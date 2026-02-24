@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@anthropic/react-wasm-table": "workspace:*",
+    "@ohah/react-wasm-table": "workspace:*",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

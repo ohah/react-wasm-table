@@ -3,13 +3,13 @@
 ## Installation
 
 ```bash
-bun add @anthropic/react-wasm-table
+bun add @ohah/react-wasm-table
 ```
 
 ## Quick Start
 
 ```tsx
-import { WasmProvider, Table } from "@anthropic/react-wasm-table";
+import { WasmProvider, Table } from "@ohah/react-wasm-table";
 
 const columns = [
   { key: "name", header: "Name", sortable: true },

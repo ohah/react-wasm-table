@@ -35,7 +35,7 @@
       "name": "demo",
       "version": "0.1.0",
       "dependencies": {
-        "@anthropic/react-wasm-table": "workspace:*",
+        "@ohah/react-wasm-table": "workspace:*",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
       },
@@ -47,8 +47,8 @@
         "vite": "^6.3.5",
       },
     },
-    "packages/react-wasm-table": {
-      "name": "@anthropic/react-wasm-table",
+    "packages/grid": {
+      "name": "@ohah/react-wasm-table",
       "version": "0.1.0",
       "devDependencies": {
         "@types/react": "^19.2.14",
@@ -63,8 +63,6 @@
     },
   },
   "packages": {
-    "@anthropic/react-wasm-table": ["@anthropic/react-wasm-table@workspace:packages/react-wasm-table"],
-
     "@babel/code-frame": ["@babel/code-frame@7.29.0", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.28.5", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw=="],
 
     "@babel/compat-data": ["@babel/compat-data@7.29.0", "", {}, "sha512-T1NCJqT/j9+cn8fvkt7jtwbLBfLC/1y1c7NtCeXFRgzGTsafi68MRv8yzkYSapBnFA6L3U2VSc02ciDzoAJhJg=="],
@@ -178,6 +176,8 @@
     "@mdx-js/react": ["@mdx-js/react@3.1.1", "", { "dependencies": { "@types/mdx": "^2.0.0" }, "peerDependencies": { "@types/react": ">=16", "react": ">=16" } }, "sha512-f++rKLQgUVYDAtECQ6fn/is15GkEH9+nZPM3MS0RcxVqoTfawHvDlSCH7JbMhAM6uJ32v3eXLvLmLvjGu7PTQw=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.1.1", "", { "dependencies": { "@emnapi/core": "^1.7.1", "@emnapi/runtime": "^1.7.1", "@tybys/wasm-util": "^0.10.1" } }, "sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A=="],
+
+    "@ohah/react-wasm-table": ["@ohah/react-wasm-table@workspace:packages/grid"],
 
     "@oxc-project/types": ["@oxc-project/types@0.112.0", "", {}, "sha512-m6RebKHIRsax2iCwVpYW2ErQwa4ywHJrE4sCK3/8JK8ZZAWOKXaRJFl/uP51gaVyyXlaS4+chU1nSCdzYf6QqQ=="],
 
