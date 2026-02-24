@@ -1,0 +1,43 @@
+{
+  "name": "react-wasm-table",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "examples/*",
+    "document"
+  ],
+  "scripts": {
+    "build:wasm": "bun scripts/build-wasm.ts",
+    "build:lib": "bun run --filter @anthropic/react-wasm-table build",
+    "build": "bun run build:wasm && bun run build:lib",
+    "dev:demo": "bun run --filter demo dev",
+    "dev:docs": "bun run --filter document dev",
+    "docs:build": "bun run --filter document build",
+    "test": "bun test packages/",
+    "test:rust": "cargo test --workspace",
+    "test:watch": "bun test --watch",
+    "lint": "oxlint .",
+    "lint:rust": "cargo clippy --workspace -- -D warnings",
+    "lint:all": "bun run lint && bun run lint:rust",
+    "format": "oxfmt .",
+    "format:check": "oxfmt . --check",
+    "format:rust": "cargo fmt --all",
+    "format:rust:check": "cargo fmt --all -- --check",
+    "format:all": "bun run format && bun run format:rust",
+    "format:all:check": "bun run format:check && bun run format:rust:check",
+    "check": "bun run lint:all && bun run format:all:check"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^20.0.11",
+    "@types/bun": "latest",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "oxfmt": "latest",
+    "oxlint": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

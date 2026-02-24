@@ -1,0 +1,28 @@
+# Rust
+/target
+**/*.rs.bk
+
+# Node / Bun
+node_modules/
+*.tsbuildinfo
+
+# WASM build output
+crates/wasm/pkg/
+packages/react-wasm-table/wasm/
+
+# Build output
+dist/
+doc_build/
+*.js.map
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+
+# Environment
+.env
+.env.local
+.env.*.local
