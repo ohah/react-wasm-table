@@ -3,6 +3,7 @@
 
 use react_wasm_table_core::data_store::{ColumnDef, DataStore};
 use react_wasm_table_core::filtering::{FilterCondition, FilterOperator};
+use react_wasm_table_core::layout::LayoutEngine;
 use react_wasm_table_core::sorting::{SortConfig, SortDirection};
 use serde_json::Value;
 use wasm_bindgen::prelude::*;
@@ -11,6 +12,7 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 pub struct TableEngine {
     store: DataStore,
+    layout: LayoutEngine,
 }
 
 #[wasm_bindgen]
@@ -20,7 +22,15 @@ impl TableEngine {
     pub fn new() -> Self {
         Self {
             store: DataStore::new(),
+            layout: LayoutEngine::new(),
         }
+    }
+
+    /// Compute layout for the current viewport. Returns cell positions as JSON.
+    #[wasm_bindgen(js_name = computeLayout)]
+    pub fn compute_layout(&mut self) -> Result<JsValue, JsError> {
+        // TODO: accept viewport params, compute header + row layouts
+        Ok(JsValue::NULL)
     }
 
     /// Set column definitions from a JS value.
@@ -102,6 +112,14 @@ impl TableEngine {
 impl Default for TableEngine {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[allow(dead_code)]
+impl TableEngine {
+    /// Access the layout engine (for testing).
+    fn layout(&self) -> &LayoutEngine {
+        &self.layout
     }
 }
 

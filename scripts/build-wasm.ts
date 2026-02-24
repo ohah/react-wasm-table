@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 const ROOT = resolve(import.meta.dirname, "..");
 const WASM_CRATE = resolve(ROOT, "crates/wasm");
 const PKG_OUTPUT = resolve(WASM_CRATE, "pkg");
-const TARGET_DIR = resolve(ROOT, "packages/react-wasm-table/wasm");
+const TARGET_DIR = resolve(ROOT, "packages/grid/wasm");
 
 async function buildWasm() {
   console.log("Building WASM...");
