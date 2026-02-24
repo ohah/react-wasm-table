@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build:wasm": "bun scripts/build-wasm.ts",
-    "build:lib": "bun run --filter @anthropic/react-wasm-table build",
+    "build:lib": "bun run --filter @ohah/react-wasm-table build",
     "build": "bun run build:wasm && bun run build:lib",
     "dev:demo": "bun run --filter demo dev",
     "dev:docs": "bun run --filter document dev",

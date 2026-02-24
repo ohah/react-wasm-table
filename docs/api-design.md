@@ -63,7 +63,7 @@ Canvas 렌더링에서는 이 패턴을 쓰지 않는다. 이유:
 ### Basic Usage
 
 ```tsx
-import { Grid, Column } from "@anthropic/react-wasm-table";
+import { Grid, Column } from "@ohah/react-wasm-table";
 
 function App() {
   const data = [
@@ -447,7 +447,7 @@ The Grid component handles WASM loading internally:
 For manual control (e.g., preloading):
 
 ```tsx
-import { initWasm } from "@anthropic/react-wasm-table";
+import { initWasm } from "@ohah/react-wasm-table";
 
 // Preload during app startup
 await initWasm();
