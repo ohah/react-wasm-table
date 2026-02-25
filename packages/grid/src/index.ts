@@ -45,5 +45,20 @@ export type {
   ColumnProps,
   GridProps,
   WasmTableEngine,
+  // CSS value types
+  CssDimension,
+  CssLength,
+  CssLengthAuto,
+  CssRect,
+  CssDisplay,
+  CssPosition,
+  CssBoxSizing,
+  CssOverflow,
+  CssFlexDirection,
+  CssFlexWrap,
+  CssAlignItems,
+  CssAlignContent,
+  CssJustifyContent,
+  BoxModelProps,
 } from "./types";
 export { DEFAULT_THEME } from "./types";
