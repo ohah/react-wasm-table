@@ -1,0 +1,68 @@
+import { useState, useMemo } from "react";
+import { Grid, Column, type CssOverflow } from "@ohah/react-wasm-table";
+import { generateSmallData } from "../data";
+
+const options: CssOverflow[] = ["visible", "clip", "hidden", "scroll"];
+
+export function Overflow() {
+  const [overflowXValue, setOverflowXValue] = useState<CssOverflow>("visible");
+  const [overflowYValue, setOverflowYValue] = useState<CssOverflow>("visible");
+  const data = useMemo(() => generateSmallData(), []);
+
+  return (
+    <>
+      <h1>overflow</h1>
+      <p>
+        Controls how Taffy handles overflow in the layout calculation.
+        Note: this affects the <strong>layout engine</strong> behavior (automatic min size),
+        not visual clipping (which the canvas handles separately).
+      </p>
+
+      <div style={{ marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap" }}>
+        <label>
+          <strong>overflow-x:</strong>{" "}
+          <select
+            value={overflowXValue}
+            onChange={(e) => setOverflowXValue(e.target.value as CssOverflow)}
+            style={{ fontSize: 14, padding: "4px 8px" }}
+          >
+            {options.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <strong>overflow-y:</strong>{" "}
+          <select
+            value={overflowYValue}
+            onChange={(e) => setOverflowYValue(e.target.value as CssOverflow)}
+            style={{ fontSize: 14, padding: "4px 8px" }}
+          >
+            {options.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
+{`<Grid overflowX="${overflowXValue}" overflowY="${overflowYValue}" ...>
+  ...
+</Grid>`}
+      </pre>
+
+      <Grid
+        data={data}
+        width={800}
+        height={400}
+        overflowX={overflowXValue}
+        overflowY={overflowYValue}
+      >
+        <Column id="name" width={180} header="Name" />
+        <Column id="dept" width={120} header="Department" />
+        <Column id="salary" width={100} header="Salary" align="right" />
+        <Column id="score" width={80} header="Score" align="right" />
+      </Grid>
+    </>
+  );
+}
