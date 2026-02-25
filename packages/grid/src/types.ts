@@ -78,7 +78,35 @@ export const DEFAULT_THEME: Theme = {
   headerFontSize: 13,
 };
 
-// ── Column props ───────────────────────────────────────────────────────
+// ── Column definition (object-based API) ──────────────────────────────
+
+/** Object-based column definition (react-table style). */
+export interface ColumnDef {
+  /** Unique column identifier. */
+  id: string;
+  /** Fixed width in pixels. */
+  width?: number;
+  /** Minimum width in pixels. */
+  minWidth?: number;
+  /** Maximum width in pixels. */
+  maxWidth?: number;
+  /** Flex grow factor. */
+  flexGrow?: number;
+  /** Flex shrink factor. */
+  flexShrink?: number;
+  /** Header text. */
+  header?: string;
+  /** Content alignment. */
+  align?: "left" | "center" | "right";
+  /** Whether the column is sortable. */
+  sortable?: boolean;
+  /** Editor type for inline editing. */
+  editor?: "text" | "number" | "select";
+  /** Render function: receives cell value, returns a render instruction. */
+  render?: (value: unknown) => RenderInstruction;
+}
+
+// ── Column props (JSX API) ────────────────────────────────────────────
 
 /** Props for the <Column> component. */
 export interface ColumnProps {
@@ -122,45 +150,40 @@ export interface GridProps {
   headerHeight?: number;
   /** Theme overrides. */
   theme?: Partial<Theme>;
-  /** Children must be <Column> elements. */
-  children: React.ReactNode;
+  /** Object-based column definitions (react-table style). Takes precedence over children. */
+  columns?: ColumnDef[];
+  /** Children must be <Column> elements. Ignored when `columns` prop is provided. */
+  children?: React.ReactNode;
 }
 
 // ── WASM engine interface ──────────────────────────────────────────────
 
 /** WASM TableEngine interface (matches wasm-bindgen exports). */
 export interface WasmTableEngine {
-  // Core setup
-  setColumns(columns: unknown): void;
-  setData(data: unknown[][]): void;
-  rowCount(): number;
-  setScrollConfig(rowHeight: number, viewportHeight: number, overscan: number): void;
-  setSort(configs: unknown): void;
-  setFilters(conditions: unknown): void;
-
-  // Unified hot path — single call per frame
-  updateViewport(scrollTop: number, viewport: unknown, columns: unknown): Float64Array;
-
-  // Pointer API — zero-copy buffer access
-  computeLayoutBuffer(
-    viewport: unknown,
-    columns: unknown,
-    visibleStart: number,
-    visibleEnd: number,
-  ): void;
+  // Layout buffer (zero-copy pointer API)
   getLayoutBufferInfo(): Uint32Array;
   getLayoutCellCount(): number;
 
-  // Index-based query
-  rebuildView(): void;
-  queryIndexed(scrollTop: number): Float64Array;
-  getViewIndicesInfo(): Uint32Array;
-  getCellValue(row: number, col: number): unknown;
-
-  // Columnar store
-  ingestColumnar(data: unknown[][]): void;
+  // Column metadata
   setColumnarColumns(columns: unknown): void;
   getColumnFloat64Info(colIdx: number): Uint32Array;
   getColumnType(colIdx: number): number;
   getColumnarGeneration(): bigint;
+
+  // TypedArray direct ingestion (no serde for numerics)
+  initColumnar(colCount: number, rowCount: number): void;
+  ingestFloat64Column(colIdx: number, values: Float64Array): void;
+  ingestBoolColumn(colIdx: number, values: Float64Array): void;
+  ingestStringColumn(colIdx: number, uniqueStrings: string[], ids: Uint32Array): void;
+  finalizeColumnar(): void;
+
+  // Hot path — single WASM call per frame
+  updateViewportColumnar(
+    scrollTop: number,
+    viewport: unknown,
+    columns: unknown,
+  ): Float64Array;
+  setColumnarSort(configs: unknown): void;
+  setColumnarScrollConfig(rowHeight: number, viewportHeight: number, overscan: number): void;
+  getColumnarViewIndicesInfo(): Uint32Array;
 }

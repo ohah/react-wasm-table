@@ -19,6 +19,7 @@ import {
 } from "../adapter/layout-reader";
 import { MemoryBridge } from "../adapter/memory-bridge";
 import { StringTable } from "../adapter/string-table";
+import { ingestData } from "../adapter/data-ingestor";
 
 const DEFAULT_ROW_HEIGHT = 36;
 const DEFAULT_HEADER_HEIGHT = 40;
@@ -36,6 +37,7 @@ export function Grid({
   rowHeight = DEFAULT_ROW_HEIGHT,
   headerHeight = DEFAULT_HEADER_HEIGHT,
   theme: themeOverrides,
+  columns: columnsProp,
   children,
 }: GridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -45,6 +47,19 @@ export function Grid({
   const [engine, setEngine] = useState<WasmTableEngine | null>(null);
 
   const theme: Theme = useMemo(() => ({ ...DEFAULT_THEME, ...themeOverrides }), [themeOverrides]);
+
+  // Sync object-based columns prop → ColumnRegistry
+  useEffect(() => {
+    if (!columnsProp) return;
+    // Convert ColumnDef[] → ColumnProps[] (render → children)
+    const asProps = columnsProp.map(
+      ({ render, ...rest }): import("../types").ColumnProps => ({
+        ...rest,
+        ...(render ? { children: render } : {}),
+      }),
+    );
+    columnRegistry.setAll(asProps);
+  }, [columnsProp, columnRegistry]);
 
   // Refs for render loop — avoid React re-renders on scroll
   const rendererRef = useRef<CanvasRenderer | null>(null);
@@ -98,31 +113,19 @@ export function Grid({
     }
   }, []);
 
-  // Convert data to row-major arrays and push to engine
+  // Ingest data via columnar TypedArray path (serde bypass)
   useEffect(() => {
     if (!engine) return;
     const columns = columnRegistry.getAll();
     if (columns.length === 0) return;
 
-    // Set columns for the data store
-    engine.setColumns(
-      columns.map((col) => ({
-        key: col.id,
-        header: col.header ?? col.id,
-        width: col.width ?? 100,
-        sortable: col.sortable ?? false,
-        filterable: false,
-      })),
-    );
-
-    // Convert record data to row-major arrays
-    const rowArrays = data.map((row) => columns.map((col) => row[col.id] ?? null));
-    engine.setData(rowArrays);
-
-    engine.setScrollConfig(rowHeight, height - headerHeight, OVERSCAN);
-
-    // Populate JS-side string table (Phase 4)
     const columnIds = columns.map((c) => c.id);
+
+    // Columnar ingestion: Object[] → typed arrays → WASM (no serde for numerics)
+    ingestData(engine, data, columnIds);
+    engine.setColumnarScrollConfig(rowHeight, height - headerHeight, OVERSCAN);
+
+    // Populate JS-side string table for display
     stringTableRef.current.populate(data, columnIds);
 
     dirtyRef.current = true;
@@ -159,14 +162,14 @@ export function Grid({
       sortStateRef.current = next;
 
       if (next) {
-        engine.setSort([
+        engine.setColumnarSort([
           {
             columnIndex: colIndex,
             direction: next.direction === "desc" ? "desc" : "asc",
           },
         ]);
       } else {
-        engine.setSort([]);
+        engine.setColumnarSort([]);
       }
       dirtyRef.current = true;
     },
@@ -279,8 +282,8 @@ export function Grid({
 
         const colCount = columns.length;
 
-        // Single WASM call: rebuild view + virtual slice + layout buffer
-        const meta = engine.updateViewport(scrollTopRef.current, viewport, colLayouts);
+        // Single WASM call: rebuild view + virtual slice + layout buffer (columnar path)
+        const meta = engine.updateViewportColumnar(scrollTopRef.current, viewport, colLayouts);
         const cellCount = meta[0] ?? 0;
         const visStart = meta[1] ?? 0;
         const headerCount = colCount;
@@ -347,9 +350,9 @@ export function Grid({
             const col = columns[readCellCol(layoutBuf, cellIdx)];
             const rowViewIdx = readCellRow(layoutBuf, cellIdx) - visStart;
             const actualRow = viewIndices[rowViewIdx] ?? 0;
-            // Use InstructionBuilder for custom renderers, StringTable for plain text
+            // Use InstructionBuilder for custom renderers, direct JS read for plain text
             if (col?.children) {
-              const value = engine.getCellValue(actualRow, readCellCol(layoutBuf, cellIdx));
+              const value = data[actualRow]?.[col.id];
               return builder.build(col, value);
             }
             const text = strTable.get(readCellCol(layoutBuf, cellIdx), actualRow);
@@ -394,7 +397,7 @@ export function Grid({
               pointerEvents: "none",
             }}
           />
-          {children}
+          {!columnsProp && children}
         </div>
       </WasmContext.Provider>
     </GridContext.Provider>

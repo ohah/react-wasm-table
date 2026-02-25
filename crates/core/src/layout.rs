@@ -247,7 +247,9 @@ impl LayoutEngine {
                 0.0,
                 width,
                 viewport.header_height,
-                columns.get(col_idx).map_or_else(Align::default, |c| c.align),
+                columns
+                    .get(col_idx)
+                    .map_or_else(Align::default, |c| c.align),
             );
         }
 
@@ -273,7 +275,9 @@ impl LayoutEngine {
                     y,
                     width,
                     viewport.row_height,
-                    columns.get(col_idx).map_or_else(Align::default, |c| c.align),
+                    columns
+                        .get(col_idx)
+                        .map_or_else(Align::default, |c| c.align),
                 );
                 cell_idx += 1;
             }

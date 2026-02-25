@@ -14,6 +14,15 @@ export class ColumnRegistry {
     this.notify();
   }
 
+  /** Replace all columns at once (for object-based column definitions). */
+  setAll(columns: ColumnProps[]): void {
+    this.columns.clear();
+    for (const col of columns) {
+      this.columns.set(col.id, col);
+    }
+    this.notify();
+  }
+
   /** Unregister a column (on unmount). */
   unregister(id: string): void {
     this.columns.delete(id);

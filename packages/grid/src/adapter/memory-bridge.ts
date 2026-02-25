@@ -45,7 +45,7 @@ export class MemoryBridge {
    * Get the view indices as a Uint32Array view.
    */
   getViewIndices(): Uint32Array {
-    const info = this.engine.getViewIndicesInfo();
+    const info = this.engine.getColumnarViewIndicesInfo();
     const offset = info[0] ?? 0;
     const len = info[1] ?? 0;
     if (

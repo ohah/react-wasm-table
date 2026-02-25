@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use serde_json::Value;
 use crate::data_store::ColumnDef;
 use crate::filtering::{FilterCondition, FilterOperator};
 use crate::sorting::{SortConfig, SortDirection};
+use serde_json::Value;
 
 /// Column data type tag.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -87,6 +87,14 @@ pub struct ColumnarStore {
     pub data: Vec<ColumnData>,
     pub row_count: usize,
     pub generation: u64,
+    // View management (mirrors DataStore's index indirection)
+    view_indices: Vec<u32>,
+    view_dirty: bool,
+    sort_configs: Vec<SortConfig>,
+    filter_conditions: Vec<FilterCondition>,
+    row_height: f64,
+    viewport_height: f64,
+    overscan: usize,
 }
 
 impl ColumnarStore {
@@ -96,6 +104,13 @@ impl ColumnarStore {
             data: Vec::new(),
             row_count: 0,
             generation: 0,
+            view_indices: Vec::new(),
+            view_dirty: true,
+            sort_configs: Vec::new(),
+            filter_conditions: Vec::new(),
+            row_height: 36.0,
+            viewport_height: 600.0,
+            overscan: 5,
         }
     }
 
@@ -104,6 +119,118 @@ impl ColumnarStore {
         self.columns = columns;
         self.data.clear();
         self.row_count = 0;
+    }
+
+    // ── Direct column setters (serde bypass) ──────────────────────────
+
+    /// Initialize for direct column ingestion. Clears existing data.
+    pub fn init(&mut self, col_count: usize, row_count: usize) {
+        self.data = Vec::with_capacity(col_count);
+        // Fill with empty Float64 columns as placeholders
+        for _ in 0..col_count {
+            self.data.push(ColumnData::Float64(Vec::new()));
+        }
+        self.row_count = row_count;
+        self.generation += 1;
+        self.view_dirty = true;
+    }
+
+    /// Set a Float64 column directly from a slice (no serde).
+    pub fn set_column_float64(&mut self, col_idx: usize, values: &[f64]) {
+        if col_idx < self.data.len() {
+            self.data[col_idx] = ColumnData::Float64(values.to_vec());
+        }
+    }
+
+    /// Set a Bool column directly from a slice (0.0/1.0/NaN, no serde).
+    pub fn set_column_bool(&mut self, col_idx: usize, values: &[f64]) {
+        if col_idx < self.data.len() {
+            self.data[col_idx] = ColumnData::Bool(values.to_vec());
+        }
+    }
+
+    /// Set a String column from pre-interned data (unique strings + ID array).
+    pub fn set_column_strings(&mut self, col_idx: usize, unique: &[String], ids: &[u32]) {
+        if col_idx < self.data.len() {
+            let mut intern = StringInternTable::new();
+            for s in unique {
+                intern.intern(s);
+            }
+            self.data[col_idx] = ColumnData::Strings {
+                ids: ids.to_vec(),
+                intern,
+            };
+        }
+    }
+
+    /// Finalize after all columns are set. Marks view as dirty.
+    pub const fn finalize(&mut self) {
+        self.view_dirty = true;
+    }
+
+    // ── View management ───────────────────────────────────────────────
+
+    /// Set sort configuration. Marks view dirty.
+    pub fn set_sort(&mut self, configs: Vec<SortConfig>) {
+        self.sort_configs = configs;
+        self.view_dirty = true;
+    }
+
+    /// Set filter conditions. Marks view dirty.
+    pub fn set_filters(&mut self, conditions: Vec<FilterCondition>) {
+        self.filter_conditions = conditions;
+        self.view_dirty = true;
+    }
+
+    /// Set scroll configuration.
+    pub const fn set_scroll_config(
+        &mut self,
+        row_height: f64,
+        viewport_height: f64,
+        overscan: usize,
+    ) {
+        self.row_height = row_height;
+        self.viewport_height = viewport_height;
+        self.overscan = overscan;
+    }
+
+    /// Rebuild the view index array: filter → sort (in-place on u32 indices).
+    /// Skips if not dirty.
+    pub fn rebuild_view(&mut self) {
+        if !self.view_dirty {
+            return;
+        }
+        self.view_dirty = false;
+
+        let all: Vec<u32> = (0..self.row_count as u32).collect();
+        let conditions = std::mem::take(&mut self.filter_conditions);
+        let mut indices = filter_indices_columnar(&all, self, &conditions);
+        self.filter_conditions = conditions;
+
+        if !self.sort_configs.is_empty() {
+            let configs = std::mem::take(&mut self.sort_configs);
+            sort_indices_columnar(&mut indices, self, &configs);
+            self.sort_configs = configs;
+        }
+        self.view_indices = indices;
+    }
+
+    /// Get the view indices (valid after `rebuild_view`).
+    pub fn view_indices(&self) -> &[u32] {
+        &self.view_indices
+    }
+
+    /// Get scroll config values.
+    pub const fn row_height(&self) -> f64 {
+        self.row_height
+    }
+
+    pub const fn viewport_height(&self) -> f64 {
+        self.viewport_height
+    }
+
+    pub const fn overscan(&self) -> usize {
+        self.overscan
     }
 
     /// Ingest row-major `serde_json::Value` data into columnar format.
@@ -126,10 +253,7 @@ impl ColumnarStore {
                 ColumnType::Float64 => {
                     let mut values = Vec::with_capacity(row_count);
                     for row in rows {
-                        let v = row
-                            .get(col_idx)
-                            .and_then(Value::as_f64)
-                            .unwrap_or(f64::NAN);
+                        let v = row.get(col_idx).and_then(Value::as_f64).unwrap_or(f64::NAN);
                         values.push(v);
                     }
                     ColumnData::Float64(values)
@@ -522,5 +646,163 @@ mod tests {
 
         store.ingest_rows(&test_rows());
         assert_eq!(store.generation, 2);
+    }
+
+    // ── Direct column setter tests ────────────────────────────────────
+
+    #[test]
+    fn init_and_set_columns_direct() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 4);
+
+        assert_eq!(store.row_count, 4);
+        assert_eq!(store.data.len(), 3);
+        assert_eq!(store.generation, 1);
+    }
+
+    #[test]
+    fn set_column_float64_direct() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 4);
+        store.set_column_float64(1, &[30.0, 25.0, 35.0, 28.0]);
+
+        assert_eq!(store.column_type(1), Some(ColumnType::Float64));
+        if let ColumnData::Float64(v) = &store.data[1] {
+            assert_eq!(v, &[30.0, 25.0, 35.0, 28.0]);
+        } else {
+            panic!("expected Float64");
+        }
+    }
+
+    #[test]
+    fn set_column_bool_direct() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 4);
+        store.set_column_bool(2, &[1.0, 0.0, 1.0, f64::NAN]);
+
+        assert_eq!(store.column_type(2), Some(ColumnType::Bool));
+        if let ColumnData::Bool(v) = &store.data[2] {
+            assert!((v[0] - 1.0).abs() < f64::EPSILON);
+            assert!((v[1] - 0.0).abs() < f64::EPSILON);
+            assert!(v[3].is_nan());
+        } else {
+            panic!("expected Bool");
+        }
+    }
+
+    #[test]
+    fn set_column_strings_direct() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 4);
+        let unique = vec![
+            "".to_string(),
+            "Alice".to_string(),
+            "Bob".to_string(),
+            "Charlie".to_string(),
+            "Alice Smith".to_string(),
+        ];
+        store.set_column_strings(0, &unique, &[1, 2, 3, 4]);
+
+        assert_eq!(store.column_type(0), Some(ColumnType::String));
+        if let ColumnData::Strings { ids, intern } = &store.data[0] {
+            assert_eq!(intern.resolve(ids[0]), "Alice");
+            assert_eq!(intern.resolve(ids[1]), "Bob");
+            assert_eq!(intern.resolve(ids[2]), "Charlie");
+            assert_eq!(intern.resolve(ids[3]), "Alice Smith");
+        } else {
+            panic!("expected Strings");
+        }
+    }
+
+    #[test]
+    fn direct_ingestion_roundtrip_with_sort() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 4);
+        // Column 0: strings (name)
+        let unique = vec![
+            "".to_string(),
+            "Alice".to_string(),
+            "Bob".to_string(),
+            "Charlie".to_string(),
+            "Alice Smith".to_string(),
+        ];
+        store.set_column_strings(0, &unique, &[1, 2, 3, 4]);
+        // Column 1: float64 (age)
+        store.set_column_float64(1, &[30.0, 25.0, 35.0, 28.0]);
+        // Column 2: bool (active)
+        store.set_column_bool(2, &[1.0, 0.0, 1.0, f64::NAN]);
+        store.finalize();
+
+        // Sort by age ascending
+        store.set_sort(vec![SortConfig {
+            column_index: 1,
+            direction: SortDirection::Ascending,
+        }]);
+        store.rebuild_view();
+
+        // Bob(25)=1, Alice Smith(28)=3, Alice(30)=0, Charlie(35)=2
+        assert_eq!(store.view_indices(), &[1, 3, 0, 2]);
+    }
+
+    #[test]
+    fn rebuild_view_idempotent() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+        store.set_sort(vec![SortConfig {
+            column_index: 1,
+            direction: SortDirection::Ascending,
+        }]);
+
+        store.rebuild_view();
+        let first = store.view_indices().to_vec();
+        store.rebuild_view(); // should be no-op (not dirty)
+        let second = store.view_indices().to_vec();
+        assert_eq!(first, second);
+    }
+
+    #[test]
+    fn rebuild_view_with_filter() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 4);
+        store.set_column_float64(1, &[30.0, 25.0, 35.0, 28.0]);
+        store.set_column_strings(
+            0,
+            &[
+                "".into(),
+                "Alice".into(),
+                "Bob".into(),
+                "Charlie".into(),
+                "Alice Smith".into(),
+            ],
+            &[1, 2, 3, 4],
+        );
+        store.set_column_bool(2, &[1.0, 0.0, 1.0, f64::NAN]);
+        store.finalize();
+
+        store.set_filters(vec![FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::GreaterThan,
+            value: json!(28),
+        }]);
+        store.rebuild_view();
+
+        // Alice(30)=0, Charlie(35)=2
+        assert_eq!(store.view_indices(), &[0, 2]);
+    }
+
+    #[test]
+    fn scroll_config_stored() {
+        let mut store = ColumnarStore::new();
+        store.set_scroll_config(40.0, 800.0, 3);
+        assert!((store.row_height() - 40.0).abs() < f64::EPSILON);
+        assert!((store.viewport_height() - 800.0).abs() < f64::EPSILON);
+        assert_eq!(store.overscan(), 3);
     }
 }
