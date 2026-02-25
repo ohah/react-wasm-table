@@ -176,6 +176,13 @@ impl TableEngine {
         // 1. Rebuild view indices
         self.columnar.rebuild_view();
 
+        log::debug!(
+            "[wasm] updateViewport: scroll_top={:.1}, total_rows={}, filtered={}",
+            scroll_top,
+            self.columnar.row_count,
+            self.columnar.view_indices().len(),
+        );
+
         // 2. Compute virtual slice
         let total_count = self.columnar.row_count;
         let filtered_count = self.columnar.view_indices().len();
@@ -248,6 +255,22 @@ impl TableEngine {
     pub fn get_columnar_view_indices_info(&self) -> Vec<usize> {
         let indices = self.columnar.view_indices();
         vec![indices.as_ptr() as usize, indices.len()]
+    }
+
+    // ── Debug logging ──────────────────────────────────────────────
+
+    /// Initialize console_log backend and enable Debug-level logging.
+    #[cfg(feature = "debug-log")]
+    #[wasm_bindgen(js_name = enableDebugLog)]
+    pub fn enable_debug_log(&self) {
+        console_log::init_with_level(log::Level::Debug).ok();
+    }
+
+    /// Disable all log output at runtime.
+    #[cfg(feature = "debug-log")]
+    #[wasm_bindgen(js_name = disableDebugLog)]
+    pub fn disable_debug_log(&self) {
+        log::set_max_level(log::LevelFilter::Off);
     }
 }
 

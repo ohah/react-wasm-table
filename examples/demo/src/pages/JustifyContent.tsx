@@ -14,6 +14,21 @@ const options: CssJustifyContent[] = [
   "space-around",
 ];
 
+const btnBase: React.CSSProperties = {
+  padding: "4px 12px",
+  border: "1px solid #ccc",
+  borderRadius: 4,
+  background: "#fff",
+  cursor: "pointer",
+  fontSize: 13,
+};
+const btnActive: React.CSSProperties = {
+  ...btnBase,
+  background: "#1976d2",
+  color: "#fff",
+  borderColor: "#1976d2",
+};
+
 export function JustifyContent() {
   const [justify, setJustify] = useState<CssJustifyContent>("start");
   const data = useMemo(() => generateSmallData(), []);
@@ -23,21 +38,20 @@ export function JustifyContent() {
       <h1>justify-content</h1>
       <p>Controls distribution of columns along the main axis.</p>
 
-      <div style={{ marginBottom: 16, display: "flex", gap: 12, alignItems: "center" }}>
-        <label>
-          <strong>justify-content:</strong>{" "}
-          <select
-            value={justify}
-            onChange={(e) => setJustify(e.target.value as CssJustifyContent)}
-            style={{ fontSize: 14, padding: "4px 8px" }}
-          >
-            {options.map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div style={{ marginBottom: 16 }}>
+        <strong>justify-content:</strong>
+        <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+          {options.map((v) => (
+            <button
+              key={v}
+              data-testid={`justify-${v}`}
+              style={justify === v ? btnActive : btnBase}
+              onClick={() => setJustify(v)}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>

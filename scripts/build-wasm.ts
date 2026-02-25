@@ -12,8 +12,14 @@ const DEMO_PUBLIC = resolve(ROOT, "examples/demo/public");
 async function buildWasm() {
   console.log("Building WASM...");
 
-  // Run wasm-pack build
-  await $`wasm-pack build --target web --out-dir pkg ${WASM_CRATE}`.cwd(ROOT);
+  // Run wasm-pack build (pass --features debug-log when WASM_DEBUG_LOG is set)
+  if (process.env.WASM_DEBUG_LOG) {
+    await $`wasm-pack build --target web --out-dir pkg ${WASM_CRATE} -- --features debug-log`.cwd(
+      ROOT,
+    );
+  } else {
+    await $`wasm-pack build --target web --out-dir pkg ${WASM_CRATE}`.cwd(ROOT);
+  }
 
   console.log("WASM build complete.");
 

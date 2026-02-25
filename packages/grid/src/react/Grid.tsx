@@ -9,7 +9,6 @@ import type {
   CssLengthAuto,
   CssDimension,
   CssGridLine,
-  BoxModelProps,
 } from "../types";
 import { DEFAULT_THEME } from "../types";
 import { ColumnRegistry } from "../adapter/column-registry";
@@ -195,6 +194,7 @@ export function Grid({
   borderRightWidth,
   borderBottomWidth,
   borderLeftWidth,
+  engineRef,
 }: GridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -240,6 +240,17 @@ export function Grid({
       if (!cancelled) {
         const eng = createTableEngine();
         setEngine(eng);
+        if (engineRef) {
+          engineRef.current = eng;
+        }
+        if (typeof window !== "undefined" && import.meta.env?.DEV) {
+          Object.defineProperty(window, "__engine", {
+            value: eng,
+            writable: true,
+            configurable: true,
+          });
+          eng.enableDebugLog?.();
+        }
         const mem = getWasmMemory();
         if (mem) {
           memoryBridgeRef.current = new MemoryBridge(eng, mem);
@@ -249,7 +260,7 @@ export function Grid({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [engineRef]);
 
   // Attach canvas renderer
   useEffect(() => {
@@ -394,7 +405,7 @@ export function Grid({
     return () => {
       em.detach();
     };
-  }, [handleHeaderClick, handleCellDoubleClick]);
+  }, [handleHeaderClick, handleCellDoubleClick, rowHeight, data.length, headerHeight, height]);
 
   // Render loop — unified hot path (single WASM call per frame)
   useEffect(() => {

@@ -529,6 +529,14 @@ impl LayoutEngine {
 
     /// Build a Taffy style for a column child node.
     fn column_style(col: &ColumnLayout, height: f32) -> Style {
+        log::debug!(
+            "[layout] column_style: w={}, grow={}, shrink={}, basis={:?}, align_self={:?}",
+            col.width,
+            col.flex_grow,
+            col.flex_shrink,
+            col.flex_basis,
+            col.align_self
+        );
         Style {
             size: Size {
                 width: if col.width > 0.0 {
@@ -589,6 +597,12 @@ impl LayoutEngine {
         viewport_width: f32,
         row_height: f32,
     ) -> Vec<(f32, f32, [f32; 4])> {
+        log::debug!(
+            "[layout] compute_column_positions: cols={}, viewport_width={}, row_height={}",
+            columns.len(),
+            viewport_width,
+            row_height
+        );
         let root_style = Self::build_container_style(container, viewport_width, row_height);
         let root = self
             .tree
@@ -635,6 +649,19 @@ impl LayoutEngine {
             })
             .collect();
 
+        for (i, &(x, w, ref pad)) in positions.iter().enumerate() {
+            log::debug!(
+                "[layout] col[{}]: x={:.1}, w={:.1}, pad=[{:.1},{:.1},{:.1},{:.1}]",
+                i,
+                x,
+                w,
+                pad[0],
+                pad[1],
+                pad[2],
+                pad[3]
+            );
+        }
+
         self.tree.clear();
 
         positions
@@ -646,6 +673,14 @@ impl LayoutEngine {
         viewport_width: f32,
         row_height: f32,
     ) -> Style {
+        log::debug!(
+            "[layout] container: display={:?}, flex_dir={:?}, gap={:?}, align_items={:?}, justify={:?}",
+            container.display,
+            container.flex_direction,
+            container.gap,
+            container.align_items,
+            container.justify_content
+        );
         let row_gap = container.row_gap.unwrap_or(container.gap);
         let col_gap = container.column_gap.unwrap_or(container.gap);
 
@@ -800,6 +835,17 @@ impl LayoutEngine {
         let row_count = visible_range.end.saturating_sub(visible_range.start);
         let total_cells = col_count + row_count * col_count;
 
+        log::debug!(
+            "[layout] compute_into_buffer: cols={}, rows={}, total_cells={}, viewport={}x{}, range={}..{}",
+            col_count,
+            row_count,
+            total_cells,
+            viewport.width,
+            viewport.row_height,
+            visible_range.start,
+            visible_range.end
+        );
+
         debug_assert!(
             buf.len() >= layout_buffer::buf_len(total_cells),
             "buffer too small: need {} f32s, got {}",
@@ -863,6 +909,8 @@ impl LayoutEngine {
                 cell_idx += 1;
             }
         }
+
+        log::debug!("[layout] compute_into_buffer: done, cells_written={total_cells}");
 
         total_cells
     }

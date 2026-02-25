@@ -12,6 +12,21 @@ const containerOptions: CssAlignItems[] = [
   "stretch",
 ];
 
+const btnBase: React.CSSProperties = {
+  padding: "4px 12px",
+  border: "1px solid #ccc",
+  borderRadius: 4,
+  background: "#fff",
+  cursor: "pointer",
+  fontSize: 13,
+};
+const btnActive: React.CSSProperties = {
+  ...btnBase,
+  background: "#1976d2",
+  color: "#fff",
+  borderColor: "#1976d2",
+};
+
 export function AlignItems() {
   const [alignItemsValue, setAlignItemsValue] = useState<CssAlignItems>("stretch");
   const [alignSelfValue, setAlignSelfValue] = useState<CssAlignItems | "">("");
@@ -26,35 +41,43 @@ export function AlignItems() {
       </p>
 
       <div style={{ marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap" }}>
-        <label>
-          <strong>align-items (container):</strong>{" "}
-          <select
-            value={alignItemsValue}
-            onChange={(e) => setAlignItemsValue(e.target.value as CssAlignItems)}
-            style={{ fontSize: 14, padding: "4px 8px" }}
-          >
+        <div>
+          <strong>align-items (container):</strong>
+          <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
             {containerOptions.map((v) => (
-              <option key={v} value={v}>
+              <button
+                key={v}
+                data-testid={`align-items-${v}`}
+                style={alignItemsValue === v ? btnActive : btnBase}
+                onClick={() => setAlignItemsValue(v)}
+              >
                 {v}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
-        <label>
-          <strong>align-self (col 2 "Department"):</strong>{" "}
-          <select
-            value={alignSelfValue}
-            onChange={(e) => setAlignSelfValue(e.target.value as CssAlignItems | "")}
-            style={{ fontSize: 14, padding: "4px 8px" }}
-          >
-            <option value="">(inherit)</option>
+          </div>
+        </div>
+        <div>
+          <strong>align-self (col 2 "Department"):</strong>
+          <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+            <button
+              data-testid="align-self-inherit"
+              style={alignSelfValue === "" ? btnActive : btnBase}
+              onClick={() => setAlignSelfValue("")}
+            >
+              (inherit)
+            </button>
             {containerOptions.map((v) => (
-              <option key={v} value={v}>
+              <button
+                key={v}
+                data-testid={`align-self-${v}`}
+                style={alignSelfValue === v ? btnActive : btnBase}
+                onClick={() => setAlignSelfValue(v)}
+              >
                 {v}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>

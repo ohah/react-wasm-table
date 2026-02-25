@@ -386,6 +386,8 @@ export interface GridProps extends BoxModelProps {
   gridAutoFlow?: CssGridAutoFlow;
   /** Justify items on the inline axis. */
   justifyItems?: CssAlignItems;
+  /** Ref callback to receive the WASM engine instance (e.g., for debug logging). */
+  engineRef?: React.RefObject<WasmTableEngine | null>;
 }
 
 // ── WASM engine interface ──────────────────────────────────────────────
@@ -419,4 +421,8 @@ export interface WasmTableEngine {
   setColumnarSort(configs: unknown): void;
   setColumnarScrollConfig(rowHeight: number, viewportHeight: number, overscan: number): void;
   getColumnarViewIndicesInfo(): Uint32Array;
+
+  // Debug logging (only available when WASM built with debug-log feature)
+  enableDebugLog?(): void;
+  disableDebugLog?(): void;
 }

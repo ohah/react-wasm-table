@@ -2,6 +2,29 @@ import { useState, useMemo } from "react";
 import { Grid, Column } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 
+const BASIS_OPTIONS = [
+  { label: "auto", value: "auto" },
+  { label: "0", value: "0" },
+  { label: "100px", value: "100" },
+  { label: "200px", value: "200" },
+  { label: "50%", value: "50%" },
+];
+
+const btnBase: React.CSSProperties = {
+  padding: "4px 12px",
+  border: "1px solid #ccc",
+  borderRadius: 4,
+  background: "#fff",
+  cursor: "pointer",
+  fontSize: 13,
+};
+const btnActive: React.CSSProperties = {
+  ...btnBase,
+  background: "#1976d2",
+  color: "#fff",
+  borderColor: "#1976d2",
+};
+
 export function FlexGrow() {
   const [grow1, setGrow1] = useState(0);
   const [grow2, setGrow2] = useState(1);
@@ -51,20 +74,21 @@ export function FlexGrow() {
           />{" "}
           {shrink}
         </label>
-        <label>
-          <strong>Col 2 flexBasis:</strong>{" "}
-          <select
-            value={basis}
-            onChange={(e) => setBasis(e.target.value)}
-            style={{ fontSize: 14, padding: "4px 8px" }}
-          >
-            <option value="auto">auto</option>
-            <option value="0">0</option>
-            <option value="100">100px</option>
-            <option value="200">200px</option>
-            <option value="50%">50%</option>
-          </select>
-        </label>
+        <div>
+          <strong>Col 2 flexBasis:</strong>
+          <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+            {BASIS_OPTIONS.map((p) => (
+              <button
+                key={p.value}
+                data-testid={`basis-${p.value}`}
+                style={basis === p.value ? btnActive : btnBase}
+                onClick={() => setBasis(p.value)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
