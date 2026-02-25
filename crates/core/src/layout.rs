@@ -72,7 +72,7 @@ pub enum OverflowValue {
     Scroll,
 }
 
-/// CSS display enum.
+/// CSS display enum. Maps to Taffy's Display (Flex, Block, None).
 #[derive(Debug, Clone, Copy, Default, Serialize)]
 pub enum DisplayValue {
     #[default]
@@ -279,9 +279,7 @@ const fn length_rect_to_taffy(r: &RectValue<LengthValue>) -> Rect<LengthPercenta
     }
 }
 
-const fn length_auto_rect_to_taffy(
-    r: &RectValue<LengthAutoValue>,
-) -> Rect<LengthPercentageAuto> {
+const fn length_auto_rect_to_taffy(r: &RectValue<LengthAutoValue>) -> Rect<LengthPercentageAuto> {
     Rect {
         top: length_auto_to_taffy(r.top),
         right: length_auto_to_taffy(r.right),
@@ -476,7 +474,8 @@ impl LayoutEngine {
 
         Style {
             display: match container.display {
-                DisplayValue::Flex | DisplayValue::Block => Display::Flex, // Block falls back to flex
+                DisplayValue::Flex => Display::Flex,
+                DisplayValue::Block => Display::Block,
                 DisplayValue::None => Display::None,
             },
             flex_direction: match container.flex_direction {
