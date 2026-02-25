@@ -117,9 +117,9 @@ export function GridTemplate() {
             gridAutoFlow={autoFlow}
             gap={gapValue}
           >
-            <Column id="name" header="Name" />
-            <Column id="dept" header="Department" />
-            <Column id="salary" header="Salary" align="right" />
+            <Column id="name" header="Name" padding={[0, 8]} />
+            <Column id="dept" header="Department" padding={[0, 8]} />
+            <Column id="salary" header="Salary" align="right" padding={[0, 8]} />
           </Grid>
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
