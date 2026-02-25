@@ -6,4 +6,10 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  resolve: {
+    conditions: ["development"],
+  },
+  optimizeDeps: {
+    exclude: ["@ohah/react-wasm-table"],
+  },
 });

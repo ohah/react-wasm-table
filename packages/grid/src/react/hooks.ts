@@ -24,11 +24,3 @@ export function useWasm(): WasmContextValue {
   }
   return ctx;
 }
-
-/** Hook to drive the canvas render loop (requestAnimationFrame). */
-export function useRenderLoop(
-  _canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  _enabled: boolean,
-): void {
-  throw new Error("TODO: useRenderLoop");
-}
