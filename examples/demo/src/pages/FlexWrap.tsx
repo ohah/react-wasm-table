@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, Column, type CssFlexWrap } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { CssComparison } from "../components/CssComparison";
 
 const options: CssFlexWrap[] = ["nowrap", "wrap", "wrap-reverse"];
 
@@ -16,7 +17,7 @@ const btnActive: React.CSSProperties = {
   ...btnBase,
   background: "#1976d2",
   color: "#fff",
-  borderColor: "#1976d2",
+  border: "1px solid #1976d2",
 };
 
 export function FlexWrap() {
@@ -50,12 +51,33 @@ export function FlexWrap() {
 </Grid>`}
       </pre>
 
-      <Grid data={data} width={500} height={400} flexWrap={wrap}>
-        <Column id="name" width={200} header="Name" />
-        <Column id="dept" width={200} header="Department" />
-        <Column id="salary" width={200} header="Salary" align="right" />
-        <Column id="score" width={200} header="Score" align="right" />
-      </Grid>
+      <div style={{ display: "flex", flexWrap: "wrap" }}>
+        <div>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <Grid data={data} width={500} height={400} flexWrap={wrap}>
+            <Column id="name" width={200} header="Name" />
+            <Column id="dept" width={200} header="Department" />
+            <Column id="salary" width={200} header="Salary" align="right" />
+            <Column id="score" width={200} header="Score" align="right" />
+          </Grid>
+        </div>
+        <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
+        <div>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
+          <CssComparison
+            data={data}
+            width={500}
+            height={400}
+            columns={[
+              { id: "name", header: "Name", width: 200 },
+              { id: "dept", header: "Department", width: 200 },
+              { id: "salary", header: "Salary", width: 200, align: "right" },
+              { id: "score", header: "Score", width: 200, align: "right" },
+            ]}
+            rowStyle={{ flexWrap: wrap }}
+          />
+        </div>
+      </div>
     </>
   );
 }

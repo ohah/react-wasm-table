@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Grid, Column } from "@ohah/react-wasm-table";
 import type { CssGridAutoFlow } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { CssComparison } from "../components/CssComparison";
 
 const PRESETS = [
   { label: "1fr 1fr 1fr", value: "1fr 1fr 1fr" },
@@ -28,7 +29,7 @@ const btnActive: React.CSSProperties = {
   ...btnBase,
   background: "#1976d2",
   color: "#fff",
-  borderColor: "#1976d2",
+  border: "1px solid #1976d2",
 };
 
 export function GridTemplate() {
@@ -104,19 +105,44 @@ export function GridTemplate() {
 </Grid>`}
       </pre>
 
-      <Grid
-        data={data}
-        width={800}
-        height={400}
-        display="grid"
-        gridTemplateColumns={templateCols}
-        gridAutoFlow={autoFlow}
-        gap={gapValue}
-      >
-        <Column id="name" header="Name" />
-        <Column id="dept" header="Department" />
-        <Column id="salary" header="Salary" align="right" />
-      </Grid>
+      <div style={{ display: "flex", flexWrap: "wrap" }}>
+        <div>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <Grid
+            data={data}
+            width={800}
+            height={400}
+            display="grid"
+            gridTemplateColumns={templateCols}
+            gridAutoFlow={autoFlow}
+            gap={gapValue}
+          >
+            <Column id="name" header="Name" />
+            <Column id="dept" header="Department" />
+            <Column id="salary" header="Salary" align="right" />
+          </Grid>
+        </div>
+        <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
+        <div>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
+          <CssComparison
+            data={data}
+            width={800}
+            height={400}
+            columns={[
+              { id: "name", header: "Name" },
+              { id: "dept", header: "Department" },
+              { id: "salary", header: "Salary", align: "right" },
+            ]}
+            rowStyle={{
+              display: "grid",
+              gridTemplateColumns: templateCols,
+              gridAutoFlow: autoFlow,
+              gap: gapValue,
+            }}
+          />
+        </div>
+      </div>
     </>
   );
 }
