@@ -2,6 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
+  // Single snapshot per project (no OS) so CI (Linux) and local (darwin) share the same baseline.
+  snapshotPathTemplate: "{snapshotDir}/{arg}-{projectName}{ext}",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
