@@ -4,6 +4,8 @@ export default defineConfig({
   testDir: "./tests",
   // Single snapshot per project (no OS) so CI (Linux) and local (darwin) share the same baseline.
   snapshotPathTemplate: "{snapshotDir}/{arg}-{projectName}{ext}",
+  // In CI: create missing snapshots so first run on a new platform (e.g. Linux) passes.
+  updateSnapshots: process.env.CI ? "missing" : undefined,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
