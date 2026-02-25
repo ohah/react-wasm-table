@@ -1,5 +1,10 @@
 import type { CellLayout } from "../types";
-import { readCellX, readCellY, readCellWidth, readCellHeight } from "../adapter/layout-reader";
+import {
+  readCellX,
+  readCellY,
+  readCellWidth,
+  readCellHeight,
+} from "../adapter/layout-reader";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -64,7 +69,10 @@ export function computeHeaderLines(
  * Compute data-area grid lines from CellLayout objects.
  * Horizontal lines span full canvasW; vertical left border sits at first cell's x.
  */
-export function computeDataLines(layouts: CellLayout[], canvasW: number): GridLineSpec {
+export function computeDataLines(
+  layouts: CellLayout[],
+  canvasW: number,
+): GridLineSpec {
   if (layouts.length === 0) return { horizontal: [], vertical: [] };
 
   let gridMaxX = 0;
@@ -88,7 +96,9 @@ export function computeDataLines(layouts: CellLayout[], canvasW: number): GridLi
 
   const horizontal: HLine[] = [];
   for (const edge of rowEdges) {
-    horizontal.push({ y: edge + 0.5, x1: 0, x2: canvasW });
+    // Last row bottom border: inset so the line stays fully inside the canvas
+    const y = edge >= maxY ? edge - 0.5 : edge + 0.5;
+    horizontal.push({ y, x1: 0, x2: canvasW });
   }
 
   const vertical: VLine[] = [{ x: firstColX + 0.25, y1: minY, y2: maxY }];
@@ -175,7 +185,9 @@ export function computeDataLinesFromBuffer(
 
   const horizontal: HLine[] = [];
   for (const edge of rowEdges) {
-    horizontal.push({ y: edge + 0.5, x1: 0, x2: canvasW });
+    // Last row bottom border: inset so the line stays fully inside the canvas
+    const y = edge >= maxY ? edge - 0.5 : edge + 0.5;
+    horizontal.push({ y, x1: 0, x2: canvasW });
   }
 
   const vertical: VLine[] = [{ x: firstColX + 0.25, y1: minY, y2: maxY }];

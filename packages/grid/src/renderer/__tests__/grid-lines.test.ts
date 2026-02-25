@@ -23,10 +23,10 @@ function cell(
 
 /**
  * Build a Float32Array layout buffer from CellLayout objects.
- * Buffer format: stride 12 per cell [row, col, x, y, width, height, align, pt, pr, pb, pl, reserved]
+ * Buffer format: stride 16 per cell [row, col, x, y, width, height, align, pt, pr, pb, pl, bt, br, bb, bl, reserved]
  */
 function toBuffer(layouts: CellLayout[]): Float32Array {
-  const STRIDE = 12;
+  const STRIDE = 16;
   const buf = new Float32Array(layouts.length * STRIDE);
   for (let i = 0; i < layouts.length; i++) {
     const l = layouts[i]!;
