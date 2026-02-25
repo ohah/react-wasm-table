@@ -8,6 +8,7 @@ import type {
   CssLength,
   CssLengthAuto,
   CssDimension,
+  CssGridLine,
   BoxModelProps,
 } from "../types";
 import { DEFAULT_THEME } from "../types";
@@ -135,6 +136,15 @@ function buildLengthAutoRect(
   return resolveRect(shorthand, top, right, bottom, left, resolveLengthAuto);
 }
 
+/** Resolve CssGridLine to WASM-compatible format. */
+function resolveGridLine(
+  v: CssGridLine | undefined,
+): number | string | [number | string, number | string] | undefined {
+  if (v === undefined) return undefined;
+  if (Array.isArray(v)) return v;
+  return v; // number or string pass through
+}
+
 /**
  * Canvas-based grid component.
  * Renders a <canvas> element for data display and a <div> overlay for editors.
@@ -162,6 +172,13 @@ export function Grid({
   overflowX,
   overflowY,
   scrollbarWidth,
+  // Grid container props
+  gridTemplateRows,
+  gridTemplateColumns,
+  gridAutoRows,
+  gridAutoColumns,
+  gridAutoFlow,
+  justifyItems,
   // Box model props
   padding,
   paddingTop,
@@ -389,6 +406,9 @@ export function Grid({
     const strTable = stringTableRef.current;
     if (!bridge) return;
 
+    // Mark dirty when effect deps change (layout props changed)
+    dirtyRef.current = true;
+
     const loop = () => {
       if (dirtyRef.current) {
         dirtyRef.current = false;
@@ -408,8 +428,16 @@ export function Grid({
           scrollTop: scrollTopRef.current,
         };
 
+        const isGrid = display === "grid";
         const colLayouts = columns.map((col) => ({
-          width: typeof col.width === "number" ? col.width : col.width === undefined ? 100 : 0,
+          width:
+            typeof col.width === "number"
+              ? col.width
+              : col.width === undefined
+                ? isGrid
+                  ? 0
+                  : 100
+                : 0,
           flexGrow: col.flexGrow ?? 0,
           flexShrink: col.flexShrink ?? 0,
           minWidth: typeof col.minWidth === "number" ? col.minWidth : undefined,
@@ -451,6 +479,9 @@ export function Grid({
             col.insetBottom,
             col.insetLeft,
           ),
+          gridRow: resolveGridLine(col.gridRow),
+          gridColumn: resolveGridLine(col.gridColumn),
+          justifySelf: col.justifySelf,
         }));
 
         const containerLayout = {
@@ -475,6 +506,12 @@ export function Grid({
             borderBottomWidth,
             borderLeftWidth,
           ),
+          gridTemplateRows,
+          gridTemplateColumns,
+          gridAutoRows,
+          gridAutoColumns,
+          gridAutoFlow,
+          justifyItems,
         };
 
         const colCount = columns.length;
@@ -611,6 +648,12 @@ export function Grid({
     borderRightWidth,
     borderBottomWidth,
     borderLeftWidth,
+    gridTemplateRows,
+    gridTemplateColumns,
+    gridAutoRows,
+    gridAutoColumns,
+    gridAutoFlow,
+    justifyItems,
   ]);
 
   return (

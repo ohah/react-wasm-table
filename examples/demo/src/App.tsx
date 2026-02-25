@@ -12,6 +12,7 @@ import { Padding } from "./pages/Padding";
 import { Margin } from "./pages/Margin";
 import { Overflow } from "./pages/Overflow";
 import { Position } from "./pages/Position";
+import { GridTemplate } from "./pages/GridTemplate";
 
 setWasmUrl("/react_wasm_table_wasm_bg.wasm");
 
@@ -32,6 +33,7 @@ export function App() {
           <Route path="/margin" element={<Margin />} />
           <Route path="/overflow" element={<Overflow />} />
           <Route path="/position" element={<Position />} />
+          <Route path="/grid-template" element={<GridTemplate />} />
         </Routes>
       </main>
     </div>

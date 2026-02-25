@@ -6,6 +6,10 @@ const sections = [
     links: [{ to: "/", label: "Home (50k rows)" }],
   },
   {
+    title: "Grid Container",
+    links: [{ to: "/grid-template", label: "grid-template-columns" }],
+  },
+  {
     title: "Flex Container",
     links: [
       { to: "/flex-direction", label: "flex-direction" },

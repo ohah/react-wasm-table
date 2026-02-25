@@ -59,6 +59,11 @@ export type {
   CssAlignItems,
   CssAlignContent,
   CssJustifyContent,
+  CssGridTrackSize,
+  CssGridTrackList,
+  CssGridAutoFlow,
+  CssGridPlacement,
+  CssGridLine,
   BoxModelProps,
 } from "./types";
 export { DEFAULT_THEME } from "./types";
