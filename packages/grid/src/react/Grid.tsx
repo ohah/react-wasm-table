@@ -592,7 +592,14 @@ export function Grid({
 
         // Draw
         renderer.clear();
-        renderer.drawHeaderFromBuffer(layoutBuf, 0, headerCount, headersWithSort, theme);
+        renderer.drawHeaderFromBuffer(
+          layoutBuf,
+          0,
+          headerCount,
+          headersWithSort,
+          theme,
+          headerHeight,
+        );
         renderer.drawRowsFromBuffer(
           layoutBuf,
           headerCount,
@@ -611,8 +618,16 @@ export function Grid({
           },
           theme,
           headerHeight,
+          rowHeight,
         );
-        renderer.drawGridLinesFromBuffer(layoutBuf, headerCount, cellCount, theme, headerHeight);
+        renderer.drawGridLinesFromBuffer(
+          layoutBuf,
+          headerCount,
+          cellCount,
+          theme,
+          headerHeight,
+          rowHeight,
+        );
       }
 
       rafRef.current = requestAnimationFrame(loop);

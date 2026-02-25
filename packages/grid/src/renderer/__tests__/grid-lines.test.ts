@@ -232,7 +232,7 @@ describe("computeDataLinesFromBuffer", () => {
     const totalCount = allLayouts.length;
 
     const objSpec = computeDataLines(DATA_START, CANVAS_W);
-    const bufSpec = computeDataLinesFromBuffer(buf, headerCount, totalCount, CANVAS_W);
+    const bufSpec = computeDataLinesFromBuffer(buf, headerCount, totalCount, CANVAS_W, 36);
 
     expect(bufSpec.horizontal).toEqual(objSpec.horizontal);
     expect(bufSpec.vertical).toEqual(objSpec.vertical);
@@ -248,6 +248,7 @@ describe("computeDataLinesFromBuffer", () => {
       HEADER_OFFSET.length,
       allLayouts.length,
       CANVAS_W,
+      36,
     );
 
     expect(bufSpec.horizontal).toEqual(objSpec.horizontal);
@@ -261,6 +262,7 @@ describe("computeDataLinesFromBuffer", () => {
       HEADER_START.length,
       HEADER_START.length,
       CANVAS_W,
+      36,
     );
     expect(spec.horizontal).toHaveLength(0);
     expect(spec.vertical).toHaveLength(0);
