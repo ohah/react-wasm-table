@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Grid, Column } from "@ohah/react-wasm-table";
 import type { CssGridAutoFlow } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssComparison } from "../components/CssComparison";
+import { CssGrid, CssColumn } from "../components/CssGrid";
 
 const PRESETS = [
   { label: "1fr 1fr 1fr", value: "1fr 1fr 1fr" },
@@ -125,22 +125,19 @@ export function GridTemplate() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssComparison
+          <CssGrid
             data={data}
             width={800}
             height={400}
-            columns={[
-              { id: "name", header: "Name" },
-              { id: "dept", header: "Department" },
-              { id: "salary", header: "Salary", align: "right" },
-            ]}
-            rowStyle={{
-              display: "grid",
-              gridTemplateColumns: templateCols,
-              gridAutoFlow: autoFlow,
-              gap: gapValue,
-            }}
-          />
+            display="grid"
+            gridTemplateColumns={templateCols}
+            gridAutoFlow={autoFlow}
+            gap={gapValue}
+          >
+            <CssColumn id="name" header="Name" />
+            <CssColumn id="dept" header="Department" />
+            <CssColumn id="salary" header="Salary" align="right" />
+          </CssGrid>
         </div>
       </div>
     </>

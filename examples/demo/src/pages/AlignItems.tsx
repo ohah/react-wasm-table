@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, Column, type CssAlignItems } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssComparison } from "../components/CssComparison";
+import { CssGrid, CssColumn } from "../components/CssGrid";
 
 const containerOptions: CssAlignItems[] = [
   "start",
@@ -107,24 +107,23 @@ export function AlignItems() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssComparison
+          <CssGrid
             data={data}
             width={800}
             height={400}
             rowHeight={60}
-            columns={[
-              { id: "name", header: "Name", width: 180 },
-              {
-                id: "dept",
-                header: "Department",
-                width: 120,
-                cellStyle: alignSelfValue ? { alignSelf: alignSelfValue } : undefined,
-              },
-              { id: "salary", header: "Salary", width: 100, align: "right" },
-              { id: "score", header: "Score", width: 80, align: "right" },
-            ]}
-            rowStyle={{ alignItems: alignItemsValue }}
-          />
+            alignItems={alignItemsValue}
+          >
+            <CssColumn id="name" width={180} header="Name" />
+            <CssColumn
+              id="dept"
+              width={120}
+              header="Department"
+              alignSelf={alignSelfValue || undefined}
+            />
+            <CssColumn id="salary" width={100} header="Salary" align="right" />
+            <CssColumn id="score" width={80} header="Score" align="right" />
+          </CssGrid>
         </div>
       </div>
     </>

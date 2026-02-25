@@ -6,14 +6,16 @@ import {
   drawBadgeFromBuffer,
 } from "./draw-primitives";
 import {
-  LAYOUT_STRIDE,
+  computeHeaderLines,
+  computeDataLines,
+  computeHeaderLinesFromBuffer,
+  computeDataLinesFromBuffer,
+  type GridLineSpec,
+} from "./grid-lines";
+import {
   readCellRow,
-  readCellCol,
-  readCellX,
   readCellY,
-  readCellWidth,
   readCellHeight,
-  readCellAlign,
 } from "../adapter/layout-reader";
 
 /**
@@ -45,18 +47,45 @@ export class CanvasRenderer {
     this.ctx.clearRect(0, 0, this.canvas.width / dpr, this.canvas.height / dpr);
   }
 
+  /** Get logical canvas width (CSS pixels). */
+  private canvasWidth(): number {
+    if (!this.canvas) return 0;
+    const dpr = window.devicePixelRatio || 1;
+    return this.canvas.width / dpr;
+  }
+
+  /** Get logical canvas height (CSS pixels). */
+  private canvasHeight(): number {
+    if (!this.canvas) return 0;
+    const dpr = window.devicePixelRatio || 1;
+    return this.canvas.height / dpr;
+  }
+
+  /** Stroke a GridLineSpec onto the canvas context. */
+  private strokeLines(ctx: CanvasRenderingContext2D, spec: GridLineSpec): void {
+    ctx.beginPath();
+    for (const h of spec.horizontal) {
+      ctx.moveTo(h.x1, h.y);
+      ctx.lineTo(h.x2, h.y);
+    }
+    for (const v of spec.vertical) {
+      ctx.moveTo(v.x, v.y1);
+      ctx.lineTo(v.x, v.y2);
+    }
+    ctx.stroke();
+  }
+
   /** Draw the header row. */
   drawHeader(layouts: CellLayout[], headers: string[], theme: Theme): void {
     const ctx = this.ctx;
     if (!ctx) return;
 
-    // Draw header background
+    // Draw header background (extend to full canvas width, like CSS)
     if (layouts.length > 0) {
+      const canvasW = this.canvasWidth();
       const firstLayout = layouts[0]!;
-      const lastLayout = layouts[layouts.length - 1]!;
-      const totalWidth = lastLayout.x + lastLayout.width;
       ctx.fillStyle = theme.headerBackground;
-      ctx.fillRect(0, firstLayout.y, totalWidth, firstLayout.height);
+      ctx.fillRect(0, firstLayout.y, canvasW, firstLayout.height);
     }
 
     // Draw header text
@@ -69,8 +98,6 @@ export class CanvasRenderer {
         fontSize: theme.headerFontSize,
       });
     }
-
-    // Header bottom border is drawn in drawGridLines (after row backgrounds)
   }
 
   /** Draw data rows. Clips to the area below headerHeight to prevent overlap. */
@@ -83,9 +110,8 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || !this.canvas) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    const canvasW = this.canvas.width / dpr;
-    const canvasH = this.canvas.height / dpr;
+    const canvasW = this.canvasWidth();
+    const canvasH = this.canvasHeight();
 
     // Clip to area below header so scrolled rows don't bleed into header
     ctx.save();
@@ -104,13 +130,12 @@ export class CanvasRenderer {
       list.push(layout);
     }
 
-    // Draw alternating row backgrounds
+    // Draw alternating row backgrounds (extend to full canvas width)
     for (const [rowIdx, rowLayouts] of rowMap) {
       const first = rowLayouts[0]!;
-      const last = rowLayouts[rowLayouts.length - 1]!;
       const bg = rowIdx % 2 === 0 ? theme.cellBackground : `${theme.cellBackground}f5`;
       ctx.fillStyle = bg;
-      ctx.fillRect(0, first.y, last.x + last.width, first.height);
+      ctx.fillRect(0, first.y, canvasW, first.height);
     }
 
     // Draw cell contents
@@ -146,84 +171,25 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || !this.canvas) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    const canvasW = this.canvas.width / dpr;
-    const canvasH = this.canvas.height / dpr;
-    const allLayouts = [...headerLayouts, ...rowLayouts];
-    if (allLayouts.length === 0) return;
-
-    // Compute overall grid width
-    let gridMaxX = 0;
-    for (const layout of allLayouts) {
-      gridMaxX = Math.max(gridMaxX, layout.x + layout.width);
-    }
+    const canvasW = this.canvasWidth();
+    const canvasH = this.canvasHeight();
+    if (headerLayouts.length === 0 && rowLayouts.length === 0) return;
 
     ctx.strokeStyle = theme.borderColor;
     ctx.lineWidth = 0.5;
 
-    // --- Header grid lines (no clip needed) ---
+    // Header grid lines (no clip needed)
     if (headerLayouts.length > 0) {
-      const headerColEdges = new Set<number>();
-      for (const layout of headerLayouts) {
-        headerColEdges.add(layout.x + layout.width);
-      }
-
-      ctx.beginPath();
-      // Top border
-      ctx.moveTo(0, 0.25);
-      ctx.lineTo(gridMaxX, 0.25);
-      // Left border
-      ctx.moveTo(0.25, 0);
-      ctx.lineTo(0.25, headerHeight);
-      // Internal column separators + right border
-      for (const edge of headerColEdges) {
-        const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, headerHeight);
-      }
-      // Header bottom border
-      ctx.moveTo(0, headerHeight - 0.25);
-      ctx.lineTo(gridMaxX, headerHeight - 0.25);
-      ctx.stroke();
+      this.strokeLines(ctx, computeHeaderLines(headerLayouts, canvasW, headerHeight));
     }
 
-    // --- Data area grid lines (clipped below header) ---
+    // Data area grid lines (clipped below header)
     if (rowLayouts.length > 0) {
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, headerHeight, canvasW, canvasH - headerHeight);
       ctx.clip();
-
-      const colEdges = new Set<number>();
-      const rowEdges = new Set<number>();
-
-      for (const layout of rowLayouts) {
-        colEdges.add(layout.x + layout.width);
-        rowEdges.add(layout.y + layout.height);
-      }
-
-      const minY = Math.min(...rowLayouts.map((l) => l.y));
-      const maxY = Math.max(...rowLayouts.map((l) => l.y + l.height));
-
-      // Vertical lines (left border + internal + right border)
-      ctx.beginPath();
-      ctx.moveTo(0.25, minY);
-      ctx.lineTo(0.25, maxY);
-      for (const edge of colEdges) {
-        const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
-        ctx.moveTo(x, minY);
-        ctx.lineTo(x, maxY);
-      }
-      ctx.stroke();
-
-      // Horizontal lines
-      ctx.beginPath();
-      for (const edge of rowEdges) {
-        ctx.moveTo(0, edge + 0.5);
-        ctx.lineTo(gridMaxX, edge + 0.5);
-      }
-      ctx.stroke();
-
+      this.strokeLines(ctx, computeDataLines(rowLayouts, canvasW));
       ctx.restore();
     }
   }
@@ -248,14 +214,12 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || count === 0) return;
 
-    // Draw header background
-    const firstX = readCellX(buf, start);
+    // Draw header background (extend to full canvas width, like CSS)
+    const canvasW = this.canvasWidth();
     const firstY = readCellY(buf, start);
     const firstH = readCellHeight(buf, start);
-    const lastIdx = start + count - 1;
-    const totalWidth = readCellX(buf, lastIdx) + readCellWidth(buf, lastIdx);
     ctx.fillStyle = theme.headerBackground;
-    ctx.fillRect(firstX, firstY, totalWidth, firstH);
+    ctx.fillRect(0, firstY, canvasW, firstH);
 
     // Draw header text
     for (let i = 0; i < count; i++) {
@@ -267,18 +231,10 @@ export class CanvasRenderer {
         fontSize: theme.headerFontSize,
       });
     }
-
-    // Header bottom border is drawn in drawGridLinesFromBuffer (after row backgrounds)
   }
 
   /**
    * Draw data rows from a layout buffer.
-   * @param buf - Float32Array view of WASM layout buffer
-   * @param start - first data cell index (after headers)
-   * @param count - number of data cells
-   * @param getInstruction - callback to get render instruction for cell index
-   * @param theme - grid theme
-   * @param headerHeight - height of header area (for clipping)
    */
   drawRowsFromBuffer(
     buf: Float32Array,
@@ -291,9 +247,8 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || count === 0) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    const canvasW = this.canvas.width / dpr;
-    const canvasH = this.canvas.height / dpr;
+    const canvasW = this.canvasWidth();
+    const canvasH = this.canvasHeight();
 
     ctx.save();
     ctx.beginPath();
@@ -301,29 +256,19 @@ export class CanvasRenderer {
     ctx.clip();
 
     // Group by row for alternating backgrounds
-    const rowBounds = new Map<number, { minX: number; maxX: number; y: number; h: number }>();
+    const rowBounds = new Map<number, { y: number; h: number }>();
     for (let i = start; i < start + count; i++) {
       const row = readCellRow(buf, i);
-      const x = readCellX(buf, i);
-      const w = readCellWidth(buf, i);
-      const existing = rowBounds.get(row);
-      if (!existing) {
-        rowBounds.set(row, {
-          minX: x,
-          maxX: x + w,
-          y: readCellY(buf, i),
-          h: readCellHeight(buf, i),
-        });
-      } else {
-        existing.maxX = Math.max(existing.maxX, x + w);
+      if (!rowBounds.has(row)) {
+        rowBounds.set(row, { y: readCellY(buf, i), h: readCellHeight(buf, i) });
       }
     }
 
-    // Alternating row backgrounds
+    // Alternating row backgrounds (extend to full canvas width)
     for (const [rowIdx, bounds] of rowBounds) {
       const bg = rowIdx % 2 === 0 ? theme.cellBackground : `${theme.cellBackground}f5`;
       ctx.fillStyle = bg;
-      ctx.fillRect(0, bounds.y, bounds.maxX, bounds.h);
+      ctx.fillRect(0, bounds.y, canvasW, bounds.h);
     }
 
     // Draw cell contents
@@ -361,88 +306,30 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || totalCount === 0) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    const canvasW = this.canvas.width / dpr;
-    const canvasH = this.canvas.height / dpr;
-
-    // Compute overall grid width
-    let gridMaxX = 0;
-    for (let i = 0; i < totalCount; i++) {
-      gridMaxX = Math.max(gridMaxX, readCellX(buf, i) + readCellWidth(buf, i));
-    }
+    const canvasW = this.canvasWidth();
+    const canvasH = this.canvasHeight();
 
     ctx.strokeStyle = theme.borderColor;
     ctx.lineWidth = 0.5;
 
     // Header grid lines
     if (headerCount > 0) {
-      const headerColEdges = new Set<number>();
-      for (let i = 0; i < headerCount; i++) {
-        headerColEdges.add(readCellX(buf, i) + readCellWidth(buf, i));
-      }
-
-      ctx.beginPath();
-      // Top border
-      ctx.moveTo(0, 0.25);
-      ctx.lineTo(gridMaxX, 0.25);
-      // Left border
-      ctx.moveTo(0.25, 0);
-      ctx.lineTo(0.25, headerHeight);
-      // Internal column separators + right border
-      for (const edge of headerColEdges) {
-        const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, headerHeight);
-      }
-      // Header bottom border
-      ctx.moveTo(0, headerHeight - 0.25);
-      ctx.lineTo(gridMaxX, headerHeight - 0.25);
-      ctx.stroke();
+      this.strokeLines(
+        ctx,
+        computeHeaderLinesFromBuffer(buf, headerCount, canvasW, headerHeight),
+      );
     }
 
     // Data area grid lines (clipped)
-    const dataCount = totalCount - headerCount;
-    if (dataCount > 0) {
+    if (totalCount > headerCount) {
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, headerHeight, canvasW, canvasH - headerHeight);
       ctx.clip();
-
-      const colEdges = new Set<number>();
-      const rowEdges = new Set<number>();
-      let minY = Infinity;
-      let maxY = -Infinity;
-
-      for (let i = headerCount; i < totalCount; i++) {
-        const x = readCellX(buf, i);
-        const y = readCellY(buf, i);
-        const w = readCellWidth(buf, i);
-        const h = readCellHeight(buf, i);
-        colEdges.add(x + w);
-        rowEdges.add(y + h);
-        minY = Math.min(minY, y);
-        maxY = Math.max(maxY, y + h);
-      }
-
-      // Vertical lines (left border + internal + right border)
-      ctx.beginPath();
-      ctx.moveTo(0.25, minY);
-      ctx.lineTo(0.25, maxY);
-      for (const edge of colEdges) {
-        const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
-        ctx.moveTo(x, minY);
-        ctx.lineTo(x, maxY);
-      }
-      ctx.stroke();
-
-      // Horizontal lines
-      ctx.beginPath();
-      for (const edge of rowEdges) {
-        ctx.moveTo(0, edge + 0.5);
-        ctx.lineTo(gridMaxX, edge + 0.5);
-      }
-      ctx.stroke();
-
+      this.strokeLines(
+        ctx,
+        computeDataLinesFromBuffer(buf, headerCount, totalCount, canvasW),
+      );
       ctx.restore();
     }
   }

@@ -628,8 +628,10 @@ fn parse_grid_track_list(v: Option<&JsGridTrackList>) -> Vec<TrackListItem> {
             // or a repeat() function
             if let JsGridTrackSize::Str(s) = t {
                 let s = s.trim();
-                if s.contains(' ') && !s.starts_with("minmax(") && !s.starts_with("fit-content(") {
+                if s.contains(' ') {
                     // Space-separated track list — parse each token
+                    // parse_space_separated_tracks handles parenthesized expressions
+                    // (e.g. "minmax(100px, 1fr) 2fr 1fr") via paren-depth tracking.
                     return parse_space_separated_tracks(s);
                 }
             }

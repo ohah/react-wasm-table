@@ -1,0 +1,202 @@
+import type { CellLayout } from "../types";
+import {
+  readCellX,
+  readCellY,
+  readCellWidth,
+  readCellHeight,
+} from "../adapter/layout-reader";
+
+// ── Types ────────────────────────────────────────────────────────────
+
+export interface HLine {
+  y: number;
+  x1: number;
+  x2: number;
+}
+
+export interface VLine {
+  x: number;
+  y1: number;
+  y2: number;
+}
+
+export interface GridLineSpec {
+  horizontal: HLine[];
+  vertical: VLine[];
+}
+
+// ── Object-based computation ─────────────────────────────────────────
+
+/**
+ * Compute header grid lines from CellLayout objects.
+ * Horizontal lines span full canvasW; vertical left border sits at first cell's x.
+ */
+export function computeHeaderLines(
+  layouts: CellLayout[],
+  canvasW: number,
+  headerHeight: number,
+): GridLineSpec {
+  if (layouts.length === 0) return { horizontal: [], vertical: [] };
+
+  let gridMaxX = 0;
+  for (const layout of layouts) {
+    gridMaxX = Math.max(gridMaxX, layout.x + layout.width);
+  }
+
+  const firstX = layouts[0]!.x;
+  const horizontal: HLine[] = [
+    { y: 0.25, x1: 0, x2: canvasW }, // top border
+    { y: headerHeight - 0.25, x1: 0, x2: canvasW }, // bottom border
+  ];
+
+  const vertical: VLine[] = [
+    { x: firstX + 0.25, y1: 0, y2: headerHeight }, // left border of first cell
+  ];
+
+  const colEdges = new Set<number>();
+  for (const layout of layouts) {
+    colEdges.add(layout.x + layout.width);
+  }
+  for (const edge of colEdges) {
+    const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
+    vertical.push({ x, y1: 0, y2: headerHeight });
+  }
+
+  return { horizontal, vertical };
+}
+
+/**
+ * Compute data-area grid lines from CellLayout objects.
+ * Horizontal lines span full canvasW; vertical left border sits at first cell's x.
+ */
+export function computeDataLines(
+  layouts: CellLayout[],
+  canvasW: number,
+): GridLineSpec {
+  if (layouts.length === 0) return { horizontal: [], vertical: [] };
+
+  let gridMaxX = 0;
+  for (const layout of layouts) {
+    gridMaxX = Math.max(gridMaxX, layout.x + layout.width);
+  }
+
+  const colEdges = new Set<number>();
+  const rowEdges = new Set<number>();
+  let minY = Infinity;
+  let maxY = -Infinity;
+  let firstColX = Infinity;
+
+  for (const layout of layouts) {
+    colEdges.add(layout.x + layout.width);
+    rowEdges.add(layout.y + layout.height);
+    minY = Math.min(minY, layout.y);
+    maxY = Math.max(maxY, layout.y + layout.height);
+    firstColX = Math.min(firstColX, layout.x);
+  }
+
+  const horizontal: HLine[] = [];
+  for (const edge of rowEdges) {
+    horizontal.push({ y: edge + 0.5, x1: 0, x2: canvasW });
+  }
+
+  const vertical: VLine[] = [
+    { x: firstColX + 0.25, y1: minY, y2: maxY },
+  ];
+  for (const edge of colEdges) {
+    const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
+    vertical.push({ x, y1: minY, y2: maxY });
+  }
+
+  return { horizontal, vertical };
+}
+
+// ── Buffer-based computation ─────────────────────────────────────────
+
+/**
+ * Compute header grid lines from a layout buffer.
+ */
+export function computeHeaderLinesFromBuffer(
+  buf: Float32Array,
+  headerCount: number,
+  canvasW: number,
+  headerHeight: number,
+): GridLineSpec {
+  if (headerCount === 0) return { horizontal: [], vertical: [] };
+
+  let gridMaxX = 0;
+  for (let i = 0; i < headerCount; i++) {
+    gridMaxX = Math.max(gridMaxX, readCellX(buf, i) + readCellWidth(buf, i));
+  }
+
+  const firstX = readCellX(buf, 0);
+  const horizontal: HLine[] = [
+    { y: 0.25, x1: 0, x2: canvasW },
+    { y: headerHeight - 0.25, x1: 0, x2: canvasW },
+  ];
+
+  const vertical: VLine[] = [
+    { x: firstX + 0.25, y1: 0, y2: headerHeight },
+  ];
+
+  const colEdges = new Set<number>();
+  for (let i = 0; i < headerCount; i++) {
+    colEdges.add(readCellX(buf, i) + readCellWidth(buf, i));
+  }
+  for (const edge of colEdges) {
+    const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
+    vertical.push({ x, y1: 0, y2: headerHeight });
+  }
+
+  return { horizontal, vertical };
+}
+
+/**
+ * Compute data-area grid lines from a layout buffer.
+ */
+export function computeDataLinesFromBuffer(
+  buf: Float32Array,
+  headerCount: number,
+  totalCount: number,
+  canvasW: number,
+): GridLineSpec {
+  const dataCount = totalCount - headerCount;
+  if (dataCount === 0) return { horizontal: [], vertical: [] };
+
+  let gridMaxX = 0;
+  for (let i = 0; i < totalCount; i++) {
+    gridMaxX = Math.max(gridMaxX, readCellX(buf, i) + readCellWidth(buf, i));
+  }
+
+  const colEdges = new Set<number>();
+  const rowEdges = new Set<number>();
+  let minY = Infinity;
+  let maxY = -Infinity;
+  let firstColX = Infinity;
+
+  for (let i = headerCount; i < totalCount; i++) {
+    const x = readCellX(buf, i);
+    const y = readCellY(buf, i);
+    const w = readCellWidth(buf, i);
+    const h = readCellHeight(buf, i);
+    colEdges.add(x + w);
+    rowEdges.add(y + h);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y + h);
+    firstColX = Math.min(firstColX, x);
+  }
+
+  const horizontal: HLine[] = [];
+  for (const edge of rowEdges) {
+    horizontal.push({ y: edge + 0.5, x1: 0, x2: canvasW });
+  }
+
+  const vertical: VLine[] = [
+    { x: firstColX + 0.25, y1: minY, y2: maxY },
+  ];
+  for (const edge of colEdges) {
+    const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
+    vertical.push({ x, y1: minY, y2: maxY });
+  }
+
+  return { horizontal, vertical };
+}
