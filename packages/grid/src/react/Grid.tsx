@@ -67,7 +67,14 @@ function resolveRect<T>(
   left?: T,
   resolver: (v: T | undefined) => number | string | undefined = (v) =>
     v as unknown as number | string | undefined,
-): { top?: number | string; right?: number | string; bottom?: number | string; left?: number | string } | undefined {
+):
+  | {
+      top?: number | string;
+      right?: number | string;
+      bottom?: number | string;
+      left?: number | string;
+    }
+  | undefined {
   let t = resolver(top);
   let r = resolver(right);
   let b = resolver(bottom);

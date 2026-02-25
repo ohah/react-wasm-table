@@ -10,8 +10,8 @@ export function Margin() {
     <>
       <h1>margin</h1>
       <p>
-        Margin on columns adds space outside each column. Unlike gap (which is uniform),
-        margin can be set individually per column.
+        Margin on columns adds space outside each column. Unlike gap (which is uniform), margin can
+        be set individually per column.
       </p>
 
       <div style={{ marginBottom: 16, display: "flex", gap: 12, alignItems: "center" }}>
@@ -30,7 +30,7 @@ export function Margin() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-{`<Grid ...>
+        {`<Grid ...>
   <Column id="name" width={180} />
   <Column id="dept" width={120} margin={${marginValue}} />
   <Column id="salary" width={100} />

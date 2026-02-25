@@ -15,8 +15,8 @@ export function Position() {
       <h1>position + inset</h1>
       <p>
         <code>position: relative</code> offsets a column from its normal position.
-        <code>position: absolute</code> positions it relative to the container.
-        Use inset (top/right/bottom/left) to control the offset.
+        <code>position: absolute</code> positions it relative to the container. Use inset
+        (top/right/bottom/left) to control the offset.
       </p>
 
       <div style={{ marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap" }}>
@@ -28,7 +28,9 @@ export function Position() {
             style={{ fontSize: 14, padding: "4px 8px" }}
           >
             {positionOptions.map((v) => (
-              <option key={v} value={v}>{v}</option>
+              <option key={v} value={v}>
+                {v}
+              </option>
             ))}
           </select>
         </label>
@@ -59,7 +61,7 @@ export function Position() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-{`<Grid ...>
+        {`<Grid ...>
   <Column id="name" width={180} />
   <Column id="dept" width={120} position="${pos}" insetLeft={${insetLeft}} insetTop={${insetTop}} />
   <Column id="salary" width={100} />

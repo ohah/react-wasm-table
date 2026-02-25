@@ -13,9 +13,9 @@ export function Overflow() {
     <>
       <h1>overflow</h1>
       <p>
-        Controls how Taffy handles overflow in the layout calculation.
-        Note: this affects the <strong>layout engine</strong> behavior (automatic min size),
-        not visual clipping (which the canvas handles separately).
+        Controls how Taffy handles overflow in the layout calculation. Note: this affects the{" "}
+        <strong>layout engine</strong> behavior (automatic min size), not visual clipping (which the
+        canvas handles separately).
       </p>
 
       <div style={{ marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap" }}>
@@ -27,7 +27,9 @@ export function Overflow() {
             style={{ fontSize: 14, padding: "4px 8px" }}
           >
             {options.map((v) => (
-              <option key={v} value={v}>{v}</option>
+              <option key={v} value={v}>
+                {v}
+              </option>
             ))}
           </select>
         </label>
@@ -39,14 +41,16 @@ export function Overflow() {
             style={{ fontSize: 14, padding: "4px 8px" }}
           >
             {options.map((v) => (
-              <option key={v} value={v}>{v}</option>
+              <option key={v} value={v}>
+                {v}
+              </option>
             ))}
           </select>
         </label>
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-{`<Grid overflowX="${overflowXValue}" overflowY="${overflowYValue}" ...>
+        {`<Grid overflowX="${overflowXValue}" overflowY="${overflowYValue}" ...>
   ...
 </Grid>`}
       </pre>

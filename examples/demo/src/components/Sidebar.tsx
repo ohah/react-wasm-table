@@ -60,9 +60,7 @@ export function Sidebar() {
         backgroundColor: "#fafafa",
       }}
     >
-      <div style={{ padding: "0 16px 12px", fontWeight: 700, fontSize: 16 }}>
-        react-wasm-table
-      </div>
+      <div style={{ padding: "0 16px 12px", fontWeight: 700, fontSize: 16 }}>react-wasm-table</div>
       {sections.map((section) => (
         <div key={section.title} style={{ marginBottom: 12 }}>
           <div

@@ -27,7 +27,7 @@ export function Gap() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-{`<Grid gap={${gapValue}} ...>
+        {`<Grid gap={${gapValue}} ...>
   <Column id="name" width={180} />
   <Column id="dept" width={120} />
   <Column id="salary" width={100} />
