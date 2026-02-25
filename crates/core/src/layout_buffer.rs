@@ -1,7 +1,7 @@
 use crate::layout::Align;
 
 /// Number of f32 fields per cell in the layout buffer.
-pub const LAYOUT_STRIDE: usize = 12;
+pub const LAYOUT_STRIDE: usize = 16;
 
 // Field offsets within each cell's stride
 pub const FIELD_ROW: usize = 0;
@@ -15,7 +15,11 @@ pub const FIELD_PADDING_TOP: usize = 7;
 pub const FIELD_PADDING_RIGHT: usize = 8;
 pub const FIELD_PADDING_BOTTOM: usize = 9;
 pub const FIELD_PADDING_LEFT: usize = 10;
-pub const FIELD_RESERVED: usize = 11;
+pub const FIELD_BORDER_TOP: usize = 11;
+pub const FIELD_BORDER_RIGHT: usize = 12;
+pub const FIELD_BORDER_BOTTOM: usize = 13;
+pub const FIELD_BORDER_LEFT: usize = 14;
+pub const FIELD_RESERVED: usize = 15;
 
 /// Write a single cell's layout data into the flat buffer at `cell_idx`.
 #[allow(clippy::too_many_arguments)]
@@ -31,6 +35,7 @@ pub fn write_cell(
     h: f32,
     align: Align,
     padding: [f32; 4],
+    border: [f32; 4],
 ) {
     let base = cell_idx * LAYOUT_STRIDE;
     buf[base + FIELD_ROW] = row as f32;
@@ -48,6 +53,10 @@ pub fn write_cell(
     buf[base + FIELD_PADDING_RIGHT] = padding[1];
     buf[base + FIELD_PADDING_BOTTOM] = padding[2];
     buf[base + FIELD_PADDING_LEFT] = padding[3];
+    buf[base + FIELD_BORDER_TOP] = border[0];
+    buf[base + FIELD_BORDER_RIGHT] = border[1];
+    buf[base + FIELD_BORDER_BOTTOM] = border[2];
+    buf[base + FIELD_BORDER_LEFT] = border[3];
     buf[base + FIELD_RESERVED] = 0.0;
 }
 
@@ -74,6 +83,7 @@ mod tests {
     use super::*;
 
     const NO_PADDING: [f32; 4] = [0.0; 4];
+    const NO_BORDER: [f32; 4] = [0.0; 4];
 
     #[test]
     fn write_and_read_cell() {
@@ -89,6 +99,7 @@ mod tests {
             36.0,
             Align::Left,
             NO_PADDING,
+            NO_BORDER,
         );
         write_cell(
             &mut buf,
@@ -101,6 +112,7 @@ mod tests {
             36.0,
             Align::Right,
             [4.0, 8.0, 4.0, 8.0],
+            [1.0, 2.0, 1.0, 2.0],
         );
 
         assert_eq!(read_row(&buf, 0), 3);
@@ -111,6 +123,7 @@ mod tests {
         assert!((buf[FIELD_HEIGHT] - 36.0).abs() < f32::EPSILON);
         assert!((buf[FIELD_ALIGN] - 0.0).abs() < f32::EPSILON); // Left
         assert!((buf[FIELD_PADDING_TOP] - 0.0).abs() < f32::EPSILON);
+        assert!((buf[FIELD_BORDER_TOP] - 0.0).abs() < f32::EPSILON);
 
         let base1 = LAYOUT_STRIDE;
         assert_eq!(read_row(&buf, 1), 4);
@@ -121,6 +134,10 @@ mod tests {
         assert!((buf[base1 + FIELD_PADDING_RIGHT] - 8.0).abs() < f32::EPSILON);
         assert!((buf[base1 + FIELD_PADDING_BOTTOM] - 4.0).abs() < f32::EPSILON);
         assert!((buf[base1 + FIELD_PADDING_LEFT] - 8.0).abs() < f32::EPSILON);
+        assert!((buf[base1 + FIELD_BORDER_TOP] - 1.0).abs() < f32::EPSILON);
+        assert!((buf[base1 + FIELD_BORDER_RIGHT] - 2.0).abs() < f32::EPSILON);
+        assert!((buf[base1 + FIELD_BORDER_BOTTOM] - 1.0).abs() < f32::EPSILON);
+        assert!((buf[base1 + FIELD_BORDER_LEFT] - 2.0).abs() < f32::EPSILON);
     }
 
     #[test]

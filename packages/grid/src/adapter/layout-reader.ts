@@ -2,13 +2,15 @@
  * Zero-copy layout buffer reader.
  * Reads cell layout data directly from a Float32Array backed by WASM memory.
  *
- * Buffer format: each cell occupies STRIDE (12) f32 values:
- *   [row, col, x, y, width, height, align, paddingTop, paddingRight, paddingBottom, paddingLeft, reserved]
+ * Buffer format: each cell occupies STRIDE (16) f32 values:
+ *   [row, col, x, y, width, height, align,
+ *    paddingTop, paddingRight, paddingBottom, paddingLeft,
+ *    borderTop, borderRight, borderBottom, borderLeft, reserved]
  *
  * Align encoding: 0=left, 1=center, 2=right
  */
 
-const STRIDE = 12;
+const STRIDE = 16;
 
 // Field offsets
 const FIELD_ROW = 0;
@@ -22,6 +24,10 @@ const FIELD_PADDING_TOP = 7;
 const FIELD_PADDING_RIGHT = 8;
 const FIELD_PADDING_BOTTOM = 9;
 const FIELD_PADDING_LEFT = 10;
+const FIELD_BORDER_TOP = 11;
+const FIELD_BORDER_RIGHT = 12;
+const FIELD_BORDER_BOTTOM = 13;
+const FIELD_BORDER_LEFT = 14;
 
 export { STRIDE as LAYOUT_STRIDE };
 
@@ -75,6 +81,22 @@ export function readCellPaddingBottom(buf: Float32Array, i: number): number {
 
 export function readCellPaddingLeft(buf: Float32Array, i: number): number {
   return buf[i * STRIDE + FIELD_PADDING_LEFT] ?? 0;
+}
+
+export function readCellBorderTop(buf: Float32Array, i: number): number {
+  return buf[i * STRIDE + FIELD_BORDER_TOP] ?? 0;
+}
+
+export function readCellBorderRight(buf: Float32Array, i: number): number {
+  return buf[i * STRIDE + FIELD_BORDER_RIGHT] ?? 0;
+}
+
+export function readCellBorderBottom(buf: Float32Array, i: number): number {
+  return buf[i * STRIDE + FIELD_BORDER_BOTTOM] ?? 0;
+}
+
+export function readCellBorderLeft(buf: Float32Array, i: number): number {
+  return buf[i * STRIDE + FIELD_BORDER_LEFT] ?? 0;
 }
 
 /**

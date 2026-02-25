@@ -321,6 +321,17 @@ pub struct CellLayout {
     pub content_align: Align,
 }
 
+/// Column position from Taffy layout result (includes cross-axis info).
+#[derive(Debug, Clone)]
+struct ColumnPosition {
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    padding: [f32; 4],
+    border: [f32; 4],
+}
+
 // ── Conversion helpers: our value types → Taffy types ──────────────────
 
 const fn dimension_to_taffy(d: DimensionValue) -> Dimension {
@@ -589,14 +600,14 @@ impl LayoutEngine {
         }
     }
 
-    /// Compute x/width for each column using Taffy flexbox, returning (x, width, padding) tuples.
+    /// Compute positions for each column using Taffy layout, returning full cross-axis info.
     fn compute_column_positions(
         &mut self,
         columns: &[ColumnLayout],
         container: &ContainerLayout,
         viewport_width: f32,
         row_height: f32,
-    ) -> Vec<(f32, f32, [f32; 4])> {
+    ) -> Vec<ColumnPosition> {
         log::debug!(
             "[layout] compute_column_positions: cols={}, viewport_width={}, row_height={}",
             columns.len(),
@@ -632,33 +643,47 @@ impl LayoutEngine {
             )
             .expect("failed to compute layout");
 
-        let positions: Vec<(f32, f32, [f32; 4])> = children
+        let positions: Vec<ColumnPosition> = children
             .iter()
             .map(|&child| {
                 let layout = self.tree.layout(child).expect("failed to get layout");
-                (
-                    layout.location.x,
-                    layout.size.width,
-                    [
+                ColumnPosition {
+                    x: layout.location.x,
+                    y: layout.location.y,
+                    width: layout.size.width,
+                    height: layout.size.height,
+                    padding: [
                         layout.padding.top,
                         layout.padding.right,
                         layout.padding.bottom,
                         layout.padding.left,
                     ],
-                )
+                    border: [
+                        layout.border.top,
+                        layout.border.right,
+                        layout.border.bottom,
+                        layout.border.left,
+                    ],
+                }
             })
             .collect();
 
-        for (i, &(x, w, ref pad)) in positions.iter().enumerate() {
+        for (i, pos) in positions.iter().enumerate() {
             log::debug!(
-                "[layout] col[{}]: x={:.1}, w={:.1}, pad=[{:.1},{:.1},{:.1},{:.1}]",
+                "[layout] col[{}]: x={:.1}, y={:.1}, w={:.1}, h={:.1}, pad=[{:.1},{:.1},{:.1},{:.1}], border=[{:.1},{:.1},{:.1},{:.1}]",
                 i,
-                x,
-                w,
-                pad[0],
-                pad[1],
-                pad[2],
-                pad[3]
+                pos.x,
+                pos.y,
+                pos.width,
+                pos.height,
+                pos.padding[0],
+                pos.padding[1],
+                pos.padding[2],
+                pos.padding[3],
+                pos.border[0],
+                pos.border[1],
+                pos.border[2],
+                pos.border[3],
             );
         }
 
@@ -759,13 +784,13 @@ impl LayoutEngine {
         positions
             .into_iter()
             .enumerate()
-            .map(|(col_idx, (x, width, _padding))| CellLayout {
+            .map(|(col_idx, pos)| CellLayout {
                 row: 0,
                 col: col_idx,
-                x,
-                y: 0.0,
-                width,
-                height: viewport.header_height,
+                x: pos.x,
+                y: pos.y,
+                width: pos.width,
+                height: pos.height,
                 content_align: columns
                     .get(col_idx)
                     .map_or_else(Align::default, |c| c.align),
@@ -794,16 +819,16 @@ impl LayoutEngine {
 
         for row_idx in visible_range {
             // Position relative to the canvas viewport: absolute position minus scroll offset.
-            let y = (row_idx as f32).mul_add(viewport.row_height, viewport.header_height)
+            let row_base_y = (row_idx as f32).mul_add(viewport.row_height, viewport.header_height)
                 - viewport.scroll_top;
-            for (col_idx, &(x, width, _padding)) in positions.iter().enumerate() {
+            for (col_idx, pos) in positions.iter().enumerate() {
                 result.push(CellLayout {
                     row: row_idx,
                     col: col_idx,
-                    x,
-                    y,
-                    width,
-                    height: viewport.row_height,
+                    x: pos.x,
+                    y: row_base_y + pos.y,
+                    width: pos.width,
+                    height: pos.height,
                     content_align: columns
                         .get(col_idx)
                         .map_or_else(Align::default, |c| c.align),
@@ -861,21 +886,22 @@ impl LayoutEngine {
             viewport.header_height,
         );
 
-        // Write header cells (row=0, y=0)
-        for (col_idx, &(x, width, padding)) in positions.iter().enumerate() {
+        // Write header cells
+        for (col_idx, pos) in positions.iter().enumerate() {
             layout_buffer::write_cell(
                 buf,
                 col_idx,
                 0,
                 col_idx,
-                x,
-                0.0,
-                width,
-                viewport.header_height,
+                pos.x,
+                pos.y,
+                pos.width,
+                pos.height,
                 columns
                     .get(col_idx)
                     .map_or_else(Align::default, |c| c.align),
-                padding,
+                pos.padding,
+                pos.border,
             );
         }
 
@@ -889,22 +915,23 @@ impl LayoutEngine {
         // Write data cells
         let mut cell_idx = col_count;
         for row_idx in visible_range {
-            let y = (row_idx as f32).mul_add(viewport.row_height, viewport.header_height)
+            let row_base_y = (row_idx as f32).mul_add(viewport.row_height, viewport.header_height)
                 - viewport.scroll_top;
-            for (col_idx, &(x, width, padding)) in row_positions.iter().enumerate() {
+            for (col_idx, pos) in row_positions.iter().enumerate() {
                 layout_buffer::write_cell(
                     buf,
                     cell_idx,
                     row_idx,
                     col_idx,
-                    x,
-                    y,
-                    width,
-                    viewport.row_height,
+                    pos.x,
+                    row_base_y + pos.y,
+                    pos.width,
+                    pos.height,
                     columns
                         .get(col_idx)
                         .map_or_else(Align::default, |c| c.align),
-                    padding,
+                    pos.padding,
+                    pos.border,
                 );
                 cell_idx += 1;
             }
@@ -1506,5 +1533,52 @@ mod tests {
         assert!((header[0].width - 200.0).abs() < 1.0);
         assert!((header[1].width - 200.0).abs() < 1.0);
         assert!((header[2].width - 200.0).abs() < 1.0);
+    }
+
+    // ── Cross-axis (y/height/border) tests ─────────────────────────────
+
+    #[test]
+    fn align_self_center_offsets_y() {
+        let mut engine = LayoutEngine::new();
+        // Column with explicit height=20 + align_self=center in a 40px-high container
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            height: DimensionValue::Length(20.0),
+            align_self: Some(AlignValue::Center),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport(); // header_height=40
+
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+        // Centered: y = (40 - 20) / 2 = 10
+        assert!((header[0].y - 10.0).abs() < 1.0);
+        assert!((header[0].height - 20.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn column_border_appears_in_buffer() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 200.0,
+            border: RectValue {
+                top: LengthValue::Length(2.0),
+                right: LengthValue::Length(3.0),
+                bottom: LengthValue::Length(2.0),
+                left: LengthValue::Length(3.0),
+            },
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let container = default_container();
+
+        let total_cells = 1; // header only
+        let mut buf = vec![0.0_f32; layout_buffer::buf_len(total_cells)];
+        engine.compute_into_buffer(&columns, &viewport, &container, 0..0, &mut buf);
+
+        assert!((buf[layout_buffer::FIELD_BORDER_TOP] - 2.0).abs() < 0.1);
+        assert!((buf[layout_buffer::FIELD_BORDER_RIGHT] - 3.0).abs() < 0.1);
+        assert!((buf[layout_buffer::FIELD_BORDER_BOTTOM] - 2.0).abs() < 0.1);
+        assert!((buf[layout_buffer::FIELD_BORDER_LEFT] - 3.0).abs() < 0.1);
     }
 }
