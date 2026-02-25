@@ -4,6 +4,21 @@ import { generateSmallData } from "../data";
 
 const options: CssFlexDirection[] = ["row", "column", "row-reverse", "column-reverse"];
 
+const btnBase: React.CSSProperties = {
+  padding: "4px 12px",
+  border: "1px solid #ccc",
+  borderRadius: 4,
+  background: "#fff",
+  cursor: "pointer",
+  fontSize: 13,
+};
+const btnActive: React.CSSProperties = {
+  ...btnBase,
+  background: "#1976d2",
+  color: "#fff",
+  borderColor: "#1976d2",
+};
+
 export function FlexDirection() {
   const [direction, setDirection] = useState<CssFlexDirection>("row");
   const data = useMemo(() => generateSmallData(), []);
@@ -13,24 +28,30 @@ export function FlexDirection() {
       <h1>flex-direction</h1>
       <p>Controls the direction of the main axis for column layout.</p>
 
-      <div style={{ marginBottom: 16, display: "flex", gap: 12, alignItems: "center" }}>
-        <label>
-          <strong>flex-direction:</strong>{" "}
-          <select
-            value={direction}
-            onChange={(e) => setDirection(e.target.value as CssFlexDirection)}
-            style={{ fontSize: 14, padding: "4px 8px" }}
-          >
-            {options.map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div style={{ marginBottom: 16 }}>
+        <strong>flex-direction:</strong>
+        <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+          {options.map((v) => (
+            <button
+              key={v}
+              data-testid={`direction-${v}`}
+              style={direction === v ? btnActive : btnBase}
+              onClick={() => setDirection(v)}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "#f5f5f5",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`<Grid flexDirection="${direction}" ...>
   <Column id="name" width={180} />
   <Column id="dept" width={120} />

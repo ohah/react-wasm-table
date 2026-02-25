@@ -4,6 +4,21 @@ import { generateSmallData } from "../data";
 
 const positionOptions: CssPosition[] = ["relative", "absolute"];
 
+const btnBase: React.CSSProperties = {
+  padding: "4px 12px",
+  border: "1px solid #ccc",
+  borderRadius: 4,
+  background: "#fff",
+  cursor: "pointer",
+  fontSize: 13,
+};
+const btnActive: React.CSSProperties = {
+  ...btnBase,
+  background: "#1976d2",
+  color: "#fff",
+  borderColor: "#1976d2",
+};
+
 export function Position() {
   const [pos, setPos] = useState<CssPosition>("relative");
   const [insetLeft, setInsetLeft] = useState(0);
@@ -20,20 +35,21 @@ export function Position() {
       </p>
 
       <div style={{ marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap" }}>
-        <label>
-          <strong>Position (col 2):</strong>{" "}
-          <select
-            value={pos}
-            onChange={(e) => setPos(e.target.value as CssPosition)}
-            style={{ fontSize: 14, padding: "4px 8px" }}
-          >
+        <div>
+          <strong>Position (col 2):</strong>
+          <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
             {positionOptions.map((v) => (
-              <option key={v} value={v}>
+              <button
+                key={v}
+                data-testid={`position-${v}`}
+                style={pos === v ? btnActive : btnBase}
+                onClick={() => setPos(v)}
+              >
                 {v}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
         <label>
           <strong>insetLeft:</strong>{" "}
           <input

@@ -4,6 +4,21 @@ import { generateSmallData } from "../data";
 
 const options: CssOverflow[] = ["visible", "clip", "hidden", "scroll"];
 
+const btnBase: React.CSSProperties = {
+  padding: "4px 12px",
+  border: "1px solid #ccc",
+  borderRadius: 4,
+  background: "#fff",
+  cursor: "pointer",
+  fontSize: 13,
+};
+const btnActive: React.CSSProperties = {
+  ...btnBase,
+  background: "#1976d2",
+  color: "#fff",
+  borderColor: "#1976d2",
+};
+
 export function Overflow() {
   const [overflowXValue, setOverflowXValue] = useState<CssOverflow>("visible");
   const [overflowYValue, setOverflowYValue] = useState<CssOverflow>("visible");
@@ -19,34 +34,36 @@ export function Overflow() {
       </p>
 
       <div style={{ marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap" }}>
-        <label>
-          <strong>overflow-x:</strong>{" "}
-          <select
-            value={overflowXValue}
-            onChange={(e) => setOverflowXValue(e.target.value as CssOverflow)}
-            style={{ fontSize: 14, padding: "4px 8px" }}
-          >
+        <div>
+          <strong>overflow-x:</strong>
+          <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
             {options.map((v) => (
-              <option key={v} value={v}>
+              <button
+                key={v}
+                data-testid={`overflow-x-${v}`}
+                style={overflowXValue === v ? btnActive : btnBase}
+                onClick={() => setOverflowXValue(v)}
+              >
                 {v}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
-        <label>
-          <strong>overflow-y:</strong>{" "}
-          <select
-            value={overflowYValue}
-            onChange={(e) => setOverflowYValue(e.target.value as CssOverflow)}
-            style={{ fontSize: 14, padding: "4px 8px" }}
-          >
+          </div>
+        </div>
+        <div>
+          <strong>overflow-y:</strong>
+          <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
             {options.map((v) => (
-              <option key={v} value={v}>
+              <button
+                key={v}
+                data-testid={`overflow-y-${v}`}
+                style={overflowYValue === v ? btnActive : btnBase}
+                onClick={() => setOverflowYValue(v)}
+              >
                 {v}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
