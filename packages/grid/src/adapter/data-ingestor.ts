@@ -26,10 +26,7 @@ export function classifyColumns(
  * Build a Float64Array from a numeric column.
  * null/undefined → NaN (sentinel).
  */
-export function buildFloat64Column(
-  data: Record<string, unknown>[],
-  colId: string,
-): Float64Array {
+export function buildFloat64Column(data: Record<string, unknown>[], colId: string): Float64Array {
   const arr = new Float64Array(data.length);
   for (let i = 0; i < data.length; i++) {
     const v = data[i]![colId];
@@ -42,10 +39,7 @@ export function buildFloat64Column(
  * Build a Float64Array for a boolean column.
  * true → 1.0, false → 0.0, null/undefined → NaN.
  */
-export function buildBoolColumn(
-  data: Record<string, unknown>[],
-  colId: string,
-): Float64Array {
+export function buildBoolColumn(data: Record<string, unknown>[], colId: string): Float64Array {
   const arr = new Float64Array(data.length);
   for (let i = 0; i < data.length; i++) {
     const v = data[i]![colId];

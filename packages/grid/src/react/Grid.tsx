@@ -52,12 +52,10 @@ export function Grid({
   useEffect(() => {
     if (!columnsProp) return;
     // Convert ColumnDef[] → ColumnProps[] (render → children)
-    const asProps = columnsProp.map(
-      ({ render, ...rest }): import("../types").ColumnProps => ({
-        ...rest,
-        ...(render ? { children: render } : {}),
-      }),
-    );
+    const asProps = columnsProp.map(({ render, ...rest }): import("../types").ColumnProps => ({
+      ...rest,
+      ...(render ? { children: render } : {}),
+    }));
     columnRegistry.setAll(asProps);
   }, [columnsProp, columnRegistry]);
 

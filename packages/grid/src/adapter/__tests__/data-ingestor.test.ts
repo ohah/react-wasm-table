@@ -61,11 +61,10 @@ describe("buildFloat64Column", () => {
 
 describe("buildBoolColumn", () => {
   it("maps true→1, false→0, null→NaN", () => {
-    const data = [
-      { active: true },
-      { active: false },
-      { active: null },
-    ] as Record<string, unknown>[];
+    const data = [{ active: true }, { active: false }, { active: null }] as Record<
+      string,
+      unknown
+    >[];
     const arr = buildBoolColumn(data, "active");
     expect(arr[0]).toBe(1.0);
     expect(arr[1]).toBe(0.0);
@@ -93,11 +92,10 @@ describe("buildStringColumn", () => {
   });
 
   it("deduplicates identical strings", () => {
-    const data = [
-      { city: "Seoul" },
-      { city: "Tokyo" },
-      { city: "Seoul" },
-    ] as Record<string, unknown>[];
+    const data = [{ city: "Seoul" }, { city: "Tokyo" }, { city: "Seoul" }] as Record<
+      string,
+      unknown
+    >[];
     const [unique, ids] = buildStringColumn(data, "city");
     // "" + "Seoul" + "Tokyo" = 3 unique
     expect(unique.length).toBe(3);

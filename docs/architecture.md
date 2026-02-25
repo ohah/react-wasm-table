@@ -195,14 +195,18 @@ Thin binding layer. All business logic lives in `core`.
 class ColumnRegistry {
   register(id: string, props: ColumnProps): void;
   unregister(id: string): void;
-  setAll(columns: ColumnProps[]): void;  // for object-based columns prop
+  setAll(columns: ColumnProps[]): void; // for object-based columns prop
   getAll(): ColumnProps[];
   get(id: string): ColumnProps | undefined;
   onChange(cb: () => void): () => void;
 }
 
 // Classifies Object[] columns by type and sends TypedArrays to WASM
-function ingestData(engine: WasmTableEngine, data: Record<string, unknown>[], columnIds: string[]): void;
+function ingestData(
+  engine: WasmTableEngine,
+  data: Record<string, unknown>[],
+  columnIds: string[],
+): void;
 
 class StringTable {
   populate(data: Record<string, unknown>[], columnIds: string[]): void;
@@ -210,8 +214,8 @@ class StringTable {
 }
 
 class MemoryBridge {
-  getLayoutBuffer(): Float32Array;   // zero-copy view into WASM memory
-  getViewIndices(): Uint32Array;     // zero-copy view into WASM memory
+  getLayoutBuffer(): Float32Array; // zero-copy view into WASM memory
+  getViewIndices(): Uint32Array; // zero-copy view into WASM memory
 }
 
 class EventManager {
@@ -234,9 +238,28 @@ class EditorManager {
 class CanvasRenderer {
   attach(canvas: HTMLCanvasElement): void;
   clear(): void;
-  drawHeaderFromBuffer(buf: Float32Array, start: number, count: number, labels: string[], theme: Theme): void;
-  drawRowsFromBuffer(buf: Float32Array, start: number, count: number, getInstruction: fn, theme: Theme, headerHeight: number): void;
-  drawGridLinesFromBuffer(buf: Float32Array, start: number, count: number, theme: Theme, headerHeight: number): void;
+  drawHeaderFromBuffer(
+    buf: Float32Array,
+    start: number,
+    count: number,
+    labels: string[],
+    theme: Theme,
+  ): void;
+  drawRowsFromBuffer(
+    buf: Float32Array,
+    start: number,
+    count: number,
+    getInstruction: fn,
+    theme: Theme,
+    headerHeight: number,
+  ): void;
+  drawGridLinesFromBuffer(
+    buf: Float32Array,
+    start: number,
+    count: number,
+    theme: Theme,
+    headerHeight: number,
+  ): void;
 }
 ```
 
