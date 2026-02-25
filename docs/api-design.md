@@ -5,11 +5,15 @@
 DOM-based tables use this pattern:
 
 ```tsx
-{rows.map(row => (
-  <tr key={row.id}>
-    {columns.map(col => <td key={col.id}>{row[col.id]}</td>)}
-  </tr>
-))}
+{
+  rows.map((row) => (
+    <tr key={row.id}>
+      {columns.map((col) => (
+        <td key={col.id}>{row[col.id]}</td>
+      ))}
+    </tr>
+  ));
+}
 ```
 
 Canvas rendering does not use this pattern because:
@@ -250,10 +254,15 @@ on the scroll hot path.
 
 ```tsx
 // Sorting enabled per column
-<Grid data={data} columns={[
-  { id: "name", width: 200, sortable: true },
-  { id: "price", width: 100, sortable: true },
-]} width={800} height={600} />
+<Grid
+  data={data}
+  columns={[
+    { id: "name", width: 200, sortable: true },
+    { id: "price", width: 100, sortable: true },
+  ]}
+  width={800}
+  height={600}
+/>
 ```
 
 ## WASM Initialization

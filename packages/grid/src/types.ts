@@ -178,11 +178,7 @@ export interface WasmTableEngine {
   finalizeColumnar(): void;
 
   // Hot path — single WASM call per frame
-  updateViewportColumnar(
-    scrollTop: number,
-    viewport: unknown,
-    columns: unknown,
-  ): Float64Array;
+  updateViewportColumnar(scrollTop: number, viewport: unknown, columns: unknown): Float64Array;
   setColumnarSort(configs: unknown): void;
   setColumnarScrollConfig(rowHeight: number, viewportHeight: number, overscan: number): void;
   getColumnarViewIndicesInfo(): Uint32Array;

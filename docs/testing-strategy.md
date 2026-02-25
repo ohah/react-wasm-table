@@ -11,12 +11,12 @@ their contract holds.
 
 ## Module Test Matrix
 
-| Module          | Runner       | Environment   | Mock deps?              | Key technique            |
-| --------------- | ------------ | ------------- | ----------------------- | ------------------------ |
-| **core** (Rust) | `cargo test` | Native        | None needed             | Pure functions, no I/O   |
-| **adapter**     | `bun test`   | happy-dom     | WASM module mocked      | Class unit tests         |
-| **renderer**    | `bun test`   | happy-dom     | None needed             | Draw call recording      |
-| **react**       | `bun test`   | happy-dom     | Adapter/renderer mocked | Component lifecycle      |
+| Module          | Runner       | Environment | Mock deps?              | Key technique          |
+| --------------- | ------------ | ----------- | ----------------------- | ---------------------- |
+| **core** (Rust) | `cargo test` | Native      | None needed             | Pure functions, no I/O |
+| **adapter**     | `bun test`   | happy-dom   | WASM module mocked      | Class unit tests       |
+| **renderer**    | `bun test`   | happy-dom   | None needed             | Draw call recording    |
+| **react**       | `bun test`   | happy-dom   | Adapter/renderer mocked | Component lifecycle    |
 
 ---
 

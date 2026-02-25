@@ -246,11 +246,11 @@ All logic lives in `core`.
 class ColumnRegistry {
   register(id: string, props: ColumnProps): void;
   unregister(id: string): void;
-  setAll(columns: ColumnProps[]): void;  // bulk replace (for columns prop)
+  setAll(columns: ColumnProps[]): void; // bulk replace (for columns prop)
   getAll(): ColumnProps[];
   get(id: string): ColumnProps | undefined;
   readonly size: number;
-  onChange(cb: () => void): () => void;  // returns unsubscribe
+  onChange(cb: () => void): () => void; // returns unsubscribe
 }
 ```
 
@@ -266,7 +266,11 @@ function classifyColumns(data: Record<string, unknown>[], columnIds: string[]): 
 function buildFloat64Column(data: Record<string, unknown>[], colId: string): Float64Array;
 function buildBoolColumn(data: Record<string, unknown>[], colId: string): Float64Array;
 function buildStringColumn(data: Record<string, unknown>[], colId: string): [string[], Uint32Array];
-function ingestData(engine: WasmTableEngine, data: Record<string, unknown>[], columnIds: string[]): void;
+function ingestData(
+  engine: WasmTableEngine,
+  data: Record<string, unknown>[],
+  columnIds: string[],
+): void;
 ```
 
 **Test scope:** type classification (number, bool, string, null-skip, all-null default),
@@ -290,8 +294,8 @@ class StringTable {
 ```typescript
 class MemoryBridge {
   constructor(engine: WasmTableEngine, memory: WebAssembly.Memory);
-  getLayoutBuffer(): Float32Array;       // cached zero-copy view
-  getViewIndices(): Uint32Array;         // cached zero-copy view
+  getLayoutBuffer(): Float32Array; // cached zero-copy view
+  getViewIndices(): Uint32Array; // cached zero-copy view
   getColumnFloat64(colIdx: number): Float64Array | null;
   invalidate(): void;
 }
@@ -374,17 +378,52 @@ function hitTest(buf: Float32Array, start: number, count: number, x: number, y: 
 class CanvasRenderer {
   attach(canvas: HTMLCanvasElement): void;
   clear(): void;
-  drawHeaderFromBuffer(buf: Float32Array, start: number, count: number, labels: string[], theme: Theme): void;
-  drawRowsFromBuffer(buf: Float32Array, start: number, count: number, getInstruction: (cellIdx: number) => RenderInstruction, theme: Theme, headerHeight: number): void;
-  drawGridLinesFromBuffer(buf: Float32Array, start: number, count: number, theme: Theme, headerHeight: number): void;
+  drawHeaderFromBuffer(
+    buf: Float32Array,
+    start: number,
+    count: number,
+    labels: string[],
+    theme: Theme,
+  ): void;
+  drawRowsFromBuffer(
+    buf: Float32Array,
+    start: number,
+    count: number,
+    getInstruction: (cellIdx: number) => RenderInstruction,
+    theme: Theme,
+    headerHeight: number,
+  ): void;
+  drawGridLinesFromBuffer(
+    buf: Float32Array,
+    start: number,
+    count: number,
+    theme: Theme,
+    headerHeight: number,
+  ): void;
 }
 ```
 
 ### Drawing Primitives
 
 ```typescript
-function drawTextCell(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, instruction: TextInstruction, theme: Theme): void;
-function drawBadge(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, instruction: BadgeInstruction, theme: Theme): void;
+function drawTextCell(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  instruction: TextInstruction,
+  theme: Theme,
+): void;
+function drawBadge(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  instruction: BadgeInstruction,
+  theme: Theme,
+): void;
 function measureText(ctx: CanvasRenderingContext2D, text: string): number;
 ```
 
