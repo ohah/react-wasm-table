@@ -13,20 +13,6 @@ const config: UserConfig = {
     ["meta", { property: "og:type", content: "website" }],
     ["meta", { property: "og:site_name", content: "react-wasm-table" }],
   ],
-  locales: [
-    {
-      lang: "en",
-      label: "English",
-      title: "react-wasm-table",
-      description: "High-performance React table component powered by Rust/WASM",
-    },
-    {
-      lang: "ko",
-      label: "한국어",
-      title: "react-wasm-table",
-      description: "Rust/WASM 기반 고성능 React 테이블 컴포넌트 라이브러리",
-    },
-  ],
   themeConfig: {
     socialLinks: [
       {
