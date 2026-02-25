@@ -373,7 +373,7 @@ struct JsRect {
 
 // ── Conversion helpers ───────────────────────────────────────────────
 
-fn parse_dimension(d: &Option<JsDimension>) -> DimensionValue {
+fn parse_dimension(d: Option<&JsDimension>) -> DimensionValue {
     match d {
         None => DimensionValue::Auto,
         Some(JsDimension::Number(v)) => DimensionValue::Length(*v),
@@ -391,23 +391,23 @@ fn parse_dimension(d: &Option<JsDimension>) -> DimensionValue {
     }
 }
 
-fn parse_length(d: &Option<JsDimension>) -> LengthValue {
+fn parse_length(d: Option<&JsDimension>) -> LengthValue {
     match d {
         None => LengthValue::Zero,
         Some(JsDimension::Number(v)) => LengthValue::Length(*v),
-        Some(JsDimension::Str(s)) => {
-            if let Some(pct) = s.strip_suffix('%') {
-                pct.parse::<f32>()
-                    .map_or(LengthValue::Zero, |v| LengthValue::Percent(v / 100.0))
-            } else {
-                s.parse::<f32>()
-                    .map_or(LengthValue::Zero, LengthValue::Length)
-            }
-        }
+        Some(JsDimension::Str(s)) => s
+            .strip_suffix('%')
+            .map_or_else(
+                || s.parse::<f32>().map_or(LengthValue::Zero, LengthValue::Length),
+                |pct| {
+                    pct.parse::<f32>()
+                        .map_or(LengthValue::Zero, |v| LengthValue::Percent(v / 100.0))
+                },
+            ),
     }
 }
 
-fn parse_length_auto(d: &Option<JsDimension>) -> LengthAutoValue {
+fn parse_length_auto(d: Option<&JsDimension>) -> LengthAutoValue {
     match d {
         None => LengthAutoValue::Auto,
         Some(JsDimension::Number(v)) => LengthAutoValue::Length(*v),
@@ -426,33 +426,27 @@ fn parse_length_auto(d: &Option<JsDimension>) -> LengthAutoValue {
     }
 }
 
-fn parse_length_rect(r: &Option<JsRect>) -> RectValue<LengthValue> {
-    match r {
-        None => RectValue::default(),
-        Some(r) => RectValue {
-            top: parse_length(&r.top),
-            right: parse_length(&r.right),
-            bottom: parse_length(&r.bottom),
-            left: parse_length(&r.left),
-        },
-    }
+fn parse_length_rect(r: Option<&JsRect>) -> RectValue<LengthValue> {
+    r.map_or_else(RectValue::default, |r| RectValue {
+        top: parse_length(r.top.as_ref()),
+        right: parse_length(r.right.as_ref()),
+        bottom: parse_length(r.bottom.as_ref()),
+        left: parse_length(r.left.as_ref()),
+    })
 }
 
-fn parse_length_auto_rect(r: &Option<JsRect>) -> RectValue<LengthAutoValue> {
-    match r {
-        None => RectValue::zero_auto(),
-        Some(r) => RectValue {
-            top: parse_length_auto(&r.top),
-            right: parse_length_auto(&r.right),
-            bottom: parse_length_auto(&r.bottom),
-            left: parse_length_auto(&r.left),
-        },
-    }
+fn parse_length_auto_rect(r: Option<&JsRect>) -> RectValue<LengthAutoValue> {
+    r.map_or_else(RectValue::zero_auto, |r| RectValue {
+        top: parse_length_auto(r.top.as_ref()),
+        right: parse_length_auto(r.right.as_ref()),
+        bottom: parse_length_auto(r.bottom.as_ref()),
+        left: parse_length_auto(r.left.as_ref()),
+    })
 }
 
-fn parse_align_value(s: &Option<String>) -> Option<AlignValue> {
-    s.as_deref().map(|v| match v {
-        "start" => AlignValue::Start,
+#[allow(clippy::single_option_map)]
+fn parse_align_value(s: Option<&String>) -> Option<AlignValue> {
+    s.map(|v| match v.as_str() {
         "end" => AlignValue::End,
         "flex-start" => AlignValue::FlexStart,
         "flex-end" => AlignValue::FlexEnd,
@@ -478,14 +472,14 @@ fn convert_column(c: &JsColumnLayout) -> ColumnLayout {
             Some("right") => Align::Right,
             _ => Align::Left,
         },
-        flex_basis: parse_dimension(&c.flex_basis),
-        height: parse_dimension(&c.height),
-        min_height: parse_dimension(&c.min_height),
-        max_height: parse_dimension(&c.max_height),
-        align_self: parse_align_value(&c.align_self),
-        padding: parse_length_rect(&c.padding),
-        margin: parse_length_auto_rect(&c.margin),
-        border: parse_length_rect(&c.border),
+        flex_basis: parse_dimension(c.flex_basis.as_ref()),
+        height: parse_dimension(c.height.as_ref()),
+        min_height: parse_dimension(c.min_height.as_ref()),
+        max_height: parse_dimension(c.max_height.as_ref()),
+        align_self: parse_align_value(c.align_self.as_ref()),
+        padding: parse_length_rect(c.padding.as_ref()),
+        margin: parse_length_auto_rect(c.margin.as_ref()),
+        border: parse_length_rect(c.border.as_ref()),
         box_sizing: match c.box_sizing.as_deref() {
             Some("content-box") => BoxSizingValue::ContentBox,
             _ => BoxSizingValue::BorderBox,
@@ -495,7 +489,7 @@ fn convert_column(c: &JsColumnLayout) -> ColumnLayout {
             Some("absolute") => PositionValue::Absolute,
             _ => PositionValue::Relative,
         },
-        inset: parse_length_auto_rect(&c.inset),
+        inset: parse_length_auto_rect(c.inset.as_ref()),
     }
 }
 
@@ -517,15 +511,12 @@ fn convert_container(c: &JsContainerLayout) -> ContainerLayout {
             Some("wrap-reverse") => FlexWrapValue::WrapReverse,
             _ => FlexWrapValue::NoWrap,
         },
-        gap: parse_length(&c.gap),
-        row_gap: c.row_gap.as_ref().map(|d| parse_length(&Some(d.clone()))),
-        column_gap: c
-            .column_gap
-            .as_ref()
-            .map(|d| parse_length(&Some(d.clone()))),
-        align_items: parse_align_value(&c.align_items),
-        align_content: parse_align_value(&c.align_content),
-        justify_content: parse_align_value(&c.justify_content),
+        gap: parse_length(c.gap.as_ref()),
+        row_gap: c.row_gap.as_ref().map(|d| parse_length(Some(d))),
+        column_gap: c.column_gap.as_ref().map(|d| parse_length(Some(d))),
+        align_items: parse_align_value(c.align_items.as_ref()),
+        align_content: parse_align_value(c.align_content.as_ref()),
+        justify_content: parse_align_value(c.justify_content.as_ref()),
         overflow_x: match c.overflow_x.as_deref() {
             Some("clip") => OverflowValue::Clip,
             Some("hidden") => OverflowValue::Hidden,
@@ -539,8 +530,8 @@ fn convert_container(c: &JsContainerLayout) -> ContainerLayout {
             _ => OverflowValue::Visible,
         },
         scrollbar_width: c.scrollbar_width.unwrap_or(0.0),
-        padding: parse_length_rect(&c.padding),
-        margin: parse_length_auto_rect(&c.margin),
-        border: parse_length_rect(&c.border),
+        padding: parse_length_rect(c.padding.as_ref()),
+        margin: parse_length_auto_rect(c.margin.as_ref()),
+        border: parse_length_rect(c.border.as_ref()),
     }
 }
