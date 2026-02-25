@@ -20,8 +20,34 @@ export type CssRect<T> = T | [T, T] | [T, T, T] | [T, T, T, T];
 
 // ── CSS enum literal types ──────────────────────────────────────────
 
-/** CSS display property (grid excluded — next phase). */
-export type CssDisplay = "flex" | "block" | "none";
+/** CSS display property. */
+export type CssDisplay = "flex" | "grid" | "block" | "none";
+
+/** CSS grid track size (e.g., `200`, `"1fr"`, `"auto"`, `"50%"`, `"minmax(100px, 1fr)"`). */
+export type CssGridTrackSize =
+  | number
+  | `${number}fr`
+  | `${number}%`
+  | "auto"
+  | "min-content"
+  | "max-content"
+  | `minmax(${string})`
+  | `fit-content(${string})`;
+
+/** CSS grid track list: single value, space-separated string, or array. */
+export type CssGridTrackList =
+  | CssGridTrackSize
+  | string
+  | (CssGridTrackSize | `repeat(${string})`)[];
+
+/** CSS grid-auto-flow property. */
+export type CssGridAutoFlow = "row" | "column" | "row dense" | "column dense";
+
+/** CSS grid placement (e.g., `1`, `"span 2"`, `"auto"`). */
+export type CssGridPlacement = number | `span ${number}` | "auto";
+
+/** CSS grid line: single placement or [start, end] pair. */
+export type CssGridLine = CssGridPlacement | [CssGridPlacement, CssGridPlacement];
 
 /** CSS position property. */
 export type CssPosition = "relative" | "absolute";
@@ -194,7 +220,7 @@ export const DEFAULT_THEME: Theme = {
 
 // ── Column definition (object-based API) ──────────────────────────────
 
-/** Object-based column definition (react-table style, flex child). */
+/** Object-based column definition (react-table style, flex/grid child). */
 export interface ColumnDef extends BoxModelProps {
   /** Unique column identifier. */
   id: string;
@@ -230,6 +256,12 @@ export interface ColumnDef extends BoxModelProps {
   insetBottom?: CssLengthAuto;
   /** Inset left. */
   insetLeft?: CssLengthAuto;
+  /** Grid row placement (e.g., `1`, `"span 2"`, `[1, 3]`). */
+  gridRow?: CssGridLine;
+  /** Grid column placement (e.g., `1`, `"span 2"`, `[1, "span 2"]`). */
+  gridColumn?: CssGridLine;
+  /** Justify self (overrides container justify-items). */
+  justifySelf?: CssAlignItems;
   /** Header text. */
   header?: string;
   /** Content alignment. */
@@ -244,7 +276,7 @@ export interface ColumnDef extends BoxModelProps {
 
 // ── Column props (JSX API) ────────────────────────────────────────────
 
-/** Props for the <Column> component (flex child). */
+/** Props for the <Column> component (flex/grid child). */
 export interface ColumnProps extends BoxModelProps {
   /** Unique column identifier. */
   id: string;
@@ -280,6 +312,12 @@ export interface ColumnProps extends BoxModelProps {
   insetBottom?: CssLengthAuto;
   /** Inset left. */
   insetLeft?: CssLengthAuto;
+  /** Grid row placement. */
+  gridRow?: CssGridLine;
+  /** Grid column placement. */
+  gridColumn?: CssGridLine;
+  /** Justify self (overrides container justify-items). */
+  justifySelf?: CssAlignItems;
   /** Header text. */
   header?: string;
   /** Content alignment. */
@@ -294,7 +332,7 @@ export interface ColumnProps extends BoxModelProps {
 
 // ── Grid props ─────────────────────────────────────────────────────────
 
-/** Props for the <Grid> component (flex container). */
+/** Props for the <Grid> component (flex/grid container). */
 export interface GridProps extends BoxModelProps {
   /** Row data as array of objects. */
   data: Record<string, unknown>[];
@@ -336,6 +374,18 @@ export interface GridProps extends BoxModelProps {
   overflowY?: CssOverflow;
   /** Scrollbar width in pixels. @default 0 */
   scrollbarWidth?: number;
+  /** Grid template rows (e.g., `"1fr 1fr"`, `["200px", "1fr"]`). */
+  gridTemplateRows?: CssGridTrackList;
+  /** Grid template columns (e.g., `"1fr 1fr 1fr"`, `[200, "1fr", "1fr"]`). */
+  gridTemplateColumns?: CssGridTrackList;
+  /** Grid auto rows (e.g., `"1fr"`, `[100, "auto"]`). */
+  gridAutoRows?: CssGridTrackSize | CssGridTrackSize[];
+  /** Grid auto columns. */
+  gridAutoColumns?: CssGridTrackSize | CssGridTrackSize[];
+  /** Grid auto flow. @default "row" */
+  gridAutoFlow?: CssGridAutoFlow;
+  /** Justify items on the inline axis. */
+  justifyItems?: CssAlignItems;
 }
 
 // ── WASM engine interface ──────────────────────────────────────────────

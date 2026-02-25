@@ -1,6 +1,6 @@
 use serde::Serialize;
 use taffy::prelude::*;
-use taffy::{Overflow, Point, TaffyTree};
+use taffy::{GridAutoFlow, GridTemplateRepetition, MinMax, Overflow, Point, TaffyTree};
 
 use crate::layout_buffer;
 
@@ -72,13 +72,69 @@ pub enum OverflowValue {
     Scroll,
 }
 
-/// CSS display enum. Maps to Taffy's Display (Flex, Block, None).
+/// CSS display enum. Maps to Taffy's Display (Flex, Grid, Block, None).
 #[derive(Debug, Clone, Copy, Default, Serialize)]
 pub enum DisplayValue {
     #[default]
     Flex,
+    Grid,
     Block,
     None,
+}
+
+/// CSS grid-auto-flow enum.
+#[derive(Debug, Clone, Copy, Default, Serialize)]
+pub enum GridAutoFlowValue {
+    #[default]
+    Row,
+    Column,
+    RowDense,
+    ColumnDense,
+}
+
+/// A single track sizing value (e.g., `1fr`, `200px`, `auto`, `minmax(100px, 1fr)`).
+#[derive(Debug, Clone, Serialize)]
+pub enum TrackSizeValue {
+    Length(f32),
+    Percent(f32),
+    Fr(f32),
+    Auto,
+    MinContent,
+    MaxContent,
+    MinMax(Box<TrackSizeValue>, Box<TrackSizeValue>),
+    FitContentPx(f32),
+    FitContentPercent(f32),
+}
+
+/// An item in a grid track list: either a single track or a `repeat()`.
+#[derive(Debug, Clone, Serialize)]
+pub enum TrackListItem {
+    Single(TrackSizeValue),
+    Repeat(RepeatValue, Vec<TrackSizeValue>),
+}
+
+/// The repeat count for a CSS `repeat()` function.
+#[derive(Debug, Clone, Copy, Serialize)]
+pub enum RepeatValue {
+    Count(u16),
+    AutoFill,
+    AutoFit,
+}
+
+/// Grid placement value for a single edge (start or end).
+#[derive(Debug, Clone, Copy, Default, Serialize)]
+pub enum GridPlacementValue {
+    #[default]
+    Auto,
+    Line(i16),
+    Span(u16),
+}
+
+/// Grid line value with start/end placement (e.g., `grid-row: 1 / span 2`).
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct GridLineValue {
+    pub start: GridPlacementValue,
+    pub end: GridPlacementValue,
 }
 
 /// CSS flex-direction enum.
@@ -131,7 +187,7 @@ pub enum BoxSizingValue {
     ContentBox,
 }
 
-/// Layout configuration for a single column (flex child).
+/// Layout configuration for a single column (flex/grid child).
 #[derive(Debug, Clone, Serialize)]
 pub struct ColumnLayout {
     pub width: f32,
@@ -140,7 +196,7 @@ pub struct ColumnLayout {
     pub min_width: Option<f32>,
     pub max_width: Option<f32>,
     pub align: Align,
-    // New flex child properties
+    // Flex child properties
     pub flex_basis: DimensionValue,
     pub height: DimensionValue,
     pub min_height: DimensionValue,
@@ -153,6 +209,10 @@ pub struct ColumnLayout {
     pub aspect_ratio: Option<f32>,
     pub position: PositionValue,
     pub inset: RectValue<LengthAutoValue>,
+    // Grid child properties
+    pub grid_row: Option<GridLineValue>,
+    pub grid_column: Option<GridLineValue>,
+    pub justify_self: Option<AlignValue>,
 }
 
 impl Default for ColumnLayout {
@@ -175,15 +235,19 @@ impl Default for ColumnLayout {
             box_sizing: BoxSizingValue::default(),
             aspect_ratio: None,
             position: PositionValue::default(),
-            inset: RectValue::default(), // inset defaults to auto in Taffy
+            inset: RectValue::default(),
+            grid_row: None,
+            grid_column: None,
+            justify_self: None,
         }
     }
 }
 
-/// Container layout configuration (flex parent).
+/// Container layout configuration (flex/grid parent).
 #[derive(Debug, Clone, Serialize)]
 pub struct ContainerLayout {
     pub display: DisplayValue,
+    // Flex properties
     pub flex_direction: FlexDirectionValue,
     pub flex_wrap: FlexWrapValue,
     pub gap: LengthValue,
@@ -198,6 +262,13 @@ pub struct ContainerLayout {
     pub padding: RectValue<LengthValue>,
     pub margin: RectValue<LengthAutoValue>,
     pub border: RectValue<LengthValue>,
+    // Grid container properties
+    pub grid_template_rows: Vec<TrackListItem>,
+    pub grid_template_columns: Vec<TrackListItem>,
+    pub grid_auto_rows: Vec<TrackSizeValue>,
+    pub grid_auto_columns: Vec<TrackSizeValue>,
+    pub grid_auto_flow: GridAutoFlowValue,
+    pub justify_items: Option<AlignValue>,
 }
 
 impl Default for ContainerLayout {
@@ -218,6 +289,12 @@ impl Default for ContainerLayout {
             padding: RectValue::default(),
             margin: RectValue::zero_auto(),
             border: RectValue::default(),
+            grid_template_rows: Vec::new(),
+            grid_template_columns: Vec::new(),
+            grid_auto_rows: Vec::new(),
+            grid_auto_columns: Vec::new(),
+            grid_auto_flow: GridAutoFlowValue::Row,
+            justify_items: None,
         }
     }
 }
@@ -342,7 +419,102 @@ const fn overflow_to_taffy(o: OverflowValue) -> Overflow {
     }
 }
 
-/// Flexbox-based layout engine powered by Taffy.
+// ── Grid conversion helpers: our grid types → Taffy grid types ─────────
+
+fn track_size_to_min(v: &TrackSizeValue) -> MinTrackSizingFunction {
+    match v {
+        TrackSizeValue::Length(px) => MinTrackSizingFunction::length(*px),
+        TrackSizeValue::Percent(pct) => MinTrackSizingFunction::percent(*pct / 100.0),
+        TrackSizeValue::MinContent => MinTrackSizingFunction::min_content(),
+        TrackSizeValue::MaxContent => MinTrackSizingFunction::max_content(),
+        TrackSizeValue::MinMax(min, _) => track_size_to_min(min),
+        // Fr/FitContent/Auto → auto for min sizing
+        TrackSizeValue::Auto
+        | TrackSizeValue::Fr(_)
+        | TrackSizeValue::FitContentPx(_)
+        | TrackSizeValue::FitContentPercent(_) => MinTrackSizingFunction::auto(),
+    }
+}
+
+fn track_size_to_max(v: &TrackSizeValue) -> MaxTrackSizingFunction {
+    match v {
+        TrackSizeValue::Length(px) => MaxTrackSizingFunction::length(*px),
+        TrackSizeValue::Percent(pct) => MaxTrackSizingFunction::percent(*pct / 100.0),
+        TrackSizeValue::Fr(fr) => MaxTrackSizingFunction::fr(*fr),
+        TrackSizeValue::Auto => MaxTrackSizingFunction::auto(),
+        TrackSizeValue::MinContent => MaxTrackSizingFunction::min_content(),
+        TrackSizeValue::MaxContent => MaxTrackSizingFunction::max_content(),
+        TrackSizeValue::FitContentPx(px) => MaxTrackSizingFunction::fit_content_px(*px),
+        TrackSizeValue::FitContentPercent(pct) => {
+            MaxTrackSizingFunction::fit_content_percent(*pct / 100.0)
+        }
+        TrackSizeValue::MinMax(_, max) => track_size_to_max(max),
+    }
+}
+
+fn track_size_to_taffy(v: &TrackSizeValue) -> TrackSizingFunction {
+    match v {
+        TrackSizeValue::MinMax(min, max) => MinMax {
+            min: track_size_to_min(min),
+            max: track_size_to_max(max),
+        },
+        _ => MinMax {
+            min: track_size_to_min(v),
+            max: track_size_to_max(v),
+        },
+    }
+}
+
+fn track_list_to_taffy(items: &[TrackListItem]) -> Vec<GridTemplateComponent<String>> {
+    items
+        .iter()
+        .map(|item| match item {
+            TrackListItem::Single(v) => GridTemplateComponent::Single(track_size_to_taffy(v)),
+            TrackListItem::Repeat(rep, tracks) => {
+                let count = match rep {
+                    RepeatValue::Count(n) => RepetitionCount::Count(*n),
+                    RepeatValue::AutoFill => RepetitionCount::AutoFill,
+                    RepeatValue::AutoFit => RepetitionCount::AutoFit,
+                };
+                GridTemplateComponent::Repeat(GridTemplateRepetition {
+                    count,
+                    tracks: tracks.iter().map(track_size_to_taffy).collect(),
+                    line_names: vec![],
+                })
+            }
+        })
+        .collect()
+}
+
+fn auto_tracks_to_taffy(tracks: &[TrackSizeValue]) -> Vec<TrackSizingFunction> {
+    tracks.iter().map(track_size_to_taffy).collect()
+}
+
+fn grid_placement_to_taffy(v: GridPlacementValue) -> GridPlacement {
+    match v {
+        GridPlacementValue::Auto => GridPlacement::Auto,
+        GridPlacementValue::Line(n) => GridPlacement::from_line_index(n),
+        GridPlacementValue::Span(n) => GridPlacement::from_span(n),
+    }
+}
+
+fn grid_line_to_taffy(v: GridLineValue) -> Line<GridPlacement> {
+    Line {
+        start: grid_placement_to_taffy(v.start),
+        end: grid_placement_to_taffy(v.end),
+    }
+}
+
+const fn grid_auto_flow_to_taffy(v: GridAutoFlowValue) -> GridAutoFlow {
+    match v {
+        GridAutoFlowValue::Row => GridAutoFlow::Row,
+        GridAutoFlowValue::Column => GridAutoFlow::Column,
+        GridAutoFlowValue::RowDense => GridAutoFlow::RowDense,
+        GridAutoFlowValue::ColumnDense => GridAutoFlow::ColumnDense,
+    }
+}
+
+/// Layout engine powered by Taffy (supports Flexbox and CSS Grid).
 pub struct LayoutEngine {
     pub(crate) tree: TaffyTree<()>,
 }
@@ -400,6 +572,11 @@ impl LayoutEngine {
                 bottom: length_auto_to_taffy(col.inset.bottom),
                 left: length_auto_to_taffy(col.inset.left),
             },
+            grid_row: col.grid_row.map_or_else(Line::default, grid_line_to_taffy),
+            grid_column: col
+                .grid_column
+                .map_or_else(Line::default, grid_line_to_taffy),
+            justify_self: col.justify_self.and_then(align_value_to_taffy_align),
             ..Style::default()
         }
     }
@@ -472,12 +649,20 @@ impl LayoutEngine {
         let row_gap = container.row_gap.unwrap_or(container.gap);
         let col_gap = container.column_gap.unwrap_or(container.gap);
 
+        let display = match container.display {
+            DisplayValue::Flex => Display::Flex,
+            DisplayValue::Grid => Display::Grid,
+            DisplayValue::Block => Display::Block,
+            DisplayValue::None => Display::None,
+        };
+
+        let grid_template_columns = track_list_to_taffy(&container.grid_template_columns);
+        let grid_template_rows = track_list_to_taffy(&container.grid_template_rows);
+        let grid_auto_columns = auto_tracks_to_taffy(&container.grid_auto_columns);
+        let grid_auto_rows = auto_tracks_to_taffy(&container.grid_auto_rows);
+
         Style {
-            display: match container.display {
-                DisplayValue::Flex => Display::Flex,
-                DisplayValue::Block => Display::Block,
-                DisplayValue::None => Display::None,
-            },
+            display,
             flex_direction: match container.flex_direction {
                 FlexDirectionValue::Row => FlexDirection::Row,
                 FlexDirectionValue::Column => FlexDirection::Column,
@@ -512,6 +697,12 @@ impl LayoutEngine {
             padding: length_rect_to_taffy(&container.padding),
             margin: length_auto_rect_to_taffy(&container.margin),
             border: length_rect_to_taffy(&container.border),
+            grid_template_columns,
+            grid_template_rows,
+            grid_auto_columns,
+            grid_auto_rows,
+            grid_auto_flow: grid_auto_flow_to_taffy(container.grid_auto_flow),
+            justify_items: container.justify_items.and_then(align_value_to_taffy_align),
             ..Style::default()
         }
     }
@@ -1076,5 +1267,196 @@ mod tests {
         // With space-between, items are at 0 and 500 (600 - 100)
         assert!((header[0].x - 0.0).abs() < 0.5);
         assert!((header[1].x - 500.0).abs() < 0.5);
+    }
+
+    // ── CSS Grid layout tests ───────────────────────────────────────────
+
+    fn grid_container(cols: Vec<TrackListItem>) -> ContainerLayout {
+        ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: cols,
+            ..ContainerLayout::default()
+        }
+    }
+
+    fn grid_col_default() -> ColumnLayout {
+        ColumnLayout {
+            width: 0.0,
+            ..ColumnLayout::default()
+        }
+    }
+
+    #[test]
+    fn display_grid_3col_1fr() {
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default(), grid_col_default()];
+        let viewport = make_viewport(); // width=600
+
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 3);
+        // Each column should be 200px (600/3)
+        assert!((header[0].width - 200.0).abs() < 1.0);
+        assert!((header[1].width - 200.0).abs() < 1.0);
+        assert!((header[2].width - 200.0).abs() < 1.0);
+        // Positions: 0, 200, 400
+        assert!((header[0].x - 0.0).abs() < 1.0);
+        assert!((header[1].x - 200.0).abs() < 1.0);
+        assert!((header[2].x - 400.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_fixed_and_fr() {
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::Length(200.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default(), grid_col_default()];
+        let viewport = make_viewport(); // width=600
+
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // Col 0: fixed 200px, Col 1 & 2: split remaining 400px → 200px each
+        assert!((header[0].width - 200.0).abs() < 1.0);
+        assert!((header[1].width - 200.0).abs() < 1.0);
+        assert!((header[2].width - 200.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_auto_flow_column() {
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: vec![
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            ],
+            grid_auto_flow: GridAutoFlowValue::Column,
+            ..ContainerLayout::default()
+        };
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+        // Both columns should have width ~300 (600/2)
+        assert!((header[0].width - 300.0).abs() < 1.0);
+        assert!((header[1].width - 300.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_placement_span() {
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        // First column spans 2 grid columns
+        let columns = vec![
+            ColumnLayout {
+                grid_column: Some(GridLineValue {
+                    start: GridPlacementValue::Auto,
+                    end: GridPlacementValue::Span(2),
+                }),
+                ..grid_col_default()
+            },
+            grid_col_default(),
+        ];
+        let viewport = make_viewport(); // width=600
+
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // First item spans 2 columns → 400px, second item → 200px
+        assert!((header[0].width - 400.0).abs() < 1.0);
+        assert!((header[1].width - 200.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_gap() {
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: vec![
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            ],
+            gap: LengthValue::Length(20.0),
+            ..ContainerLayout::default()
+        };
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport(); // width=600
+
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // 600 - 20 gap = 580 / 2 = 290 each
+        assert!((header[0].width - 290.0).abs() < 1.0);
+        assert!((header[1].width - 290.0).abs() < 1.0);
+        // Second column starts at 290 + 20 = 310
+        assert!((header[1].x - 310.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_into_buffer() {
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+
+        let total_cells = 2 + 2 * 2; // 2 headers + 2 rows × 2 cols
+        let mut buf = vec![0.0_f32; layout_buffer::buf_len(total_cells)];
+        let count = engine.compute_into_buffer(&columns, &viewport, &container, 0..2, &mut buf);
+        assert_eq!(count, total_cells);
+
+        // Header col 0: x=0, width=300
+        assert!((buf[layout_buffer::FIELD_X] - 0.0).abs() < 1.0);
+        assert!((buf[layout_buffer::FIELD_WIDTH] - 300.0).abs() < 1.0);
+        // Header col 1: x=300, width=300
+        let base = layout_buffer::LAYOUT_STRIDE;
+        assert!((buf[base + layout_buffer::FIELD_X] - 300.0).abs() < 1.0);
+        assert!((buf[base + layout_buffer::FIELD_WIDTH] - 300.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_minmax_track() {
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::MinMax(
+                Box::new(TrackSizeValue::Length(100.0)),
+                Box::new(TrackSizeValue::Fr(1.0)),
+            )),
+            TrackListItem::Single(TrackSizeValue::Fr(2.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport(); // width=600
+
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // minmax(100px, 1fr) vs 2fr → 1fr:2fr ratio → 200:400 (min 100 satisfied)
+        assert!((header[0].width - 200.0).abs() < 1.0);
+        assert!((header[1].width - 400.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_repeat_track() {
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![TrackListItem::Repeat(
+            RepeatValue::Count(3),
+            vec![TrackSizeValue::Fr(1.0)],
+        )]);
+        let columns = vec![grid_col_default(), grid_col_default(), grid_col_default()];
+        let viewport = make_viewport(); // width=600
+
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // repeat(3, 1fr) → 3 columns of 200px each
+        assert_eq!(header.len(), 3);
+        assert!((header[0].width - 200.0).abs() < 1.0);
+        assert!((header[1].width - 200.0).abs() < 1.0);
+        assert!((header[2].width - 200.0).abs() < 1.0);
     }
 }

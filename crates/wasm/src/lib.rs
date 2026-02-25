@@ -6,8 +6,9 @@ use react_wasm_table_core::columnar_store::ColumnarStore;
 use react_wasm_table_core::data_store::ColumnDef;
 use react_wasm_table_core::layout::{
     Align, AlignValue, BoxSizingValue, ColumnLayout, ContainerLayout, DimensionValue, DisplayValue,
-    FlexDirectionValue, FlexWrapValue, LayoutEngine, LengthAutoValue, LengthValue, OverflowValue,
-    PositionValue, RectValue, Viewport,
+    FlexDirectionValue, FlexWrapValue, GridAutoFlowValue, GridLineValue, GridPlacementValue,
+    LayoutEngine, LengthAutoValue, LengthValue, OverflowValue, PositionValue, RectValue,
+    RepeatValue, TrackListItem, TrackSizeValue, Viewport,
 };
 use react_wasm_table_core::layout_buffer;
 use react_wasm_table_core::sorting::{SortConfig, SortDirection};
@@ -314,6 +315,13 @@ struct JsColumnLayout {
     position: Option<String>,
     #[serde(default)]
     inset: Option<JsRect>,
+    // Grid child properties
+    #[serde(rename = "gridRow")]
+    grid_row: Option<JsGridLine>,
+    #[serde(rename = "gridColumn")]
+    grid_column: Option<JsGridLine>,
+    #[serde(rename = "justifySelf")]
+    justify_self: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -348,6 +356,19 @@ struct JsContainerLayout {
     margin: Option<JsRect>,
     #[serde(default)]
     border: Option<JsRect>,
+    // Grid container properties
+    #[serde(rename = "gridTemplateRows")]
+    grid_template_rows: Option<JsGridTrackList>,
+    #[serde(rename = "gridTemplateColumns")]
+    grid_template_columns: Option<JsGridTrackList>,
+    #[serde(rename = "gridAutoRows")]
+    grid_auto_rows: Option<JsGridTrackList>,
+    #[serde(rename = "gridAutoColumns")]
+    grid_auto_columns: Option<JsGridTrackList>,
+    #[serde(rename = "gridAutoFlow")]
+    grid_auto_flow: Option<String>,
+    #[serde(rename = "justifyItems")]
+    justify_items: Option<String>,
 }
 
 /// A CSS dimension: number (px) or string ("50%", "auto").
@@ -369,6 +390,38 @@ struct JsRect {
     bottom: Option<JsDimension>,
     #[serde(default)]
     left: Option<JsDimension>,
+}
+
+/// A CSS grid track size: number (px) or string ("1fr", "auto", "50%", "min-content", etc.).
+#[derive(serde::Deserialize, Clone)]
+#[serde(untagged)]
+enum JsGridTrackSize {
+    Number(f32),
+    Str(String),
+}
+
+/// A CSS grid track list: single value or array of values.
+#[derive(serde::Deserialize, Clone)]
+#[serde(untagged)]
+enum JsGridTrackList {
+    Single(JsGridTrackSize),
+    Array(Vec<JsGridTrackSize>),
+}
+
+/// A CSS grid placement: number (line) or string ("span 2", "auto").
+#[derive(serde::Deserialize, Clone)]
+#[serde(untagged)]
+enum JsGridPlacement {
+    Number(i16),
+    Str(String),
+}
+
+/// A CSS grid line: single placement or [start, end] pair.
+#[derive(serde::Deserialize, Clone)]
+#[serde(untagged)]
+enum JsGridLine {
+    Single(JsGridPlacement),
+    Pair(Vec<JsGridPlacement>),
 }
 
 // ── Conversion helpers ───────────────────────────────────────────────
@@ -461,6 +514,198 @@ fn parse_align_value(s: Option<&String>) -> Option<AlignValue> {
     })
 }
 
+fn parse_grid_track_size(v: &JsGridTrackSize) -> TrackSizeValue {
+    match v {
+        JsGridTrackSize::Number(n) => TrackSizeValue::Length(*n),
+        JsGridTrackSize::Str(s) => {
+            let s = s.trim();
+            if s == "auto" {
+                TrackSizeValue::Auto
+            } else if s == "min-content" {
+                TrackSizeValue::MinContent
+            } else if s == "max-content" {
+                TrackSizeValue::MaxContent
+            } else if let Some(fr) = s.strip_suffix("fr") {
+                fr.trim()
+                    .parse::<f32>()
+                    .map_or(TrackSizeValue::Auto, TrackSizeValue::Fr)
+            } else if let Some(pct) = s.strip_suffix('%') {
+                pct.trim()
+                    .parse::<f32>()
+                    .map_or(TrackSizeValue::Auto, TrackSizeValue::Percent)
+            } else if s.starts_with("minmax(") && s.ends_with(')') {
+                let inner = &s[7..s.len() - 1];
+                if let Some((min_s, max_s)) = inner.split_once(',') {
+                    let min =
+                        parse_grid_track_size(&JsGridTrackSize::Str(min_s.trim().to_string()));
+                    let max =
+                        parse_grid_track_size(&JsGridTrackSize::Str(max_s.trim().to_string()));
+                    TrackSizeValue::MinMax(Box::new(min), Box::new(max))
+                } else {
+                    TrackSizeValue::Auto
+                }
+            } else if s.starts_with("fit-content(") && s.ends_with(')') {
+                let inner = &s[12..s.len() - 1];
+                inner.strip_suffix('%').map_or_else(
+                    || {
+                        inner
+                            .trim()
+                            .strip_suffix("px")
+                            .unwrap_or_else(|| inner.trim())
+                            .parse::<f32>()
+                            .map_or(TrackSizeValue::Auto, TrackSizeValue::FitContentPx)
+                    },
+                    |pct| {
+                        pct.trim()
+                            .parse::<f32>()
+                            .map_or(TrackSizeValue::Auto, TrackSizeValue::FitContentPercent)
+                    },
+                )
+            } else {
+                // Try parsing as px value (strip optional "px" suffix)
+                s.strip_suffix("px")
+                    .unwrap_or(s)
+                    .parse::<f32>()
+                    .map_or(TrackSizeValue::Auto, TrackSizeValue::Length)
+            }
+        }
+    }
+}
+
+fn parse_grid_track_list_item(s: &str) -> TrackListItem {
+    let s = s.trim();
+    if s.starts_with("repeat(") && s.ends_with(')') {
+        let inner = &s[7..s.len() - 1];
+        if let Some((count_s, tracks_s)) = inner.split_once(',') {
+            let count = match count_s.trim() {
+                "auto-fill" => RepeatValue::AutoFill,
+                "auto-fit" => RepeatValue::AutoFit,
+                n => n
+                    .parse::<u16>()
+                    .map_or(RepeatValue::Count(1), RepeatValue::Count),
+            };
+            let tracks: Vec<TrackSizeValue> = tracks_s
+                .split_whitespace()
+                .map(|t| parse_grid_track_size(&JsGridTrackSize::Str(t.to_string())))
+                .collect();
+            TrackListItem::Repeat(count, tracks)
+        } else {
+            TrackListItem::Single(TrackSizeValue::Auto)
+        }
+    } else {
+        TrackListItem::Single(parse_grid_track_size(&JsGridTrackSize::Str(s.to_string())))
+    }
+}
+
+fn parse_grid_track_list(v: Option<&JsGridTrackList>) -> Vec<TrackListItem> {
+    match v {
+        None => Vec::new(),
+        Some(JsGridTrackList::Single(t)) => {
+            // A single string might contain space-separated values like "1fr 1fr 1fr"
+            // or a repeat() function
+            if let JsGridTrackSize::Str(s) = t {
+                let s = s.trim();
+                if s.contains(' ') && !s.starts_with("minmax(") && !s.starts_with("fit-content(") {
+                    // Space-separated track list — parse each token
+                    return parse_space_separated_tracks(s);
+                }
+            }
+            vec![TrackListItem::Single(parse_grid_track_size(t))]
+        }
+        Some(JsGridTrackList::Array(arr)) => arr
+            .iter()
+            .map(|t| {
+                if let JsGridTrackSize::Str(s) = t {
+                    let s = s.trim();
+                    if s.starts_with("repeat(") {
+                        return parse_grid_track_list_item(s);
+                    }
+                }
+                TrackListItem::Single(parse_grid_track_size(t))
+            })
+            .collect(),
+    }
+}
+
+fn parse_space_separated_tracks(s: &str) -> Vec<TrackListItem> {
+    let mut items = Vec::new();
+    let mut current = String::new();
+    let mut paren_depth: u32 = 0;
+
+    for ch in s.chars() {
+        match ch {
+            '(' => {
+                paren_depth += 1;
+                current.push(ch);
+            }
+            ')' => {
+                paren_depth = paren_depth.saturating_sub(1);
+                current.push(ch);
+            }
+            ' ' | '\t' if paren_depth == 0 => {
+                let trimmed = current.trim().to_string();
+                if !trimmed.is_empty() {
+                    items.push(parse_grid_track_list_item(&trimmed));
+                }
+                current.clear();
+            }
+            _ => current.push(ch),
+        }
+    }
+    let trimmed = current.trim().to_string();
+    if !trimmed.is_empty() {
+        items.push(parse_grid_track_list_item(&trimmed));
+    }
+    items
+}
+
+fn parse_auto_tracks(v: Option<&JsGridTrackList>) -> Vec<TrackSizeValue> {
+    match v {
+        None => Vec::new(),
+        Some(JsGridTrackList::Single(t)) => vec![parse_grid_track_size(t)],
+        Some(JsGridTrackList::Array(arr)) => arr.iter().map(parse_grid_track_size).collect(),
+    }
+}
+
+fn parse_grid_placement(v: &JsGridPlacement) -> GridPlacementValue {
+    match v {
+        JsGridPlacement::Number(n) => GridPlacementValue::Line(*n),
+        JsGridPlacement::Str(s) => {
+            let s = s.trim();
+            if s == "auto" {
+                GridPlacementValue::Auto
+            } else if let Some(span_s) = s.strip_prefix("span ") {
+                span_s
+                    .trim()
+                    .parse::<u16>()
+                    .map_or(GridPlacementValue::Auto, GridPlacementValue::Span)
+            } else {
+                s.parse::<i16>()
+                    .map_or(GridPlacementValue::Auto, GridPlacementValue::Line)
+            }
+        }
+    }
+}
+
+fn parse_grid_line(v: Option<&JsGridLine>) -> Option<GridLineValue> {
+    match v {
+        None => None,
+        Some(JsGridLine::Single(p)) => Some(GridLineValue {
+            start: parse_grid_placement(p),
+            end: GridPlacementValue::Auto,
+        }),
+        Some(JsGridLine::Pair(arr)) => {
+            let start = arr
+                .first()
+                .map_or(GridPlacementValue::Auto, parse_grid_placement);
+            let end = arr
+                .get(1)
+                .map_or(GridPlacementValue::Auto, parse_grid_placement);
+            Some(GridLineValue { start, end })
+        }
+    }
+}
+
 fn convert_column(c: &JsColumnLayout) -> ColumnLayout {
     ColumnLayout {
         width: c.width,
@@ -491,12 +736,16 @@ fn convert_column(c: &JsColumnLayout) -> ColumnLayout {
             _ => PositionValue::Relative,
         },
         inset: parse_length_auto_rect(c.inset.as_ref()),
+        grid_row: parse_grid_line(c.grid_row.as_ref()),
+        grid_column: parse_grid_line(c.grid_column.as_ref()),
+        justify_self: parse_align_value(c.justify_self.as_ref()),
     }
 }
 
 fn convert_container(c: &JsContainerLayout) -> ContainerLayout {
     ContainerLayout {
         display: match c.display.as_deref() {
+            Some("grid") => DisplayValue::Grid,
             Some("none") => DisplayValue::None,
             Some("block") => DisplayValue::Block,
             _ => DisplayValue::Flex,
@@ -534,5 +783,16 @@ fn convert_container(c: &JsContainerLayout) -> ContainerLayout {
         padding: parse_length_rect(c.padding.as_ref()),
         margin: parse_length_auto_rect(c.margin.as_ref()),
         border: parse_length_rect(c.border.as_ref()),
+        grid_template_rows: parse_grid_track_list(c.grid_template_rows.as_ref()),
+        grid_template_columns: parse_grid_track_list(c.grid_template_columns.as_ref()),
+        grid_auto_rows: parse_auto_tracks(c.grid_auto_rows.as_ref()),
+        grid_auto_columns: parse_auto_tracks(c.grid_auto_columns.as_ref()),
+        grid_auto_flow: match c.grid_auto_flow.as_deref() {
+            Some("column") => GridAutoFlowValue::Column,
+            Some("row dense") => GridAutoFlowValue::RowDense,
+            Some("column dense") => GridAutoFlowValue::ColumnDense,
+            _ => GridAutoFlowValue::Row,
+        },
+        justify_items: parse_align_value(c.justify_items.as_ref()),
     }
 }
