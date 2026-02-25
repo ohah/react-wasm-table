@@ -11,8 +11,8 @@ export function Padding() {
     <>
       <h1>padding</h1>
       <p>
-        Padding on <strong>columns</strong> (flex children) affects the inner content area of each cell.
-        Padding on the <strong>Grid</strong> (container) adds space around all columns.
+        Padding on <strong>columns</strong> (flex children) affects the inner content area of each
+        cell. Padding on the <strong>Grid</strong> (container) adds space around all columns.
       </p>
 
       <div style={{ marginBottom: 16, display: "flex", gap: 20, flexWrap: "wrap" }}>
@@ -43,7 +43,7 @@ export function Padding() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-{`<Grid padding={${containerPad}} ...>
+        {`<Grid padding={${containerPad}} ...>
   <Column id="name" width={180} padding={${cellPad}} />
   <Column id="dept" width={120} padding={${cellPad}} />
   <Column id="salary" width={100} padding={${cellPad}} />

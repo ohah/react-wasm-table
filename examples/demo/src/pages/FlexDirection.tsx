@@ -22,14 +22,16 @@ export function FlexDirection() {
             style={{ fontSize: 14, padding: "4px 8px" }}
           >
             {options.map((v) => (
-              <option key={v} value={v}>{v}</option>
+              <option key={v} value={v}>
+                {v}
+              </option>
             ))}
           </select>
         </label>
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-{`<Grid flexDirection="${direction}" ...>
+        {`<Grid flexDirection="${direction}" ...>
   <Column id="name" width={180} />
   <Column id="dept" width={120} />
   <Column id="salary" width={100} />

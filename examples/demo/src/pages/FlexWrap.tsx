@@ -22,14 +22,16 @@ export function FlexWrap() {
             style={{ fontSize: 14, padding: "4px 8px" }}
           >
             {options.map((v) => (
-              <option key={v} value={v}>{v}</option>
+              <option key={v} value={v}>
+                {v}
+              </option>
             ))}
           </select>
         </label>
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-{`<Grid flexWrap="${wrap}" width={500} ...>
+        {`<Grid flexWrap="${wrap}" width={500} ...>
   <Column width={200} /> × 4 (total 800px > 500px container)
 </Grid>`}
       </pre>

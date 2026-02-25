@@ -68,7 +68,7 @@ export function FlexGrow() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-{`<Grid width={800} ...>
+        {`<Grid width={800} ...>
   <Column id="name" width={150} flexGrow={${grow1}} />
   <Column id="dept" flexGrow={${grow2}} flexBasis="${basis}" />
   <Column id="salary" width={300} flexShrink={${shrink}} />
@@ -81,7 +81,13 @@ export function FlexGrow() {
           id="dept"
           header="Department"
           flexGrow={grow2}
-          flexBasis={basis === "auto" ? "auto" : basis.includes("%") ? (basis as `${number}%`) : Number(basis)}
+          flexBasis={
+            basis === "auto"
+              ? "auto"
+              : basis.includes("%")
+                ? (basis as `${number}%`)
+                : Number(basis)
+          }
         />
         <Column id="salary" width={300} header="Salary" align="right" flexShrink={shrink} />
       </Grid>
