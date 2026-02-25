@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 // Generate coverage report comment for PR / PR용 커버리지 리포트 댓글 생성
-import { spawn } from 'bun';
-import { writeFileSync } from 'fs';
-import { join } from 'path';
+import { spawn } from "bun";
+import { writeFileSync } from "fs";
+import { join } from "path";
 
 interface CoverageLine {
   file: string;
@@ -18,12 +18,12 @@ function parseCoverageOutput(output: string): {
   summary: { funcs: number; lines: number };
   files: CoverageLine[];
 } {
-  const lines = output.split('\n');
+  const lines = output.split("\n");
   const fileLines: CoverageLine[] = [];
   let summary = { funcs: 0, lines: 0 };
 
   // Find summary line
-  const summaryLine = lines.find((line) => line.includes('All files'));
+  const summaryLine = lines.find((line) => line.includes("All files"));
   if (summaryLine) {
     const match = summaryLine.match(/\|\s+(\d+\.\d+)\s+\|\s+(\d+\.\d+)\s+\|/);
     if (match) {
@@ -38,35 +38,35 @@ function parseCoverageOutput(output: string): {
   let inTable = false;
   for (const line of lines) {
     // Start parsing after table header
-    if (line.includes('File') && line.includes('% Funcs')) {
+    if (line.includes("File") && line.includes("% Funcs")) {
       inTable = true;
       continue;
     }
-    if (line.includes('---')) {
+    if (line.includes("---")) {
       continue;
     }
     if (!inTable) {
       continue;
     }
 
-    if (line.includes('|') && !line.includes('All files')) {
+    if (line.includes("|") && !line.includes("All files")) {
       const parts = line
-        .split('|')
+        .split("|")
         .map((p) => p.trim())
         .filter((p) => p);
       if (parts.length >= 3) {
         const file = parts[0];
         // Skip if it's a separator or header
-        if (file === 'File' || file.includes('---') || !file) {
+        if (file === "File" || file.includes("---") || !file) {
           continue;
         }
 
         const funcs = parseFloat(parts[1]) || 0;
         const lines = parseFloat(parts[2]) || 0;
-        const uncovered = parts[3] || '';
+        const uncovered = parts[3] || "";
 
         // Skip test files
-        if (!file.includes('__tests__') && !file.includes('.test.') && file.length > 0) {
+        if (!file.includes("__tests__") && !file.includes(".test.") && file.length > 0) {
           fileLines.push({
             file,
             funcs,
@@ -87,7 +87,7 @@ function parseCoverageOutput(output: string): {
 function formatCoverageComment(
   summary: { funcs: number; lines: number },
   files: CoverageLine[],
-  packageName: string
+  packageName: string,
 ): string {
   const comment = `## 📊 Test Coverage Report - ${packageName}
 
@@ -110,9 +110,9 @@ ${files
   .slice(0, 50)
   .map(
     (f) =>
-      `| \`${f.file}\` | ${f.funcs.toFixed(2)}% | ${f.lines.toFixed(2)}% | ${f.uncovered || 'N/A'} |`
+      `| \`${f.file}\` | ${f.funcs.toFixed(2)}% | ${f.lines.toFixed(2)}% | ${f.uncovered || "N/A"} |`,
   )
-  .join('\n')}
+  .join("\n")}
 
 </details>
 
@@ -131,16 +131,16 @@ async function generateCoverageComment(packagePath: string, packageName: string)
   console.log(`Running coverage for ${packageName}...`);
 
   const proc = spawn({
-    cmd: ['bun', 'test', packagePath, '--coverage'],
-    stdout: 'pipe',
-    stderr: 'pipe',
+    cmd: ["bun", "test", packagePath, "--coverage"],
+    stdout: "pipe",
+    stderr: "pipe",
     cwd: process.cwd(),
   });
 
   const output = await new Response(proc.stdout).text();
   const error = await new Response(proc.stderr).text();
 
-  if (error && !error.includes('File')) {
+  if (error && !error.includes("File")) {
     console.error(`Error running coverage:`, error);
   }
 
@@ -153,21 +153,21 @@ async function generateCoverageComment(packagePath: string, packageName: string)
  */
 async function main() {
   const packagePath = process.argv[2];
-  const packageName = process.argv[3] || 'Package';
+  const packageName = process.argv[3] || "Package";
 
   if (!packagePath) {
-    console.error('Usage: bun scripts/coverage-comment.ts <package-path> [package-name]');
+    console.error("Usage: bun scripts/coverage-comment.ts <package-path> [package-name]");
     process.exit(1);
   }
 
   try {
     const comment = await generateCoverageComment(packagePath, packageName);
 
-    const outputPath = join(process.cwd(), 'coverage-comment.md');
-    writeFileSync(outputPath, comment, 'utf-8');
+    const outputPath = join(process.cwd(), "coverage-comment.md");
+    writeFileSync(outputPath, comment, "utf-8");
 
     console.log(`\n✅ Coverage comment generated: ${outputPath}`);
-    console.log('\n' + comment);
+    console.log("\n" + comment);
   } catch (error) {
     console.error(`Failed to generate coverage for ${packageName}:`, error);
     process.exit(1);

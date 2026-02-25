@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // Generate coverage report comment for Rust tests using cargo-llvm-cov / cargo-llvm-cov를 사용한 Rust 테스트 커버리지 리포트 댓글 생성
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, writeFileSync } from "fs";
+import { join } from "path";
 
 interface CoverageFile {
   file: string;
@@ -25,13 +25,13 @@ function parseLCOV(lcovPath: string): {
   summary: { funcs: number; lines: number; branches: number };
   files: CoverageFile[];
 } {
-  const content = readFileSync(lcovPath, 'utf-8');
+  const content = readFileSync(lcovPath, "utf-8");
   const records: LCOVRecord[] = [];
   let currentRecord: Partial<LCOVRecord> | null = null;
 
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   for (const line of lines) {
-    if (line.startsWith('SF:')) {
+    if (line.startsWith("SF:")) {
       if (currentRecord) {
         records.push(currentRecord as LCOVRecord);
       }
@@ -41,7 +41,7 @@ function parseLCOV(lcovPath: string): {
         lines: [],
         branches: [],
       };
-    } else if (line.startsWith('FN:')) {
+    } else if (line.startsWith("FN:")) {
       const match = line.match(/^FN:(\d+),(.+)$/);
       if (match && currentRecord?.functions) {
         currentRecord.functions.push({
@@ -49,7 +49,7 @@ function parseLCOV(lcovPath: string): {
           name: match[2],
         });
       }
-    } else if (line.startsWith('DA:')) {
+    } else if (line.startsWith("DA:")) {
       const match = line.match(/^DA:(\d+),(\d+)$/);
       if (match && currentRecord?.lines) {
         currentRecord.lines.push({
@@ -57,16 +57,16 @@ function parseLCOV(lcovPath: string): {
           hits: parseInt(match[2]),
         });
       }
-    } else if (line.startsWith('BRDA:')) {
+    } else if (line.startsWith("BRDA:")) {
       const match = line.match(/^BRDA:(\d+),(\d+),(\d+),(-|\d+)$/);
       if (match && currentRecord?.branches) {
-        const hits = match[4] === '-' ? 0 : parseInt(match[4]);
+        const hits = match[4] === "-" ? 0 : parseInt(match[4]);
         currentRecord.branches.push({
           line: parseInt(match[1]),
           hits,
         });
       }
-    } else if (line === 'end_of_record') {
+    } else if (line === "end_of_record") {
       if (currentRecord) {
         records.push(currentRecord as LCOVRecord);
         currentRecord = null;
@@ -91,9 +91,9 @@ function parseLCOV(lcovPath: string): {
   for (const record of records) {
     // Skip test files / 테스트 파일 제외
     if (
-      record.file.includes('test') ||
-      record.file.includes('__tests__') ||
-      record.file.includes('.test.')
+      record.file.includes("test") ||
+      record.file.includes("__tests__") ||
+      record.file.includes(".test.")
     ) {
       continue;
     }
@@ -119,7 +119,7 @@ function parseLCOV(lcovPath: string): {
       .sort((a, b) => a - b);
 
     files.push({
-      file: record.file.replace(process.cwd() + '/', ''),
+      file: record.file.replace(process.cwd() + "/", ""),
       funcs: fileFuncs > 0 ? (fileCoveredFuncs / fileFuncs) * 100 : 0,
       lines: fileLines > 0 ? (fileCoveredLines / fileLines) * 100 : 0,
       branches: fileBranches > 0 ? (fileCoveredBranches / fileBranches) * 100 : 0,
@@ -140,7 +140,7 @@ function parseLCOV(lcovPath: string): {
  * Format uncovered lines as ranges / 커버되지 않은 라인을 범위로 포맷팅
  */
 function formatUncoveredLines(lines: number[]): string {
-  if (lines.length === 0) return 'N/A';
+  if (lines.length === 0) return "N/A";
   if (lines.length === 1) return lines[0].toString();
 
   const ranges: string[] = [];
@@ -167,8 +167,8 @@ function formatUncoveredLines(lines: number[]): string {
     ranges.push(`${start}-${end}`);
   }
 
-  const result = ranges.join(', ');
-  return result.length > 100 ? result.substring(0, 97) + '...' : result;
+  const result = ranges.join(", ");
+  return result.length > 100 ? result.substring(0, 97) + "..." : result;
 }
 
 /**
@@ -177,7 +177,7 @@ function formatUncoveredLines(lines: number[]): string {
 function formatCoverageComment(
   summary: { funcs: number; lines: number; branches: number },
   files: CoverageFile[],
-  packageName: string
+  packageName: string,
 ): string {
   const comment = `## 📊 Test Coverage Report - ${packageName}
 
@@ -201,9 +201,9 @@ ${files
   .slice(0, 50)
   .map(
     (f) =>
-      `| \`${f.file}\` | ${f.lines.toFixed(2)}% | ${f.funcs.toFixed(2)}% | ${f.branches.toFixed(2)}% | ${f.uncovered} |`
+      `| \`${f.file}\` | ${f.lines.toFixed(2)}% | ${f.funcs.toFixed(2)}% | ${f.branches.toFixed(2)}% | ${f.uncovered} |`,
   )
-  .join('\n')}
+  .join("\n")}
 
 </details>
 
@@ -219,17 +219,17 @@ ${files
  * Main function / 메인 함수
  */
 async function main() {
-  const lcovPath = join(process.cwd(), 'coverage', 'lcov.info');
+  const lcovPath = join(process.cwd(), "coverage", "lcov.info");
 
   try {
     const { summary, files } = parseLCOV(lcovPath);
-    const comment = formatCoverageComment(summary, files, 'Rust (core)');
+    const comment = formatCoverageComment(summary, files, "Rust (core)");
 
-    const outputPath = join(process.cwd(), 'coverage-comment.md');
-    writeFileSync(outputPath, comment, 'utf-8');
+    const outputPath = join(process.cwd(), "coverage-comment.md");
+    writeFileSync(outputPath, comment, "utf-8");
 
     console.log(`\n✅ Coverage comment generated: ${outputPath}`);
-    console.log('\n' + comment);
+    console.log("\n" + comment);
   } catch (error) {
     console.error(`Failed to generate coverage:`, error);
     process.exit(1);
