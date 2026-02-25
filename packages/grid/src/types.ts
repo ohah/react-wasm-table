@@ -211,7 +211,7 @@ export const DEFAULT_THEME: Theme = {
   headerColor: "#333",
   cellBackground: "#fff",
   cellColor: "#333",
-  borderColor: "#e0e0e0",
+  borderColor: "#000",
   selectedBackground: "#e3f2fd",
   fontFamily: "system-ui, sans-serif",
   fontSize: 13,

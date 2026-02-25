@@ -14,6 +14,7 @@ interface Props {
   width: number;
   height: number;
   rowHeight?: number;
+  headerHeight?: number;
   rowStyle?: CSSProperties;
   containerStyle?: CSSProperties;
 }
@@ -26,7 +27,8 @@ export function CssComparison({
   columns,
   width,
   height,
-  rowHeight = 32,
+  rowHeight = 36,
+  headerHeight = 40,
   rowStyle = {},
   containerStyle = {},
 }: Props) {
@@ -37,7 +39,7 @@ export function CssComparison({
     ...rowStyle,
   };
 
-  const cellBase = (col: CssColumnDef): CSSProperties => ({
+  const cellBase = (col: CssColumnDef, colIdx: number): CSSProperties => ({
     ...(col.width && !isGrid ? { width: col.width, minWidth: col.width } : {}),
     textAlign: col.align || "left",
     padding: "0 8px",
@@ -45,7 +47,8 @@ export function CssComparison({
     display: "flex",
     alignItems: "center",
     justifyContent: alignToJustify(col.align),
-    borderRight: "0.5px solid #e0e0e0",
+    borderRight: "0.5px solid #000",
+    ...(colIdx === 0 ? { borderLeft: "0.5px solid #000" } : {}),
     boxSizing: "border-box",
     overflow: "hidden",
     whiteSpace: "nowrap",
@@ -69,16 +72,17 @@ export function CssComparison({
       <div
         style={{
           ...baseRowStyle,
-          height: rowHeight,
-          minHeight: rowHeight,
-          borderBottom: "1px solid #e0e0e0",
+          height: headerHeight,
+          minHeight: headerHeight,
+          borderTop: "0.5px solid #000",
+          borderBottom: "0.5px solid #000",
           backgroundColor: "#f5f5f5",
           color: "#333",
           fontWeight: 600,
         }}
       >
-        {columns.map((col) => (
-          <div key={col.id} style={cellBase(col)}>
+        {columns.map((col, i) => (
+          <div key={col.id} style={cellBase(col, i)}>
             {col.header}
           </div>
         ))}
@@ -90,12 +94,12 @@ export function CssComparison({
             ...baseRowStyle,
             height: rowHeight,
             minHeight: rowHeight,
-            borderBottom: "0.5px solid #e0e0e0",
+            borderBottom: "0.5px solid #000",
             backgroundColor: i % 2 === 0 ? "#fff" : "rgba(255,255,255,0.96)",
           }}
         >
-          {columns.map((col) => (
-            <div key={col.id} style={cellBase(col)}>
+          {columns.map((col, colIdx) => (
+            <div key={col.id} style={cellBase(col, colIdx)}>
               {String(row[col.id] ?? "")}
             </div>
           ))}
