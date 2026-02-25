@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, Column, type CssFlexWrap } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssComparison } from "../components/CssComparison";
+import { CssGrid, CssColumn } from "../components/CssGrid";
 
 const options: CssFlexWrap[] = ["nowrap", "wrap", "wrap-reverse"];
 
@@ -64,18 +64,12 @@ export function FlexWrap() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssComparison
-            data={data}
-            width={500}
-            height={400}
-            columns={[
-              { id: "name", header: "Name", width: 200 },
-              { id: "dept", header: "Department", width: 200 },
-              { id: "salary", header: "Salary", width: 200, align: "right" },
-              { id: "score", header: "Score", width: 200, align: "right" },
-            ]}
-            rowStyle={{ flexWrap: wrap }}
-          />
+          <CssGrid data={data} width={500} height={400} flexWrap={wrap}>
+            <CssColumn id="name" width={200} header="Name" />
+            <CssColumn id="dept" width={200} header="Department" />
+            <CssColumn id="salary" width={200} header="Salary" align="right" />
+            <CssColumn id="score" width={200} header="Score" align="right" />
+          </CssGrid>
         </div>
       </div>
     </>

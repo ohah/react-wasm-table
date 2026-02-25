@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, Column } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssComparison } from "../components/CssComparison";
+import { CssGrid, CssColumn } from "../components/CssGrid";
 
 export function Padding() {
   const [cellPad, setCellPad] = useState(0);
@@ -64,30 +64,12 @@ export function Padding() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssComparison
-            data={data}
-            width={800}
-            height={400}
-            columns={[
-              { id: "name", header: "Name", width: 180, cellStyle: { padding: cellPad } },
-              { id: "dept", header: "Department", width: 120, cellStyle: { padding: cellPad } },
-              {
-                id: "salary",
-                header: "Salary",
-                width: 100,
-                align: "right",
-                cellStyle: { padding: cellPad },
-              },
-              {
-                id: "score",
-                header: "Score",
-                width: 80,
-                align: "right",
-                cellStyle: { padding: cellPad },
-              },
-            ]}
-            containerStyle={{ padding: containerPad }}
-          />
+          <CssGrid data={data} width={800} height={400} padding={containerPad}>
+            <CssColumn id="name" width={180} header="Name" padding={cellPad} />
+            <CssColumn id="dept" width={120} header="Department" padding={cellPad} />
+            <CssColumn id="salary" width={100} header="Salary" align="right" padding={cellPad} />
+            <CssColumn id="score" width={80} header="Score" align="right" padding={cellPad} />
+          </CssGrid>
         </div>
       </div>
     </>

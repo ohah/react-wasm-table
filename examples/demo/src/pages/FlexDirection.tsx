@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, Column, type CssFlexDirection } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssComparison } from "../components/CssComparison";
+import { CssGrid, CssColumn } from "../components/CssGrid";
 
 const options: CssFlexDirection[] = ["row", "column", "row-reverse", "column-reverse"];
 
@@ -74,18 +74,12 @@ export function FlexDirection() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssComparison
-            data={data}
-            width={800}
-            height={h}
-            columns={[
-              { id: "name", header: "Name", width: 180 },
-              { id: "dept", header: "Department", width: 120 },
-              { id: "salary", header: "Salary", width: 100, align: "right" },
-              { id: "score", header: "Score", width: 80, align: "right" },
-            ]}
-            rowStyle={{ flexDirection: direction }}
-          />
+          <CssGrid data={data} width={800} height={h} flexDirection={direction}>
+            <CssColumn id="name" width={180} header="Name" />
+            <CssColumn id="dept" width={120} header="Department" />
+            <CssColumn id="salary" width={100} header="Salary" align="right" />
+            <CssColumn id="score" width={80} header="Score" align="right" />
+          </CssGrid>
         </div>
       </div>
     </>
