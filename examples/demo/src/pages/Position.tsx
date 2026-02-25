@@ -111,7 +111,12 @@ export function Position() {
             height={400}
             columns={[
               { id: "name", header: "Name", width: 180 },
-              { id: "dept", header: "Dept (positioned)", width: 120, cellStyle: { position: pos, left: insetLeft, top: insetTop } },
+              {
+                id: "dept",
+                header: "Dept (positioned)",
+                width: 120,
+                cellStyle: { position: pos, left: insetLeft, top: insetTop },
+              },
               { id: "salary", header: "Salary", width: 100, align: "right" },
               { id: "score", header: "Score", width: 80, align: "right" },
             ]}
