@@ -25,9 +25,6 @@ const config: UserConfig = {
   route: {
     cleanUrls: true,
   },
-  markdown: {
-    checkDeadLinks: false,
-  },
   builderConfig: {
     output: {
       distPath: {
