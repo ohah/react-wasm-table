@@ -270,7 +270,7 @@ const fn length_auto_to_taffy(l: LengthAutoValue) -> LengthPercentageAuto {
     }
 }
 
-fn length_rect_to_taffy(r: &RectValue<LengthValue>) -> Rect<LengthPercentage> {
+const fn length_rect_to_taffy(r: &RectValue<LengthValue>) -> Rect<LengthPercentage> {
     Rect {
         top: length_to_taffy(r.top),
         right: length_to_taffy(r.right),
@@ -279,7 +279,9 @@ fn length_rect_to_taffy(r: &RectValue<LengthValue>) -> Rect<LengthPercentage> {
     }
 }
 
-fn length_auto_rect_to_taffy(r: &RectValue<LengthAutoValue>) -> Rect<LengthPercentageAuto> {
+const fn length_auto_rect_to_taffy(
+    r: &RectValue<LengthAutoValue>,
+) -> Rect<LengthPercentageAuto> {
     Rect {
         top: length_auto_to_taffy(r.top),
         right: length_auto_to_taffy(r.right),
