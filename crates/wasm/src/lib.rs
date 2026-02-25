@@ -395,15 +395,16 @@ fn parse_length(d: Option<&JsDimension>) -> LengthValue {
     match d {
         None => LengthValue::Zero,
         Some(JsDimension::Number(v)) => LengthValue::Length(*v),
-        Some(JsDimension::Str(s)) => s
-            .strip_suffix('%')
-            .map_or_else(
-                || s.parse::<f32>().map_or(LengthValue::Zero, LengthValue::Length),
-                |pct| {
-                    pct.parse::<f32>()
-                        .map_or(LengthValue::Zero, |v| LengthValue::Percent(v / 100.0))
-                },
-            ),
+        Some(JsDimension::Str(s)) => s.strip_suffix('%').map_or_else(
+            || {
+                s.parse::<f32>()
+                    .map_or(LengthValue::Zero, LengthValue::Length)
+            },
+            |pct| {
+                pct.parse::<f32>()
+                    .map_or(LengthValue::Zero, |v| LengthValue::Percent(v / 100.0))
+            },
+        ),
     }
 }
 
