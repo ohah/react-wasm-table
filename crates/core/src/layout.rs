@@ -101,7 +101,7 @@ pub enum TrackSizeValue {
     Auto,
     MinContent,
     MaxContent,
-    MinMax(Box<TrackSizeValue>, Box<TrackSizeValue>),
+    MinMax(Box<Self>, Box<Self>),
     FitContentPx(f32),
     FitContentPercent(f32),
 }

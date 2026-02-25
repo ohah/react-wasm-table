@@ -46,7 +46,7 @@ export type CssDisplay = "flex" | "grid" | "block" | "none";
 ```typescript
 /** Track sizing: "200px" | "1fr" | "auto" | "min-content" | "max-content" | "minmax(100px, 1fr)" */
 export type CssGridTrackSize =
-  | number                    // px
+  | number // px
   | `${number}fr`
   | `${number}%`
   | "auto"
@@ -63,10 +63,10 @@ export type CssGridAutoFlow = "row" | "column" | "row dense" | "column dense";
 
 /** Grid placement: line number, span, or named line */
 export type CssGridPlacement =
-  | number                    // line number (positive or negative)
-  | `span ${number}`          // span N tracks
-  | `span ${string}`          // span named line
-  | string                    // named line
+  | number // line number (positive or negative)
+  | `span ${number}` // span N tracks
+  | `span ${string}` // span named line
+  | string // named line
   | "auto";
 
 /** Grid line (start/end pair) */
@@ -219,6 +219,7 @@ fn grid_auto_flow_to_taffy(v: &GridAutoFlowValue) -> GridAutoFlow { ... }
 ```
 
 `build_container_style()` 확장:
+
 ```rust
 DisplayValue::Grid => {
     style.display = Display::Grid;
@@ -231,6 +232,7 @@ DisplayValue::Grid => {
 ```
 
 `column_style()` 확장:
+
 ```rust
 if let Some(ref grid_row) = col.grid_row {
     style.grid_row = grid_line_to_taffy(grid_row);
@@ -327,6 +329,7 @@ fn parse_grid_line(v: &JsGridLine) -> GridLineValue { ... }
 ```
 
 문자열 파싱 예시:
+
 - `"1fr"` → `TrackSizeValue::Fr(1.0)`
 - `"auto"` → `TrackSizeValue::Auto`
 - `"minmax(100px, 1fr)"` → `TrackSizeValue::MinMax(...)`
@@ -343,36 +346,45 @@ fn parse_grid_line(v: &JsGridLine) -> GridLineValue { ... }
 ```typescript
 // 추가 destructure
 const {
-  gridTemplateRows, gridTemplateColumns,
-  gridAutoRows, gridAutoColumns, gridAutoFlow,
-  gridTemplateAreas, justifyItems,
+  gridTemplateRows,
+  gridTemplateColumns,
+  gridAutoRows,
+  gridAutoColumns,
+  gridAutoFlow,
+  gridTemplateAreas,
+  justifyItems,
   ...rest
 } = props;
 
 // containerLayout 객체에 추가
 const containerLayout = {
   // ... 기존 flex ...
-  gridTemplateRows, gridTemplateColumns,
-  gridAutoRows, gridAutoColumns, gridAutoFlow,
-  gridTemplateAreas, justifyItems,
+  gridTemplateRows,
+  gridTemplateColumns,
+  gridAutoRows,
+  gridAutoColumns,
+  gridAutoFlow,
+  gridTemplateAreas,
+  justifyItems,
 };
 ```
 
 ### 5-2. Column.tsx — grid child props 등록
 
 ```typescript
-const {
-  gridRow, gridColumn, justifySelf,
-  ...rest
-} = props;
+const { gridRow, gridColumn, justifySelf, ...rest } = props;
 ```
 
 ### 5-3. index.ts — 새 타입 export
 
 ```typescript
 export type {
-  CssGridTrackSize, CssGridTrackList, CssGridAutoFlow,
-  CssGridPlacement, CssGridLine, CssGridTemplateAreas,
+  CssGridTrackSize,
+  CssGridTrackList,
+  CssGridAutoFlow,
+  CssGridPlacement,
+  CssGridLine,
+  CssGridTemplateAreas,
 } from "./types";
 ```
 
