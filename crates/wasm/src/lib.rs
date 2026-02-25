@@ -213,6 +213,7 @@ impl TableEngine {
             row_height: vp.row_height,
             header_height: vp.header_height,
             scroll_top: vp.scroll_top,
+            line_height: vp.line_height,
         };
 
         let columns: Vec<ColumnLayout> = cols.into_iter().map(|c| convert_column(&c)).collect();
@@ -297,6 +298,12 @@ struct JsViewport {
     header_height: f32,
     #[serde(rename = "scrollTop")]
     scroll_top: f32,
+    #[serde(rename = "lineHeight", default = "default_line_height")]
+    line_height: f32,
+}
+
+fn default_line_height() -> f32 {
+    20.0
 }
 
 #[derive(serde::Deserialize)]

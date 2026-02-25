@@ -1,10 +1,5 @@
 import type { CellLayout } from "../types";
-import {
-  readCellX,
-  readCellY,
-  readCellWidth,
-  readCellHeight,
-} from "../adapter/layout-reader";
+import { readCellX, readCellY, readCellWidth, readCellHeight } from "../adapter/layout-reader";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -69,10 +64,7 @@ export function computeHeaderLines(
  * Compute data-area grid lines from CellLayout objects.
  * Horizontal lines span full canvasW; vertical left border sits at first cell's x.
  */
-export function computeDataLines(
-  layouts: CellLayout[],
-  canvasW: number,
-): GridLineSpec {
+export function computeDataLines(layouts: CellLayout[], canvasW: number): GridLineSpec {
   if (layouts.length === 0) return { horizontal: [], vertical: [] };
 
   let gridMaxX = 0;
