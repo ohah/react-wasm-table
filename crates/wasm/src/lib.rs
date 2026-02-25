@@ -4,7 +4,11 @@
 
 use react_wasm_table_core::columnar_store::ColumnarStore;
 use react_wasm_table_core::data_store::ColumnDef;
-use react_wasm_table_core::layout::{Align, ColumnLayout, LayoutEngine, Viewport};
+use react_wasm_table_core::layout::{
+    Align, AlignValue, BoxSizingValue, ColumnLayout, ContainerLayout, DimensionValue, DisplayValue,
+    FlexDirectionValue, FlexWrapValue, LayoutEngine, LengthAutoValue, LengthValue, OverflowValue,
+    PositionValue, RectValue, Viewport,
+};
 use react_wasm_table_core::layout_buffer;
 use react_wasm_table_core::sorting::{SortConfig, SortDirection};
 use wasm_bindgen::prelude::*;
@@ -166,6 +170,7 @@ impl TableEngine {
         scroll_top: f64,
         viewport_js: JsValue,
         columns_js: JsValue,
+        container_js: JsValue,
     ) -> Result<Vec<f64>, JsError> {
         // 1. Rebuild view indices
         self.columnar.rebuild_view();
@@ -183,9 +188,16 @@ impl TableEngine {
         let virtual_slice =
             react_wasm_table_core::virtual_scroll::compute_virtual_slice(&scroll_state);
 
-        // 3. Parse viewport + columns for layout
+        // 3. Parse viewport + columns + container for layout
         let vp: JsViewport = serde_wasm_bindgen::from_value(viewport_js)?;
         let cols: Vec<JsColumnLayout> = serde_wasm_bindgen::from_value(columns_js)?;
+
+        let container = if container_js.is_undefined() || container_js.is_null() {
+            ContainerLayout::default()
+        } else {
+            let jc: JsContainerLayout = serde_wasm_bindgen::from_value(container_js)?;
+            convert_container(&jc)
+        };
 
         let viewport = Viewport {
             width: vp.width,
@@ -195,21 +207,7 @@ impl TableEngine {
             scroll_top: vp.scroll_top,
         };
 
-        let columns: Vec<ColumnLayout> = cols
-            .into_iter()
-            .map(|c| ColumnLayout {
-                width: c.width,
-                flex_grow: c.flex_grow,
-                flex_shrink: c.flex_shrink,
-                min_width: c.min_width,
-                max_width: c.max_width,
-                align: match c.align.as_deref() {
-                    Some("center") => Align::Center,
-                    Some("right") => Align::Right,
-                    _ => Align::Left,
-                },
-            })
-            .collect();
+        let columns: Vec<ColumnLayout> = cols.into_iter().map(|c| convert_column(&c)).collect();
 
         // 4. Compute layout into buffer
         let col_count = columns.len();
@@ -226,6 +224,7 @@ impl TableEngine {
         self.layout_cell_count = self.layout.compute_into_buffer(
             &columns,
             &viewport,
+            &container,
             virtual_slice.start_index..virtual_slice.end_index,
             &mut self.layout_buf,
         );
@@ -278,6 +277,7 @@ struct JsViewport {
 
 #[derive(serde::Deserialize)]
 struct JsColumnLayout {
+    #[serde(default)]
     width: f32,
     #[serde(rename = "flexGrow", default)]
     flex_grow: f32,
@@ -287,5 +287,260 @@ struct JsColumnLayout {
     min_width: Option<f32>,
     #[serde(rename = "maxWidth")]
     max_width: Option<f32>,
+    #[serde(default)]
     align: Option<String>,
+    // New flex child properties
+    #[serde(rename = "flexBasis")]
+    flex_basis: Option<JsDimension>,
+    #[serde(default)]
+    height: Option<JsDimension>,
+    #[serde(rename = "minHeight")]
+    min_height: Option<JsDimension>,
+    #[serde(rename = "maxHeight")]
+    max_height: Option<JsDimension>,
+    #[serde(rename = "alignSelf")]
+    align_self: Option<String>,
+    #[serde(default)]
+    padding: Option<JsRect>,
+    #[serde(default)]
+    margin: Option<JsRect>,
+    #[serde(default)]
+    border: Option<JsRect>,
+    #[serde(rename = "boxSizing")]
+    box_sizing: Option<String>,
+    #[serde(rename = "aspectRatio")]
+    aspect_ratio: Option<f32>,
+    #[serde(default)]
+    position: Option<String>,
+    #[serde(default)]
+    inset: Option<JsRect>,
+}
+
+#[derive(serde::Deserialize)]
+struct JsContainerLayout {
+    #[serde(default)]
+    display: Option<String>,
+    #[serde(rename = "flexDirection")]
+    flex_direction: Option<String>,
+    #[serde(rename = "flexWrap")]
+    flex_wrap: Option<String>,
+    #[serde(default)]
+    gap: Option<JsDimension>,
+    #[serde(rename = "rowGap")]
+    row_gap: Option<JsDimension>,
+    #[serde(rename = "columnGap")]
+    column_gap: Option<JsDimension>,
+    #[serde(rename = "alignItems")]
+    align_items: Option<String>,
+    #[serde(rename = "alignContent")]
+    align_content: Option<String>,
+    #[serde(rename = "justifyContent")]
+    justify_content: Option<String>,
+    #[serde(rename = "overflowX")]
+    overflow_x: Option<String>,
+    #[serde(rename = "overflowY")]
+    overflow_y: Option<String>,
+    #[serde(rename = "scrollbarWidth")]
+    scrollbar_width: Option<f32>,
+    #[serde(default)]
+    padding: Option<JsRect>,
+    #[serde(default)]
+    margin: Option<JsRect>,
+    #[serde(default)]
+    border: Option<JsRect>,
+}
+
+/// A CSS dimension: number (px) or string ("50%", "auto").
+#[derive(serde::Deserialize, Clone)]
+#[serde(untagged)]
+enum JsDimension {
+    Number(f32),
+    Str(String),
+}
+
+/// A CSS rect with top/right/bottom/left.
+#[derive(serde::Deserialize, Default)]
+struct JsRect {
+    #[serde(default)]
+    top: Option<JsDimension>,
+    #[serde(default)]
+    right: Option<JsDimension>,
+    #[serde(default)]
+    bottom: Option<JsDimension>,
+    #[serde(default)]
+    left: Option<JsDimension>,
+}
+
+// ── Conversion helpers ───────────────────────────────────────────────
+
+fn parse_dimension(d: &Option<JsDimension>) -> DimensionValue {
+    match d {
+        None => DimensionValue::Auto,
+        Some(JsDimension::Number(v)) => DimensionValue::Length(*v),
+        Some(JsDimension::Str(s)) => {
+            if s == "auto" {
+                DimensionValue::Auto
+            } else if let Some(pct) = s.strip_suffix('%') {
+                pct.parse::<f32>()
+                    .map_or(DimensionValue::Auto, |v| DimensionValue::Percent(v / 100.0))
+            } else {
+                s.parse::<f32>()
+                    .map_or(DimensionValue::Auto, DimensionValue::Length)
+            }
+        }
+    }
+}
+
+fn parse_length(d: &Option<JsDimension>) -> LengthValue {
+    match d {
+        None => LengthValue::Zero,
+        Some(JsDimension::Number(v)) => LengthValue::Length(*v),
+        Some(JsDimension::Str(s)) => {
+            if let Some(pct) = s.strip_suffix('%') {
+                pct.parse::<f32>()
+                    .map_or(LengthValue::Zero, |v| LengthValue::Percent(v / 100.0))
+            } else {
+                s.parse::<f32>()
+                    .map_or(LengthValue::Zero, LengthValue::Length)
+            }
+        }
+    }
+}
+
+fn parse_length_auto(d: &Option<JsDimension>) -> LengthAutoValue {
+    match d {
+        None => LengthAutoValue::Auto,
+        Some(JsDimension::Number(v)) => LengthAutoValue::Length(*v),
+        Some(JsDimension::Str(s)) => {
+            if s == "auto" {
+                LengthAutoValue::Auto
+            } else if let Some(pct) = s.strip_suffix('%') {
+                pct.parse::<f32>().map_or(LengthAutoValue::Auto, |v| {
+                    LengthAutoValue::Percent(v / 100.0)
+                })
+            } else {
+                s.parse::<f32>()
+                    .map_or(LengthAutoValue::Auto, LengthAutoValue::Length)
+            }
+        }
+    }
+}
+
+fn parse_length_rect(r: &Option<JsRect>) -> RectValue<LengthValue> {
+    match r {
+        None => RectValue::default(),
+        Some(r) => RectValue {
+            top: parse_length(&r.top),
+            right: parse_length(&r.right),
+            bottom: parse_length(&r.bottom),
+            left: parse_length(&r.left),
+        },
+    }
+}
+
+fn parse_length_auto_rect(r: &Option<JsRect>) -> RectValue<LengthAutoValue> {
+    match r {
+        None => RectValue::zero_auto(),
+        Some(r) => RectValue {
+            top: parse_length_auto(&r.top),
+            right: parse_length_auto(&r.right),
+            bottom: parse_length_auto(&r.bottom),
+            left: parse_length_auto(&r.left),
+        },
+    }
+}
+
+fn parse_align_value(s: &Option<String>) -> Option<AlignValue> {
+    s.as_deref().map(|v| match v {
+        "start" => AlignValue::Start,
+        "end" => AlignValue::End,
+        "flex-start" => AlignValue::FlexStart,
+        "flex-end" => AlignValue::FlexEnd,
+        "center" => AlignValue::Center,
+        "baseline" => AlignValue::Baseline,
+        "stretch" => AlignValue::Stretch,
+        "space-between" => AlignValue::SpaceBetween,
+        "space-evenly" => AlignValue::SpaceEvenly,
+        "space-around" => AlignValue::SpaceAround,
+        _ => AlignValue::Start,
+    })
+}
+
+fn convert_column(c: &JsColumnLayout) -> ColumnLayout {
+    ColumnLayout {
+        width: c.width,
+        flex_grow: c.flex_grow,
+        flex_shrink: c.flex_shrink,
+        min_width: c.min_width,
+        max_width: c.max_width,
+        align: match c.align.as_deref() {
+            Some("center") => Align::Center,
+            Some("right") => Align::Right,
+            _ => Align::Left,
+        },
+        flex_basis: parse_dimension(&c.flex_basis),
+        height: parse_dimension(&c.height),
+        min_height: parse_dimension(&c.min_height),
+        max_height: parse_dimension(&c.max_height),
+        align_self: parse_align_value(&c.align_self),
+        padding: parse_length_rect(&c.padding),
+        margin: parse_length_auto_rect(&c.margin),
+        border: parse_length_rect(&c.border),
+        box_sizing: match c.box_sizing.as_deref() {
+            Some("content-box") => BoxSizingValue::ContentBox,
+            _ => BoxSizingValue::BorderBox,
+        },
+        aspect_ratio: c.aspect_ratio,
+        position: match c.position.as_deref() {
+            Some("absolute") => PositionValue::Absolute,
+            _ => PositionValue::Relative,
+        },
+        inset: parse_length_auto_rect(&c.inset),
+    }
+}
+
+fn convert_container(c: &JsContainerLayout) -> ContainerLayout {
+    ContainerLayout {
+        display: match c.display.as_deref() {
+            Some("none") => DisplayValue::None,
+            Some("block") => DisplayValue::Block,
+            _ => DisplayValue::Flex,
+        },
+        flex_direction: match c.flex_direction.as_deref() {
+            Some("column") => FlexDirectionValue::Column,
+            Some("row-reverse") => FlexDirectionValue::RowReverse,
+            Some("column-reverse") => FlexDirectionValue::ColumnReverse,
+            _ => FlexDirectionValue::Row,
+        },
+        flex_wrap: match c.flex_wrap.as_deref() {
+            Some("wrap") => FlexWrapValue::Wrap,
+            Some("wrap-reverse") => FlexWrapValue::WrapReverse,
+            _ => FlexWrapValue::NoWrap,
+        },
+        gap: parse_length(&c.gap),
+        row_gap: c.row_gap.as_ref().map(|d| parse_length(&Some(d.clone()))),
+        column_gap: c
+            .column_gap
+            .as_ref()
+            .map(|d| parse_length(&Some(d.clone()))),
+        align_items: parse_align_value(&c.align_items),
+        align_content: parse_align_value(&c.align_content),
+        justify_content: parse_align_value(&c.justify_content),
+        overflow_x: match c.overflow_x.as_deref() {
+            Some("clip") => OverflowValue::Clip,
+            Some("hidden") => OverflowValue::Hidden,
+            Some("scroll") => OverflowValue::Scroll,
+            _ => OverflowValue::Visible,
+        },
+        overflow_y: match c.overflow_y.as_deref() {
+            Some("clip") => OverflowValue::Clip,
+            Some("hidden") => OverflowValue::Hidden,
+            Some("scroll") => OverflowValue::Scroll,
+            _ => OverflowValue::Visible,
+        },
+        scrollbar_width: c.scrollbar_width.unwrap_or(0.0),
+        padding: parse_length_rect(&c.padding),
+        margin: parse_length_auto_rect(&c.margin),
+        border: parse_length_rect(&c.border),
+    }
 }
