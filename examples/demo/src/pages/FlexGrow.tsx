@@ -111,9 +111,9 @@ export function FlexGrow() {
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
           <Grid data={data} width={800} height={400}>
-            <Column id="name" width={150} header="Name" flexGrow={grow1} />
-            <Column id="dept" header="Department" flexGrow={grow2} flexBasis={basisProp} />
-            <Column id="salary" width={300} header="Salary" align="right" flexShrink={shrink} />
+            <Column id="name" width={150} header="Name" flexGrow={grow1} padding={[0, 8]} />
+            <Column id="dept" header="Department" flexGrow={grow2} flexBasis={basisProp} padding={[0, 8]} />
+            <Column id="salary" width={300} header="Salary" align="right" flexShrink={shrink} padding={[0, 8]} />
           </Grid>
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />

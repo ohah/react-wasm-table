@@ -3,16 +3,16 @@ import { Grid, type ColumnDef } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
 
 const columns: ColumnDef[] = [
-  { id: "id", width: 70, header: "ID", sortable: true, align: "right" },
-  { id: "name", width: 180, header: "Name", sortable: true },
-  { id: "email", width: 260, header: "Email", sortable: true },
-  { id: "department", width: 130, header: "Department", sortable: true },
-  { id: "title", width: 180, header: "Title", sortable: true },
-  { id: "salary", width: 110, header: "Salary", sortable: true, align: "right" },
-  { id: "startDate", width: 110, header: "Start Date", sortable: true },
-  { id: "isActive", width: 80, header: "Active", sortable: true, align: "center" },
-  { id: "performanceScore", width: 80, header: "Score", sortable: true, align: "right" },
-  { id: "teamSize", width: 80, header: "Team", sortable: true, align: "right" },
+  { id: "id", width: 70, header: "ID", sortable: true, align: "right", padding: [0, 8] },
+  { id: "name", width: 180, header: "Name", sortable: true, padding: [0, 8] },
+  { id: "email", width: 260, header: "Email", sortable: true, padding: [0, 8] },
+  { id: "department", width: 130, header: "Department", sortable: true, padding: [0, 8] },
+  { id: "title", width: 180, header: "Title", sortable: true, padding: [0, 8] },
+  { id: "salary", width: 110, header: "Salary", sortable: true, align: "right", padding: [0, 8] },
+  { id: "startDate", width: 110, header: "Start Date", sortable: true, padding: [0, 8] },
+  { id: "isActive", width: 80, header: "Active", sortable: true, align: "center", padding: [0, 8] },
+  { id: "performanceScore", width: 80, header: "Score", sortable: true, align: "right", padding: [0, 8] },
+  { id: "teamSize", width: 80, header: "Team", sortable: true, align: "right", padding: [0, 8] },
 ];
 
 export function Home() {

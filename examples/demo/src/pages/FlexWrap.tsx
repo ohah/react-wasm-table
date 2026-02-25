@@ -55,10 +55,10 @@ export function FlexWrap() {
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
           <Grid data={data} width={500} height={400} flexWrap={wrap}>
-            <Column id="name" width={200} header="Name" />
-            <Column id="dept" width={200} header="Department" />
-            <Column id="salary" width={200} header="Salary" align="right" />
-            <Column id="score" width={200} header="Score" align="right" />
+            <Column id="name" width={200} header="Name" padding={[0, 8]} />
+            <Column id="dept" width={200} header="Department" padding={[0, 8]} />
+            <Column id="salary" width={200} header="Salary" align="right" padding={[0, 8]} />
+            <Column id="score" width={200} header="Score" align="right" padding={[0, 8]} />
           </Grid>
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />

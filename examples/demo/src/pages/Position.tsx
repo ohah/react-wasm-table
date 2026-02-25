@@ -89,7 +89,7 @@ export function Position() {
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
           <Grid data={data} width={800} height={400}>
-            <Column id="name" width={180} header="Name" />
+            <Column id="name" width={180} header="Name" padding={[0, 8]} />
             <Column
               id="dept"
               width={120}
@@ -97,9 +97,10 @@ export function Position() {
               position={pos}
               insetLeft={insetLeft}
               insetTop={insetTop}
+              padding={[0, 8]}
             />
-            <Column id="salary" width={100} header="Salary" align="right" />
-            <Column id="score" width={80} header="Score" align="right" />
+            <Column id="salary" width={100} header="Salary" align="right" padding={[0, 8]} />
+            <Column id="score" width={80} header="Score" align="right" padding={[0, 8]} />
           </Grid>
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
