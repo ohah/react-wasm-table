@@ -11,9 +11,13 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -47,6 +51,19 @@ jobs:
 
       - name: Run E2E tests
         run: cd e2e && bunx playwright test
+
+      - name: Commit and push snapshot updates
+        if: success() && github.event_name == 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add e2e/tests/
+          if git diff --staged --quiet; then
+            echo "No snapshot changes to commit."
+          else
+            git commit -m "chore(e2e): update snapshots from CI [skip ci]"
+            git push origin HEAD:refs/heads/${{ github.head_ref }}
+          fi
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
