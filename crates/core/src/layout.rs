@@ -307,6 +307,9 @@ pub struct Viewport {
     pub row_height: f32,
     pub header_height: f32,
     pub scroll_top: f32,
+    /// Approximate single-line text height (fontSize * lineHeightRatio).
+    /// Used as default min-height for auto-height columns.
+    pub line_height: f32,
 }
 
 /// Computed layout for a single cell.
@@ -539,7 +542,7 @@ impl LayoutEngine {
     }
 
     /// Build a Taffy style for a column child node.
-    fn column_style(col: &ColumnLayout, height: f32) -> Style {
+    fn column_style(col: &ColumnLayout, line_height: f32) -> Style {
         log::debug!(
             "[layout] column_style: w={}, grow={}, shrink={}, basis={:?}, align_self={:?}",
             col.width,
@@ -556,7 +559,7 @@ impl LayoutEngine {
                     Dimension::auto()
                 },
                 height: match col.height {
-                    DimensionValue::Auto => Dimension::length(height),
+                    DimensionValue::Auto => Dimension::auto(),
                     DimensionValue::Length(v) => Dimension::length(v),
                     DimensionValue::Percent(v) => Dimension::percent(v),
                 },
@@ -566,7 +569,13 @@ impl LayoutEngine {
             flex_basis: dimension_to_taffy(col.flex_basis),
             min_size: Size {
                 width: col.min_width.map_or(Dimension::auto(), Dimension::length),
-                height: dimension_to_taffy(col.min_height),
+                // Leaf nodes have no intrinsic content size; use line_height
+                // as the default minimum so align-items start/center/end
+                // produce visible cells.
+                height: match col.min_height {
+                    DimensionValue::Auto => Dimension::length(line_height),
+                    other => dimension_to_taffy(other),
+                },
             },
             max_size: Size {
                 width: col.max_width.map_or(Dimension::auto(), Dimension::length),
@@ -607,6 +616,7 @@ impl LayoutEngine {
         container: &ContainerLayout,
         viewport_width: f32,
         row_height: f32,
+        line_height: f32,
     ) -> Vec<ColumnPosition> {
         log::debug!(
             "[layout] compute_column_positions: cols={}, viewport_width={}, row_height={}",
@@ -624,7 +634,7 @@ impl LayoutEngine {
             .iter()
             .map(|col| {
                 self.tree
-                    .new_leaf(Self::column_style(col, row_height))
+                    .new_leaf(Self::column_style(col, line_height))
                     .expect("failed to create child node")
             })
             .collect();
@@ -779,6 +789,7 @@ impl LayoutEngine {
             container,
             viewport.width,
             viewport.header_height,
+            viewport.line_height,
         );
 
         positions
@@ -811,8 +822,13 @@ impl LayoutEngine {
         }
 
         // Compute column positions once — all rows share the same x/width
-        let positions =
-            self.compute_column_positions(columns, container, viewport.width, viewport.row_height);
+        let positions = self.compute_column_positions(
+            columns,
+            container,
+            viewport.width,
+            viewport.row_height,
+            viewport.line_height,
+        );
 
         let mut result =
             Vec::with_capacity((visible_range.end - visible_range.start) * columns.len());
@@ -884,6 +900,7 @@ impl LayoutEngine {
             container,
             viewport.width,
             viewport.header_height,
+            viewport.line_height,
         );
 
         // Write header cells
@@ -907,7 +924,13 @@ impl LayoutEngine {
 
         // Re-compute positions for row height if different from header height
         let row_positions = if (viewport.row_height - viewport.header_height).abs() > f32::EPSILON {
-            self.compute_column_positions(columns, container, viewport.width, viewport.row_height)
+            self.compute_column_positions(
+                columns,
+                container,
+                viewport.width,
+                viewport.row_height,
+                viewport.line_height,
+            )
         } else {
             positions
         };
@@ -960,6 +983,7 @@ mod tests {
             row_height: 36.0,
             header_height: 40.0,
             scroll_top: 0.0,
+            line_height: 20.0,
         }
     }
 

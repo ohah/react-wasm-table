@@ -437,6 +437,7 @@ export function Grid({
           rowHeight,
           headerHeight,
           scrollTop: scrollTopRef.current,
+          lineHeight: Math.ceil(theme.fontSize * 1.5),
         };
 
         const isGrid = display === "grid";
