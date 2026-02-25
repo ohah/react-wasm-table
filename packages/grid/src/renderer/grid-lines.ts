@@ -1,10 +1,5 @@
 import type { CellLayout } from "../types";
-import {
-  readCellX,
-  readCellY,
-  readCellWidth,
-  readCellHeight,
-} from "../adapter/layout-reader";
+import { readCellX, readCellY, readCellWidth, readCellHeight } from "../adapter/layout-reader";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -69,10 +64,7 @@ export function computeHeaderLines(
  * Compute data-area grid lines from CellLayout objects.
  * Horizontal lines span full canvasW; vertical left border sits at first cell's x.
  */
-export function computeDataLines(
-  layouts: CellLayout[],
-  canvasW: number,
-): GridLineSpec {
+export function computeDataLines(layouts: CellLayout[], canvasW: number): GridLineSpec {
   if (layouts.length === 0) return { horizontal: [], vertical: [] };
 
   let gridMaxX = 0;
@@ -99,9 +91,7 @@ export function computeDataLines(
     horizontal.push({ y: edge + 0.5, x1: 0, x2: canvasW });
   }
 
-  const vertical: VLine[] = [
-    { x: firstColX + 0.25, y1: minY, y2: maxY },
-  ];
+  const vertical: VLine[] = [{ x: firstColX + 0.25, y1: minY, y2: maxY }];
   for (const edge of colEdges) {
     const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
     vertical.push({ x, y1: minY, y2: maxY });
@@ -134,9 +124,7 @@ export function computeHeaderLinesFromBuffer(
     { y: headerHeight - 0.25, x1: 0, x2: canvasW },
   ];
 
-  const vertical: VLine[] = [
-    { x: firstX + 0.25, y1: 0, y2: headerHeight },
-  ];
+  const vertical: VLine[] = [{ x: firstX + 0.25, y1: 0, y2: headerHeight }];
 
   const colEdges = new Set<number>();
   for (let i = 0; i < headerCount; i++) {
@@ -190,9 +178,7 @@ export function computeDataLinesFromBuffer(
     horizontal.push({ y: edge + 0.5, x1: 0, x2: canvasW });
   }
 
-  const vertical: VLine[] = [
-    { x: firstColX + 0.25, y1: minY, y2: maxY },
-  ];
+  const vertical: VLine[] = [{ x: firstColX + 0.25, y1: minY, y2: maxY }];
   for (const edge of colEdges) {
     const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
     vertical.push({ x, y1: minY, y2: maxY });

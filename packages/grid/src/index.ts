@@ -20,7 +20,11 @@ export { EditorManager } from "./adapter/editor-manager";
 
 // Renderer
 export { CanvasRenderer } from "./renderer/canvas-renderer";
-export { drawTextCellFromBuffer, drawBadgeFromBuffer, measureText } from "./renderer/draw-primitives";
+export {
+  drawTextCellFromBuffer,
+  drawBadgeFromBuffer,
+  measureText,
+} from "./renderer/draw-primitives";
 
 // Debug
 export { createLogger } from "./debug/logger";

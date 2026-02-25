@@ -4,36 +4,36 @@ react-wasm-table exposes a CSS-like API but runs layout through Taffy (Rust flex
 
 ## Supported units
 
-| Unit | CSS | react-wasm-table |
-|------|-----|-----------------|
-| `px` (number) | `padding: 8px` | `padding={8}` |
-| `%` | `padding: 50%` | `padding="50%"` |
-| `auto` | `margin: auto` | `margin="auto"` |
-| `rem` / `em` | `padding: 1rem` | Not supported |
-| `vh` / `vw` | `width: 100vh` | Not supported |
-| `ch` / `ex` | `width: 10ch` | Not supported |
-| `calc()` | `width: calc(100% - 8px)` | Not supported |
-| `min()` / `max()` / `clamp()` | `width: clamp(100px, 50%, 200px)` | Not supported |
+| Unit                          | CSS                               | react-wasm-table |
+| ----------------------------- | --------------------------------- | ---------------- |
+| `px` (number)                 | `padding: 8px`                    | `padding={8}`    |
+| `%`                           | `padding: 50%`                    | `padding="50%"`  |
+| `auto`                        | `margin: auto`                    | `margin="auto"`  |
+| `rem` / `em`                  | `padding: 1rem`                   | Not supported    |
+| `vh` / `vw`                   | `width: 100vh`                    | Not supported    |
+| `ch` / `ex`                   | `width: 10ch`                     | Not supported    |
+| `calc()`                      | `width: calc(100% - 8px)`         | Not supported    |
+| `min()` / `max()` / `clamp()` | `width: clamp(100px, 50%, 200px)` | Not supported    |
 
 ## Rect shorthand syntax
 
 CSS rect properties (padding, margin, border, inset) use a tuple/array syntax instead of CSS string shorthand.
 
-| CSS | react-wasm-table |
-|-----|-----------------|
-| `padding: 8px` | `padding={8}` |
-| `padding: 0 8px` | `padding={[0, 8]}` |
-| `padding: 0 8px 4px` | `padding={[0, 8, 4]}` |
-| `padding: 0 8px 4px 12px` | `padding={[0, 8, 4, 12]}` |
-| `"0 8px"` (string) | Not supported, use `{[0, 8]}` |
+| CSS                       | react-wasm-table              |
+| ------------------------- | ----------------------------- |
+| `padding: 8px`            | `padding={8}`                 |
+| `padding: 0 8px`          | `padding={[0, 8]}`            |
+| `padding: 0 8px 4px`      | `padding={[0, 8, 4]}`         |
+| `padding: 0 8px 4px 12px` | `padding={[0, 8, 4, 12]}`     |
+| `"0 8px"` (string)        | Not supported, use `{[0, 8]}` |
 
 ## Default values
 
-| Property | CSS default | react-wasm-table default |
-|----------|------------|------------------------|
-| `padding` | `0` | `0` |
-| `position` | `static` | `relative` (Taffy default) |
-| `box-sizing` | `content-box` | `border-box` |
+| Property     | CSS default   | react-wasm-table default   |
+| ------------ | ------------- | -------------------------- |
+| `padding`    | `0`           | `0`                        |
+| `position`   | `static`      | `relative` (Taffy default) |
+| `box-sizing` | `content-box` | `border-box`               |
 
 ## Layout model
 

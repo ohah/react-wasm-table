@@ -108,13 +108,7 @@ export function AlignItems() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid
-            data={data}
-            width={800}
-            height={400}
-            rowHeight={60}
-            alignItems={alignItemsValue}
-          >
+          <CssGrid data={data} width={800} height={400} rowHeight={60} alignItems={alignItemsValue}>
             <CssColumn id="name" width={180} header="Name" />
             <CssColumn
               id="dept"
