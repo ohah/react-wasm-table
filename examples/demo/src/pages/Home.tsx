@@ -11,7 +11,14 @@ const columns: ColumnDef[] = [
   { id: "salary", width: 110, header: "Salary", sortable: true, align: "right", padding: [0, 8] },
   { id: "startDate", width: 110, header: "Start Date", sortable: true, padding: [0, 8] },
   { id: "isActive", width: 80, header: "Active", sortable: true, align: "center", padding: [0, 8] },
-  { id: "performanceScore", width: 80, header: "Score", sortable: true, align: "right", padding: [0, 8] },
+  {
+    id: "performanceScore",
+    width: 80,
+    header: "Score",
+    sortable: true,
+    align: "right",
+    padding: [0, 8],
+  },
   { id: "teamSize", width: 80, header: "Team", sortable: true, align: "right", padding: [0, 8] },
 ];
 

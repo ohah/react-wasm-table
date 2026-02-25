@@ -256,7 +256,12 @@ describe("computeDataLinesFromBuffer", () => {
 
   it("returns empty when no data cells", () => {
     const buf = toBuffer(HEADER_START);
-    const spec = computeDataLinesFromBuffer(buf, HEADER_START.length, HEADER_START.length, CANVAS_W);
+    const spec = computeDataLinesFromBuffer(
+      buf,
+      HEADER_START.length,
+      HEADER_START.length,
+      CANVAS_W,
+    );
     expect(spec.horizontal).toHaveLength(0);
     expect(spec.vertical).toHaveLength(0);
   });

@@ -5,11 +5,7 @@ import {
   computeDataLinesFromBuffer,
   type GridLineSpec,
 } from "./grid-lines";
-import {
-  readCellRow,
-  readCellY,
-  readCellHeight,
-} from "../adapter/layout-reader";
+import { readCellRow, readCellY, readCellHeight } from "../adapter/layout-reader";
 
 /**
  * Draws the grid onto a <canvas> 2D context.
@@ -186,10 +182,7 @@ export class CanvasRenderer {
 
     // Header grid lines
     if (headerCount > 0) {
-      this.strokeLines(
-        ctx,
-        computeHeaderLinesFromBuffer(buf, headerCount, canvasW, headerHeight),
-      );
+      this.strokeLines(ctx, computeHeaderLinesFromBuffer(buf, headerCount, canvasW, headerHeight));
     }
 
     // Data area grid lines (clipped)
@@ -198,10 +191,7 @@ export class CanvasRenderer {
       ctx.beginPath();
       ctx.rect(0, headerHeight, canvasW, canvasH - headerHeight);
       ctx.clip();
-      this.strokeLines(
-        ctx,
-        computeDataLinesFromBuffer(buf, headerCount, totalCount, canvasW),
-      );
+      this.strokeLines(ctx, computeDataLinesFromBuffer(buf, headerCount, totalCount, canvasW));
       ctx.restore();
     }
   }
