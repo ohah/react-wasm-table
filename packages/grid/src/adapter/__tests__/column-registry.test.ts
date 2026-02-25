@@ -65,4 +65,31 @@ describe("ColumnRegistry", () => {
     reg.register("name", col("name"));
     expect(cb).not.toHaveBeenCalled();
   });
+
+  // setAll tests
+  it("setAll replaces all columns at once", () => {
+    const reg = new ColumnRegistry();
+    reg.register("old", col("old"));
+    reg.setAll([col("a"), col("b"), col("c")]);
+    expect(reg.size).toBe(3);
+    expect(reg.getAll().map((c) => c.id)).toEqual(["a", "b", "c"]);
+    expect(reg.get("old")).toBeUndefined();
+  });
+
+  it("setAll notifies listeners once", () => {
+    const reg = new ColumnRegistry();
+    const cb = mock(() => {});
+    reg.onChange(cb);
+    reg.setAll([col("a"), col("b")]);
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it("setAll with empty array clears all columns", () => {
+    const reg = new ColumnRegistry();
+    reg.register("a", col("a"));
+    reg.register("b", col("b"));
+    reg.setAll([]);
+    expect(reg.size).toBe(0);
+    expect(reg.getAll()).toEqual([]);
+  });
 });

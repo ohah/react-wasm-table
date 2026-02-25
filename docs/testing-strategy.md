@@ -11,20 +11,53 @@ their contract holds.
 
 ## Module Test Matrix
 
-| Module          | Runner           | Environment                 | Mock deps?              | Key technique                  |
-| --------------- | ---------------- | --------------------------- | ----------------------- | ------------------------------ |
-| **core** (Rust) | `cargo test`     | Native                      | None needed             | Pure functions, no I/O         |
-| **wasm** (Rust) | `wasm-pack test` | Headless browser            | None needed             | Round-trip serialization       |
-| **adapter**     | `bun test`       | happy-dom                   | WASM module mocked      | Class unit tests               |
-| **renderer**    | `bun test`       | happy-dom + OffscreenCanvas | None needed             | Draw call recording            |
-| **react**       | `bun test`       | happy-dom                   | Adapter/renderer mocked | React Testing Library patterns |
-| **integration** | `bun test`       | Playwright                  | Real WASM + real canvas | Pixel/interaction tests        |
+| Module          | Runner       | Environment   | Mock deps?              | Key technique            |
+| --------------- | ------------ | ------------- | ----------------------- | ------------------------ |
+| **core** (Rust) | `cargo test` | Native        | None needed             | Pure functions, no I/O   |
+| **adapter**     | `bun test`   | happy-dom     | WASM module mocked      | Class unit tests         |
+| **renderer**    | `bun test`   | happy-dom     | None needed             | Draw call recording      |
+| **react**       | `bun test`   | happy-dom     | Adapter/renderer mocked | Component lifecycle      |
 
 ---
 
 ## 1. core (Rust) — `cargo test -p react-wasm-table-core`
 
 No mocks, no browser, no WASM. Pure Rust unit tests.
+
+### columnar_store
+
+The primary data store. Tests cover both `ingest_rows` (serde path) and direct
+column setters (`init` → `set_column_*` → `finalize`).
+
+```rust
+#[test]
+fn direct_ingestion_roundtrip_with_sort() {
+    let mut store = ColumnarStore::new();
+    store.init(3, 4);
+    store.set_column_strings(0, &["Alice","Bob","Carol","Dave"], &[0,1,2,3]);
+    store.set_column_float64(1, &[30.0, 25.0, 35.0, 28.0]);
+    store.set_column_bool(2, &[1.0, 0.0, 1.0, f64::NAN]);
+    store.finalize();
+
+    store.set_sort(vec![SortConfig { column_index: 1, direction: Ascending }]);
+    store.rebuild_view();
+    assert_eq!(store.view_indices(), &[1, 3, 0, 2]);  // sorted by age ascending
+}
+```
+
+Coverage targets:
+
+- Column type detection (Float64, String, Bool)
+- Float64 values stored correctly
+- String interning (unique table + ID resolution)
+- Bool encoding (true→1.0, false→0.0, null→NaN)
+- Direct column setters: `init`, `set_column_float64`, `set_column_bool`, `set_column_strings`, `finalize`
+- Sort on columnar data (`sort_indices_columnar`)
+- Filter on columnar data (`filter_indices_columnar`)
+- View rebuild idempotency (second `rebuild_view` is a no-op when not dirty)
+- Scroll config stored correctly
+- Generation tracking (increments on each ingest)
+- Float64 pointer access for zero-copy
 
 ### sorting
 
@@ -33,28 +66,23 @@ No mocks, no browser, no WASM. Pure Rust unit tests.
 fn sort_ascending_numbers() {
     let mut rows = vec![vec![json!(3)], vec![json!(1)], vec![json!(2)]];
     let configs = vec![SortConfig { column_index: 0, direction: Ascending }];
-    apply_sort(&mut rows, &configs);
+    apply_sort(&mut rows, &configs, &columns);
     assert_eq!(rows, vec![vec![json!(1)], vec![json!(2)], vec![json!(3)]]);
 }
 ```
 
 Coverage targets:
 
-- Each sort direction
-- Each value type (number, string, bool, null)
+- Ascending/descending sort
+- String sort
 - Multi-column sort (primary + secondary)
-- Sort stability (equal elements preserve order)
-- Empty input
 
 ### filtering
 
 Coverage targets:
 
-- Each operator: `Equals`, `NotEquals`, `Contains`, `GreaterThan`, `LessThan`, `GreaterThanOrEqual`, `LessThanOrEqual`
-- Type coercion (string "100" vs number 100)
-- Case-insensitive `Contains`
-- Multiple conditions (all must match — AND)
-- Empty result set
+- Each operator: `Equals`, `Contains`, `GreaterThan`
+- Multiple conditions (AND logic)
 
 ### virtual_scroll
 
@@ -64,13 +92,25 @@ Coverage targets:
 - Scrolled position (middle of data)
 - Near-end boundary (don't overshoot total rows)
 - Overscan clamping (don't go below 0 or above total)
-- Edge cases: 0 rows, 1 row, fewer rows than viewport
+- Edge cases: 0 rows, fewer rows than viewport
+
+### index_ops
+
+Tests index indirection — sorting/filtering on `u32` indices without cloning row data.
+
+Coverage targets:
+
+- Identity indices generation
+- `filter_indices` with Equals, Contains
+- `sort_indices` ascending/descending
+- Pipeline: filter then sort in sequence
+- Cross-validation against `apply_sort` output
 
 ### layout (Taffy)
 
 ```rust
 #[test]
-fn fixed_width_columns_match_viewport() {
+fn fixed_width_columns() {
     let mut engine = LayoutEngine::new();
     let columns = vec![
         ColumnLayout { width: 200.0, flex_grow: 0.0, .. },
@@ -86,64 +126,62 @@ fn fixed_width_columns_match_viewport() {
 }
 
 #[test]
-fn flex_grow_distributes_remaining_space() {
+fn flex_grow_column_fills_remaining_space() {
     let mut engine = LayoutEngine::new();
     let columns = vec![
         ColumnLayout { width: 100.0, flex_grow: 0.0, .. },
         ColumnLayout { width: 0.0, flex_grow: 1.0, .. },  // takes remaining
     ];
-    let viewport = Viewport { width: 500.0, .. };
+    let viewport = Viewport { width: 600.0, .. };
     let layouts = engine.compute_header_layout(&columns, &viewport);
 
     assert_eq!(layouts[0].width, 100.0);
-    assert_eq!(layouts[1].width, 400.0);  // 500 - 100
+    assert_eq!(layouts[1].width, 400.0);  // fill remaining
 }
 ```
 
 Coverage targets:
 
-- Fixed width columns
+- Fixed-width columns
 - Flex-grow distribution
-- Flex-shrink compression
 - Min/max width constraints
-- Multiple row layout (y-offset accumulation)
-- Alignment (left/center/right)
+- Row layout y-offset accumulation
+- Scroll offsets (y-position shifts, x/width unchanged)
+- Partial-row scroll offsets
+- Header always pinned at y=0 regardless of scroll
+- `compute_into_buffer` matches struct-based API output
+- Empty range handling
 
-### data_store (integration of above)
+### layout_buffer
 
 Coverage targets:
 
-- Full pipeline: set data → set sort → set filter → query → verify result
-- State management (changing sort doesn't lose data)
-- Empty data edge case
-- Large data (10K+ rows) — performance regression test
+- `write_cell` / `read_cell` round-trip (all 8 stride fields)
+- Alignment enum encoding (0.0=Left, 1.0=Center, 2.0=Right)
+- `buf_len` calculation (0→0, 1→8, 10→80)
+
+### data_store
+
+Row-major store with index indirection. Internal module, not used by WASM layer.
+
+Coverage targets:
+
+- Data loading and query
+- Sort and filter integration via `query_indexed`
+- View indices correctness after sort/filter
+- Generation tracking
+- `rebuild_view` idempotency
 
 ---
 
-## 2. wasm — `wasm-pack test --headless --chrome`
+## 2. wasm — `crates/wasm/`
 
-Tests the serialization boundary between JS types and Rust types.
+The WASM crate is a thin binding layer. All business logic is tested in `core`.
+No `wasm_bindgen_test` tests exist — correctness is verified through:
 
-```rust
-#[wasm_bindgen_test]
-fn round_trip_columns() {
-    let engine = TableEngine::new();
-    let columns = JsValue::from_serde(&json!([
-        {"key": "name", "header": "Name", "width": 200}
-    ])).unwrap();
-    engine.set_columns(columns).unwrap();
-    assert_eq!(engine.row_count(), 0);
-}
-```
-
-Coverage targets:
-
-- Column definition round-trip
-- Data loading (various types: string, number, bool, null)
-- Sort config serialization (camelCase JS → snake_case Rust)
-- Filter condition serialization
-- Query result deserialization (Rust → JsValue)
-- Error cases: malformed JSON, missing fields, wrong types
+1. Core Rust tests (all logic lives in `core`)
+2. JS adapter tests with engine mocks (verifying call sequences)
+3. Manual demo testing with real WASM module
 
 ---
 
@@ -152,85 +190,141 @@ Coverage targets:
 ### ColumnRegistry tests
 
 ```typescript
-import { describe, it, expect } from "bun:test";
-import { ColumnRegistry } from "./column-registry";
-
 describe("ColumnRegistry", () => {
-  it("maintains insertion order", () => {
-    const registry = new ColumnRegistry();
-    registry.register({ id: "b", width: 100, header: "B" });
-    registry.register({ id: "a", width: 200, header: "A" });
-    expect(registry.getAll().map((c) => c.id)).toEqual(["b", "a"]);
+  it("registers and retrieves a column", () => {
+    const reg = new ColumnRegistry();
+    reg.register("name", { id: "name", width: 200, header: "Name" });
+    expect(reg.get("name")).toBeDefined();
+    expect(reg.size).toBe(1);
   });
 
-  it("notifies subscribers on change", () => {
-    const registry = new ColumnRegistry();
+  it("calls onChange listeners on register", () => {
+    const reg = new ColumnRegistry();
     const calls: number[] = [];
-    registry.subscribe(() => calls.push(1));
-    registry.register({ id: "x", width: 100, header: "X" });
+    reg.onChange(() => calls.push(1));
+    reg.register("x", { id: "x", width: 100, header: "X" });
     expect(calls.length).toBe(1);
   });
 
-  it("cleans up on unregister", () => {
-    const registry = new ColumnRegistry();
-    registry.register({ id: "a", width: 100, header: "A" });
-    registry.unregister("a");
-    expect(registry.getAll()).toEqual([]);
+  it("unsubscribes onChange listener", () => {
+    const reg = new ColumnRegistry();
+    const calls: number[] = [];
+    const unsub = reg.onChange(() => calls.push(1));
+    unsub();
+    reg.register("x", { id: "x", width: 100, header: "X" });
+    expect(calls.length).toBe(0);
+  });
+
+  it("setAll replaces all columns at once", () => {
+    const reg = new ColumnRegistry();
+    reg.register("old", { id: "old", width: 100, header: "Old" });
+    reg.setAll([
+      { id: "a", width: 200, header: "A" },
+      { id: "b", width: 300, header: "B" },
+    ]);
+    expect(reg.get("old")).toBeUndefined();
+    expect(reg.size).toBe(2);
   });
 });
 ```
 
-### EventManager tests
+Coverage targets:
 
-Uses happy-dom with synthetic events. Mock `requestAnimationFrame`.
+- Register/unregister ordering
+- `getAll` preserves insertion order
+- Update on re-register (same ID replaces, size stays same)
+- `onChange` notification on register/unregister
+- `onChange` unsubscribe function works
+- `setAll` bulk replace (clears previous, sets new)
+- `setAll` notifies listeners once
+- `setAll` with empty array clears all
+
+### DataIngestor tests
 
 ```typescript
-describe("EventManager", () => {
-  it("resolves click to cell coordinate", () => {
-    const canvas = document.createElement("canvas");
-    const manager = new EventManager(canvas);
-    manager.setLayoutResolver((x, y) => ({ rowIndex: 0, columnId: "name" }));
+describe("classifyColumns", () => {
+  it("detects float64 columns", () => {
+    const data = [{ id: 1, salary: 50000 }];
+    expect(classifyColumns(data, ["id", "salary"])).toEqual(["float64", "float64"]);
+  });
 
-    let clicked: CellCoord | null = null;
-    manager.onCellClick((coord) => {
-      clicked = coord;
-    });
-    manager.attach();
+  it("skips null to find real type", () => {
+    const data = [{ x: null }, { x: 42 }];
+    expect(classifyColumns(data, ["x"])).toEqual(["float64"]);
+  });
 
-    canvas.dispatchEvent(new MouseEvent("click", { clientX: 50, clientY: 50 }));
-    expect(clicked).toEqual({ rowIndex: 0, columnId: "name" });
+  it("defaults to string for all-null columns", () => {
+    const data = [{ x: null }];
+    expect(classifyColumns(data, ["x"])).toEqual(["string"]);
+  });
+});
+
+describe("ingestData", () => {
+  it("calls engine methods in correct order", () => {
+    const engine = {
+      initColumnar: mock(),
+      ingestFloat64Column: mock(),
+      ingestBoolColumn: mock(),
+      ingestStringColumn: mock(),
+      finalizeColumnar: mock(),
+    };
+    ingestData(engine, data, columnIds);
+    expect(engine.initColumnar).toHaveBeenCalledWith(colCount, rowCount);
+    expect(engine.finalizeColumnar).toHaveBeenCalled();
   });
 });
 ```
 
-### EditorManager tests
+Coverage targets:
+
+- Type classification: float64, string, bool, null-skip, all-null default
+- `buildFloat64Column`: correct values, NaN for null
+- `buildBoolColumn`: true→1.0, false→0.0, null→NaN
+- `buildStringColumn`: string interning, deduplication, null→empty string (ID 0)
+- `ingestData`: engine method call order (init → ingest per column → finalize)
+
+### InstructionBuilder tests
+
+Coverage targets:
+
+- Text instruction for plain string values
+- Number-to-text conversion
+- Null/undefined → empty string
+- Render prop (`children` function) execution → custom instruction
+- Error fallback to text when render prop throws
+- Invalid return fallback to text
+
+### Scroll tests
+
+Tests extracted pure functions for scroll clamping and layout splitting.
 
 ```typescript
-describe("EditorManager", () => {
-  it("creates and positions input overlay", () => {
-    const container = document.createElement("div");
-    const manager = new EditorManager(container);
-
-    manager.open(
-      { rowIndex: 0, columnId: "name" },
-      { type: "text", value: "Alice", position: { x: 10, y: 40, width: 200, height: 36 } },
-    );
-
-    const input = container.querySelector("input");
-    expect(input).toBeTruthy();
-    expect(input!.value).toBe("Alice");
-    expect(manager.isOpen()).toBe(true);
+describe("scroll clamping", () => {
+  it("does not scroll below zero", () => {
+    expect(clampScroll(0, -100, 1000, 36, 460)).toBe(0);
   });
 
-  it("commits value on enter", () => {
-    // ...
+  it("does not scroll past maximum", () => {
+    const max = 1000 * 36 - 460;
+    expect(clampScroll(0, 999999, 1000, 36, 460)).toBe(max);
   });
+});
 
-  it("cancels on escape", () => {
-    // ...
+describe("layout split", () => {
+  it("splits header from rows by column count", () => {
+    const { header, rows } = splitLayouts(allLayouts, colCount);
+    expect(header.length).toBe(colCount);
   });
 });
 ```
+
+Coverage targets:
+
+- Scroll clamping: zero floor, max ceiling, accumulation
+- Content-fits-in-viewport case (max = 0)
+- Layout split: header vs rows by column count
+- Empty layout handling
+- Alignment normalization ("Center"→"center", "Left"→"left", etc.)
 
 ---
 
@@ -238,37 +332,16 @@ describe("EditorManager", () => {
 
 ### Approach: Draw Call Recording
 
-Instead of checking pixels, we spy on `CanvasRenderingContext2D` methods.
+Instead of checking pixels, spy on `CanvasRenderingContext2D` methods.
 
 ```typescript
-function createMockCanvas(): { canvas: HTMLCanvasElement; calls: DrawCall[] } {
-  const canvas = document.createElement("canvas");
-  const calls: DrawCall[] = [];
-  const ctx = canvas.getContext("2d")!;
-
-  // Proxy draw calls
-  const original = ctx.fillText.bind(ctx);
-  ctx.fillText = (text: string, x: number, y: number) => {
-    calls.push({ method: "fillText", args: [text, x, y] });
-    original(text, x, y);
-  };
-  // ... same for fillRect, strokeRect, etc.
-
-  return { canvas, calls };
-}
-
 describe("CanvasRenderer", () => {
   it("draws text cell at correct position", () => {
     const { canvas, calls } = createMockCanvas();
-    const renderer = new CanvasRenderer(canvas);
+    const renderer = new CanvasRenderer();
+    renderer.attach(canvas);
 
-    renderer.render({
-      headerLayouts: [],
-      headerContents: [],
-      bodyLayouts: [{ row: 0, col: 0, x: 10, y: 40, width: 200, height: 36, contentAlign: "left" }],
-      bodyContents: [{ type: "text", value: "Alice" }],
-      // ...
-    });
+    renderer.drawRowsFromBuffer(buf, 0, cellCount, getInstruction, theme, headerHeight);
 
     const textCall = calls.find((c) => c.method === "fillText" && c.args[0] === "Alice");
     expect(textCall).toBeTruthy();
@@ -276,31 +349,22 @@ describe("CanvasRenderer", () => {
 });
 ```
 
-### HitTest tests
+Coverage targets:
 
-```typescript
-describe("hitTest", () => {
-  it("returns correct cell for click inside cell bounds", () => {
-    const renderer = new CanvasRenderer(canvas);
-    renderer.render(frame); // set up layout data
-    expect(renderer.hitTest(50, 55)).toEqual({ rowIndex: 0, columnId: "name" });
-  });
-
-  it("returns null for click outside grid", () => {
-    expect(renderer.hitTest(9999, 9999)).toBeNull();
-  });
-});
-```
+- Buffer-based header drawing (`drawHeaderFromBuffer`)
+- Buffer-based row drawing (`drawRowsFromBuffer`)
+- Grid line drawing (`drawGridLinesFromBuffer`)
+- Theme application (colors, fonts)
+- Text cell positioning
+- Badge cell rendering
 
 ---
 
 ## 5. react — `bun test packages/grid/src/react/`
 
-### Component tests (React Testing Library-style)
+### Component tests
 
 ```typescript
-import { renderToString } from "react-dom/server";
-
 describe("Column", () => {
   it("registers on mount and unregisters on unmount", () => {
     const registry = new ColumnRegistry();
@@ -314,8 +378,8 @@ describe("Grid", () => {
     // render Grid → verify canvas exists in container
   });
 
-  it("passes column configs to adapter", () => {
-    // render Grid with Columns → verify adapter receives correct configs
+  it("accepts columns prop for object-based API", () => {
+    // render Grid with columns prop → verify columnRegistry.setAll called
   });
 });
 ```
@@ -324,53 +388,18 @@ The react module tests mock the adapter and renderer to test React behavior only
 
 ---
 
-## 6. Integration Tests
-
-**Runner:** Playwright (headless Chromium)
-**Path:** `tests/integration/`
-
-End-to-end tests that wire all modules together with a real canvas.
-
-```typescript
-test("scroll renders correct rows", async ({ page }) => {
-  await page.goto("http://localhost:3000");
-
-  // Verify initial render
-  const canvas = page.locator("canvas");
-  await expect(canvas).toBeVisible();
-
-  // Scroll down
-  await canvas.evaluate((el) => el.dispatchEvent(new WheelEvent("wheel", { deltaY: 500 })));
-
-  // Verify rendered content changed (via accessibility overlay or screenshot)
-});
-
-test("sort changes column order", async ({ page }) => {
-  // Click header → verify data re-renders in sorted order
-});
-
-test("editor opens on double-click", async ({ page }) => {
-  // Double-click cell → verify input overlay appears
-  // Type new value → press Enter → verify cell updated
-});
-```
-
----
-
-## Performance Tests
-
-**Path:** `tests/perf/`
+## Performance Tests (planned)
 
 Benchmark critical hot paths to prevent regressions.
 
 ```rust
 // Rust benchmarks (cargo bench)
 #[bench]
-fn bench_sort_100k_rows(b: &mut Bencher) {
-    let rows = generate_rows(100_000);
+fn bench_sort_columnar_100k(b: &mut Bencher) {
+    let store = generate_columnar_store(100_000);
+    let mut indices = identity_indices(100_000);
     b.iter(|| {
-        let mut data = rows.clone();
-        apply_sort(&mut data, &[SortConfig { column_index: 0, direction: Ascending }]);
+        sort_indices_columnar(&mut indices, &store, &configs);
     });
 }
 
@@ -379,21 +408,11 @@ fn bench_layout_30_visible_rows(b: &mut Bencher) {
     let mut engine = LayoutEngine::new();
     let columns = generate_columns(10);
     let viewport = Viewport { width: 1200.0, height: 600.0, row_height: 36.0, .. };
+    let mut buf = vec![0.0f32; buf_len(10 * 31)];  // 30 rows + header × 10 cols
     b.iter(|| {
-        engine.compute_rows_layout(&columns, &viewport, 0..30);
+        engine.compute_into_buffer(&columns, &viewport, 0..30, &mut buf);
     });
 }
-```
-
-```typescript
-// JS benchmarks (bun)
-Bun.bench("canvas render 30 rows × 10 cols", () => {
-  renderer.render(frame300cells);
-});
-
-Bun.bench("hitTest lookup", () => {
-  renderer.hitTest(500, 300);
-});
 ```
 
 ---
@@ -412,14 +431,9 @@ jobs:
     - bun test packages/
     - bun run lint:all
 
-  wasm-tests:
-    - wasm-pack test --headless --chrome
-
-  integration:
-    needs: [rust-tests, js-tests, wasm-tests]
-    - bun run build
-    - bun run test:integration
+  build:
+    needs: [rust-tests, js-tests]
+    - bun run build  # wasm + lib
 ```
 
-Rust, JS, and WASM tests run in parallel. Integration tests run only after all
-unit tests pass.
+Rust and JS tests run in parallel. Build runs only after all unit tests pass.

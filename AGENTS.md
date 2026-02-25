@@ -12,3 +12,4 @@ React Headless API → JS Adapter → WASM Core (Rust) → Canvas Renderer
 - [API Design](docs/api-design.md) — React component API, render props, editors
 - [Module Specs](docs/module-specs.md) — per-module interfaces, types, responsibilities
 - [Testing Strategy](docs/testing-strategy.md) — isolation testing, CI pipeline
+- [Code Rules](docs/code-rules.md) — legacy/unused code removal policy

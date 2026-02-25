@@ -37,33 +37,60 @@ Each module is independently testable with zero cross-module test dependencies.
 
 ### Submodules
 
-#### data_store
+#### columnar_store
 
-Manages row/column data and orchestrates query pipeline.
+Primary data store. Columnar typed arrays with view management (sort/filter on u32 indices).
 
 ```rust
-pub struct DataStore {
-    columns: Vec<ColumnDef>,
-    rows: Vec<Vec<Value>>,
+pub struct ColumnarStore {
+    pub columns: Vec<ColumnDef>,
+    pub data: Vec<ColumnData>,
+    pub row_count: usize,
+    pub generation: u64,
+    view_indices: Vec<u32>,
+    view_dirty: bool,
     sort_configs: Vec<SortConfig>,
     filter_conditions: Vec<FilterCondition>,
-    scroll_config: ScrollConfig,
+    row_height: f64,
+    viewport_height: f64,
+    overscan: usize,
 }
 
-impl DataStore {
-    pub fn new() -> Self;
-    pub fn set_columns(&mut self, columns: Vec<ColumnDef>);
-    pub fn set_data(&mut self, rows: Vec<Vec<Value>>);
+pub enum ColumnData {
+    Float64(Vec<f64>),               // NaN = null sentinel
+    Strings { ids: Vec<u32>, intern: StringInternTable },
+    Bool(Vec<f64>),                  // 0.0/1.0/NaN
+}
+
+impl ColumnarStore {
+    // Direct column setters (serde bypass — used by JS TypedArray ingestion)
+    pub fn init(&mut self, col_count: usize, row_count: usize);
+    pub fn set_column_float64(&mut self, col_idx: usize, values: &[f64]);
+    pub fn set_column_bool(&mut self, col_idx: usize, values: &[f64]);
+    pub fn set_column_strings(&mut self, col_idx: usize, unique: &[String], ids: &[u32]);
+    pub fn finalize(&mut self);
+
+    // View management
     pub fn set_sort(&mut self, configs: Vec<SortConfig>);
     pub fn set_filters(&mut self, conditions: Vec<FilterCondition>);
-    pub fn set_scroll_config(&mut self, config: ScrollConfig);
-    pub fn query(&self, scroll_top: f64) -> TableResult;
-    pub fn row_count(&self) -> usize;
+    pub fn set_scroll_config(&mut self, row_height: f64, viewport_height: f64, overscan: usize);
+    pub fn rebuild_view(&mut self);  // filter → sort on u32 indices, skips if not dirty
+    pub fn view_indices(&self) -> &[u32];
 }
+
+// Free functions operating on ColumnarStore
+pub fn sort_indices_columnar(indices: &mut [u32], store: &ColumnarStore, configs: &[SortConfig]);
+pub fn filter_indices_columnar(indices: &[u32], store: &ColumnarStore, conditions: &[FilterCondition]) -> Vec<u32>;
 ```
 
-**Test scope:** data loading, query pipeline (filter → sort → slice), edge cases
-(empty data, single row, null values).
+**Test scope:** data ingestion (serde and direct setters), type detection, sort/filter on columnar data,
+view rebuild idempotency, string interning, null (NaN) handling, generation tracking.
+
+#### data_store
+
+Row-major store with index indirection. Internal module, not used by WASM layer.
+
+**Test scope:** data loading, query pipeline (filter → sort → slice), edge cases.
 
 #### sorting
 
@@ -80,7 +107,7 @@ pub fn apply_sort(rows: &mut [Vec<Value>], configs: &[SortConfig], columns: &[Co
 Pure function. No state.
 
 ```rust
-pub fn apply_filters(rows: &[Vec<Value>], conditions: &[FilterCondition], columns: &[ColumnDef]) -> Vec<Vec<Value>>;
+pub fn apply_filters(rows: &[Vec<Value>], conditions: &[FilterCondition], columns: &[ColumnDef]) -> Vec<usize>;
 ```
 
 **Test scope:** each operator (eq, neq, contains, gt, lt, gte, lte), type coercion,
@@ -113,14 +140,12 @@ pub struct VirtualSlice {
 **Test scope:** basic viewport, scrolled position, near-end boundary, overscan clamping,
 empty/few rows.
 
-#### layout (NEW — Taffy integration)
+#### layout (Taffy integration)
 
 Wraps Taffy to compute grid cell positions.
 
 ```rust
-pub struct LayoutEngine {
-    tree: TaffyTree<()>,
-}
+pub struct LayoutEngine { tree: TaffyTree<()> }
 
 pub struct ColumnLayout {
     pub width: f32,
@@ -128,56 +153,34 @@ pub struct ColumnLayout {
     pub flex_shrink: f32,
     pub min_width: Option<f32>,
     pub max_width: Option<f32>,
-    pub align: Align,  // Left | Center | Right
-}
-
-pub struct Viewport {
-    pub width: f32,
-    pub height: f32,
-    pub row_height: f32,
-    pub header_height: f32,
-    pub scroll_top: f32,
-}
-
-pub struct CellLayout {
-    pub row: usize,
-    pub col: usize,
-    pub x: f32,
-    pub y: f32,
-    pub width: f32,
-    pub height: f32,
-    pub content_align: Align,
+    pub align: Align,
 }
 
 impl LayoutEngine {
     pub fn new() -> Self;
-
-    /// Compute layout for header row
-    pub fn compute_header_layout(
+    pub fn compute_into_buffer(
         &mut self,
         columns: &[ColumnLayout],
         viewport: &Viewport,
-    ) -> Vec<CellLayout>;
-
-    /// Compute layout for visible data rows
-    pub fn compute_rows_layout(
-        &mut self,
-        columns: &[ColumnLayout],
-        viewport: &Viewport,
-        row_range: std::ops::Range<usize>,
-    ) -> Vec<CellLayout>;
+        row_range: Range<usize>,
+        buf: &mut [f32],
+    ) -> usize;  // returns cell count written
 }
 ```
 
-**Test scope:**
+**Test scope:** fixed-width columns, flex-grow distribution, flex-shrink compression,
+min/max width constraints, alignment mapping, scroll offsets, buffer output correctness.
 
-- Fixed-width columns sum to viewport width
-- Flex-grow distributes remaining space
-- Flex-shrink compresses when total > viewport
-- Min/max width constraints
-- Alignment mapping (left/center/right → Taffy justify-content)
-- Header vs body layout consistency
-- Single column, many columns, zero columns
+#### layout_buffer
+
+Flat f32 buffer format for zero-copy layout data.
+
+```rust
+pub const LAYOUT_STRIDE: usize = 8;  // [row, col, x, y, width, height, align, reserved]
+pub fn buf_len(cell_count: usize) -> usize;
+pub fn write_cell(buf: &mut [f32], index: usize, cell: &CellLayout);
+pub fn read_cell(buf: &[f32], index: usize) -> CellLayout;
+```
 
 ---
 
@@ -185,13 +188,15 @@ impl LayoutEngine {
 
 **Path:** `crates/wasm/`
 **Dependencies:** `react-wasm-table-core`, `wasm-bindgen`, `serde-wasm-bindgen`
-**Test command:** `wasm-pack test --headless --chrome` (or `cargo test -p react-wasm-table-wasm`)
+**Test command:** `cargo test -p react-wasm-table-wasm`
 
 ```rust
 #[wasm_bindgen]
 pub struct TableEngine {
-    store: DataStore,
     layout: LayoutEngine,
+    layout_buf: Vec<f32>,
+    layout_cell_count: usize,
+    columnar: ColumnarStore,
 }
 
 #[wasm_bindgen]
@@ -199,26 +204,33 @@ impl TableEngine {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self;
 
-    pub fn set_columns(&mut self, columns: JsValue) -> Result<(), JsError>;
-    pub fn set_data(&mut self, data: JsValue) -> Result<(), JsError>;
-    pub fn row_count(&self) -> usize;
-    pub fn set_scroll_config(&mut self, config: JsValue) -> Result<(), JsError>;
-    pub fn set_sort(&mut self, configs: JsValue) -> Result<(), JsError>;
-    pub fn set_filters(&mut self, conditions: JsValue) -> Result<(), JsError>;
+    // TypedArray direct ingestion (no serde for numerics)
+    pub fn init_columnar(&mut self, col_count: usize, row_count: usize);
+    pub fn ingest_float64_column(&mut self, col_idx: usize, values: &[f64]);
+    pub fn ingest_bool_column(&mut self, col_idx: usize, values: &[f64]);
+    pub fn ingest_string_column(&mut self, col_idx: usize, unique: JsValue, ids: &[u32]);
+    pub fn finalize_columnar(&mut self);
 
-    /// Main query: filter → sort → virtual slice → layout
-    pub fn query(&mut self, scroll_top: f64) -> Result<JsValue, JsError>;
+    // Hot path
+    pub fn update_viewport_columnar(&mut self, scroll_top, viewport, columns) -> Vec<f64>;
+    pub fn set_columnar_sort(&mut self, configs: JsValue);
+    pub fn set_columnar_scroll_config(&mut self, row_height, viewport_height, overscan);
 
-    /// Layout only (for resize without data change)
-    pub fn compute_layout(&mut self, viewport: JsValue) -> Result<JsValue, JsError>;
+    // Zero-copy buffer access
+    pub fn get_layout_buffer_info(&self) -> Vec<usize>;
+    pub fn get_layout_cell_count(&self) -> usize;
+    pub fn get_columnar_view_indices_info(&self) -> Vec<usize>;
+
+    // Column metadata
+    pub fn set_columnar_columns(&mut self, columns: JsValue);
+    pub fn get_column_float64_info(&self, col_idx: usize) -> Vec<usize>;
+    pub fn get_column_type(&self, col_idx: usize) -> i32;
+    pub fn get_columnar_generation(&self) -> u64;
 }
 ```
 
 **Responsibility:** Serialization/deserialization only. No business logic.
 All logic lives in `core`.
-
-**Test scope:** JS↔Rust serialization round-trips, error handling for malformed input,
-JsValue conversion correctness.
 
 ---
 
@@ -232,93 +244,121 @@ JsValue conversion correctness.
 
 ```typescript
 class ColumnRegistry {
-  private columns: Map<string, ColumnConfig>;
-  private order: string[];
-  private listeners: Set<() => void>;
-
-  register(config: ColumnConfig): void;
+  register(id: string, props: ColumnProps): void;
   unregister(id: string): void;
-  update(id: string, partial: Partial<ColumnConfig>): void;
-  getAll(): ColumnConfig[]; // ordered
-  getById(id: string): ColumnConfig | undefined;
-  subscribe(listener: () => void): () => void; // returns unsubscribe
+  setAll(columns: ColumnProps[]): void;  // bulk replace (for columns prop)
+  getAll(): ColumnProps[];
+  get(id: string): ColumnProps | undefined;
+  readonly size: number;
+  onChange(cb: () => void): () => void;  // returns unsubscribe
 }
 ```
 
-**Test scope:** register/unregister ordering, duplicate id handling, subscription
-notification, update partial merge.
+**Test scope:** register/unregister ordering, setAll bulk replace, subscription
+notification, update on re-register.
+
+### DataIngestor
+
+```typescript
+type ColumnDataType = "float64" | "bool" | "string";
+
+function classifyColumns(data: Record<string, unknown>[], columnIds: string[]): ColumnDataType[];
+function buildFloat64Column(data: Record<string, unknown>[], colId: string): Float64Array;
+function buildBoolColumn(data: Record<string, unknown>[], colId: string): Float64Array;
+function buildStringColumn(data: Record<string, unknown>[], colId: string): [string[], Uint32Array];
+function ingestData(engine: WasmTableEngine, data: Record<string, unknown>[], columnIds: string[]): void;
+```
+
+**Test scope:** type classification (number, bool, string, null-skip, all-null default),
+Float64Array/Uint32Array correctness, NaN null sentinel, string deduplication,
+engine method call order.
+
+### StringTable
+
+```typescript
+class StringTable {
+  populate(data: Record<string, unknown>[], columnIds: string[]): void;
+  get(colIdx: number, rowIdx: number): string;
+  clear(): void;
+}
+```
+
+**Test scope:** populate from objects, get returns correct strings, null → empty string.
+
+### MemoryBridge
+
+```typescript
+class MemoryBridge {
+  constructor(engine: WasmTableEngine, memory: WebAssembly.Memory);
+  getLayoutBuffer(): Float32Array;       // cached zero-copy view
+  getViewIndices(): Uint32Array;         // cached zero-copy view
+  getColumnFloat64(colIdx: number): Float64Array | null;
+  invalidate(): void;
+}
+```
+
+**Test scope:** cache invalidation on memory growth, buffer re-creation.
 
 ### InstructionBuilder
 
 ```typescript
 class InstructionBuilder {
-  /**
-   * Convert column configs + row data into render instructions
-   * for the WASM engine and canvas renderer.
-   */
-  build(
-    columns: ColumnConfig[],
-    rows: unknown[],
-    rowRange: { start: number; end: number },
-  ): {
-    wasmColumns: WasmColumnDef[]; // for WASM layout
-    cellContents: CellContent[][]; // for canvas renderer
-  };
+  build(column: ColumnProps, value: unknown): RenderInstruction;
 }
 ```
 
-**Test scope:** column config to WASM format conversion, render prop execution,
-default rendering (no render prop), row range slicing.
+**Test scope:** text instruction for plain values, render prop execution,
+error fallback to text, null/undefined handling.
 
 ### EventManager
 
 ```typescript
+interface GridEventHandlers {
+  onHeaderClick?: (colIndex: number) => void;
+  onCellClick?: (coord: { row: number; col: number }) => void;
+  onCellDoubleClick?: (coord: { row: number; col: number }) => void;
+  onScroll?: (deltaY: number) => void;
+}
+
 class EventManager {
-  constructor(canvas: HTMLCanvasElement);
-
-  attach(): void;
+  attach(canvas: HTMLCanvasElement, handlers: GridEventHandlers): void;
   detach(): void;
-
-  onCellClick(handler: (coord: CellCoord) => void): () => void;
-  onCellDoubleClick(handler: (coord: CellCoord) => void): () => void;
-  onHeaderClick(handler: (columnId: string) => void): () => void;
-  onScroll(handler: (scrollTop: number) => void): () => void;
-  onResize(handler: (width: number, height: number) => void): () => void;
-
-  /** Convert canvas pixel coords to cell coords using current layout */
-  setLayoutResolver(resolver: (x: number, y: number) => CellCoord | null): void;
+  setLayouts(headerLayouts: CellLayout[], rowLayouts: CellLayout[]): void;
 }
 ```
 
-**Test scope:** event listener attach/detach cleanup, coordinate → cell resolution,
-scroll throttling (rAF), handler registration/removal.
+**Test scope:** event listener attach/detach cleanup, hit-test accuracy,
+layout-based coordinate resolution.
 
 ### EditorManager
 
 ```typescript
 class EditorManager {
-  constructor(container: HTMLElement);
-
-  open(coord: CellCoord, config: EditorConfig): void;
-  commit(): { coord: CellCoord; value: unknown } | null;
+  setContainer(div: HTMLElement): void;
+  setOnCommit(cb: (coord, value) => void): void;
+  open(coord: CellCoord, layout: CellLayout, editorType: string, currentValue: unknown): void;
+  commit(): void;
   cancel(): void;
-  isOpen(): boolean;
-  getCurrentCoord(): CellCoord | null;
-
-  onCommit(handler: (coord: CellCoord, value: unknown) => void): () => void;
-  onCancel(handler: () => void): () => void;
-}
-
-interface EditorConfig {
-  type: "text" | "number" | "select" | "date" | "boolean";
-  value: unknown;
-  position: { x: number; y: number; width: number; height: number };
-  options?: string[]; // for select type
+  readonly isEditing: boolean;
 }
 ```
 
 **Test scope:** open/close lifecycle, DOM element creation/removal, value commit,
-escape cancellation, position overlay accuracy. Uses happy-dom for DOM.
+escape cancellation, position overlay accuracy.
+
+### LayoutReader
+
+```typescript
+const LAYOUT_STRIDE = 8;
+function readCellRow(buf: Float32Array, i: number): number;
+function readCellCol(buf: Float32Array, i: number): number;
+function readCellX(buf: Float32Array, i: number): number;
+function readCellY(buf: Float32Array, i: number): number;
+function readCellWidth(buf: Float32Array, i: number): number;
+function readCellHeight(buf: Float32Array, i: number): number;
+function readCellAlign(buf: Float32Array, i: number): "left" | "center" | "right";
+function hitTest(buf: Float32Array, start: number, count: number, x: number, y: number): number;
+```
 
 ---
 
@@ -332,79 +372,23 @@ escape cancellation, position overlay accuracy. Uses happy-dom for DOM.
 
 ```typescript
 class CanvasRenderer {
-  constructor(canvas: HTMLCanvasElement);
-
-  /** Full frame render */
-  render(frame: RenderFrame): void;
-
-  /** Partial update (single cell) */
-  renderCell(layout: CellLayout, content: CellContent): void;
-
-  /** Find cell at canvas coordinates */
-  hitTest(x: number, y: number): CellCoord | null;
-
-  /** Measure text dimensions */
-  measureText(text: string, font: string): { width: number; height: number };
-
-  /** Set DPI scaling (for retina) */
-  setScale(devicePixelRatio: number): void;
-
-  destroy(): void;
-}
-
-interface RenderFrame {
-  headerLayouts: CellLayout[];
-  headerContents: CellContent[];
-  bodyLayouts: CellLayout[];
-  bodyContents: CellContent[];
-  gridWidth: number;
-  gridHeight: number;
-  scrollTop: number;
-  selection?: Selection;
-  theme: Theme;
+  attach(canvas: HTMLCanvasElement): void;
+  clear(): void;
+  drawHeaderFromBuffer(buf: Float32Array, start: number, count: number, labels: string[], theme: Theme): void;
+  drawRowsFromBuffer(buf: Float32Array, start: number, count: number, getInstruction: (cellIdx: number) => RenderInstruction, theme: Theme, headerHeight: number): void;
+  drawGridLinesFromBuffer(buf: Float32Array, start: number, count: number, theme: Theme, headerHeight: number): void;
 }
 ```
-
-**Test scope:** Uses OffscreenCanvas or canvas mock.
-
-- Correct draw calls for each CellContent type (text, badge, progress, icon)
-- Hit testing accuracy (click at pixel → correct cell)
-- DPI scaling (2x renders at double resolution)
-- Theme application (colors, fonts)
-- Selection highlight rendering
 
 ### Drawing Primitives
 
 ```typescript
-// Internal — not exported
-function drawTextCell(
-  ctx: CanvasRenderingContext2D,
-  layout: CellLayout,
-  content: TextContent,
-  theme: Theme,
-): void;
-function drawBadgeCell(
-  ctx: CanvasRenderingContext2D,
-  layout: CellLayout,
-  content: BadgeContent,
-  theme: Theme,
-): void;
-function drawProgressCell(
-  ctx: CanvasRenderingContext2D,
-  layout: CellLayout,
-  content: ProgressContent,
-  theme: Theme,
-): void;
-function drawGridLines(ctx: CanvasRenderingContext2D, layouts: CellLayout[], theme: Theme): void;
-function drawSelection(
-  ctx: CanvasRenderingContext2D,
-  selection: Selection,
-  layouts: CellLayout[],
-  theme: Theme,
-): void;
+function drawTextCell(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, instruction: TextInstruction, theme: Theme): void;
+function drawBadge(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, instruction: BadgeInstruction, theme: Theme): void;
+function measureText(ctx: CanvasRenderingContext2D, text: string): number;
 ```
 
-**Test scope:** Each primitive tested in isolation with pixel snapshot or draw call spy.
+**Test scope:** draw call recording with canvas mock, theme application.
 
 ---
 
@@ -431,26 +415,17 @@ function Column(props: ColumnProps): null;
 ### Hooks
 
 ```typescript
-// useGrid — main state hook
-function useGrid(config: GridConfig): GridState;
-
-// useColumnRegistry — column collection
+function useGrid(): { columnRegistry: ColumnRegistry };
 function useColumnRegistry(): ColumnRegistry;
-
-// useWasm — WASM lifecycle
-function useWasm(): { ready: boolean; error: Error | null; engine: TableEngine | null };
-
-// useRenderLoop — animation frame management
-function useRenderLoop(renderer: CanvasRenderer, engine: TableEngine): void;
+function useWasm(): { engine: WasmTableEngine | null; isReady: boolean };
 ```
 
-**Test scope:** Uses happy-dom + React testing patterns.
+### Contexts
 
-- `<Column>` registration on mount/unmount
-- `<Grid>` canvas element creation
-- Hook state transitions (loading → ready → error)
-- Re-render on column config change
-- Cleanup on unmount
+```typescript
+const GridContext: React.Context<{ columnRegistry: ColumnRegistry }>;
+const WasmContext: React.Context<{ engine: WasmTableEngine | null; isReady: boolean }>;
+```
 
 ---
 
@@ -460,8 +435,8 @@ function useRenderLoop(renderer: CanvasRenderer, engine: TableEngine): void;
 
 ```typescript
 interface CellCoord {
-  rowIndex: number;
-  columnId: string;
+  row: number;
+  col: number;
 }
 
 interface CellLayout {
@@ -474,29 +449,30 @@ interface CellLayout {
   contentAlign: "left" | "center" | "right";
 }
 
-interface CellContent {
-  type: string;
+type RenderInstruction = TextInstruction | BadgeInstruction;
+
+interface TextInstruction {
+  type: "text";
   value: string;
-  style?: Record<string, unknown>;
-  onClick?: () => void;
+  style?: Partial<TextStyle>;
 }
 
-interface Selection {
-  type: "row" | "cell" | "range";
-  rows?: number[];
-  cells?: CellCoord[];
-  range?: { start: CellCoord; end: CellCoord };
+interface BadgeInstruction {
+  type: "badge";
+  value: string;
+  style?: Partial<BadgeStyle>;
 }
 
 interface Theme {
-  headerBg: string;
+  headerBackground: string;
   headerColor: string;
-  cellBg: string;
+  cellBackground: string;
   cellColor: string;
   borderColor: string;
-  selectionBg: string;
-  font: string;
-  headerFont: string;
+  selectedBackground: string;
+  fontFamily: string;
+  fontSize: number;
+  headerFontSize: number;
 }
 ```
 

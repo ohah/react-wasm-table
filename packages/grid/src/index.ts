@@ -41,6 +41,7 @@ export type {
   TextStyle,
   BadgeStyle,
   Theme,
+  ColumnDef,
   ColumnProps,
   GridProps,
   WasmTableEngine,
