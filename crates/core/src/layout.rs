@@ -52,7 +52,7 @@ pub struct RectValue<T: Default + Copy> {
 impl RectValue<LengthAutoValue> {
     /// Create a rect with all sides set to zero (not auto).
     /// Matches Taffy's default margin behavior.
-    pub fn zero_auto() -> Self {
+    pub const fn zero_auto() -> Self {
         Self {
             top: LengthAutoValue::Length(0.0),
             right: LengthAutoValue::Length(0.0),
@@ -246,7 +246,7 @@ pub struct CellLayout {
 
 // ── Conversion helpers: our value types → Taffy types ──────────────────
 
-fn dimension_to_taffy(d: DimensionValue) -> Dimension {
+const fn dimension_to_taffy(d: DimensionValue) -> Dimension {
     match d {
         DimensionValue::Auto => Dimension::auto(),
         DimensionValue::Length(v) => Dimension::length(v),
@@ -254,7 +254,7 @@ fn dimension_to_taffy(d: DimensionValue) -> Dimension {
     }
 }
 
-fn length_to_taffy(l: LengthValue) -> LengthPercentage {
+const fn length_to_taffy(l: LengthValue) -> LengthPercentage {
     match l {
         LengthValue::Zero => LengthPercentage::length(0.0),
         LengthValue::Length(v) => LengthPercentage::length(v),
@@ -262,7 +262,7 @@ fn length_to_taffy(l: LengthValue) -> LengthPercentage {
     }
 }
 
-fn length_auto_to_taffy(l: LengthAutoValue) -> LengthPercentageAuto {
+const fn length_auto_to_taffy(l: LengthAutoValue) -> LengthPercentageAuto {
     match l {
         LengthAutoValue::Auto => LengthPercentageAuto::auto(),
         LengthAutoValue::Length(v) => LengthPercentageAuto::length(v),
@@ -288,7 +288,7 @@ fn length_auto_rect_to_taffy(r: &RectValue<LengthAutoValue>) -> Rect<LengthPerce
     }
 }
 
-fn align_value_to_taffy_align(v: AlignValue) -> Option<AlignItems> {
+const fn align_value_to_taffy_align(v: AlignValue) -> Option<AlignItems> {
     Some(match v {
         AlignValue::Start => AlignItems::Start,
         AlignValue::End => AlignItems::End,
@@ -303,7 +303,7 @@ fn align_value_to_taffy_align(v: AlignValue) -> Option<AlignItems> {
     })
 }
 
-fn align_value_to_taffy_align_content(v: AlignValue) -> Option<AlignContent> {
+const fn align_value_to_taffy_align_content(v: AlignValue) -> Option<AlignContent> {
     Some(match v {
         AlignValue::Start => AlignContent::Start,
         AlignValue::End => AlignContent::End,
@@ -318,7 +318,7 @@ fn align_value_to_taffy_align_content(v: AlignValue) -> Option<AlignContent> {
     })
 }
 
-fn align_value_to_taffy_justify(v: AlignValue) -> Option<JustifyContent> {
+const fn align_value_to_taffy_justify(v: AlignValue) -> Option<JustifyContent> {
     Some(match v {
         AlignValue::Start => JustifyContent::Start,
         AlignValue::End => JustifyContent::End,
@@ -333,7 +333,7 @@ fn align_value_to_taffy_justify(v: AlignValue) -> Option<JustifyContent> {
     })
 }
 
-fn overflow_to_taffy(o: OverflowValue) -> Overflow {
+const fn overflow_to_taffy(o: OverflowValue) -> Overflow {
     match o {
         OverflowValue::Visible => Overflow::Visible,
         OverflowValue::Clip => Overflow::Clip,
@@ -474,8 +474,7 @@ impl LayoutEngine {
 
         Style {
             display: match container.display {
-                DisplayValue::Flex => Display::Flex,
-                DisplayValue::Block => Display::Flex, // fallback to flex
+                DisplayValue::Flex | DisplayValue::Block => Display::Flex, // Block falls back to flex
                 DisplayValue::None => Display::None,
             },
             flex_direction: match container.flex_direction {
