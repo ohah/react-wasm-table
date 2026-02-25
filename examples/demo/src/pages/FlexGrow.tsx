@@ -33,8 +33,7 @@ export function FlexGrow() {
   const [basis, setBasis] = useState("auto");
   const data = useMemo(() => generateSmallData(), []);
 
-  const basisCss =
-    basis === "auto" ? "auto" : basis.includes("%") ? basis : `${basis}px`;
+  const basisCss = basis === "auto" ? "auto" : basis.includes("%") ? basis : `${basis}px`;
 
   return (
     <>
@@ -132,8 +131,18 @@ export function FlexGrow() {
             height={400}
             columns={[
               { id: "name", header: "Name", width: 150, cellStyle: { flexGrow: grow1 } },
-              { id: "dept", header: "Department", cellStyle: { flexGrow: grow2, flexBasis: basisCss } },
-              { id: "salary", header: "Salary", width: 300, align: "right", cellStyle: { flexShrink: shrink } },
+              {
+                id: "dept",
+                header: "Department",
+                cellStyle: { flexGrow: grow2, flexBasis: basisCss },
+              },
+              {
+                id: "salary",
+                header: "Salary",
+                width: 300,
+                align: "right",
+                cellStyle: { flexShrink: shrink },
+              },
             ]}
           />
         </div>

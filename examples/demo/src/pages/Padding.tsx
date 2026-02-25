@@ -71,8 +71,20 @@ export function Padding() {
             columns={[
               { id: "name", header: "Name", width: 180, cellStyle: { padding: cellPad } },
               { id: "dept", header: "Department", width: 120, cellStyle: { padding: cellPad } },
-              { id: "salary", header: "Salary", width: 100, align: "right", cellStyle: { padding: cellPad } },
-              { id: "score", header: "Score", width: 80, align: "right", cellStyle: { padding: cellPad } },
+              {
+                id: "salary",
+                header: "Salary",
+                width: 100,
+                align: "right",
+                cellStyle: { padding: cellPad },
+              },
+              {
+                id: "score",
+                header: "Score",
+                width: 80,
+                align: "right",
+                cellStyle: { padding: cellPad },
+              },
             ]}
             containerStyle={{ padding: containerPad }}
           />
