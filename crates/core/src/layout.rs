@@ -2,6 +2,8 @@ use serde::Serialize;
 use taffy::prelude::*;
 use taffy::TaffyTree;
 
+use crate::layout_buffer;
+
 /// Text alignment within a cell.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 pub enum Align {
@@ -201,6 +203,83 @@ impl LayoutEngine {
         }
 
         result
+    }
+
+    /// Compute header + visible row layouts into a pre-allocated flat f32 buffer.
+    /// Returns the number of cells written.
+    ///
+    /// Buffer layout: first `columns.len()` cells are headers, then data cells.
+    /// Each cell occupies `LAYOUT_STRIDE` (8) f32 values.
+    pub fn compute_into_buffer(
+        &mut self,
+        columns: &[ColumnLayout],
+        viewport: &Viewport,
+        visible_range: std::ops::Range<usize>,
+        buf: &mut [f32],
+    ) -> usize {
+        if columns.is_empty() {
+            return 0;
+        }
+
+        let col_count = columns.len();
+        let row_count = visible_range.end.saturating_sub(visible_range.start);
+        let total_cells = col_count + row_count * col_count;
+
+        debug_assert!(
+            buf.len() >= layout_buffer::buf_len(total_cells),
+            "buffer too small: need {} f32s, got {}",
+            layout_buffer::buf_len(total_cells),
+            buf.len()
+        );
+
+        // Compute column positions (shared by header and all rows)
+        let positions =
+            self.compute_column_positions(columns, viewport.width, viewport.header_height);
+
+        // Write header cells (row=0, y=0)
+        for (col_idx, &(x, width)) in positions.iter().enumerate() {
+            layout_buffer::write_cell(
+                buf,
+                col_idx,
+                0,
+                col_idx,
+                x,
+                0.0,
+                width,
+                viewport.header_height,
+                columns.get(col_idx).map_or_else(Align::default, |c| c.align),
+            );
+        }
+
+        // Re-compute positions for row height if different from header height
+        let row_positions = if (viewport.row_height - viewport.header_height).abs() > f32::EPSILON {
+            self.compute_column_positions(columns, viewport.width, viewport.row_height)
+        } else {
+            positions
+        };
+
+        // Write data cells
+        let mut cell_idx = col_count;
+        for row_idx in visible_range {
+            let y = (row_idx as f32).mul_add(viewport.row_height, viewport.header_height)
+                - viewport.scroll_top;
+            for (col_idx, &(x, width)) in row_positions.iter().enumerate() {
+                layout_buffer::write_cell(
+                    buf,
+                    cell_idx,
+                    row_idx,
+                    col_idx,
+                    x,
+                    y,
+                    width,
+                    viewport.row_height,
+                    columns.get(col_idx).map_or_else(Align::default, |c| c.align),
+                );
+                cell_idx += 1;
+            }
+        }
+
+        total_cells
     }
 }
 
@@ -489,6 +568,98 @@ mod tests {
         // Header is always pinned at y=0, regardless of scroll
         assert!((header[0].y - 0.0).abs() < 0.1);
         assert!((header[0].height - viewport.header_height).abs() < 0.1);
+    }
+
+    // ── Buffer output tests ──────────────────────────────────────────
+
+    #[test]
+    fn compute_into_buffer_matches_struct_output() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![
+            ColumnLayout {
+                width: 100.0,
+                flex_grow: 0.0,
+                flex_shrink: 0.0,
+                min_width: None,
+                max_width: None,
+                align: Align::Left,
+            },
+            ColumnLayout {
+                width: 200.0,
+                flex_grow: 0.0,
+                flex_shrink: 0.0,
+                min_width: None,
+                max_width: None,
+                align: Align::Right,
+            },
+        ];
+        let viewport = make_viewport();
+
+        // Struct-based output
+        let headers = engine.compute_header_layout(&columns, &viewport);
+        let rows = engine.compute_rows_layout(&columns, &viewport, 0..3);
+
+        // Buffer-based output
+        let col_count = columns.len();
+        let total_cells = col_count + 3 * col_count; // 2 header + 6 data = 8
+        let mut buf = vec![0.0_f32; layout_buffer::buf_len(total_cells)];
+        let count = engine.compute_into_buffer(&columns, &viewport, 0..3, &mut buf);
+        assert_eq!(count, total_cells);
+
+        // Verify header cells match
+        for (i, h) in headers.iter().enumerate() {
+            let base = i * layout_buffer::LAYOUT_STRIDE;
+            assert!((buf[base + layout_buffer::FIELD_X] - h.x).abs() < 0.1);
+            assert!((buf[base + layout_buffer::FIELD_Y] - h.y).abs() < 0.1);
+            assert!((buf[base + layout_buffer::FIELD_WIDTH] - h.width).abs() < 0.1);
+            assert!((buf[base + layout_buffer::FIELD_HEIGHT] - h.height).abs() < 0.1);
+        }
+
+        // Verify data cells match
+        for (i, r) in rows.iter().enumerate() {
+            let base = (col_count + i) * layout_buffer::LAYOUT_STRIDE;
+            assert!((buf[base + layout_buffer::FIELD_ROW] - r.row as f32).abs() < 0.1);
+            assert!((buf[base + layout_buffer::FIELD_COL] - r.col as f32).abs() < 0.1);
+            assert!((buf[base + layout_buffer::FIELD_X] - r.x).abs() < 0.1);
+            assert!((buf[base + layout_buffer::FIELD_Y] - r.y).abs() < 0.1);
+            assert!((buf[base + layout_buffer::FIELD_WIDTH] - r.width).abs() < 0.1);
+            assert!((buf[base + layout_buffer::FIELD_HEIGHT] - r.height).abs() < 0.1);
+        }
+    }
+
+    #[test]
+    fn compute_into_buffer_with_scroll() {
+        let mut engine = LayoutEngine::new();
+        let columns = make_single_column();
+        let mut viewport = make_viewport();
+        viewport.scroll_top = 360.0;
+
+        let total_cells = 1 + 10; // 1 header + 10 data
+        let mut buf = vec![0.0_f32; layout_buffer::buf_len(total_cells)];
+        let count = engine.compute_into_buffer(&columns, &viewport, 5..15, &mut buf);
+        assert_eq!(count, total_cells);
+
+        // Header at y=0 regardless of scroll
+        assert!((buf[layout_buffer::FIELD_Y] - 0.0).abs() < 0.1);
+
+        // Row 5: y = 40 + 5*36 - 360 = -140
+        let base = 1 * layout_buffer::LAYOUT_STRIDE;
+        assert!((buf[base + layout_buffer::FIELD_Y] - -140.0).abs() < 0.1);
+
+        // Row 10: y = 40 + 10*36 - 360 = 40
+        let base = 6 * layout_buffer::LAYOUT_STRIDE;
+        assert!((buf[base + layout_buffer::FIELD_Y] - 40.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn compute_into_buffer_empty_range() {
+        let mut engine = LayoutEngine::new();
+        let columns = make_single_column();
+        let viewport = make_viewport();
+
+        let mut buf = vec![0.0_f32; layout_buffer::buf_len(1)]; // just header
+        let count = engine.compute_into_buffer(&columns, &viewport, 0..0, &mut buf);
+        assert_eq!(count, 1); // header only
     }
 
     #[test]

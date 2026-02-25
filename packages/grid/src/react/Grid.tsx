@@ -7,7 +7,18 @@ import { EventManager } from "../adapter/event-manager";
 import { EditorManager } from "../adapter/editor-manager";
 import { CanvasRenderer } from "../renderer/canvas-renderer";
 import { GridContext, WasmContext } from "./context";
-import { initWasm, createTableEngine } from "../wasm-loader";
+import { initWasm, createTableEngine, getWasmMemory } from "../wasm-loader";
+import {
+  readCellRow,
+  readCellCol,
+  readCellX,
+  readCellY,
+  readCellWidth,
+  readCellHeight,
+  readCellAlign,
+} from "../adapter/layout-reader";
+import { MemoryBridge } from "../adapter/memory-bridge";
+import { StringTable } from "../adapter/string-table";
 
 const DEFAULT_ROW_HEIGHT = 36;
 const DEFAULT_HEADER_HEIGHT = 40;
@@ -46,13 +57,24 @@ export function Grid({
   const sortStateRef = useRef<{ columnId: string; direction: "asc" | "desc" } | null>(null);
   const headerLayoutsRef = useRef<CellLayout[]>([]);
   const rowLayoutsRef = useRef<CellLayout[]>([]);
+  // Buffer-based layout refs
+  const layoutBufRef = useRef<Float32Array | null>(null);
+  const headerCountRef = useRef(0);
+  const totalCellCountRef = useRef(0);
+  const memoryBridgeRef = useRef<MemoryBridge | null>(null);
+  const stringTableRef = useRef(new StringTable());
 
   // Initialize WASM engine
   useEffect(() => {
     let cancelled = false;
     initWasm().then(() => {
       if (!cancelled) {
-        setEngine(createTableEngine());
+        const eng = createTableEngine();
+        setEngine(eng);
+        const mem = getWasmMemory();
+        if (mem) {
+          memoryBridgeRef.current = new MemoryBridge(eng, mem);
+        }
       }
     });
     return () => {
@@ -98,6 +120,11 @@ export function Grid({
     engine.setData(rowArrays);
 
     engine.setScrollConfig(rowHeight, height - headerHeight, OVERSCAN);
+
+    // Populate JS-side string table (Phase 4)
+    const columnIds = columns.map((c) => c.id);
+    stringTableRef.current.populate(data, columnIds);
+
     dirtyRef.current = true;
   }, [engine, data, columnRegistry, rowHeight, height, headerHeight]);
 
@@ -153,8 +180,27 @@ export function Grid({
       const col = columns[coord.col];
       if (!col?.editor) return;
 
-      // Find the matching cell layout
-      const layout = rowLayoutsRef.current.find((l) => l.row === coord.row && l.col === coord.col);
+      // Find the matching cell layout from buffer
+      const buf = layoutBufRef.current;
+      let layout: CellLayout | undefined;
+      if (buf) {
+        const hc = headerCountRef.current;
+        const tc = totalCellCountRef.current;
+        for (let i = hc; i < tc; i++) {
+          if (readCellRow(buf, i) === coord.row && readCellCol(buf, i) === coord.col) {
+            layout = {
+              row: coord.row,
+              col: coord.col,
+              x: readCellX(buf, i),
+              y: readCellY(buf, i),
+              width: readCellWidth(buf, i),
+              height: readCellHeight(buf, i),
+              contentAlign: readCellAlign(buf, i),
+            };
+            break;
+          }
+        }
+      }
       if (!layout) return;
 
       const rowData = data[coord.row];
@@ -193,12 +239,15 @@ export function Grid({
     };
   }, [handleHeaderClick, handleCellDoubleClick]);
 
-  // Render loop
+  // Render loop — unified hot path (single WASM call per frame)
   useEffect(() => {
     if (!engine) return;
     const renderer = rendererRef.current;
     if (!renderer) return;
     const builder = instructionBuilderRef.current;
+    const bridge = memoryBridgeRef.current;
+    const strTable = stringTableRef.current;
+    if (!bridge) return;
 
     const loop = () => {
       if (dirtyRef.current) {
@@ -210,20 +259,6 @@ export function Grid({
           rafRef.current = requestAnimationFrame(loop);
           return;
         }
-
-        // Query the WASM engine for visible rows
-        const queryResult = engine.query(scrollTopRef.current) as {
-          rows: unknown[][];
-          total_count: number;
-          filtered_count: number;
-          virtual_slice: {
-            start_index: number;
-            end_index: number;
-            offset_y: number;
-            total_height: number;
-            visible_count: number;
-          };
-        };
 
         const viewport = {
           width,
@@ -242,54 +277,55 @@ export function Grid({
           align: col.align ?? "left",
         }));
 
-        // Compute layout via WASM
-        const { start_index, end_index } = queryResult.virtual_slice;
-        const allLayouts = engine.computeLayout(
-          viewport,
-          colLayouts,
-          start_index,
-          end_index,
-        ) as CellLayout[];
-
-        // Split: first `columns.length` entries are header, rest are data rows.
-        // (Can't use row===0 because data row 0 also has row=0.)
         const colCount = columns.length;
-        const headerLayouts = allLayouts.slice(0, colCount);
-        const rowLayouts = allLayouts.slice(colCount);
 
-        // Normalize snake_case from WASM to camelCase
-        const normalize = (layouts: CellLayout[]) =>
-          layouts.map((l) => ({
-            ...l,
-            contentAlign:
-              (l as unknown as { content_align: string }).content_align === "Center"
-                ? ("center" as const)
-                : (l as unknown as { content_align: string }).content_align === "Right"
-                  ? ("right" as const)
-                  : ("left" as const),
-          }));
+        // Single WASM call: rebuild view + virtual slice + layout buffer
+        const meta = engine.updateViewport(scrollTopRef.current, viewport, colLayouts);
+        const cellCount = meta[0] ?? 0;
+        const visStart = meta[1] ?? 0;
+        const headerCount = colCount;
+        const dataCount = cellCount - headerCount;
 
-        const normalizedHeaders = normalize(headerLayouts);
-        const normalizedRows = normalize(rowLayouts);
+        // Zero-copy reads from WASM memory
+        const layoutBuf = bridge.getLayoutBuffer();
+        const viewIndices = bridge.getViewIndices();
+
+        // Store refs for hit-testing and editor positioning
+        layoutBufRef.current = layoutBuf;
+        headerCountRef.current = headerCount;
+        totalCellCountRef.current = cellCount;
+
+        // Build CellLayout arrays for event manager
+        const normalizedHeaders: CellLayout[] = [];
+        for (let i = 0; i < headerCount; i++) {
+          normalizedHeaders.push({
+            row: readCellRow(layoutBuf, i),
+            col: readCellCol(layoutBuf, i),
+            x: readCellX(layoutBuf, i),
+            y: readCellY(layoutBuf, i),
+            width: readCellWidth(layoutBuf, i),
+            height: readCellHeight(layoutBuf, i),
+            contentAlign: readCellAlign(layoutBuf, i),
+          });
+        }
+        const normalizedRows: CellLayout[] = [];
+        for (let i = headerCount; i < cellCount; i++) {
+          normalizedRows.push({
+            row: readCellRow(layoutBuf, i),
+            col: readCellCol(layoutBuf, i),
+            x: readCellX(layoutBuf, i),
+            y: readCellY(layoutBuf, i),
+            width: readCellWidth(layoutBuf, i),
+            height: readCellHeight(layoutBuf, i),
+            contentAlign: readCellAlign(layoutBuf, i),
+          });
+        }
 
         headerLayoutsRef.current = normalizedHeaders;
         rowLayoutsRef.current = normalizedRows;
-
-        // Update event manager hit-test layouts
         eventManagerRef.current.setLayouts(normalizedHeaders, normalizedRows);
 
-        // Build render instructions for each data cell
-        const instructions = normalizedRows.map((layout) => {
-          const col = columns[layout.col];
-          // Find the row data from query results
-          const rowOffset = layout.row - start_index;
-          const rowData = queryResult.rows[rowOffset];
-          const value = rowData ? rowData[layout.col] : undefined;
-          return builder.build(col!, value);
-        });
-
-        // Draw
-        renderer.clear();
+        // Prepare header labels
         const headers = columns.map((c) => c.header ?? c.id);
         const sortCol = sortStateRef.current;
         const headersWithSort = headers.map((h, i) => {
@@ -299,9 +335,30 @@ export function Grid({
           }
           return h;
         });
-        renderer.drawHeader(normalizedHeaders, headersWithSort, theme);
-        renderer.drawRows(normalizedRows, instructions, theme, headerHeight);
-        renderer.drawGridLines(normalizedHeaders, normalizedRows, theme, headerHeight);
+
+        // Draw
+        renderer.clear();
+        renderer.drawHeaderFromBuffer(layoutBuf, 0, headerCount, headersWithSort, theme);
+        renderer.drawRowsFromBuffer(
+          layoutBuf,
+          headerCount,
+          dataCount,
+          (cellIdx: number) => {
+            const col = columns[readCellCol(layoutBuf, cellIdx)];
+            const rowViewIdx = readCellRow(layoutBuf, cellIdx) - visStart;
+            const actualRow = viewIndices[rowViewIdx] ?? 0;
+            // Use InstructionBuilder for custom renderers, StringTable for plain text
+            if (col?.children) {
+              const value = engine.getCellValue(actualRow, readCellCol(layoutBuf, cellIdx));
+              return builder.build(col, value);
+            }
+            const text = strTable.get(readCellCol(layoutBuf, cellIdx), actualRow);
+            return { type: "text" as const, value: text };
+          },
+          theme,
+          headerHeight,
+        );
+        renderer.drawGridLinesFromBuffer(layoutBuf, headerCount, cellCount, theme, headerHeight);
       }
 
       rafRef.current = requestAnimationFrame(loop);

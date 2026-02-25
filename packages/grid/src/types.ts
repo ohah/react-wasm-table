@@ -130,17 +130,37 @@ export interface GridProps {
 
 /** WASM TableEngine interface (matches wasm-bindgen exports). */
 export interface WasmTableEngine {
+  // Core setup
   setColumns(columns: unknown): void;
   setData(data: unknown[][]): void;
   rowCount(): number;
   setScrollConfig(rowHeight: number, viewportHeight: number, overscan: number): void;
   setSort(configs: unknown): void;
   setFilters(conditions: unknown): void;
-  query(scrollTop: number): unknown;
-  computeLayout(
+
+  // Unified hot path — single call per frame
+  updateViewport(scrollTop: number, viewport: unknown, columns: unknown): Float64Array;
+
+  // Pointer API — zero-copy buffer access
+  computeLayoutBuffer(
     viewport: unknown,
     columns: unknown,
     visibleStart: number,
     visibleEnd: number,
-  ): unknown;
+  ): void;
+  getLayoutBufferInfo(): Uint32Array;
+  getLayoutCellCount(): number;
+
+  // Index-based query
+  rebuildView(): void;
+  queryIndexed(scrollTop: number): Float64Array;
+  getViewIndicesInfo(): Uint32Array;
+  getCellValue(row: number, col: number): unknown;
+
+  // Columnar store
+  ingestColumnar(data: unknown[][]): void;
+  setColumnarColumns(columns: unknown): void;
+  getColumnFloat64Info(colIdx: number): Uint32Array;
+  getColumnType(colIdx: number): number;
+  getColumnarGeneration(): bigint;
 }
