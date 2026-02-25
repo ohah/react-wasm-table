@@ -1,5 +1,15 @@
 import { useRef, useMemo, useState, useEffect, useCallback } from "react";
-import type { GridProps, WasmTableEngine, Theme, CellLayout } from "../types";
+import type {
+  GridProps,
+  WasmTableEngine,
+  Theme,
+  CellLayout,
+  CssRect,
+  CssLength,
+  CssLengthAuto,
+  CssDimension,
+  BoxModelProps,
+} from "../types";
 import { DEFAULT_THEME } from "../types";
 import { ColumnRegistry } from "../adapter/column-registry";
 import { InstructionBuilder } from "../adapter/instruction-builder";
@@ -25,6 +35,99 @@ const DEFAULT_ROW_HEIGHT = 36;
 const DEFAULT_HEADER_HEIGHT = 40;
 const OVERSCAN = 5;
 
+// ── CSS value conversion utilities ──────────────────────────────────
+
+/** Convert CssDimension to WASM-compatible value (number | string). */
+function resolveDimension(v: CssDimension | undefined): number | string | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v === "number") return v;
+  return v; // "auto" or "50%" pass through as string
+}
+
+/** Convert CssLength to WASM-compatible value (number | string). */
+function resolveLength(v: CssLength | undefined): number | string | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v === "number") return v;
+  return v; // "50%" passes through
+}
+
+/** Convert CssLengthAuto to WASM-compatible value. */
+function resolveLengthAuto(v: CssLengthAuto | undefined): number | string | undefined {
+  if (v === undefined) return undefined;
+  if (typeof v === "number") return v;
+  return v; // "auto" or "50%"
+}
+
+/** Resolve CSS rect shorthand to {top, right, bottom, left}. */
+function resolveRect<T>(
+  shorthand: CssRect<T> | undefined,
+  top?: T,
+  right?: T,
+  bottom?: T,
+  left?: T,
+  resolver: (v: T | undefined) => number | string | undefined = (v) =>
+    v as unknown as number | string | undefined,
+): { top?: number | string; right?: number | string; bottom?: number | string; left?: number | string } | undefined {
+  let t = resolver(top);
+  let r = resolver(right);
+  let b = resolver(bottom);
+  let l = resolver(left);
+
+  if (shorthand !== undefined) {
+    if (Array.isArray(shorthand)) {
+      if (shorthand.length === 2) {
+        const [vert, horiz] = shorthand as [T, T];
+        t = t ?? resolver(vert);
+        r = r ?? resolver(horiz);
+        b = b ?? resolver(vert);
+        l = l ?? resolver(horiz);
+      } else if (shorthand.length === 3) {
+        const [tVal, hVal, bVal] = shorthand as [T, T, T];
+        t = t ?? resolver(tVal);
+        r = r ?? resolver(hVal);
+        b = b ?? resolver(bVal);
+        l = l ?? resolver(hVal);
+      } else if (shorthand.length === 4) {
+        const [tVal, rVal, bVal, lVal] = shorthand as [T, T, T, T];
+        t = t ?? resolver(tVal);
+        r = r ?? resolver(rVal);
+        b = b ?? resolver(bVal);
+        l = l ?? resolver(lVal);
+      }
+    } else {
+      const all = resolver(shorthand as T);
+      t = t ?? all;
+      r = r ?? all;
+      b = b ?? all;
+      l = l ?? all;
+    }
+  }
+
+  if (t === undefined && r === undefined && b === undefined && l === undefined) return undefined;
+  return { top: t, right: r, bottom: b, left: l };
+}
+
+/** Build padding/margin/border rect from BoxModelProps. */
+function buildLengthRect(
+  shorthand: CssRect<CssLength> | undefined,
+  top?: CssLength,
+  right?: CssLength,
+  bottom?: CssLength,
+  left?: CssLength,
+) {
+  return resolveRect(shorthand, top, right, bottom, left, resolveLength);
+}
+
+function buildLengthAutoRect(
+  shorthand: CssRect<CssLengthAuto> | undefined,
+  top?: CssLengthAuto,
+  right?: CssLengthAuto,
+  bottom?: CssLengthAuto,
+  left?: CssLengthAuto,
+) {
+  return resolveRect(shorthand, top, right, bottom, left, resolveLengthAuto);
+}
+
 /**
  * Canvas-based grid component.
  * Renders a <canvas> element for data display and a <div> overlay for editors.
@@ -39,6 +142,35 @@ export function Grid({
   theme: themeOverrides,
   columns: columnsProp,
   children,
+  // Container flex props
+  display,
+  flexDirection,
+  flexWrap,
+  gap,
+  rowGap,
+  columnGap,
+  alignItems,
+  alignContent,
+  justifyContent,
+  overflowX,
+  overflowY,
+  scrollbarWidth,
+  // Box model props
+  padding,
+  paddingTop,
+  paddingRight,
+  paddingBottom,
+  paddingLeft,
+  margin,
+  marginTop,
+  marginRight,
+  marginBottom,
+  marginLeft,
+  borderWidth,
+  borderTopWidth,
+  borderRightWidth,
+  borderBottomWidth,
+  borderLeftWidth,
 }: GridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -270,18 +402,83 @@ export function Grid({
         };
 
         const colLayouts = columns.map((col) => ({
-          width: col.width ?? 100,
+          width: typeof col.width === "number" ? col.width : col.width === undefined ? 100 : 0,
           flexGrow: col.flexGrow ?? 0,
           flexShrink: col.flexShrink ?? 0,
-          minWidth: col.minWidth,
-          maxWidth: col.maxWidth,
+          minWidth: typeof col.minWidth === "number" ? col.minWidth : undefined,
+          maxWidth: typeof col.maxWidth === "number" ? col.maxWidth : undefined,
           align: col.align ?? "left",
+          flexBasis: resolveDimension(col.flexBasis),
+          height: resolveDimension(col.height),
+          minHeight: resolveDimension(col.minHeight),
+          maxHeight: resolveDimension(col.maxHeight),
+          alignSelf: col.alignSelf,
+          padding: buildLengthRect(
+            col.padding,
+            col.paddingTop,
+            col.paddingRight,
+            col.paddingBottom,
+            col.paddingLeft,
+          ),
+          margin: buildLengthAutoRect(
+            col.margin,
+            col.marginTop,
+            col.marginRight,
+            col.marginBottom,
+            col.marginLeft,
+          ),
+          border: buildLengthRect(
+            col.borderWidth,
+            col.borderTopWidth,
+            col.borderRightWidth,
+            col.borderBottomWidth,
+            col.borderLeftWidth,
+          ),
+          boxSizing: col.boxSizing,
+          aspectRatio: col.aspectRatio,
+          position: col.position,
+          inset: buildLengthAutoRect(
+            col.inset,
+            col.insetTop,
+            col.insetRight,
+            col.insetBottom,
+            col.insetLeft,
+          ),
         }));
+
+        const containerLayout = {
+          display,
+          flexDirection,
+          flexWrap,
+          gap: resolveLength(gap),
+          rowGap: resolveLength(rowGap),
+          columnGap: resolveLength(columnGap),
+          alignItems,
+          alignContent,
+          justifyContent,
+          overflowX,
+          overflowY,
+          scrollbarWidth,
+          padding: buildLengthRect(padding, paddingTop, paddingRight, paddingBottom, paddingLeft),
+          margin: buildLengthAutoRect(margin, marginTop, marginRight, marginBottom, marginLeft),
+          border: buildLengthRect(
+            borderWidth,
+            borderTopWidth,
+            borderRightWidth,
+            borderBottomWidth,
+            borderLeftWidth,
+          ),
+        };
 
         const colCount = columns.length;
 
         // Single WASM call: rebuild view + virtual slice + layout buffer (columnar path)
-        const meta = engine.updateViewportColumnar(scrollTopRef.current, viewport, colLayouts);
+        const meta = engine.updateViewportColumnar(
+          scrollTopRef.current,
+          viewport,
+          colLayouts,
+          containerLayout,
+        );
         const cellCount = meta[0] ?? 0;
         const visStart = meta[1] ?? 0;
         const headerCount = colCount;
@@ -370,7 +567,44 @@ export function Grid({
     return () => {
       cancelAnimationFrame(rafRef.current);
     };
-  }, [engine, columnRegistry, width, height, rowHeight, headerHeight, theme, data]);
+  }, [
+    engine,
+    columnRegistry,
+    width,
+    height,
+    rowHeight,
+    headerHeight,
+    theme,
+    data,
+    // Container props
+    display,
+    flexDirection,
+    flexWrap,
+    gap,
+    rowGap,
+    columnGap,
+    alignItems,
+    alignContent,
+    justifyContent,
+    overflowX,
+    overflowY,
+    scrollbarWidth,
+    padding,
+    paddingTop,
+    paddingRight,
+    paddingBottom,
+    paddingLeft,
+    margin,
+    marginTop,
+    marginRight,
+    marginBottom,
+    marginLeft,
+    borderWidth,
+    borderTopWidth,
+    borderRightWidth,
+    borderBottomWidth,
+    borderLeftWidth,
+  ]);
 
   return (
     <GridContext.Provider value={{ columnRegistry }}>
