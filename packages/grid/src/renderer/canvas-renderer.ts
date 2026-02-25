@@ -5,7 +5,7 @@ import {
   computeDataLinesFromBuffer,
   type GridLineSpec,
 } from "./grid-lines";
-import { readCellRow, readCellY, readCellHeight } from "../adapter/layout-reader";
+import { readCellRow, readCellY } from "../adapter/layout-reader";
 
 /**
  * Draws the grid onto a <canvas> 2D context.
@@ -78,16 +78,17 @@ export class CanvasRenderer {
     count: number,
     headers: string[],
     theme: Theme,
+    headerHeight: number,
   ): void {
     const ctx = this.ctx;
     if (!ctx || count === 0) return;
 
     // Draw header background (extend to full canvas width, like CSS)
+    // Use headerHeight instead of first cell's height — with flex-wrap,
+    // individual cells may be shorter than the full header row.
     const canvasW = this.canvasWidth();
-    const firstY = readCellY(buf, start);
-    const firstH = readCellHeight(buf, start);
     ctx.fillStyle = theme.headerBackground;
-    ctx.fillRect(0, firstY, canvasW, firstH);
+    ctx.fillRect(0, 0, canvasW, headerHeight);
 
     // Draw header text
     for (let i = 0; i < count; i++) {
@@ -111,6 +112,7 @@ export class CanvasRenderer {
     getInstruction: (cellIdx: number) => RenderInstruction | undefined,
     theme: Theme,
     headerHeight: number,
+    rowHeight: number,
   ): void {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || count === 0) return;
@@ -123,12 +125,18 @@ export class CanvasRenderer {
     ctx.rect(0, headerHeight, canvasW, canvasH - headerHeight);
     ctx.clip();
 
-    // Group by row for alternating backgrounds
+    // Group by row for alternating backgrounds.
+    // Use minY across all cells in a row + rowHeight for bounds —
+    // with flex-wrap, individual cells may be shorter than the full row.
     const rowBounds = new Map<number, { y: number; h: number }>();
     for (let i = start; i < start + count; i++) {
       const row = readCellRow(buf, i);
+      const cellY = readCellY(buf, i);
       if (!rowBounds.has(row)) {
-        rowBounds.set(row, { y: readCellY(buf, i), h: readCellHeight(buf, i) });
+        rowBounds.set(row, { y: cellY, h: rowHeight });
+      } else {
+        const b = rowBounds.get(row)!;
+        b.y = Math.min(b.y, cellY);
       }
     }
 
@@ -170,6 +178,7 @@ export class CanvasRenderer {
     totalCount: number,
     theme: Theme,
     headerHeight: number,
+    rowHeight: number,
   ): void {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || totalCount === 0) return;
@@ -191,7 +200,10 @@ export class CanvasRenderer {
       ctx.beginPath();
       ctx.rect(0, headerHeight, canvasW, canvasH - headerHeight);
       ctx.clip();
-      this.strokeLines(ctx, computeDataLinesFromBuffer(buf, headerCount, totalCount, canvasW));
+      this.strokeLines(
+        ctx,
+        computeDataLinesFromBuffer(buf, headerCount, totalCount, canvasW, rowHeight),
+      );
       ctx.restore();
     }
   }

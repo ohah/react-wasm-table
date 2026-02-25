@@ -1,5 +1,5 @@
 import type { CellLayout } from "../types";
-import { readCellX, readCellY, readCellWidth, readCellHeight } from "../adapter/layout-reader";
+import { readCellRow, readCellX, readCellY, readCellWidth } from "../adapter/layout-reader";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -148,6 +148,7 @@ export function computeDataLinesFromBuffer(
   headerCount: number,
   totalCount: number,
   canvasW: number,
+  rowHeight: number,
 ): GridLineSpec {
   const dataCount = totalCount - headerCount;
   if (dataCount === 0) return { horizontal: [], vertical: [] };
@@ -158,21 +159,35 @@ export function computeDataLinesFromBuffer(
   }
 
   const colEdges = new Set<number>();
+  let firstColX = Infinity;
+
+  // Collect per-row minY using rowHeight for correct bounds under flex-wrap.
+  // Individual cells may be shorter than the full row when wrapped.
+  const rowMinY = new Map<number, number>();
+  for (let i = headerCount; i < totalCount; i++) {
+    const x = readCellX(buf, i);
+    const w = readCellWidth(buf, i);
+    const row = readCellRow(buf, i);
+    const cellY = readCellY(buf, i);
+    colEdges.add(x + w);
+    firstColX = Math.min(firstColX, x);
+
+    if (!rowMinY.has(row)) {
+      rowMinY.set(row, cellY);
+    } else {
+      rowMinY.set(row, Math.min(rowMinY.get(row)!, cellY));
+    }
+  }
+
+  // Compute row edges and overall minY/maxY from row-level bounds
   const rowEdges = new Set<number>();
   let minY = Infinity;
   let maxY = -Infinity;
-  let firstColX = Infinity;
-
-  for (let i = headerCount; i < totalCount; i++) {
-    const x = readCellX(buf, i);
-    const y = readCellY(buf, i);
-    const w = readCellWidth(buf, i);
-    const h = readCellHeight(buf, i);
-    colEdges.add(x + w);
-    rowEdges.add(y + h);
+  for (const y of rowMinY.values()) {
+    const bottom = y + rowHeight;
+    rowEdges.add(bottom);
     minY = Math.min(minY, y);
-    maxY = Math.max(maxY, y + h);
-    firstColX = Math.min(firstColX, x);
+    maxY = Math.max(maxY, bottom);
   }
 
   const horizontal: HLine[] = [];
