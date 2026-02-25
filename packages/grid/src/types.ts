@@ -137,5 +137,10 @@ export interface WasmTableEngine {
   setSort(configs: unknown): void;
   setFilters(conditions: unknown): void;
   query(scrollTop: number): unknown;
-  computeLayout(): unknown;
+  computeLayout(
+    viewport: unknown,
+    columns: unknown,
+    visibleStart: number,
+    visibleEnd: number,
+  ): unknown;
 }

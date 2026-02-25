@@ -5,7 +5,7 @@ export { RowStyle } from "./react/RowStyle";
 export type { RowStyleProps } from "./react/RowStyle";
 
 // Hooks
-export { useGrid, useColumnRegistry, useWasm, useRenderLoop } from "./react/hooks";
+export { useGrid, useColumnRegistry, useWasm } from "./react/hooks";
 
 // Contexts
 export { GridContext, WasmContext } from "./react/context";
@@ -29,7 +29,7 @@ export { renderDebugOverlay } from "./debug/overlay";
 export { installInspector } from "./debug/inspector";
 
 // WASM loader
-export { initWasm, createTableEngine, isWasmReady } from "./wasm-loader";
+export { initWasm, createTableEngine, isWasmReady, setWasmUrl } from "./wasm-loader";
 
 // Types
 export type {

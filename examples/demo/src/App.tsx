@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import { Grid, Column } from "@ohah/react-wasm-table";
+import { Grid, Column, setWasmUrl } from "@ohah/react-wasm-table";
+
+// Point directly to the .wasm binary in public/ so the bundler doesn't interfere.
+setWasmUrl("/react_wasm_table_wasm_bg.wasm");
 
 function generateData(count: number): Record<string, unknown>[] {
   const names = ["Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Grace"];

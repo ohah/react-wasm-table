@@ -3,7 +3,7 @@
 
 use react_wasm_table_core::data_store::{ColumnDef, DataStore};
 use react_wasm_table_core::filtering::{FilterCondition, FilterOperator};
-use react_wasm_table_core::layout::LayoutEngine;
+use react_wasm_table_core::layout::{Align, ColumnLayout, LayoutEngine, Viewport};
 use react_wasm_table_core::sorting::{SortConfig, SortDirection};
 use serde_json::Value;
 use wasm_bindgen::prelude::*;
@@ -27,10 +27,51 @@ impl TableEngine {
     }
 
     /// Compute layout for the current viewport. Returns cell positions as JSON.
+    /// `viewport_js`: { width, height, rowHeight, headerHeight, scrollTop }
+    /// `columns_js`: [{ width, flexGrow, flexShrink, minWidth?, maxWidth?, align }]
+    /// `visible_start` / `visible_end`: visible row range
     #[wasm_bindgen(js_name = computeLayout)]
-    pub fn compute_layout(&mut self) -> Result<JsValue, JsError> {
-        // TODO: accept viewport params, compute header + row layouts
-        Ok(JsValue::NULL)
+    pub fn compute_layout(
+        &mut self,
+        viewport_js: JsValue,
+        columns_js: JsValue,
+        visible_start: usize,
+        visible_end: usize,
+    ) -> Result<JsValue, JsError> {
+        let vp: JsViewport = serde_wasm_bindgen::from_value(viewport_js)?;
+        let cols: Vec<JsColumnLayout> = serde_wasm_bindgen::from_value(columns_js)?;
+
+        let viewport = Viewport {
+            width: vp.width,
+            height: vp.height,
+            row_height: vp.row_height,
+            header_height: vp.header_height,
+            scroll_top: vp.scroll_top,
+        };
+
+        let columns: Vec<ColumnLayout> = cols
+            .into_iter()
+            .map(|c| ColumnLayout {
+                width: c.width,
+                flex_grow: c.flex_grow,
+                flex_shrink: c.flex_shrink,
+                min_width: c.min_width,
+                max_width: c.max_width,
+                align: match c.align.as_deref() {
+                    Some("center") => Align::Center,
+                    Some("right") => Align::Right,
+                    _ => Align::Left,
+                },
+            })
+            .collect();
+
+        let mut header = self.layout.compute_header_layout(&columns, &viewport);
+        let rows = self
+            .layout
+            .compute_rows_layout(&columns, &viewport, visible_start..visible_end);
+
+        header.extend(rows);
+        Ok(serde_wasm_bindgen::to_value(&header)?)
     }
 
     /// Set column definitions from a JS value.
@@ -136,6 +177,32 @@ struct JsFilterCondition {
     column_key: String,
     operator: String,
     value: Value,
+}
+
+#[derive(serde::Deserialize)]
+struct JsViewport {
+    width: f32,
+    height: f32,
+    #[serde(rename = "rowHeight")]
+    row_height: f32,
+    #[serde(rename = "headerHeight")]
+    header_height: f32,
+    #[serde(rename = "scrollTop")]
+    scroll_top: f32,
+}
+
+#[derive(serde::Deserialize)]
+struct JsColumnLayout {
+    width: f32,
+    #[serde(rename = "flexGrow", default)]
+    flex_grow: f32,
+    #[serde(rename = "flexShrink", default)]
+    flex_shrink: f32,
+    #[serde(rename = "minWidth")]
+    min_width: Option<f32>,
+    #[serde(rename = "maxWidth")]
+    max_width: Option<f32>,
+    align: Option<String>,
 }
 
 fn parse_filter_operator(op: &str) -> FilterOperator {

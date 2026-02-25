@@ -3,6 +3,15 @@ import type { WasmTableEngine } from "./types";
 let wasmModule: typeof import("../wasm/react_wasm_table_wasm") | null = null;
 let initPromise: Promise<void> | null = null;
 
+// Allow users to set a custom URL for the .wasm binary before calling initWasm().
+// Useful when the bundler can't resolve the file automatically.
+let customWasmUrl: string | URL | undefined;
+
+/** Override the URL from which the .wasm binary is fetched. */
+export function setWasmUrl(url: string | URL): void {
+  customWasmUrl = url;
+}
+
 /** Initialize the WASM module. Only loads once. */
 export async function initWasm(): Promise<void> {
   if (wasmModule) return;
@@ -10,7 +19,15 @@ export async function initWasm(): Promise<void> {
   if (!initPromise) {
     initPromise = (async () => {
       const wasm = await import("../wasm/react_wasm_table_wasm");
-      await wasm.default();
+
+      // Try multiple strategies to locate the .wasm binary:
+      // 1. User-provided URL via setWasmUrl()
+      // 2. Bundler-resolved URL via new URL() + import.meta.url
+      // 3. Fallback: let wasm-pack glue resolve it (default behaviour)
+      const url =
+        customWasmUrl ?? new URL("../wasm/react_wasm_table_wasm_bg.wasm", import.meta.url);
+
+      await wasm.default(url);
       wasmModule = wasm;
     })();
   }
