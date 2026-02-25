@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/*",
     "examples/*",
-    "document"
+    "document",
+    "e2e"
   ],
   "scripts": {
     "build:wasm": "bun scripts/build-wasm.ts",
@@ -15,6 +16,7 @@
     "dev:docs": "bun run --filter document dev",
     "docs:build": "bun run --filter document build",
     "test": "bun test packages/",
+    "test:e2e": "cd e2e && bunx playwright test",
     "test:rust": "cargo test --workspace",
     "test:watch": "bun test --watch",
     "lint": "oxlint .",
