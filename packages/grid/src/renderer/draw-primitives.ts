@@ -5,6 +5,10 @@ import {
   readCellWidth,
   readCellHeight,
   readCellAlign,
+  readCellPaddingTop,
+  readCellPaddingRight,
+  readCellPaddingBottom,
+  readCellPaddingLeft,
 } from "../adapter/layout-reader";
 
 const CELL_PADDING = 8;
@@ -104,21 +108,27 @@ export function drawTextCellFromBuffer(
   const h = readCellHeight(buf, cellIdx);
   const align = readCellAlign(buf, cellIdx);
 
-  const textY = y + h / 2;
+  // Use buffer padding if set, fall back to default CELL_PADDING
+  const padLeft = readCellPaddingLeft(buf, cellIdx) || CELL_PADDING;
+  const padRight = readCellPaddingRight(buf, cellIdx) || CELL_PADDING;
+  const padTop = readCellPaddingTop(buf, cellIdx);
+  const padBottom = readCellPaddingBottom(buf, cellIdx);
+
+  const textY = y + padTop + (h - padTop - padBottom) / 2;
   let textX: number;
 
   if (align === "center") {
     ctx.textAlign = "center";
-    textX = x + w / 2;
+    textX = x + padLeft + (w - padLeft - padRight) / 2;
   } else if (align === "right") {
     ctx.textAlign = "right";
-    textX = x + w - CELL_PADDING;
+    textX = x + w - padRight;
   } else {
     ctx.textAlign = "left";
-    textX = x + CELL_PADDING;
+    textX = x + padLeft;
   }
 
-  ctx.fillText(text, textX, textY, w - CELL_PADDING * 2);
+  ctx.fillText(text, textX, textY, w - padLeft - padRight);
 }
 
 /** Draw a badge reading layout from a Float32Array buffer. */
@@ -139,13 +149,17 @@ export function drawBadgeFromBuffer(
   const w = readCellWidth(buf, cellIdx);
   const h = readCellHeight(buf, cellIdx);
 
+  // Use buffer padding if set, fall back to default CELL_PADDING
+  const padTop = readCellPaddingTop(buf, cellIdx) || CELL_PADDING;
+  const padBottom = readCellPaddingBottom(buf, cellIdx) || CELL_PADDING;
+
   ctx.font = "12px system-ui, sans-serif";
   const textWidth = ctx.measureText(text).width;
   const badgeWidth = textWidth + padding * 2;
-  const badgeHeight = h - CELL_PADDING * 2;
+  const badgeHeight = h - padTop - padBottom;
 
   const badgeX = x + (w - badgeWidth) / 2;
-  const badgeY = y + CELL_PADDING;
+  const badgeY = y + padTop;
 
   ctx.beginPath();
   ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, borderRadius);
