@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::filtering::{apply_filters, FilterCondition};
+use crate::index_ops;
 use crate::sorting::{apply_sort, SortConfig};
 use crate::virtual_scroll::{compute_virtual_slice, ScrollState, VirtualSlice};
 
@@ -25,12 +26,24 @@ pub struct DataStore {
     row_height: f64,
     viewport_height: f64,
     overscan: usize,
+    // Index indirection (Phase 2)
+    view_indices: Vec<u32>,
+    view_dirty: bool,
+    generation: u64,
 }
 
 /// The result of a table query, containing visible rows and scroll metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TableResult {
     pub rows: Vec<Vec<Value>>,
+    pub total_count: usize,
+    pub filtered_count: usize,
+    pub virtual_slice: VirtualSlice,
+}
+
+/// Result of an index-based query (no data copying).
+#[derive(Debug, Clone)]
+pub struct IndexedResult {
     pub total_count: usize,
     pub filtered_count: usize,
     pub virtual_slice: VirtualSlice,
@@ -46,12 +59,16 @@ impl DataStore {
             row_height: 40.0,
             viewport_height: 600.0,
             overscan: 5,
+            view_indices: Vec::new(),
+            view_dirty: true,
+            generation: 0,
         }
     }
 
     /// Set column definitions.
     pub fn set_columns(&mut self, columns: Vec<ColumnDef>) {
         self.columns = columns;
+        self.view_dirty = true;
     }
 
     /// Get column definitions.
@@ -62,6 +79,8 @@ impl DataStore {
     /// Load data rows into the store.
     pub fn set_data(&mut self, rows: Vec<Vec<Value>>) {
         self.rows = rows;
+        self.view_dirty = true;
+        self.generation += 1;
     }
 
     /// Get total row count.
@@ -84,11 +103,13 @@ impl DataStore {
     /// Set sort configuration.
     pub fn set_sort(&mut self, configs: Vec<SortConfig>) {
         self.sort_configs = configs;
+        self.view_dirty = true;
     }
 
     /// Set filter conditions.
     pub fn set_filters(&mut self, conditions: Vec<FilterCondition>) {
         self.filter_conditions = conditions;
+        self.view_dirty = true;
     }
 
     /// Query the table: apply filters, sort, then compute virtual slice.
@@ -130,6 +151,80 @@ impl DataStore {
             filtered_count,
             virtual_slice,
         }
+    }
+
+    // ── Index-based API (Phase 2) ──────────────────────────────────────
+
+    /// Rebuild the view index array: filter → sort (in-place on u32 indices).
+    pub fn rebuild_view(&mut self) {
+        if !self.view_dirty {
+            return;
+        }
+        self.view_dirty = false;
+
+        let all = index_ops::identity_indices(self.rows.len());
+        let filtered =
+            index_ops::filter_indices(&all, &self.rows, &self.columns, &self.filter_conditions);
+        self.view_indices = filtered;
+        if !self.sort_configs.is_empty() {
+            index_ops::sort_indices(
+                &mut self.view_indices,
+                &self.rows,
+                &self.columns,
+                &self.sort_configs,
+            );
+        }
+    }
+
+    /// Query using index indirection — no data cloning.
+    pub fn query_indexed(&mut self, scroll_top: f64) -> IndexedResult {
+        self.rebuild_view();
+
+        let total_count = self.rows.len();
+        let filtered_count = self.view_indices.len();
+
+        let scroll_state = ScrollState {
+            scroll_top,
+            viewport_height: self.viewport_height,
+            row_height: self.row_height,
+            total_rows: filtered_count,
+            overscan: self.overscan,
+        };
+        let virtual_slice = compute_virtual_slice(&scroll_state);
+
+        IndexedResult {
+            total_count,
+            filtered_count,
+            virtual_slice,
+        }
+    }
+
+    /// Get the view indices (valid after `rebuild_view` / `query_indexed`).
+    pub fn view_indices(&self) -> &[u32] {
+        &self.view_indices
+    }
+
+    /// Get a reference to the raw rows.
+    pub fn rows(&self) -> &[Vec<Value>] {
+        &self.rows
+    }
+
+    /// Get the current generation counter.
+    pub const fn generation(&self) -> u64 {
+        self.generation
+    }
+
+    /// Get scroll config values (for unified hot path).
+    pub const fn row_height(&self) -> f64 {
+        self.row_height
+    }
+
+    pub const fn viewport_height(&self) -> f64 {
+        self.viewport_height
+    }
+
+    pub const fn overscan(&self) -> usize {
+        self.overscan
     }
 }
 
@@ -204,5 +299,84 @@ mod tests {
         let result = store.query(0.0);
         // Bob (25) should be first
         assert_eq!(result.rows[0][0], json!("Bob"));
+    }
+
+    // ── Index-based query tests ──────────────────────────────────────
+
+    #[test]
+    fn test_query_indexed_basic() {
+        let mut store = DataStore::new();
+        store.set_columns(sample_columns());
+        store.set_data(sample_rows());
+        store.set_scroll_config(40.0, 400.0, 5);
+
+        let result = store.query_indexed(0.0);
+        assert_eq!(result.total_count, 3);
+        assert_eq!(result.filtered_count, 3);
+        assert_eq!(store.view_indices(), &[0, 1, 2]);
+    }
+
+    #[test]
+    fn test_query_indexed_with_sort() {
+        let mut store = DataStore::new();
+        store.set_columns(sample_columns());
+        store.set_data(sample_rows());
+        store.set_scroll_config(40.0, 400.0, 5);
+        store.set_sort(vec![SortConfig {
+            column_index: 1,
+            direction: crate::sorting::SortDirection::Ascending,
+        }]);
+
+        let result = store.query_indexed(0.0);
+        assert_eq!(result.filtered_count, 3);
+        // Bob(25)=idx1, Alice(30)=idx0, Charlie(35)=idx2
+        assert_eq!(store.view_indices(), &[1, 0, 2]);
+    }
+
+    #[test]
+    fn test_query_indexed_with_filter() {
+        let mut store = DataStore::new();
+        store.set_columns(sample_columns());
+        store.set_data(sample_rows());
+        store.set_scroll_config(40.0, 400.0, 5);
+        store.set_filters(vec![crate::filtering::FilterCondition {
+            column_key: "age".into(),
+            operator: crate::filtering::FilterOperator::GreaterThan,
+            value: json!(28),
+        }]);
+
+        let result = store.query_indexed(0.0);
+        assert_eq!(result.total_count, 3);
+        assert_eq!(result.filtered_count, 2); // Alice(30), Charlie(35)
+        assert_eq!(store.view_indices(), &[0, 2]);
+    }
+
+    #[test]
+    fn test_generation_increments() {
+        let mut store = DataStore::new();
+        assert_eq!(store.generation(), 0);
+
+        store.set_data(vec![]);
+        assert_eq!(store.generation(), 1);
+
+        store.set_data(vec![]);
+        assert_eq!(store.generation(), 2);
+    }
+
+    #[test]
+    fn test_rebuild_view_idempotent() {
+        let mut store = DataStore::new();
+        store.set_columns(sample_columns());
+        store.set_data(sample_rows());
+        store.set_sort(vec![SortConfig {
+            column_index: 1,
+            direction: crate::sorting::SortDirection::Ascending,
+        }]);
+
+        store.rebuild_view();
+        let first = store.view_indices().to_vec();
+        store.rebuild_view(); // should be no-op
+        let second = store.view_indices().to_vec();
+        assert_eq!(first, second);
     }
 }

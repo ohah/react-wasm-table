@@ -1,4 +1,11 @@
 import type { CellLayout, TextStyle, BadgeStyle } from "../types";
+import {
+  readCellX,
+  readCellY,
+  readCellWidth,
+  readCellHeight,
+  readCellAlign,
+} from "../adapter/layout-reader";
 
 const CELL_PADDING = 8;
 
@@ -73,4 +80,80 @@ export function measureText(
 ): number {
   ctx.font = `${fontSize}px ${fontFamily}`;
   return ctx.measureText(text).width;
+}
+
+// ── Buffer-based primitives ───────────────────────────────────────────
+
+/** Draw a text cell reading layout from a Float32Array buffer. */
+export function drawTextCellFromBuffer(
+  ctx: CanvasRenderingContext2D,
+  buf: Float32Array,
+  cellIdx: number,
+  text: string,
+  style?: Partial<TextStyle>,
+): void {
+  const fontSize = style?.fontSize ?? 13;
+  const fontWeight = style?.fontWeight ?? "normal";
+  ctx.font = `${fontWeight} ${fontSize}px system-ui, sans-serif`;
+  ctx.fillStyle = style?.color ?? "#333";
+  ctx.textBaseline = "middle";
+
+  const x = readCellX(buf, cellIdx);
+  const y = readCellY(buf, cellIdx);
+  const w = readCellWidth(buf, cellIdx);
+  const h = readCellHeight(buf, cellIdx);
+  const align = readCellAlign(buf, cellIdx);
+
+  const textY = y + h / 2;
+  let textX: number;
+
+  if (align === "center") {
+    ctx.textAlign = "center";
+    textX = x + w / 2;
+  } else if (align === "right") {
+    ctx.textAlign = "right";
+    textX = x + w - CELL_PADDING;
+  } else {
+    ctx.textAlign = "left";
+    textX = x + CELL_PADDING;
+  }
+
+  ctx.fillText(text, textX, textY, w - CELL_PADDING * 2);
+}
+
+/** Draw a badge reading layout from a Float32Array buffer. */
+export function drawBadgeFromBuffer(
+  ctx: CanvasRenderingContext2D,
+  buf: Float32Array,
+  cellIdx: number,
+  text: string,
+  style?: Partial<BadgeStyle>,
+): void {
+  const bgColor = style?.backgroundColor ?? "#e0e0e0";
+  const textColor = style?.color ?? "#333";
+  const borderRadius = style?.borderRadius ?? 4;
+  const padding = 6;
+
+  const x = readCellX(buf, cellIdx);
+  const y = readCellY(buf, cellIdx);
+  const w = readCellWidth(buf, cellIdx);
+  const h = readCellHeight(buf, cellIdx);
+
+  ctx.font = "12px system-ui, sans-serif";
+  const textWidth = ctx.measureText(text).width;
+  const badgeWidth = textWidth + padding * 2;
+  const badgeHeight = h - CELL_PADDING * 2;
+
+  const badgeX = x + (w - badgeWidth) / 2;
+  const badgeY = y + CELL_PADDING;
+
+  ctx.beginPath();
+  ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, borderRadius);
+  ctx.fillStyle = bgColor;
+  ctx.fill();
+
+  ctx.fillStyle = textColor;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, badgeX + badgeWidth / 2, badgeY + badgeHeight / 2);
 }

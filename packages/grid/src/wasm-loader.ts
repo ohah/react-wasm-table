@@ -1,6 +1,7 @@
 import type { WasmTableEngine } from "./types";
 
 let wasmModule: typeof import("../wasm/react_wasm_table_wasm") | null = null;
+let wasmMemory: WebAssembly.Memory | null = null;
 let initPromise: Promise<void> | null = null;
 
 // Allow users to set a custom URL for the .wasm binary before calling initWasm().
@@ -27,8 +28,9 @@ export async function initWasm(): Promise<void> {
       const url =
         customWasmUrl ?? new URL("../wasm/react_wasm_table_wasm_bg.wasm", import.meta.url);
 
-      await wasm.default(url);
+      const initOutput = await wasm.default(url);
       wasmModule = wasm;
+      wasmMemory = initOutput.memory ?? null;
     })();
   }
 
@@ -46,4 +48,9 @@ export function createTableEngine(): WasmTableEngine {
 /** Check if the WASM module is loaded. */
 export function isWasmReady(): boolean {
   return wasmModule !== null;
+}
+
+/** Get the WebAssembly.Memory instance for zero-copy buffer access. */
+export function getWasmMemory(): WebAssembly.Memory | null {
+  return wasmMemory;
 }
