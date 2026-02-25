@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, Column, type CssPosition } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { CssComparison } from "../components/CssComparison";
 
 const positionOptions: CssPosition[] = ["relative", "absolute"];
 
@@ -16,7 +17,7 @@ const btnActive: React.CSSProperties = {
   ...btnBase,
   background: "#1976d2",
   color: "#fff",
-  borderColor: "#1976d2",
+  border: "1px solid #1976d2",
 };
 
 export function Position() {
@@ -84,19 +85,40 @@ export function Position() {
 </Grid>`}
       </pre>
 
-      <Grid data={data} width={800} height={400}>
-        <Column id="name" width={180} header="Name" />
-        <Column
-          id="dept"
-          width={120}
-          header="Dept (positioned)"
-          position={pos}
-          insetLeft={insetLeft}
-          insetTop={insetTop}
-        />
-        <Column id="salary" width={100} header="Salary" align="right" />
-        <Column id="score" width={80} header="Score" align="right" />
-      </Grid>
+      <div style={{ display: "flex", flexWrap: "wrap" }}>
+        <div>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <Grid data={data} width={800} height={400}>
+            <Column id="name" width={180} header="Name" />
+            <Column
+              id="dept"
+              width={120}
+              header="Dept (positioned)"
+              position={pos}
+              insetLeft={insetLeft}
+              insetTop={insetTop}
+            />
+            <Column id="salary" width={100} header="Salary" align="right" />
+            <Column id="score" width={80} header="Score" align="right" />
+          </Grid>
+        </div>
+        <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
+        <div>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
+          <CssComparison
+            data={data}
+            width={800}
+            height={400}
+            columns={[
+              { id: "name", header: "Name", width: 180 },
+              { id: "dept", header: "Dept (positioned)", width: 120, cellStyle: { position: pos, left: insetLeft, top: insetTop } },
+              { id: "salary", header: "Salary", width: 100, align: "right" },
+              { id: "score", header: "Score", width: 80, align: "right" },
+            ]}
+            rowStyle={{ position: "relative" }}
+          />
+        </div>
+      </div>
     </>
   );
 }

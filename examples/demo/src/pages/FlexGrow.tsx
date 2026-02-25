@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, Column } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { CssComparison } from "../components/CssComparison";
 
 const BASIS_OPTIONS = [
   { label: "auto", value: "auto" },
@@ -22,7 +23,7 @@ const btnActive: React.CSSProperties = {
   ...btnBase,
   background: "#1976d2",
   color: "#fff",
-  borderColor: "#1976d2",
+  border: "1px solid #1976d2",
 };
 
 export function FlexGrow() {
@@ -31,6 +32,9 @@ export function FlexGrow() {
   const [shrink, setShrink] = useState(1);
   const [basis, setBasis] = useState("auto");
   const data = useMemo(() => generateSmallData(), []);
+
+  const basisCss =
+    basis === "auto" ? "auto" : basis.includes("%") ? basis : `${basis}px`;
 
   return (
     <>
@@ -99,22 +103,41 @@ export function FlexGrow() {
 </Grid>`}
       </pre>
 
-      <Grid data={data} width={800} height={400}>
-        <Column id="name" width={150} header="Name" flexGrow={grow1} />
-        <Column
-          id="dept"
-          header="Department"
-          flexGrow={grow2}
-          flexBasis={
-            basis === "auto"
-              ? "auto"
-              : basis.includes("%")
-                ? (basis as `${number}%`)
-                : Number(basis)
-          }
-        />
-        <Column id="salary" width={300} header="Salary" align="right" flexShrink={shrink} />
-      </Grid>
+      <div style={{ display: "flex", flexWrap: "wrap" }}>
+        <div>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <Grid data={data} width={800} height={400}>
+            <Column id="name" width={150} header="Name" flexGrow={grow1} />
+            <Column
+              id="dept"
+              header="Department"
+              flexGrow={grow2}
+              flexBasis={
+                basis === "auto"
+                  ? "auto"
+                  : basis.includes("%")
+                    ? (basis as `${number}%`)
+                    : Number(basis)
+              }
+            />
+            <Column id="salary" width={300} header="Salary" align="right" flexShrink={shrink} />
+          </Grid>
+        </div>
+        <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
+        <div>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
+          <CssComparison
+            data={data}
+            width={800}
+            height={400}
+            columns={[
+              { id: "name", header: "Name", width: 150, cellStyle: { flexGrow: grow1 } },
+              { id: "dept", header: "Department", cellStyle: { flexGrow: grow2, flexBasis: basisCss } },
+              { id: "salary", header: "Salary", width: 300, align: "right", cellStyle: { flexShrink: shrink } },
+            ]}
+          />
+        </div>
+      </div>
     </>
   );
 }
