@@ -3,6 +3,7 @@ export { InstructionBuilder } from "./instruction-builder";
 export { EventManager } from "./event-manager";
 export type { GridEventHandlers } from "./event-manager";
 export { EditorManager } from "./editor-manager";
+export { SelectionManager, buildTSV } from "./selection-manager";
 export * from "./layout-reader";
 export { StringTable } from "./string-table";
 export { MemoryBridge } from "./memory-bridge";
