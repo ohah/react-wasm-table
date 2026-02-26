@@ -35,29 +35,82 @@ Grid.tsx (965줄)
 └── 정렬/선택/에디터    → 전부 Grid 내부 배선
 ```
 
-### Step 0-1. Hook 추출 — Grid를 얇게 만들기
+### Step 0-1. Hook 추출 — Grid를 얇게 만들기 ✅ 완료
 
 Grid.tsx의 로직을 **독립 hook**으로 추출. Grid는 조합기(thin shell)로만 남긴다.
 
-```ts
-// 추출할 hook 목록
-useWasmEngine(options?)        → engine, memoryBridge, isReady
-useDataIngestion(engine, data, columns)  → stringTable, dirty flag
-useEventHandlers(canvas, options)        → enriched event callbacks
-useRenderLoop(canvas, engine, options)   → requestAnimationFrame 관리
-useSelection(options?)         → selectionManager, state, handlers
-useEditing(options?)           → editorManager, state, handlers
-useSorting(engine, options?)   → sorting state, WASM sync
+```
+결과: Grid.tsx 965줄 → 317줄 (67% 감소)
+      378개 단위 테스트 pass, E2E 회귀 0건
 ```
 
-**목표**: 각 hook이 Grid 밖에서도 독립적으로 사용 가능.
+**추출된 hook 목록** (`packages/grid/src/react/hooks/`):
+
+| Hook                 | 파일                      | 역할                                            |
+| -------------------- | ------------------------- | ----------------------------------------------- |
+| `useWasmEngine`      | `use-wasm-engine.ts`      | WASM 초기화 + MemoryBridge 생성                 |
+| `useSorting`         | `use-sorting.ts`          | 정렬 상태 (controlled/uncontrolled) + WASM sync |
+| `useDataIngestion`   | `use-data-ingestion.ts`   | 데이터 인제스트 + StringTable 관리              |
+| `useSelection`       | `use-selection.ts`        | SelectionManager + clipboard + 핸들러           |
+| `useEditing`         | `use-editing.ts`          | EditorManager + double-click 핸들러             |
+| `useGridScroll`      | `use-grid-scroll.ts`      | 스크롤 ref + auto-scroll + clamping             |
+| `useEventAttachment` | `use-event-attachment.ts` | EventManager.attach 배선                        |
+| `useRenderLoop`      | `use-render-loop.ts`      | RAF + WASM call + Canvas draw                   |
+
+**추가 추출**:
+
+- `packages/grid/src/react/css-utils.ts` — 7개 순수 CSS 변환 함수
+
+**테스트**: 기존 343개 → 378개 (hook별 8개 테스트 파일 추가). E2E 회귀 0건.
+
+### Step 0-1b. Hook 데모 페이지 추가 (TODO)
+
+Step 0-1에서 추출한 hook들을 데모앱에서 활용하는 예제 페이지 작성.
+각 hook의 독립 사용 가능성과 조합 패턴을 시각적으로 보여준다.
+
+**추가할 페이지 목록**:
+
+1. **`HooksOverview`** — 전체 hook 구성도와 데이터 흐름을 보여주는 인덱스 페이지
+   - Grid.tsx thin shell 구조 다이어그램
+   - 각 hook 페이지로의 링크
+
+2. **`UseWasmEngineDemo`** — `useWasmEngine` 단독 사용 예제
+   - engine 초기화 상태 표시 (loading → ready)
+   - `engineRef`를 통한 외부 접근 (debug log 토글)
+   - 여러 Grid가 engine을 공유하는 시나리오 (미래 Step 0-2 프리뷰)
+
+3. **`UseSortingDemo`** — `useSorting` controlled/uncontrolled 비교
+   - Uncontrolled: Grid 내부 상태로 동작
+   - Controlled: 외부 `useState`로 정렬 상태 관리, 정렬 히스토리 UI
+   - multi-column sort 제한 (최대 2컬럼) 같은 커스텀 로직 데모
+
+4. **`UseSelectionDemo`** — `useSelection` 고급 사용 예제
+   - Controlled selection: 외부에서 selection range 주입
+   - onCopy 커스텀: TSV 대신 JSON으로 복사
+   - selectable: false 컬럼 혼합 시나리오
+
+5. **`UseGridScrollDemo`** — `useGridScroll` 스크롤 커스텀 예제
+   - 프로그래매틱 스크롤 (버튼 클릭으로 특정 행으로 이동)
+   - 스크롤 위치 실시간 표시 (scrollTop, scrollLeft)
+   - auto-scroll 동작 시각화
+
+6. **`HookCompositionDemo`** — hook 조합 패턴 예제
+   - Grid 없이 hook만으로 커스텀 테이블 빌드 (headless 패턴 프리뷰)
+   - 또는 Grid + 외부 hook 상태 연동 (정렬+선택 상태를 외부 패널에 표시)
 
 **대상 파일**:
 
-- `packages/grid/src/react/Grid.tsx` — 분해 대상
-- `packages/grid/src/react/hooks/` — 새 디렉토리, hook별 파일
+- `examples/demo/src/pages/HooksOverview.tsx` — 신규
+- `examples/demo/src/pages/UseSortingDemo.tsx` — 신규
+- `examples/demo/src/pages/UseSelectionDemo.tsx` — 신규
+- `examples/demo/src/pages/UseGridScrollDemo.tsx` — 신규
+- `examples/demo/src/pages/HookCompositionDemo.tsx` — 신규
+- `examples/demo/src/App.tsx` — 사이드바에 Hooks 섹션 추가
+- `examples/demo/src/routes.ts` — 라우트 등록
 
-**테스트 안전망**: 기존 343개 단위 테스트 + 27개 E2E 유지. hook별 새 테스트 추가.
+**우선순위**: Phase 0의 나머지 Step(0-2 ~ 0-5) 진행 전에 완료하면
+hook API의 사용성 피드백을 데모 페이지 제작 과정에서 얻을 수 있다.
+단, 반드시 선행은 아님 — 병렬 진행 가능.
 
 ### Step 0-2. WASM Provider 분리
 

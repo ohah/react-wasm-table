@@ -1,0 +1,473 @@
+import { useRef, useEffect } from "react";
+import type {
+  WasmTableEngine,
+  Theme,
+  CellLayout,
+  SelectionStyle,
+  CssDisplay,
+  CssFlexDirection,
+  CssFlexWrap,
+  CssLength,
+  CssAlignItems,
+  CssAlignContent,
+  CssJustifyContent,
+  CssOverflow,
+  CssRect,
+  CssLengthAuto,
+  CssGridTrackList,
+  CssGridTrackSize,
+  CssGridAutoFlow,
+} from "../../types";
+import type { SortingState } from "../../tanstack-types";
+import type { ColumnRegistry } from "../../adapter/column-registry";
+import type { MemoryBridge } from "../../adapter/memory-bridge";
+import type { StringTable } from "../../adapter/string-table";
+import type { SelectionManager } from "../../adapter/selection-manager";
+import type { EventManager } from "../../adapter/event-manager";
+import { CanvasRenderer } from "../../renderer/canvas-renderer";
+import { InstructionBuilder } from "../../adapter/instruction-builder";
+import {
+  readCellRow,
+  readCellCol,
+  readCellX,
+  readCellY,
+  readCellWidth,
+  readCellHeight,
+  readCellAlign,
+} from "../../adapter/layout-reader";
+import { syncScrollBarPosition } from "../ScrollBar";
+import {
+  resolveDimension,
+  resolveLength,
+  buildLengthRect,
+  buildLengthAutoRect,
+  resolveGridLine,
+} from "../css-utils";
+
+export interface ContainerLayoutProps {
+  display?: CssDisplay;
+  flexDirection?: CssFlexDirection;
+  flexWrap?: CssFlexWrap;
+  gap?: CssLength;
+  rowGap?: CssLength;
+  columnGap?: CssLength;
+  alignItems?: CssAlignItems;
+  alignContent?: CssAlignContent;
+  justifyContent?: CssJustifyContent;
+  overflowX?: CssOverflow;
+  overflowY?: CssOverflow;
+  scrollbarWidth?: number;
+  padding?: CssRect<CssLength>;
+  paddingTop?: CssLength;
+  paddingRight?: CssLength;
+  paddingBottom?: CssLength;
+  paddingLeft?: CssLength;
+  margin?: CssRect<CssLengthAuto>;
+  marginTop?: CssLengthAuto;
+  marginRight?: CssLengthAuto;
+  marginBottom?: CssLengthAuto;
+  marginLeft?: CssLengthAuto;
+  borderWidth?: CssRect<CssLength>;
+  borderTopWidth?: CssLength;
+  borderRightWidth?: CssLength;
+  borderBottomWidth?: CssLength;
+  borderLeftWidth?: CssLength;
+  gridTemplateRows?: CssGridTrackList;
+  gridTemplateColumns?: CssGridTrackList;
+  gridAutoRows?: CssGridTrackSize | CssGridTrackSize[];
+  gridAutoColumns?: CssGridTrackSize | CssGridTrackSize[];
+  gridAutoFlow?: CssGridAutoFlow;
+  justifyItems?: CssAlignItems;
+}
+
+export interface UseRenderLoopParams {
+  engine: WasmTableEngine | null;
+  memoryBridgeRef: React.RefObject<MemoryBridge | null>;
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  columnRegistry: ColumnRegistry;
+  data: Record<string, unknown>[];
+  stringTableRef: React.RefObject<StringTable>;
+  theme: Theme;
+  sorting: SortingState;
+  enableSelection: boolean;
+  selectionStyle?: SelectionStyle;
+  selectionManagerRef: React.RefObject<SelectionManager>;
+  eventManagerRef: React.RefObject<EventManager>;
+  scrollTopRef: React.RefObject<number>;
+  scrollLeftRef: React.RefObject<number>;
+  dirtyRef: React.MutableRefObject<boolean>;
+  vScrollbarRef: React.RefObject<HTMLDivElement | null>;
+  hScrollbarRef: React.RefObject<HTMLDivElement | null>;
+  containerProps: ContainerLayoutProps;
+  width: number;
+  height: number;
+  rowHeight: number;
+  headerHeight: number;
+  onLayoutComputed: (buf: Float32Array, headerCount: number, totalCellCount: number) => void;
+  onVisStartComputed: (visStart: number) => void;
+}
+
+export function useRenderLoop({
+  engine,
+  memoryBridgeRef,
+  canvasRef,
+  columnRegistry,
+  data,
+  stringTableRef,
+  theme,
+  sorting,
+  enableSelection,
+  selectionStyle,
+  selectionManagerRef,
+  eventManagerRef,
+  scrollTopRef,
+  scrollLeftRef,
+  dirtyRef,
+  vScrollbarRef,
+  hScrollbarRef,
+  containerProps,
+  width,
+  height,
+  rowHeight,
+  headerHeight,
+  onLayoutComputed,
+  onVisStartComputed,
+}: UseRenderLoopParams) {
+  const rendererRef = useRef<CanvasRenderer | null>(null);
+  const instructionBuilderRef = useRef(new InstructionBuilder());
+  const rafRef = useRef<number>(0);
+
+  // Attach canvas renderer
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const renderer = new CanvasRenderer();
+    renderer.attach(canvas);
+    rendererRef.current = renderer;
+  }, [canvasRef]);
+
+  // Render loop — unified hot path (single WASM call per frame)
+  useEffect(() => {
+    if (!engine) return;
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    const builder = instructionBuilderRef.current;
+    const bridge = memoryBridgeRef.current;
+    const strTable = stringTableRef.current;
+    if (!bridge) return;
+
+    // Mark dirty when effect deps change (layout props changed)
+    dirtyRef.current = true;
+
+    const {
+      display,
+      flexDirection,
+      flexWrap,
+      gap,
+      rowGap,
+      columnGap,
+      alignItems,
+      alignContent,
+      justifyContent,
+      overflowX,
+      overflowY,
+      scrollbarWidth,
+      padding,
+      paddingTop,
+      paddingRight,
+      paddingBottom,
+      paddingLeft,
+      margin,
+      marginTop,
+      marginRight,
+      marginBottom,
+      marginLeft,
+      borderWidth,
+      borderTopWidth,
+      borderRightWidth,
+      borderBottomWidth,
+      borderLeftWidth,
+      gridTemplateRows,
+      gridTemplateColumns,
+      gridAutoRows,
+      gridAutoColumns,
+      gridAutoFlow,
+      justifyItems,
+    } = containerProps;
+
+    const loop = () => {
+      if (dirtyRef.current) {
+        dirtyRef.current = false;
+
+        const columns = columnRegistry.getAll();
+        if (columns.length === 0) {
+          renderer.clear();
+          rafRef.current = requestAnimationFrame(loop);
+          return;
+        }
+
+        const viewport = {
+          width,
+          height,
+          rowHeight,
+          headerHeight,
+          scrollTop: scrollTopRef.current,
+          lineHeight: Math.ceil(theme.fontSize * 1.5),
+        };
+
+        const isGrid = display === "grid";
+        const colLayouts = columns.map((col) => ({
+          width:
+            typeof col.width === "number"
+              ? col.width
+              : col.width === undefined
+                ? isGrid
+                  ? 0
+                  : 100
+                : 0,
+          flexGrow: col.flexGrow ?? 0,
+          flexShrink: col.flexShrink ?? 0,
+          minWidth: typeof col.minWidth === "number" ? col.minWidth : undefined,
+          maxWidth: typeof col.maxWidth === "number" ? col.maxWidth : undefined,
+          align: col.align ?? "left",
+          flexBasis: resolveDimension(col.flexBasis),
+          height: resolveDimension(col.height),
+          minHeight: resolveDimension(col.minHeight),
+          maxHeight: resolveDimension(col.maxHeight),
+          alignSelf: col.alignSelf,
+          padding: buildLengthRect(
+            col.padding,
+            col.paddingTop,
+            col.paddingRight,
+            col.paddingBottom,
+            col.paddingLeft,
+          ),
+          margin: buildLengthAutoRect(
+            col.margin,
+            col.marginTop,
+            col.marginRight,
+            col.marginBottom,
+            col.marginLeft,
+          ),
+          border: buildLengthRect(
+            col.borderWidth,
+            col.borderTopWidth,
+            col.borderRightWidth,
+            col.borderBottomWidth,
+            col.borderLeftWidth,
+          ),
+          boxSizing: col.boxSizing,
+          aspectRatio: col.aspectRatio,
+          position: col.position,
+          inset: buildLengthAutoRect(
+            col.inset,
+            col.insetTop,
+            col.insetRight,
+            col.insetBottom,
+            col.insetLeft,
+          ),
+          gridRow: resolveGridLine(col.gridRow),
+          gridColumn: resolveGridLine(col.gridColumn),
+          justifySelf: col.justifySelf,
+        }));
+
+        // Map "auto" → "scroll" for Taffy (no "auto" in Taffy)
+        const taffyOverflowX = overflowX === "auto" ? "scroll" : overflowX;
+        const taffyOverflowY = overflowY === "auto" ? "scroll" : overflowY;
+
+        const containerLayout = {
+          display,
+          flexDirection,
+          flexWrap,
+          gap: resolveLength(gap),
+          rowGap: resolveLength(rowGap),
+          columnGap: resolveLength(columnGap),
+          alignItems,
+          alignContent,
+          justifyContent,
+          overflowX: taffyOverflowX,
+          overflowY: taffyOverflowY,
+          scrollbarWidth,
+          padding: buildLengthRect(padding, paddingTop, paddingRight, paddingBottom, paddingLeft),
+          margin: buildLengthAutoRect(margin, marginTop, marginRight, marginBottom, marginLeft),
+          border: buildLengthRect(
+            borderWidth,
+            borderTopWidth,
+            borderRightWidth,
+            borderBottomWidth,
+            borderLeftWidth,
+          ),
+          gridTemplateRows,
+          gridTemplateColumns,
+          gridAutoRows,
+          gridAutoColumns,
+          gridAutoFlow,
+          justifyItems,
+        };
+
+        const colCount = columns.length;
+
+        // Single WASM call: rebuild view + virtual slice + layout buffer (columnar path)
+        const meta = engine.updateViewportColumnar(
+          scrollTopRef.current,
+          viewport,
+          colLayouts,
+          containerLayout,
+        );
+        const cellCount = meta[0] ?? 0;
+        const visStart = meta[1] ?? 0;
+        const headerCount = colCount;
+        const dataCount = cellCount - headerCount;
+
+        // Store visStart for selection clipboard row mapping
+        onVisStartComputed(visStart);
+
+        // Zero-copy reads from WASM memory
+        const layoutBuf = bridge.getLayoutBuffer();
+        const viewIndices = bridge.getViewIndices();
+
+        // Store refs for hit-testing and editor positioning
+        onLayoutComputed(layoutBuf, headerCount, cellCount);
+
+        // Build CellLayout arrays for event manager
+        const normalizedHeaders: CellLayout[] = [];
+        for (let i = 0; i < headerCount; i++) {
+          normalizedHeaders.push({
+            row: readCellRow(layoutBuf, i),
+            col: readCellCol(layoutBuf, i),
+            x: readCellX(layoutBuf, i),
+            y: readCellY(layoutBuf, i),
+            width: readCellWidth(layoutBuf, i),
+            height: readCellHeight(layoutBuf, i),
+            contentAlign: readCellAlign(layoutBuf, i),
+          });
+        }
+        const normalizedRows: CellLayout[] = [];
+        for (let i = headerCount; i < cellCount; i++) {
+          normalizedRows.push({
+            row: readCellRow(layoutBuf, i),
+            col: readCellCol(layoutBuf, i),
+            x: readCellX(layoutBuf, i),
+            y: readCellY(layoutBuf, i),
+            width: readCellWidth(layoutBuf, i),
+            height: readCellHeight(layoutBuf, i),
+            contentAlign: readCellAlign(layoutBuf, i),
+          });
+        }
+
+        eventManagerRef.current.setLayouts(normalizedHeaders, normalizedRows);
+        eventManagerRef.current.setScrollOffset(scrollLeftRef.current);
+
+        // During drag auto-scroll, re-hit-test at last mouse position to extend selection
+        const sm = selectionManagerRef.current;
+        if (enableSelection && sm.isDragging) {
+          const hit = eventManagerRef.current.hitTestAtLastPos();
+          if (hit) {
+            sm.extend(hit.row, hit.col);
+          }
+        }
+
+        // Prepare header labels with sort indicators
+        const headers = columns.map((c) => c.header ?? c.id);
+        const headersWithSort = headers.map((h, i) => {
+          const col = columns[i];
+          const sortEntry = sorting.find((s) => s.id === col?.id);
+          if (sortEntry) {
+            return `${h} ${sortEntry.desc ? "\u25BC" : "\u25B2"}`;
+          }
+          return h;
+        });
+
+        // Draw — apply horizontal scroll via canvas translate
+        renderer.clear();
+        const ctx = renderer.context;
+        const scrollLeft = scrollLeftRef.current;
+        if (ctx && scrollLeft !== 0) {
+          ctx.save();
+          ctx.translate(-scrollLeft, 0);
+        }
+        renderer.drawHeaderFromBuffer(
+          layoutBuf,
+          0,
+          headerCount,
+          headersWithSort,
+          theme,
+          headerHeight,
+        );
+        renderer.drawRowsFromBuffer(
+          layoutBuf,
+          headerCount,
+          dataCount,
+          (cellIdx: number) => {
+            const col = columns[readCellCol(layoutBuf, cellIdx)];
+            const rowViewIdx = readCellRow(layoutBuf, cellIdx) - visStart;
+            const actualRow = viewIndices[rowViewIdx] ?? 0;
+            // Use InstructionBuilder for custom renderers, direct JS read for plain text
+            if (col?.children) {
+              const value = data[actualRow]?.[col.id];
+              return builder.build(col, value);
+            }
+            const text = strTable.get(readCellCol(layoutBuf, cellIdx), actualRow);
+            return { type: "text" as const, value: text };
+          },
+          theme,
+          rowHeight,
+        );
+        renderer.drawGridLinesFromBuffer(
+          layoutBuf,
+          headerCount,
+          cellCount,
+          theme,
+          headerHeight,
+          rowHeight,
+        );
+        // Draw selection highlight (topmost layer, inside scroll transform)
+        if (enableSelection) {
+          const sel = selectionManagerRef.current.getNormalized();
+          if (sel) {
+            renderer.drawSelection(layoutBuf, headerCount, cellCount, sel, theme, selectionStyle);
+          }
+        }
+        if (ctx && scrollLeft !== 0) {
+          ctx.restore();
+        }
+
+        // Sync native scrollbar positions (canvas wheel → scrollbar DOM)
+        syncScrollBarPosition(vScrollbarRef.current, scrollTopRef.current, "vertical");
+        syncScrollBarPosition(hScrollbarRef.current, scrollLeftRef.current, "horizontal");
+      }
+
+      rafRef.current = requestAnimationFrame(loop);
+    };
+
+    rafRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [
+    engine,
+    columnRegistry,
+    width,
+    height,
+    rowHeight,
+    headerHeight,
+    theme,
+    data,
+    containerProps,
+    sorting,
+    enableSelection,
+    selectionStyle,
+    memoryBridgeRef,
+    stringTableRef,
+    selectionManagerRef,
+    eventManagerRef,
+    scrollTopRef,
+    scrollLeftRef,
+    dirtyRef,
+    vScrollbarRef,
+    hScrollbarRef,
+    onLayoutComputed,
+    onVisStartComputed,
+  ]);
+}
