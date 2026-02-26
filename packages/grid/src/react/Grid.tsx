@@ -166,6 +166,7 @@ export function Grid({
   sorting: sortingProp,
   onSortingChange: onSortingChangeProp,
   // Selection (controlled/uncontrolled)
+  enableSelection: enableSelectionProp = true,
   selection: selectionProp,
   onSelectionChange: onSelectionChangeProp,
   selectionStyle,
@@ -248,6 +249,8 @@ export function Grid({
   const memoryBridgeRef = useRef<MemoryBridge | null>(null);
   const stringTableRef = useRef(new StringTable());
   const selectionManagerRef = useRef(new SelectionManager());
+  const selectionEnabledRef = useRef(enableSelectionProp);
+  selectionEnabledRef.current = enableSelectionProp;
   const visStartRef = useRef(0);
   const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoScrollDeltaRef = useRef({ dy: 0, dx: 0 });
@@ -304,7 +307,9 @@ export function Grid({
     const sm = selectionManagerRef.current;
     sm.setOnDirty(() => {
       dirtyRef.current = true;
-      onSelectionChangeProp?.(sm.getNormalized());
+      if (selectionEnabledRef.current) {
+        onSelectionChangeProp?.(sm.getNormalized());
+      }
     });
     sm.attachClipboard(container);
     return () => sm.detachClipboard();
@@ -448,6 +453,9 @@ export function Grid({
         onCellDoubleClick: handleCellDoubleClick,
         onCellMouseDown: (coord, shiftKey) => {
           if (editorManagerRef.current.isEditing) editorManagerRef.current.cancel();
+          if (!selectionEnabledRef.current) return;
+          const cols = columnRegistry.getAll();
+          if (cols[coord.col]?.selectable === false) return;
           const sm = selectionManagerRef.current;
           if (shiftKey && sm.hasSelection) {
             sm.extendTo(coord.row, coord.col);
@@ -456,6 +464,7 @@ export function Grid({
           }
         },
         onCellMouseMove: (coord) => {
+          if (!selectionEnabledRef.current) return;
           const sm = selectionManagerRef.current;
           if (sm.isDragging) sm.extend(coord.row, coord.col);
         },
@@ -498,6 +507,7 @@ export function Grid({
           autoScrollDeltaRef.current = { dy: 0, dx: 0 };
         },
         onKeyDown: (e) => {
+          if (!selectionEnabledRef.current) return;
           const sm = selectionManagerRef.current;
           if ((e.ctrlKey || e.metaKey) && e.key === "c" && sm.hasSelection) {
             e.preventDefault();
@@ -732,7 +742,7 @@ export function Grid({
 
         // During drag auto-scroll, re-hit-test at last mouse position to extend selection
         const sm = selectionManagerRef.current;
-        if (sm.isDragging) {
+        if (enableSelectionProp && sm.isDragging) {
           const hit = eventManagerRef.current.hitTestAtLastPos();
           if (hit) {
             sm.extend(hit.row, hit.col);
@@ -794,9 +804,11 @@ export function Grid({
           rowHeight,
         );
         // Draw selection highlight (topmost layer, inside scroll transform)
-        const sel = selectionManagerRef.current.getNormalized();
-        if (sel) {
-          renderer.drawSelection(layoutBuf, headerCount, cellCount, sel, theme, selectionStyle);
+        if (enableSelectionProp) {
+          const sel = selectionManagerRef.current.getNormalized();
+          if (sel) {
+            renderer.drawSelection(layoutBuf, headerCount, cellCount, sel, theme, selectionStyle);
+          }
         }
         if (ctx && scrollLeft !== 0) {
           ctx.restore();
@@ -860,7 +872,8 @@ export function Grid({
     justifyItems,
     // Sorting
     sorting,
-    // Selection style
+    // Selection
+    enableSelectionProp,
     selectionStyle,
   ]);
 
