@@ -31,6 +31,9 @@ e2e/blob-report/
 coverage/
 coverage-comment.md
 
+# Reference repos
+.reference/
+
 # Environment
 .env
 .env.local
