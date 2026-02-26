@@ -173,4 +173,97 @@ mod tests {
         assert_eq!(result.len(), 1); // Only Alice(30)
         assert_eq!(result[0][0], json!("Alice"));
     }
+
+    #[test]
+    fn test_filter_not_equals() {
+        let columns = test_columns();
+        let rows = test_rows();
+        let conditions = vec![FilterCondition {
+            column_key: "name".into(),
+            operator: FilterOperator::NotEquals,
+            value: json!("Bob"),
+        }];
+
+        let result = apply_filters(&rows, &columns, &conditions);
+        assert_eq!(result.len(), 3); // Alice, Charlie, Alice Smith
+        assert!(result.iter().all(|r| r[0] != json!("Bob")));
+    }
+
+    #[test]
+    fn test_filter_contains_non_string_returns_false() {
+        let columns = test_columns();
+        let rows = test_rows();
+        // Contains on the "age" column (numeric values) should return false for all
+        let conditions = vec![FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::Contains,
+            value: json!("30"),
+        }];
+
+        let result = apply_filters(&rows, &columns, &conditions);
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    fn test_filter_greater_than_or_equal() {
+        let columns = test_columns();
+        let rows = test_rows();
+        let conditions = vec![FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::GreaterThanOrEqual,
+            value: json!(30),
+        }];
+
+        let result = apply_filters(&rows, &columns, &conditions);
+        assert_eq!(result.len(), 2); // Alice(30), Charlie(35)
+        assert_eq!(result[0][0], json!("Alice"));
+        assert_eq!(result[1][0], json!("Charlie"));
+    }
+
+    #[test]
+    fn test_filter_less_than() {
+        let columns = test_columns();
+        let rows = test_rows();
+        let conditions = vec![FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::LessThan,
+            value: json!(28),
+        }];
+
+        let result = apply_filters(&rows, &columns, &conditions);
+        assert_eq!(result.len(), 1); // Bob(25)
+        assert_eq!(result[0][0], json!("Bob"));
+    }
+
+    #[test]
+    fn test_filter_less_than_or_equal() {
+        let columns = test_columns();
+        let rows = test_rows();
+        let conditions = vec![FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::LessThanOrEqual,
+            value: json!(28),
+        }];
+
+        let result = apply_filters(&rows, &columns, &conditions);
+        assert_eq!(result.len(), 2); // Bob(25), Alice Smith(28)
+        assert_eq!(result[0][0], json!("Bob"));
+        assert_eq!(result[1][0], json!("Alice Smith"));
+    }
+
+    #[test]
+    fn test_compare_numeric_with_non_numeric_value() {
+        let columns = test_columns();
+        let rows = test_rows();
+        // GreaterThan on "name" column (string values) with a numeric filter value
+        // compare_numeric will get None from as_f64() on strings, returning false
+        let conditions = vec![FilterCondition {
+            column_key: "name".into(),
+            operator: FilterOperator::GreaterThan,
+            value: json!(10),
+        }];
+
+        let result = apply_filters(&rows, &columns, &conditions);
+        assert_eq!(result.len(), 0);
+    }
 }

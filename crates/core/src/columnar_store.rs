@@ -805,4 +805,532 @@ mod tests {
         assert!((store.viewport_height() - 800.0).abs() < f64::EPSILON);
         assert_eq!(store.overscan(), 3);
     }
+
+    // ── StringInternTable coverage ───────────────────────────────────
+
+    #[test]
+    fn intern_cache_hit_returns_same_id() {
+        let mut intern = StringInternTable::new();
+        let id1 = intern.intern("hello");
+        let id2 = intern.intern("hello"); // cache hit path (line 50)
+        assert_eq!(id1, id2);
+        assert_eq!(intern.len(), 1); // only one entry
+    }
+
+    #[test]
+    fn intern_table_len_and_is_empty() {
+        let mut intern = StringInternTable::new();
+        assert!(intern.is_empty()); // lines 72-73
+        assert_eq!(intern.len(), 0); // lines 68-69
+
+        intern.intern("a");
+        assert!(!intern.is_empty());
+        assert_eq!(intern.len(), 1);
+
+        intern.intern("b");
+        assert_eq!(intern.len(), 2);
+    }
+
+    #[test]
+    fn intern_table_default() {
+        let intern = StringInternTable::default(); // lines 78-79
+        assert!(intern.is_empty());
+        assert_eq!(intern.len(), 0);
+    }
+
+    // ── ColumnarStore Default impl ───────────────────────────────────
+
+    #[test]
+    fn columnar_store_default() {
+        let store = ColumnarStore::default(); // lines 308-309
+        assert_eq!(store.row_count, 0);
+        assert_eq!(store.generation, 0);
+        assert!(store.columns.is_empty());
+        assert!(store.data.is_empty());
+    }
+
+    // ── get_float64_ptr for non-Float64 column ──────────────────────
+
+    #[test]
+    fn get_float64_ptr_returns_none_for_string_column() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+
+        // Column 0 is String type
+        assert!(store.get_float64_ptr(0).is_none()); // line 293
+    }
+
+    // ── compare_columnar NaN handling ────────────────────────────────
+
+    #[test]
+    fn compare_columnar_nan_both() {
+        // Two NaN values should compare as Equal (line 370)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 3);
+        store.set_column_float64(1, &[f64::NAN, f64::NAN, 5.0]);
+
+        let result = compare_columnar(&store, 1, 0, 1);
+        assert_eq!(result, std::cmp::Ordering::Equal); // line 370: (true, true)
+    }
+
+    #[test]
+    fn compare_columnar_nan_left_only() {
+        // NaN on left should be Less (line 371)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 2);
+        store.set_column_float64(1, &[f64::NAN, 5.0]);
+
+        let result = compare_columnar(&store, 1, 0, 1);
+        assert_eq!(result, std::cmp::Ordering::Less);
+    }
+
+    #[test]
+    fn compare_columnar_nan_right_only() {
+        // NaN on right should be Greater (line 372)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 2);
+        store.set_column_float64(1, &[5.0, f64::NAN]);
+
+        let result = compare_columnar(&store, 1, 0, 1);
+        assert_eq!(result, std::cmp::Ordering::Greater);
+    }
+
+    #[test]
+    fn sort_descending_exercises_nan_branches() {
+        // Sorting descending with NaN values triggers line 326 (reverse)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 3);
+        store.set_column_float64(1, &[f64::NAN, 10.0, 5.0]);
+
+        let mut indices: Vec<u32> = vec![0, 1, 2];
+        sort_indices_columnar(
+            &mut indices,
+            &store,
+            &[SortConfig {
+                column_index: 1,
+                direction: SortDirection::Descending, // line 326
+            }],
+        );
+        // Descending: 10.0(1), 5.0(2), NaN(0)
+        assert_eq!(indices, vec![1, 2, 0]);
+    }
+
+    // ── compare_columnar for None column (out of bounds) ─────────────
+
+    #[test]
+    fn compare_columnar_none_column() {
+        // Accessing a non-existent column returns Equal (line 381)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 2);
+        store.set_column_float64(1, &[1.0, 2.0]);
+
+        let result = compare_columnar(&store, 99, 0, 1); // col_idx 99 doesn't exist
+        assert_eq!(result, std::cmp::Ordering::Equal); // line 381
+    }
+
+    // ── matches_columnar NaN cell handling ───────────────────────────
+
+    #[test]
+    fn matches_columnar_nan_not_equals_returns_true() {
+        // NaN cell with NotEquals operator returns true (line 395)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 2);
+        store.set_column_float64(1, &[f64::NAN, 5.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::NotEquals,
+            value: json!(5),
+        };
+        assert!(matches_columnar(&store, 1, 0, &cond)); // NaN + NotEquals → true (line 395)
+    }
+
+    #[test]
+    fn matches_columnar_nan_equals_returns_false() {
+        // NaN cell with Equals operator returns false (not NotEquals → false, lines 394-395)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 2);
+        store.set_column_float64(1, &[f64::NAN, 5.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::Equals,
+            value: json!(5),
+        };
+        assert!(!matches_columnar(&store, 1, 0, &cond)); // NaN + Equals → false
+    }
+
+    // ── matches_columnar None column ─────────────────────────────────
+
+    #[test]
+    fn matches_columnar_none_column_returns_false() {
+        // Non-existent column returns false (line 427)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 2);
+        store.set_column_float64(1, &[1.0, 2.0]);
+
+        let cond = FilterCondition {
+            column_key: "nonexistent".into(),
+            operator: FilterOperator::Equals,
+            value: json!(1),
+        };
+        // filter_indices_columnar won't match "nonexistent" key,
+        // so we call matches_columnar directly with out-of-bounds col_idx
+        assert!(!matches_columnar(&store, 99, 0, &cond)); // line 427
+    }
+
+    // ── matches_columnar numeric operators ───────────────────────────
+
+    #[test]
+    fn matches_columnar_numeric_equals() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 2);
+        store.set_column_float64(1, &[30.0, 25.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::Equals, // line 400
+            value: json!(30),
+        };
+        assert!(matches_columnar(&store, 1, 0, &cond));
+        assert!(!matches_columnar(&store, 1, 1, &cond));
+    }
+
+    #[test]
+    fn matches_columnar_numeric_not_equals() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 2);
+        store.set_column_float64(1, &[30.0, 25.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::NotEquals, // line 403
+            value: json!(30),
+        };
+        assert!(!matches_columnar(&store, 1, 0, &cond)); // 30 != 30 → false
+        assert!(matches_columnar(&store, 1, 1, &cond)); // 25 != 30 → true
+    }
+
+    #[test]
+    fn matches_columnar_numeric_less_than() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 3);
+        store.set_column_float64(1, &[20.0, 30.0, 40.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::LessThan, // line 406
+            value: json!(30),
+        };
+        assert!(matches_columnar(&store, 1, 0, &cond)); // 20 < 30
+        assert!(!matches_columnar(&store, 1, 1, &cond)); // 30 < 30 → false
+        assert!(!matches_columnar(&store, 1, 2, &cond)); // 40 < 30 → false
+    }
+
+    #[test]
+    fn matches_columnar_numeric_gte() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 3);
+        store.set_column_float64(1, &[20.0, 30.0, 40.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::GreaterThanOrEqual, // line 407
+            value: json!(30),
+        };
+        assert!(!matches_columnar(&store, 1, 0, &cond)); // 20 >= 30 → false
+        assert!(matches_columnar(&store, 1, 1, &cond)); // 30 >= 30 → true
+        assert!(matches_columnar(&store, 1, 2, &cond)); // 40 >= 30 → true
+    }
+
+    #[test]
+    fn matches_columnar_numeric_lte() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 3);
+        store.set_column_float64(1, &[20.0, 30.0, 40.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::LessThanOrEqual, // line 408
+            value: json!(30),
+        };
+        assert!(matches_columnar(&store, 1, 0, &cond)); // 20 <= 30 → true
+        assert!(matches_columnar(&store, 1, 1, &cond)); // 30 <= 30 → true
+        assert!(!matches_columnar(&store, 1, 2, &cond)); // 40 <= 30 → false
+    }
+
+    #[test]
+    fn matches_columnar_numeric_contains_returns_false() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 1);
+        store.set_column_float64(1, &[30.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::Contains, // line 409
+            value: json!("30"),
+        };
+        assert!(!matches_columnar(&store, 1, 0, &cond)); // numeric Contains → false
+    }
+
+    // ── matches_columnar string operators ────────────────────────────
+
+    #[test]
+    fn matches_columnar_string_equals() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+
+        let cond = FilterCondition {
+            column_key: "name".into(),
+            operator: FilterOperator::Equals, // line 416
+            value: json!("Alice"),
+        };
+        assert!(matches_columnar(&store, 0, 0, &cond)); // "Alice" == "Alice"
+        assert!(!matches_columnar(&store, 0, 1, &cond)); // "Bob" == "Alice" → false
+    }
+
+    #[test]
+    fn matches_columnar_string_not_equals() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+
+        let cond = FilterCondition {
+            column_key: "name".into(),
+            operator: FilterOperator::NotEquals, // line 417
+            value: json!("Alice"),
+        };
+        assert!(!matches_columnar(&store, 0, 0, &cond)); // "Alice" != "Alice" → false
+        assert!(matches_columnar(&store, 0, 1, &cond)); // "Bob" != "Alice" → true
+    }
+
+    #[test]
+    fn matches_columnar_string_gt() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+
+        let cond = FilterCondition {
+            column_key: "name".into(),
+            operator: FilterOperator::GreaterThan, // line 421
+            value: json!("Bob"),
+        };
+        assert!(!matches_columnar(&store, 0, 0, &cond)); // "Alice" > "Bob" → false
+        assert!(!matches_columnar(&store, 0, 1, &cond)); // "Bob" > "Bob" → false
+        assert!(matches_columnar(&store, 0, 2, &cond)); // "Charlie" > "Bob" → true
+    }
+
+    #[test]
+    fn matches_columnar_string_lt() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+
+        let cond = FilterCondition {
+            column_key: "name".into(),
+            operator: FilterOperator::LessThan, // line 422
+            value: json!("Bob"),
+        };
+        assert!(matches_columnar(&store, 0, 0, &cond)); // "Alice" < "Bob" → true
+        assert!(!matches_columnar(&store, 0, 1, &cond)); // "Bob" < "Bob" → false
+        assert!(!matches_columnar(&store, 0, 2, &cond)); // "Charlie" < "Bob" → false
+    }
+
+    #[test]
+    fn matches_columnar_string_gte() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+
+        let cond = FilterCondition {
+            column_key: "name".into(),
+            operator: FilterOperator::GreaterThanOrEqual, // line 423
+            value: json!("Bob"),
+        };
+        assert!(!matches_columnar(&store, 0, 0, &cond)); // "Alice" >= "Bob" → false
+        assert!(matches_columnar(&store, 0, 1, &cond)); // "Bob" >= "Bob" → true
+        assert!(matches_columnar(&store, 0, 2, &cond)); // "Charlie" >= "Bob" → true
+    }
+
+    #[test]
+    fn matches_columnar_string_lte() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+
+        let cond = FilterCondition {
+            column_key: "name".into(),
+            operator: FilterOperator::LessThanOrEqual, // line 424
+            value: json!("Bob"),
+        };
+        assert!(matches_columnar(&store, 0, 0, &cond)); // "Alice" <= "Bob" → true
+        assert!(matches_columnar(&store, 0, 1, &cond)); // "Bob" <= "Bob" → true
+        assert!(!matches_columnar(&store, 0, 2, &cond)); // "Charlie" <= "Bob" → false
+    }
+
+    // ── detect_type edge cases ───────────────────────────────────────
+
+    #[test]
+    fn detect_type_null_first_then_number() {
+        // First row has null, second row has a number (line 436: null → continue)
+        let rows = vec![vec![json!(null)], vec![json!(42)]];
+        assert_eq!(detect_type(&rows, 0), ColumnType::Float64);
+    }
+
+    #[test]
+    fn detect_type_all_null_defaults_to_string() {
+        // All rows are null → defaults to String (line 447)
+        let rows = vec![vec![json!(null)], vec![json!(null)], vec![json!(null)]];
+        assert_eq!(detect_type(&rows, 0), ColumnType::String);
+    }
+
+    #[test]
+    fn detect_type_empty_rows_defaults_to_string() {
+        // No rows at all → defaults to String (line 447)
+        let rows: Vec<Vec<serde_json::Value>> = vec![];
+        assert_eq!(detect_type(&rows, 0), ColumnType::String);
+    }
+
+    // ── Bool column with get_float64_ptr ─────────────────────────────
+
+    #[test]
+    fn get_float64_ptr_works_for_bool_column() {
+        // Bool columns are stored as f64, so get_float64_ptr should return them
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+
+        let result = store.get_float64_ptr(2); // column 2 is Bool
+        assert!(result.is_some());
+        let (ptr, len) = result.unwrap();
+        assert_eq!(len, 4);
+        assert!(!ptr.is_null());
+    }
+
+    // ── Sort with multi-key equal fallthrough ────────────────────────
+
+    #[test]
+    fn sort_multi_key_equal_fallthrough() {
+        // When first sort key is equal, falls through to Equal (line 332)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 3);
+        // All same value in column 1
+        store.set_column_float64(1, &[30.0, 30.0, 30.0]);
+        // Different values in column 0
+        store.set_column_strings(
+            0,
+            &["".into(), "Charlie".into(), "Alice".into(), "Bob".into()],
+            &[1, 2, 3],
+        );
+
+        let mut indices: Vec<u32> = vec![0, 1, 2];
+        sort_indices_columnar(
+            &mut indices,
+            &store,
+            &[
+                SortConfig {
+                    column_index: 1,
+                    direction: SortDirection::Ascending,
+                },
+                SortConfig {
+                    column_index: 0,
+                    direction: SortDirection::Ascending,
+                },
+            ],
+        );
+        // All ages equal (30), so sort by name: Alice(2), Bob(3→idx2 is wrong, let me fix)
+        // ids: row0→"Charlie", row1→"Alice", row2→"Bob"
+        // Sort by name ascending: Alice(1), Bob(2), Charlie(0)
+        assert_eq!(indices, vec![1, 2, 0]);
+    }
+
+    // ── matches_columnar numeric with non-numeric filter value ───────
+
+    #[test]
+    fn matches_columnar_numeric_equals_non_numeric_filter() {
+        // filter_val.as_f64() returns None when value is a string
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 1);
+        store.set_column_float64(1, &[30.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::Equals,
+            value: json!("not_a_number"),
+        };
+        assert!(!matches_columnar(&store, 1, 0, &cond)); // filter_val is None → false
+    }
+
+    #[test]
+    fn matches_columnar_numeric_not_equals_non_numeric_filter() {
+        // NotEquals with non-numeric filter_val: filter_val.is_none_or → true (since None)
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.init(3, 1);
+        store.set_column_float64(1, &[30.0]);
+
+        let cond = FilterCondition {
+            column_key: "age".into(),
+            operator: FilterOperator::NotEquals,
+            value: json!("not_a_number"),
+        };
+        assert!(matches_columnar(&store, 1, 0, &cond)); // filter_val is None → true
+    }
+
+    #[test]
+    fn sort_columnar_empty_configs_no_change() {
+        let mut store = ColumnarStore::new();
+        store.set_columns(test_columns());
+        store.ingest_rows(&test_rows());
+
+        let mut indices: Vec<u32> = (0..4).collect();
+        sort_indices_columnar(&mut indices, &store, &[]);
+        // Should remain in original order
+        assert_eq!(indices, vec![0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn sort_columnar_all_equal_returns_equal() {
+        // When all sort keys are equal, the final Ordering::Equal fallthrough is hit
+        let mut store = ColumnarStore::new();
+        store.set_columns(vec![ColumnDef {
+            key: "val".into(),
+            header: "Val".into(),
+            width: None,
+            sortable: true,
+            filterable: false,
+        }]);
+        // All rows have the same value
+        store.ingest_rows(&vec![vec![json!(42)], vec![json!(42)], vec![json!(42)]]);
+
+        let mut indices: Vec<u32> = (0..3).collect();
+        sort_indices_columnar(
+            &mut indices,
+            &store,
+            &[SortConfig {
+                column_index: 0,
+                direction: SortDirection::Ascending,
+            }],
+        );
+        // Order should be stable (original order preserved)
+        assert_eq!(indices, vec![0, 1, 2]);
+    }
 }

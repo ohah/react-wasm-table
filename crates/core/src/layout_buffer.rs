@@ -146,4 +146,23 @@ mod tests {
         assert_eq!(buf_len(1), LAYOUT_STRIDE);
         assert_eq!(buf_len(10), 10 * LAYOUT_STRIDE);
     }
+
+    #[test]
+    fn write_cell_center_align() {
+        let mut buf = vec![0.0_f32; buf_len(1)];
+        write_cell(
+            &mut buf,
+            0,
+            0,
+            0,
+            0.0,
+            0.0,
+            100.0,
+            36.0,
+            Align::Center,
+            NO_PADDING,
+            NO_BORDER,
+        );
+        assert!((buf[FIELD_ALIGN] - 1.0).abs() < f32::EPSILON); // Center = 1.0
+    }
 }

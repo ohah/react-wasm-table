@@ -209,4 +209,57 @@ describe("buildHeaderGroups", () => {
     const ctx = groups[0]!.headers[0]!.getContext();
     expect(ctx.column.id).toBe("firstName");
   });
+
+  it("getContext works on leaf headers in grouped columns", () => {
+    const groups = build([
+      helper.group({
+        header: "Name",
+        columns: [
+          helper.accessor("firstName", { header: "First" }),
+          helper.accessor("lastName", { header: "Last" }),
+        ],
+      }),
+    ]);
+
+    // Leaf headers are at depth 1
+    const leafCtx = groups[1]!.headers[0]!.getContext();
+    expect(leafCtx.column.id).toBe("firstName");
+    const leafCtx2 = groups[1]!.headers[1]!.getContext();
+    expect(leafCtx2.column.id).toBe("lastName");
+  });
+
+  it("getContext works on group parent headers", () => {
+    const groups = build([
+      helper.group({
+        id: "nameGroup",
+        header: "Name",
+        columns: [
+          helper.accessor("firstName", { header: "First" }),
+          helper.accessor("lastName", { header: "Last" }),
+        ],
+      }),
+      helper.accessor("age", { header: "Age" }),
+    ]);
+
+    // Parent header at depth 0
+    const groupCtx = groups[0]!.headers[0]!.getContext();
+    expect(groupCtx.column.id).toBe("nameGroup");
+  });
+
+  it("getContext works on placeholder headers", () => {
+    const groups = build([
+      helper.group({
+        header: "Name",
+        columns: [
+          helper.accessor("firstName", { header: "First" }),
+          helper.accessor("lastName", { header: "Last" }),
+        ],
+      }),
+      helper.accessor("age", { header: "Age" }),
+    ]);
+
+    // Placeholder header for "age" at depth 0
+    const placeholderCtx = groups[0]!.headers[1]!.getContext();
+    expect(placeholderCtx.column.id).toBe("age");
+  });
 });
