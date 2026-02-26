@@ -409,7 +409,10 @@ export function Grid({
           const maxScrollY = Math.max(0, data.length * rowHeight - (height - headerHeight));
           scrollTopRef.current = Math.max(0, Math.min(maxScrollY, scrollTopRef.current + deltaY));
           const cols = columnRegistry.getAll();
-          const totalColWidth = cols.reduce((sum, c) => sum + (typeof c.width === "number" ? c.width : 100), 0);
+          const totalColWidth = cols.reduce(
+            (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
+            0,
+          );
           const maxScrollX = Math.max(0, totalColWidth - width);
           scrollLeftRef.current = Math.max(0, Math.min(maxScrollX, scrollLeftRef.current + deltaX));
           dirtyRef.current = true;
@@ -421,7 +424,16 @@ export function Grid({
     return () => {
       em.detach();
     };
-  }, [handleHeaderClick, handleCellDoubleClick, rowHeight, data.length, headerHeight, height, columnRegistry, width]);
+  }, [
+    handleHeaderClick,
+    handleCellDoubleClick,
+    rowHeight,
+    data.length,
+    headerHeight,
+    height,
+    columnRegistry,
+    width,
+  ]);
 
   // Render loop — unified hot path (single WASM call per frame)
   useEffect(() => {
