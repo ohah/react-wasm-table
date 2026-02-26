@@ -43,22 +43,24 @@ const columns = [
 
 ## Column Helper Methods
 
-| Method | Description |
-|--------|-------------|
-| `helper.accessor(key, opts)` | Data column by property name — type-safe `getValue()` |
-| `helper.accessor(fn, opts)` | Data column by function (requires `id`) |
-| `helper.display(opts)` | Display-only column (requires `id`) |
-| `helper.group(opts)` | Group column with nested `columns` (multi-level headers) |
+| Method                       | Description                                              |
+| ---------------------------- | -------------------------------------------------------- |
+| `helper.accessor(key, opts)` | Data column by property name — type-safe `getValue()`    |
+| `helper.accessor(fn, opts)`  | Data column by function (requires `id`)                  |
+| `helper.display(opts)`       | Display-only column (requires `id`)                      |
+| `helper.group(opts)`         | Group column with nested `columns` (multi-level headers) |
 
 ## Column Properties
 
 **TanStack-compatible (내부 변환됨):**
+
 - `size` → width, `minSize` → minWidth, `maxSize` → maxWidth
 - `enableSorting` → sortable
 - `cell: string | (info: CellContext<T, V>) => RenderInstruction | ReactElement | string`
 - `header: string | (ctx: HeaderContext<T, V>) => string`
 
 **Canvas extensions (Taffy flexbox):**
+
 - `flexGrow`, `flexShrink`, `flexBasis`, `align`
 - `padding`, `paddingTop/Right/Bottom/Left`
 - `margin`, `marginTop/Right/Bottom/Left`
@@ -112,35 +114,48 @@ const columns: GridColumnDef<Person>[] = [...];
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `packages/grid/src/tanstack-types.ts` | GridColumnDef, CellContext, HeaderContext, SortingState |
-| `packages/grid/src/column-helper.ts` | createColumnHelper factory |
-| `packages/grid/src/resolve-columns.ts` | GridColumnDef → ColumnProps 변환 |
-| `packages/grid/src/grid-instance.ts` | GridInstance, GridColumn (runtime methods) |
-| `packages/grid/src/use-grid-table.ts` | React hook (controlled/uncontrolled) |
-| `packages/grid/src/build-header-groups.ts` | Multi-level header builder |
-| `packages/grid/src/components.tsx` | Canvas JSX components |
-| `packages/grid/src/resolve-instruction.ts` | ReactElement → RenderInstruction |
-| `packages/grid/src/react/Grid.tsx` | Main Grid component |
-| `packages/grid/src/types.ts` | Core types (GridProps, ColumnProps, Theme) |
+| File                                       | Purpose                                                 |
+| ------------------------------------------ | ------------------------------------------------------- |
+| `packages/grid/src/tanstack-types.ts`      | GridColumnDef, CellContext, HeaderContext, SortingState |
+| `packages/grid/src/column-helper.ts`       | createColumnHelper factory                              |
+| `packages/grid/src/resolve-columns.ts`     | GridColumnDef → ColumnProps 변환                        |
+| `packages/grid/src/grid-instance.ts`       | GridInstance, GridColumn (runtime methods)              |
+| `packages/grid/src/use-grid-table.ts`      | React hook (controlled/uncontrolled)                    |
+| `packages/grid/src/build-header-groups.ts` | Multi-level header builder                              |
+| `packages/grid/src/components.tsx`         | Canvas JSX components                                   |
+| `packages/grid/src/resolve-instruction.ts` | ReactElement → RenderInstruction                        |
+| `packages/grid/src/react/Grid.tsx`         | Main Grid component                                     |
+| `packages/grid/src/types.ts`               | Core types (GridProps, ColumnProps, Theme)              |
 
 ## Grid Container Props
 
 ```tsx
 <Grid
-  data={data} columns={columns} width={800} height={600}
+  data={data}
+  columns={columns}
+  width={800}
+  height={600}
   // Flexbox
-  display="flex" flexDirection="row" flexWrap="nowrap"
-  gap={8} alignItems="stretch" justifyContent="start"
+  display="flex"
+  flexDirection="row"
+  flexWrap="nowrap"
+  gap={8}
+  alignItems="stretch"
+  justifyContent="start"
   // Grid layout
-  display="grid" gridTemplateColumns="1fr 2fr 1fr" gridAutoFlow="row"
+  display="grid"
+  gridTemplateColumns="1fr 2fr 1fr"
+  gridAutoFlow="row"
   // Box model
-  padding={[4, 8]} margin={0} borderWidth={1}
+  padding={[4, 8]}
+  margin={0}
+  borderWidth={1}
   // Overflow
-  overflowX="visible" overflowY="visible"
+  overflowX="visible"
+  overflowY="visible"
   // Sorting
-  sorting={sorting} onSortingChange={setSorting}
+  sorting={sorting}
+  onSortingChange={setSorting}
   initialState={{ sorting: [] }}
   // Theme
   theme={{ headerBackground: "#f5f5f5", fontSize: 13 }}
