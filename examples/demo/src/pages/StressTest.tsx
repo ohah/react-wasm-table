@@ -16,6 +16,8 @@ type Employee = {
   teamSize: number;
 };
 
+const ROW_COUNT = 1_000_000; // 50k × 20 for stress test
+
 const helper = createColumnHelper<Employee>();
 
 const columns = [
@@ -115,16 +117,17 @@ const columns = [
   }),
 ];
 
-export function Home() {
-  const data = useMemo(() => generateEmployees(50_000), []);
+export function StressTest() {
+  const data = useMemo(() => generateEmployees(ROW_COUNT), []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const { ref, size } = useContainerSize(600);
 
   return (
     <>
-      <h1>react-wasm-table Demo</h1>
+      <h1>Stress Test — 1M rows</h1>
       <p>
-        Rendering {data.length.toLocaleString()} rows with Canvas + WASM layout
+        Same grid as Home, with {data.length.toLocaleString()} rows (50k × 20). Initial data
+        generation may take a few seconds.
         {sorting.length > 0 && (
           <span style={{ marginLeft: 8, color: "#666" }}>
             | Sorted by: {sorting[0]!.id} ({sorting[0]!.desc ? "desc" : "asc"})
