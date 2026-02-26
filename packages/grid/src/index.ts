@@ -4,6 +4,70 @@ export { Column } from "./react/Column";
 export { RowStyle } from "./react/RowStyle";
 export type { RowStyleProps } from "./react/RowStyle";
 
+// Canvas JSX components
+export {
+  Text,
+  Badge,
+  Flex,
+  Box,
+  Stack,
+  HStack,
+  VStack,
+  ProgressBar,
+  Sparkline,
+  Rating,
+  Icon,
+  Image,
+  Avatar,
+  Tag,
+  Chip,
+  Link,
+  Color,
+  Input,
+  NumberInput,
+  Select,
+  Checkbox,
+  Switch,
+  DatePicker,
+  Dropdown,
+} from "./components";
+
+// Resolve instruction
+export { resolveInstruction } from "./resolve-instruction";
+
+// Column helper (TanStack-compatible API)
+export { createColumnHelper } from "./column-helper";
+export type { ColumnHelper } from "./column-helper";
+export { resolveColumns, getLeafColumns } from "./resolve-columns";
+export type {
+  GridColumnDef,
+  AccessorKeyColumnDef,
+  AccessorFnColumnDef,
+  DisplayColumnDef,
+  GroupColumnDef,
+  ColumnDefBase,
+  CellContext,
+  HeaderContext,
+  SortingState,
+  ColumnSort,
+  SortingUpdater,
+} from "./tanstack-types";
+
+// Header grouping (multi-level headers)
+export { buildHeaderGroups } from "./build-header-groups";
+
+// Grid instance + useGridTable (TanStack-compatible)
+export { useGridTable } from "./use-grid-table";
+export type { UseGridTableOptions } from "./use-grid-table";
+export { buildGridInstance } from "./grid-instance";
+export type {
+  GridInstance,
+  GridColumn,
+  GridHeader,
+  GridHeaderGroup,
+  GridState,
+} from "./grid-instance";
+
 // Hooks
 export { useGrid, useColumnRegistry, useWasm } from "./react/hooks";
 
@@ -41,11 +105,12 @@ export type {
   CellLayout,
   TextInstruction,
   BadgeInstruction,
+  FlexInstruction,
+  StubInstruction,
   RenderInstruction,
   TextStyle,
   BadgeStyle,
   Theme,
-  ColumnDef,
   ColumnProps,
   GridProps,
   WasmTableEngine,
