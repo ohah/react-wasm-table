@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
-use crate::data_store::ColumnDef;
 use crate::filtering::{FilterCondition, FilterOperator};
-use crate::sorting::{SortConfig, SortDirection};
+use crate::types::{ColumnDef, SortConfig, SortDirection};
 use serde_json::Value;
 
 /// Column data type tag.
@@ -450,7 +449,7 @@ fn detect_type(rows: &[Vec<serde_json::Value>], col_idx: usize) -> ColumnType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data_store::ColumnDef;
+    use crate::types::ColumnDef;
     use serde_json::json;
 
     fn test_columns() -> Vec<ColumnDef> {
