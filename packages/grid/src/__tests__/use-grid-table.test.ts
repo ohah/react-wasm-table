@@ -55,7 +55,7 @@ function simulateHookState(opts: {
 
   return {
     instance: buildGridInstance({ columns, state, onSortingChange }),
-    getSorting: () => (opts.controlledSorting ?? internalSorting),
+    getSorting: () => opts.controlledSorting ?? internalSorting,
   };
 }
 
@@ -107,7 +107,9 @@ describe("useGridTable state logic", () => {
       let captured: SortingUpdater | undefined;
       const { instance } = simulateHookState({
         controlledSorting: [],
-        onSortingChange: (updater) => { captured = updater; },
+        onSortingChange: (updater) => {
+          captured = updater;
+        },
       });
       instance.getColumn("age")!.toggleSorting();
       expect(captured).toBeDefined();
@@ -118,7 +120,9 @@ describe("useGridTable state logic", () => {
       let captured: SortingUpdater | undefined;
       const { instance } = simulateHookState({
         controlledSorting: [],
-        onSortingChange: (updater) => { captured = updater; },
+        onSortingChange: (updater) => {
+          captured = updater;
+        },
       });
       instance.setSorting([{ id: "age", desc: true }]);
       expect(captured).toEqual([{ id: "age", desc: true }]);
@@ -128,7 +132,9 @@ describe("useGridTable state logic", () => {
       let captured: SortingUpdater | undefined;
       const { instance } = simulateHookState({
         controlledSorting: [{ id: "age", desc: false }],
-        onSortingChange: (updater) => { captured = updater; },
+        onSortingChange: (updater) => {
+          captured = updater;
+        },
       });
       instance.resetSorting();
       expect(captured).toEqual([]);
@@ -140,10 +146,10 @@ describe("useGridTable state logic", () => {
       let captured: SortingState | undefined;
       simulateHookState({
         controlledSorting: [{ id: "age", desc: false }],
-        onSortingChange: (v) => { captured = v; },
-      }).instance.setSorting((prev: SortingState) =>
-        prev.map((s) => ({ ...s, desc: !s.desc })),
-      );
+        onSortingChange: (v) => {
+          captured = v;
+        },
+      }).instance.setSorting((prev: SortingState) => prev.map((s) => ({ ...s, desc: !s.desc })));
       expect(captured).toEqual([{ id: "age", desc: true }]);
     });
 
@@ -151,9 +157,7 @@ describe("useGridTable state logic", () => {
       const { instance, getSorting } = simulateHookState({
         initialSorting: [{ id: "age", desc: false }],
       });
-      instance.setSorting((prev: SortingState) =>
-        [...prev, { id: "status", desc: true }],
-      );
+      instance.setSorting((prev: SortingState) => [...prev, { id: "status", desc: true }]);
       expect(getSorting()).toEqual([
         { id: "age", desc: false },
         { id: "status", desc: true },

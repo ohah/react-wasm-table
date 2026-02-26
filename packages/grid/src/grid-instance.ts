@@ -139,13 +139,7 @@ function buildGridColumns<TData>(
 
     // Recurse for group columns
     if ("columns" in def && def.columns) {
-      column.columns = buildGridColumns(
-        def.columns,
-        state,
-        onSortingChange,
-        depth + 1,
-        column,
-      );
+      column.columns = buildGridColumns(def.columns, state, onSortingChange, depth + 1, column);
     }
 
     return column;
@@ -153,9 +147,7 @@ function buildGridColumns<TData>(
 }
 
 /** Build a GridInstance from options. */
-export function buildGridInstance<TData>(
-  options: BuildOptions<TData>,
-): GridInstance<TData> {
+export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInstance<TData> {
   const { columns: defs, state, onSortingChange } = options;
 
   const allColumns = buildGridColumns(defs, state, onSortingChange);

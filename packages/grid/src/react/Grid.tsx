@@ -226,9 +226,7 @@ export function Grid({
   const dirtyRef = useRef(true);
   const rafRef = useRef<number>(0);
   // TanStack-compatible sorting state (uncontrolled internal state)
-  const [internalSorting, setInternalSorting] = useState<SortingState>(
-    initialState?.sorting ?? [],
-  );
+  const [internalSorting, setInternalSorting] = useState<SortingState>(initialState?.sorting ?? []);
   const sorting = sortingProp ?? internalSorting;
   const headerLayoutsRef = useRef<CellLayout[]>([]);
   const rowLayoutsRef = useRef<CellLayout[]>([]);

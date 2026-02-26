@@ -15,8 +15,7 @@ const helper = createColumnHelper<Person>();
 function createInstance(sorting: SortingState = []) {
   let currentSorting = sorting;
   const onSortingChange = (updater: SortingUpdater) => {
-    currentSorting =
-      typeof updater === "function" ? updater(currentSorting) : updater;
+    currentSorting = typeof updater === "function" ? updater(currentSorting) : updater;
   };
 
   const columns = [
@@ -146,16 +145,12 @@ describe("GridInstance", () => {
       expect(getSorting()).toEqual([{ id: "age", desc: false }]);
 
       // Rebuild instance with new state to test cycle
-      const { instance: i2, getSorting: gs2 } = createInstance([
-        { id: "age", desc: false },
-      ]);
+      const { instance: i2, getSorting: gs2 } = createInstance([{ id: "age", desc: false }]);
       i2.getColumn("age")!.toggleSorting();
       expect(gs2()).toEqual([{ id: "age", desc: true }]);
 
       // desc → remove
-      const { instance: i3, getSorting: gs3 } = createInstance([
-        { id: "age", desc: true },
-      ]);
+      const { instance: i3, getSorting: gs3 } = createInstance([{ id: "age", desc: true }]);
       i3.getColumn("age")!.toggleSorting();
       expect(gs3()).toEqual([]);
     });
@@ -258,9 +253,7 @@ describe("GridInstance", () => {
       const columns = [
         helper.group({
           header: "Info",
-          columns: [
-            helper.accessor("firstName", { header: "First" }),
-          ],
+          columns: [helper.accessor("firstName", { header: "First" })],
         }),
       ];
       const instance = buildGridInstance({
@@ -282,9 +275,7 @@ describe("GridInstance", () => {
     });
 
     it("resetSorting clears sorting", () => {
-      const { instance, getSorting } = createInstance([
-        { id: "age", desc: true },
-      ]);
+      const { instance, getSorting } = createInstance([{ id: "age", desc: true }]);
       instance.resetSorting();
       expect(getSorting()).toEqual([]);
     });

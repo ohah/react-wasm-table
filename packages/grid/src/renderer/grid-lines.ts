@@ -46,9 +46,7 @@ export function computeHeaderLines(
     { y: headerY + headerHeight - 0.25, x1: 0, x2: canvasW },
   ];
 
-  const vertical: VLine[] = [
-    { x: firstX + 0.25, y1: headerY, y2: headerY + headerHeight },
-  ];
+  const vertical: VLine[] = [{ x: firstX + 0.25, y1: headerY, y2: headerY + headerHeight }];
 
   const colEdges = new Set<number>();
   for (const layout of layouts) {

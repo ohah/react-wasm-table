@@ -291,9 +291,7 @@ describe("resolveColumns", () => {
   });
 
   it("omits undefined properties (no spurious keys)", () => {
-    const defs = [
-      helper.accessor("firstName", { header: "First", size: 100 }),
-    ];
+    const defs = [helper.accessor("firstName", { header: "First", size: 100 })];
     const result = resolveColumns(defs, []);
     expect("margin" in result[0]!).toBe(false);
     expect("borderWidth" in result[0]!).toBe(false);

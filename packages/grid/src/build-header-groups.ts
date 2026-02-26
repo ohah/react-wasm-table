@@ -176,9 +176,7 @@ function findMaxDepth<TData>(columns: GridColumn<TData>[]): number {
 }
 
 /** Collect all leaf GridColumns in order. */
-function getLeafGridColumns<TData>(
-  columns: GridColumn<TData>[],
-): GridColumn<TData>[] {
+function getLeafGridColumns<TData>(columns: GridColumn<TData>[]): GridColumn<TData>[] {
   const leaves: GridColumn<TData>[] = [];
   function collect(cols: GridColumn<TData>[]) {
     for (const col of cols) {
