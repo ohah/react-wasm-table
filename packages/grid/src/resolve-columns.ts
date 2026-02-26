@@ -7,12 +7,12 @@ import { resolveInstruction } from "./resolve-instruction";
  * Group columns are recursed; their leaf children are collected in order.
  */
 export function resolveColumns<TData>(
-  defs: GridColumnDef<TData>[],
+  defs: GridColumnDef<TData, any>[],
   data: TData[],
 ): ColumnProps[] {
   const result: ColumnProps[] = [];
 
-  function flatten(def: GridColumnDef<TData>): void {
+  function flatten(def: GridColumnDef<TData, any>): void {
     // Group column: recurse into children
     if ("columns" in def && def.columns) {
       for (const child of def.columns) {
@@ -117,7 +117,7 @@ export function resolveColumns<TData>(
 }
 
 /** Extract or derive the column ID from a column definition. */
-function getId<TData>(def: GridColumnDef<TData>): string {
+function getId<TData>(def: GridColumnDef<TData, any>): string {
   if ("id" in def && def.id) return def.id;
   if ("accessorKey" in def && def.accessorKey) return def.accessorKey as string;
   return `col_${Math.random().toString(36).slice(2, 8)}`;
@@ -128,10 +128,10 @@ function getId<TData>(def: GridColumnDef<TData>): string {
  * Preserves the group structure for header rendering.
  */
 export function getLeafColumns<TData>(
-  defs: GridColumnDef<TData>[],
-): GridColumnDef<TData>[] {
-  const leaves: GridColumnDef<TData>[] = [];
-  function collect(def: GridColumnDef<TData>) {
+  defs: GridColumnDef<TData, any>[],
+): GridColumnDef<TData, any>[] {
+  const leaves: GridColumnDef<TData, any>[] = [];
+  function collect(def: GridColumnDef<TData, any>) {
     if ("columns" in def && def.columns) {
       for (const child of def.columns) collect(child);
     } else {
