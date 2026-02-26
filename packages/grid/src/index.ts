@@ -81,6 +81,7 @@ export { InstructionBuilder } from "./adapter/instruction-builder";
 export { EventManager } from "./adapter/event-manager";
 export type { GridEventHandlers, ScrollNormalization } from "./adapter/event-manager";
 export { EditorManager } from "./adapter/editor-manager";
+export { SelectionManager, buildTSV } from "./adapter/selection-manager";
 
 // Renderer
 export { CanvasRenderer } from "./renderer/canvas-renderer";
@@ -102,6 +103,9 @@ export { initWasm, createTableEngine, isWasmReady, setWasmUrl } from "./wasm-loa
 // Types
 export type {
   CellCoord,
+  CellRange,
+  NormalizedRange,
+  SelectionStyle,
   CellLayout,
   TextInstruction,
   BadgeInstruction,
