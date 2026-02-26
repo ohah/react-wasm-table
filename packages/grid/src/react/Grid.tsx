@@ -4,7 +4,7 @@ import { DEFAULT_THEME } from "../types";
 import { resolveColumns } from "../resolve-columns";
 import { ColumnRegistry } from "../adapter/column-registry";
 import { EventManager } from "../adapter/event-manager";
-import { GridContext, WasmContext } from "./context";
+import { GridContext } from "./context";
 import { ScrollBar } from "./ScrollBar";
 import { useSorting } from "./hooks/use-sorting";
 import { useWasmEngine } from "./hooks/use-wasm-engine";
@@ -334,53 +334,51 @@ export function Grid({
 
   return (
     <GridContext.Provider value={{ columnRegistry }}>
-      <WasmContext.Provider value={{ engine, isReady: engine !== null }}>
+      <div
+        style={{
+          position: "relative",
+          width,
+          height,
+          overflow: "hidden",
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          width={width}
+          height={height}
+          style={{ display: "block", touchAction: "none" }}
+        />
         <div
+          ref={editorRef}
           style={{
-            position: "relative",
-            width,
-            height,
-            overflow: "hidden",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
           }}
-        >
-          <canvas
-            ref={canvasRef}
-            width={width}
-            height={height}
-            style={{ display: "block", touchAction: "none" }}
+        />
+        {showVerticalScrollbar && (
+          <ScrollBar
+            ref={vScrollbarRef}
+            orientation="vertical"
+            contentSize={totalContentHeight}
+            viewportSize={height}
+            onScrollChange={handleVScrollChange}
           />
-          <div
-            ref={editorRef}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              pointerEvents: "none",
-            }}
+        )}
+        {showHorizontalScrollbar && (
+          <ScrollBar
+            ref={hScrollbarRef}
+            orientation="horizontal"
+            contentSize={totalContentWidth}
+            viewportSize={width}
+            onScrollChange={handleHScrollChange}
           />
-          {showVerticalScrollbar && (
-            <ScrollBar
-              ref={vScrollbarRef}
-              orientation="vertical"
-              contentSize={totalContentHeight}
-              viewportSize={height}
-              onScrollChange={handleVScrollChange}
-            />
-          )}
-          {showHorizontalScrollbar && (
-            <ScrollBar
-              ref={hScrollbarRef}
-              orientation="horizontal"
-              contentSize={totalContentWidth}
-              viewportSize={width}
-              onScrollChange={handleHScrollChange}
-            />
-          )}
-          {!columnsProp && children}
-        </div>
-      </WasmContext.Provider>
+        )}
+        {!columnsProp && children}
+      </div>
     </GridContext.Provider>
   );
 }
