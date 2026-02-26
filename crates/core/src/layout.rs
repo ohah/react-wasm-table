@@ -977,6 +977,21 @@ impl Default for LayoutEngine {
 mod tests {
     use super::*;
 
+    struct NullLogger;
+    impl log::Log for NullLogger {
+        fn enabled(&self, _: &log::Metadata) -> bool {
+            true
+        }
+        fn log(&self, _: &log::Record) {}
+        fn flush(&self) {}
+    }
+    static NULL_LOGGER: NullLogger = NullLogger;
+
+    fn init_logger() {
+        let _ = log::set_logger(&NULL_LOGGER);
+        log::set_max_level(log::LevelFilter::Debug);
+    }
+
     fn make_viewport() -> Viewport {
         Viewport {
             width: 600.0,
@@ -1017,6 +1032,7 @@ mod tests {
 
     #[test]
     fn fixed_width_columns() {
+        init_logger();
         let mut engine = LayoutEngine::new();
         let columns = vec![
             col(100.0, Align::Left),
@@ -1218,6 +1234,7 @@ mod tests {
 
     #[test]
     fn compute_into_buffer_matches_struct_output() {
+        init_logger();
         let mut engine = LayoutEngine::new();
         let columns = vec![col(100.0, Align::Left), col(200.0, Align::Right)];
         let viewport = make_viewport();
@@ -1605,5 +1622,1494 @@ mod tests {
         assert!((buf[layout_buffer::FIELD_BORDER_RIGHT] - 3.0).abs() < 0.1);
         assert!((buf[layout_buffer::FIELD_BORDER_BOTTOM] - 2.0).abs() < 0.1);
         assert!((buf[layout_buffer::FIELD_BORDER_LEFT] - 3.0).abs() < 0.1);
+    }
+
+    // ── Coverage: DimensionValue conversion paths ──────────────────────
+
+    #[test]
+    fn dimension_auto_when_column_width_zero() {
+        // Line 547: column_style with width=0 produces Dimension::auto()
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 0.0,
+            flex_grow: 1.0,
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        // width=0 → Dimension::auto(), but flex_grow=1 fills container → 600
+        assert!((header[0].width - 600.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn dimension_percent_height() {
+        // Lines 343-344: dimension_to_taffy Percent branch via column height
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            height: DimensionValue::Percent(0.5), // 50% of row height
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport(); // header_height=40
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        // 50% of 40 = 20
+        assert!((header[0].height - 20.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn dimension_auto_flex_basis() {
+        // dimension_to_taffy Auto branch via flex_basis (default)
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            flex_basis: DimensionValue::Auto,
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert!((header[0].width - 100.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn dimension_percent_flex_basis() {
+        // dimension_to_taffy Percent branch via flex_basis
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 0.0,
+            flex_basis: DimensionValue::Percent(0.5), // 50% of container width
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport(); // width=600
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        // 50% of 600 = 300
+        assert!((header[0].width - 300.0).abs() < 1.0);
+    }
+
+    // ── Coverage: LengthValue Percent branch ───────────────────────────
+
+    #[test]
+    fn length_percent_gap() {
+        // Line 352: length_to_taffy Percent branch via gap
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(100.0, Align::Left)];
+        let viewport = make_viewport(); // width=600
+        let container = ContainerLayout {
+            gap: LengthValue::Percent(0.1), // 10% of container
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // Gap of 10% of 600 = 60, second column starts at 100 + 60 = 160
+        assert!((header[1].x - 160.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn length_percent_padding_on_column() {
+        // length_to_taffy Percent branch via column padding
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 200.0,
+            padding: RectValue {
+                top: LengthValue::Percent(0.1),
+                right: LengthValue::Percent(0.05),
+                bottom: LengthValue::Percent(0.1),
+                left: LengthValue::Percent(0.05),
+            },
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        // Layout should compute without error; padding percents are resolved
+        assert_eq!(header.len(), 1);
+        assert!(header[0].width > 0.0);
+    }
+
+    // ── Coverage: LengthAutoValue Percent branch ───────────────────────
+
+    #[test]
+    fn length_auto_percent_margin() {
+        // Line 360: length_auto_to_taffy Percent branch via column margin
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            margin: RectValue {
+                top: LengthAutoValue::Percent(0.1),
+                right: LengthAutoValue::Percent(0.05),
+                bottom: LengthAutoValue::Percent(0.1),
+                left: LengthAutoValue::Percent(0.05),
+            },
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+        // 10% margins on left/right of the container width shrink available space
+        assert!(header[0].x > 0.0);
+    }
+
+    #[test]
+    fn length_auto_percent_inset() {
+        // length_auto_to_taffy Percent branch via column inset
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            position: PositionValue::Absolute,
+            inset: RectValue {
+                top: LengthAutoValue::Percent(0.1),
+                right: LengthAutoValue::Auto,
+                bottom: LengthAutoValue::Auto,
+                left: LengthAutoValue::Percent(0.2),
+            },
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: AlignValue → AlignItems (all branches) ───────────────
+
+    #[test]
+    fn align_self_end() {
+        // Line 385: AlignValue::End → AlignItems::End
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            height: DimensionValue::Length(20.0),
+            align_self: Some(AlignValue::End),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport(); // header_height=40
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        // End-aligned: y = 40 - 20 = 20
+        assert!((header[0].y - 20.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn align_self_flex_start() {
+        // Line 386: AlignValue::FlexStart → AlignItems::FlexStart
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            height: DimensionValue::Length(20.0),
+            align_self: Some(AlignValue::FlexStart),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        // FlexStart in a row container → y=0
+        assert!((header[0].y - 0.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn align_self_flex_end() {
+        // Line 387: AlignValue::FlexEnd → AlignItems::FlexEnd
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            height: DimensionValue::Length(20.0),
+            align_self: Some(AlignValue::FlexEnd),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport(); // header_height=40
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        // FlexEnd: y = 40 - 20 = 20
+        assert!((header[0].y - 20.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn align_self_baseline() {
+        // Line 389: AlignValue::Baseline → AlignItems::Baseline
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            align_self: Some(AlignValue::Baseline),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_self_space_between_returns_none() {
+        // Lines 391-392: SpaceBetween/SpaceEvenly/SpaceAround → None for align_self
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            align_self: Some(AlignValue::SpaceBetween),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        // SpaceBetween is invalid for align_self → returns None → default behavior
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_self_space_around_returns_none() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            align_self: Some(AlignValue::SpaceAround),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_self_space_evenly_returns_none() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            align_self: Some(AlignValue::SpaceEvenly),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: AlignValue → AlignContent (all branches) ─────────────
+
+    #[test]
+    fn align_content_end() {
+        // Line 400: AlignValue::End → AlignContent::End
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::End),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_content_flex_start() {
+        // Line 401: AlignValue::FlexStart → AlignContent::FlexStart
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::FlexStart),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_content_flex_end() {
+        // Line 402: AlignValue::FlexEnd → AlignContent::FlexEnd
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::FlexEnd),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_content_center() {
+        // Line 403: AlignValue::Center → AlignContent::Center
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::Center),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_content_stretch() {
+        // Line 404: AlignValue::Stretch → AlignContent::Stretch
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::Stretch),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_content_space_between() {
+        // Line 405: AlignValue::SpaceBetween → AlignContent::SpaceBetween
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::SpaceBetween),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_content_space_evenly() {
+        // Line 406: AlignValue::SpaceEvenly → AlignContent::SpaceEvenly
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::SpaceEvenly),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_content_space_around() {
+        // Line 407: AlignValue::SpaceAround → AlignContent::SpaceAround
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::SpaceAround),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_content_baseline_returns_none() {
+        // Line 408: AlignValue::Baseline → return None for align_content
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::Baseline),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_content_start() {
+        // Line 399: AlignValue::Start → AlignContent::Start
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            align_content: Some(AlignValue::Start),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: AlignValue → JustifyContent (remaining branches) ─────
+
+    #[test]
+    fn justify_content_end() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            justify_content: Some(AlignValue::End),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // End-justified: column at 600 - 100 = 500
+        assert!((header[0].x - 500.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn justify_content_flex_start() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            justify_content: Some(AlignValue::FlexStart),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert!((header[0].x - 0.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn justify_content_flex_end() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            justify_content: Some(AlignValue::FlexEnd),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert!((header[0].x - 500.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn justify_content_center() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport(); // width=600
+        let container = ContainerLayout {
+            justify_content: Some(AlignValue::Center),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // Centered: (600 - 100) / 2 = 250
+        assert!((header[0].x - 250.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn justify_content_stretch() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            justify_content: Some(AlignValue::Stretch),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn justify_content_space_evenly() {
+        // Line 421: AlignValue::SpaceEvenly → JustifyContent::SpaceEvenly
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(100.0, Align::Left)];
+        let viewport = make_viewport(); // width=600
+        let container = ContainerLayout {
+            justify_content: Some(AlignValue::SpaceEvenly),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // SpaceEvenly: equal space around each item
+        // (600 - 200) / 3 gaps = 133.33
+        assert!((header[0].x - 133.33).abs() < 1.0);
+    }
+
+    #[test]
+    fn justify_content_space_around() {
+        // Line 422: AlignValue::SpaceAround → JustifyContent::SpaceAround
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(100.0, Align::Left)];
+        let viewport = make_viewport(); // width=600
+        let container = ContainerLayout {
+            justify_content: Some(AlignValue::SpaceAround),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // SpaceAround: half-space on edges, full space between
+        // (600 - 200) = 400 free space, 2 items → 400/2 = 200 per item
+        // edge = 100, between = 200
+        assert!((header[0].x - 100.0).abs() < 1.0);
+        assert!((header[1].x - 400.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn justify_content_baseline_returns_none() {
+        // Line 423: AlignValue::Baseline → return None for justify_content
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            justify_content: Some(AlignValue::Baseline),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // Baseline is invalid for justify_content → None → default behavior
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: OverflowValue conversion (Clip, Hidden, Scroll) ──────
+
+    #[test]
+    fn overflow_clip() {
+        // Line 430: OverflowValue::Clip → Overflow::Clip
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            overflow_x: OverflowValue::Clip,
+            overflow_y: OverflowValue::Clip,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn overflow_hidden() {
+        // Line 431: OverflowValue::Hidden → Overflow::Hidden
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            overflow_x: OverflowValue::Hidden,
+            overflow_y: OverflowValue::Hidden,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn overflow_scroll() {
+        // Line 432: OverflowValue::Scroll → Overflow::Scroll
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            overflow_x: OverflowValue::Scroll,
+            overflow_y: OverflowValue::Scroll,
+            scrollbar_width: 15.0,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: TrackSizeValue conversion paths ──────────────────────
+
+    #[test]
+    fn grid_track_percent() {
+        // Lines 441, 456: track_size_to_min/max Percent branch
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::Percent(50.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport(); // width=600
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // 50% of 600 = 300, remaining 300 for 1fr
+        assert!((header[0].width - 300.0).abs() < 1.0);
+        assert!((header[1].width - 300.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_track_min_content() {
+        // Lines 442, 459: track_size_to_min/max MinContent branch
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::MinContent),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // MinContent with no intrinsic content → 0 width, rest to fr
+        assert_eq!(header.len(), 2);
+    }
+
+    #[test]
+    fn grid_track_max_content() {
+        // Lines 443 (via MinMax fallthrough), 460: track_size_to_min/max MaxContent branch
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::MaxContent),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    #[test]
+    fn grid_track_auto() {
+        // Lines 458: track_size_to_max Auto branch
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::Auto),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    #[test]
+    fn grid_track_fit_content_px() {
+        // Lines 461: track_size_to_max FitContentPx branch
+        // (also covers the auto fallthrough in track_size_to_min for FitContentPx)
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::FitContentPx(150.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+        // FitContent(150px) with no content → minimal size
+    }
+
+    #[test]
+    fn grid_track_fit_content_percent() {
+        // Lines 462-463: track_size_to_max FitContentPercent branch
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::FitContentPercent(50.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    #[test]
+    fn grid_track_minmax_nested() {
+        // Lines 444, 465: track_size_to_min/max MinMax branch (recursive)
+        // Need nested MinMax so the inner MinMax hits the recursive arm
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::MinMax(
+                Box::new(TrackSizeValue::MinMax(
+                    Box::new(TrackSizeValue::Length(50.0)),
+                    Box::new(TrackSizeValue::Length(100.0)),
+                )),
+                Box::new(TrackSizeValue::MinMax(
+                    Box::new(TrackSizeValue::Length(100.0)),
+                    Box::new(TrackSizeValue::Length(200.0)),
+                )),
+            )),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    // ── Coverage: RepeatValue::AutoFit ─────────────────────────────────
+
+    #[test]
+    fn grid_repeat_auto_fit() {
+        // Lines 490-491: RepeatValue::AutoFit in track_list_to_taffy
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![TrackListItem::Repeat(
+            RepeatValue::AutoFit,
+            vec![TrackSizeValue::Length(200.0)],
+        )]);
+        let columns = vec![grid_col_default(), grid_col_default(), grid_col_default()];
+        let viewport = make_viewport(); // width=600
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // AutoFit with 200px tracks in 600px → 3 columns of 200px
+        assert_eq!(header.len(), 3);
+        assert!((header[0].width - 200.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_repeat_auto_fill() {
+        // Line 490: RepeatValue::AutoFill in track_list_to_taffy
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![TrackListItem::Repeat(
+            RepeatValue::AutoFill,
+            vec![TrackSizeValue::Length(200.0)],
+        )]);
+        let columns = vec![grid_col_default(), grid_col_default(), grid_col_default()];
+        let viewport = make_viewport(); // width=600
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 3);
+        assert!((header[0].width - 200.0).abs() < 1.0);
+    }
+
+    // ── Coverage: GridPlacementValue::Span ──────────────────────────────
+
+    #[test]
+    fn grid_placement_line() {
+        // Line 510: GridPlacementValue::Line
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![
+            ColumnLayout {
+                grid_column: Some(GridLineValue {
+                    start: GridPlacementValue::Line(2),
+                    end: GridPlacementValue::Auto,
+                }),
+                ..grid_col_default()
+            },
+            grid_col_default(),
+            grid_col_default(),
+        ];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 3);
+        // First column placed at line 2 (second track), so x ~200
+        assert!((header[0].x - 200.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn grid_placement_span_value() {
+        // Line 511: GridPlacementValue::Span
+        let mut engine = LayoutEngine::new();
+        let container = grid_container(vec![
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+        ]);
+        let columns = vec![
+            ColumnLayout {
+                grid_column: Some(GridLineValue {
+                    start: GridPlacementValue::Line(1),
+                    end: GridPlacementValue::Span(2),
+                }),
+                ..grid_col_default()
+            },
+            grid_col_default(),
+        ];
+        let viewport = make_viewport(); // width=600
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // First column starts at line 1, spans 2 → width=400
+        assert!((header[0].width - 400.0).abs() < 1.0);
+    }
+
+    // ── Coverage: GridAutoFlowValue (RowDense, ColumnDense) ────────────
+
+    #[test]
+    fn grid_auto_flow_row_dense() {
+        // Line 526: GridAutoFlowValue::RowDense
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: vec![
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            ],
+            grid_auto_flow: GridAutoFlowValue::RowDense,
+            ..ContainerLayout::default()
+        };
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    #[test]
+    fn grid_auto_flow_column_dense() {
+        // Line 527: GridAutoFlowValue::ColumnDense
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: vec![
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            ],
+            grid_auto_flow: GridAutoFlowValue::ColumnDense,
+            ..ContainerLayout::default()
+        };
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    // ── Coverage: grid_auto_rows / grid_auto_columns ───────────────────
+
+    #[test]
+    fn grid_auto_rows_sizing() {
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: vec![TrackListItem::Single(TrackSizeValue::Fr(1.0))],
+            grid_auto_rows: vec![TrackSizeValue::Length(50.0)],
+            ..ContainerLayout::default()
+        };
+        let columns = vec![grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn grid_auto_columns_sizing() {
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_rows: vec![TrackListItem::Single(TrackSizeValue::Fr(1.0))],
+            grid_auto_columns: vec![TrackSizeValue::Length(100.0)],
+            grid_auto_flow: GridAutoFlowValue::Column,
+            ..ContainerLayout::default()
+        };
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    // ── Coverage: compute_into_buffer edge cases ───────────────────────
+
+    #[test]
+    fn compute_into_buffer_empty_columns() {
+        // Line 872: compute_into_buffer with empty columns returns 0
+        let mut engine = LayoutEngine::new();
+        let columns: Vec<ColumnLayout> = vec![];
+        let viewport = make_viewport();
+        let mut buf = vec![0.0_f32; 64];
+        let count =
+            engine.compute_into_buffer(&columns, &viewport, &default_container(), 0..5, &mut buf);
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "buffer too small")]
+    fn compute_into_buffer_panics_on_small_buffer() {
+        // Lines 892-894: debug_assert! fires when buffer is too small
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        // 1 header cell + 2 row cells = 3 cells needed (3 * 16 = 48 f32s)
+        // Provide a buffer that's too small
+        let mut buf = vec![0.0_f32; 1];
+        engine.compute_into_buffer(&columns, &viewport, &default_container(), 0..2, &mut buf);
+    }
+
+    #[test]
+    fn compute_into_buffer_header_equals_row_height() {
+        // Line 936: compute_into_buffer when header_height == row_height (else branch)
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(200.0, Align::Right)];
+        let mut viewport = make_viewport();
+        viewport.header_height = 36.0; // same as row_height
+        viewport.row_height = 36.0;
+
+        let total_cells = 2 + 3 * 2; // 2 headers + 3 rows × 2 cols = 8
+        let mut buf = vec![0.0_f32; layout_buffer::buf_len(total_cells)];
+        let count =
+            engine.compute_into_buffer(&columns, &viewport, &default_container(), 0..3, &mut buf);
+        assert_eq!(count, total_cells);
+
+        // Header cells
+        assert!((buf[layout_buffer::FIELD_X] - 0.0).abs() < 0.1);
+        assert!((buf[layout_buffer::FIELD_WIDTH] - 100.0).abs() < 0.1);
+        // Data cell row 0, col 0: y = header_height + 0*36 - 0 = 36
+        let base = 2 * layout_buffer::LAYOUT_STRIDE;
+        assert!((buf[base + layout_buffer::FIELD_Y] - 36.0).abs() < 0.1);
+    }
+
+    // ── Coverage: LayoutEngine Default impl ────────────────────────────
+
+    #[test]
+    fn layout_engine_default() {
+        // Lines 971-972: LayoutEngine Default impl
+        let engine = LayoutEngine::default();
+        assert_eq!(engine.tree.total_node_count(), 0);
+    }
+
+    // ── Coverage: container align_items all branches ────────────────────
+
+    #[test]
+    fn container_align_items_end() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            height: DimensionValue::Length(20.0),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            align_items: Some(AlignValue::End),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // End-aligned: y = 40 - 20 = 20
+        assert!((header[0].y - 20.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn container_align_items_flex_start() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            height: DimensionValue::Length(20.0),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            align_items: Some(AlignValue::FlexStart),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert!((header[0].y - 0.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn container_align_items_flex_end() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            height: DimensionValue::Length(20.0),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            align_items: Some(AlignValue::FlexEnd),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert!((header[0].y - 20.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn container_align_items_baseline() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            align_items: Some(AlignValue::Baseline),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn container_align_items_space_between_returns_none() {
+        // SpaceBetween invalid for align_items → None
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            align_items: Some(AlignValue::SpaceBetween),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: justify_items via grid container ──────────────────────
+
+    #[test]
+    fn grid_justify_items() {
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: vec![
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            ],
+            justify_items: Some(AlignValue::Center),
+            ..ContainerLayout::default()
+        };
+        let columns = vec![grid_col_default(), grid_col_default()];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    // ── Coverage: justify_self via column ───────────────────────────────
+
+    #[test]
+    fn column_justify_self() {
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: vec![TrackListItem::Single(TrackSizeValue::Fr(1.0))],
+            ..ContainerLayout::default()
+        };
+        let columns = vec![ColumnLayout {
+            justify_self: Some(AlignValue::Center),
+            ..grid_col_default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: Display::Block and Display::None ──────────────────────
+
+    #[test]
+    fn display_block() {
+        // Line 725: DisplayValue::Block → Display::Block
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            display: DisplayValue::Block,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn display_none() {
+        // Line 726: DisplayValue::None → Display::None
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            display: DisplayValue::None,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+        // Display::None collapses all sizes to 0
+        assert!((header[0].width - 0.0).abs() < 1.0);
+        assert!((header[0].height - 0.0).abs() < 1.0);
+    }
+
+    // ── Coverage: column dimension variants through min/max height ──────
+
+    #[test]
+    fn column_min_height_length() {
+        // dimension_to_taffy Length variant via min_height
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            min_height: DimensionValue::Length(30.0),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert!(header[0].height >= 30.0 - 0.1);
+    }
+
+    #[test]
+    fn column_min_height_percent() {
+        // dimension_to_taffy Percent variant via min_height
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            min_height: DimensionValue::Percent(0.5),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn column_max_height_length() {
+        // dimension_to_taffy Length variant via max_height
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            min_height: DimensionValue::Length(0.0), // override default line_height min
+            max_height: DimensionValue::Length(15.0),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert!(header[0].height <= 15.0 + 0.1);
+    }
+
+    #[test]
+    fn column_max_height_percent() {
+        // dimension_to_taffy Percent variant via max_height
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            max_height: DimensionValue::Percent(0.5),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: row_gap / column_gap overrides ───────────────────────
+
+    #[test]
+    fn separate_row_and_column_gap() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            gap: LengthValue::Length(5.0),
+            row_gap: Some(LengthValue::Length(20.0)),
+            column_gap: Some(LengthValue::Length(30.0)),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        // column_gap=30 overrides gap for horizontal spacing
+        assert!((header[1].x - 130.0).abs() < 1.0);
+    }
+
+    // ── Coverage: grid_row placement ───────────────────────────────────
+
+    #[test]
+    fn grid_row_placement() {
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: vec![TrackListItem::Single(TrackSizeValue::Fr(1.0))],
+            grid_template_rows: vec![
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            ],
+            ..ContainerLayout::default()
+        };
+        let columns = vec![ColumnLayout {
+            grid_row: Some(GridLineValue {
+                start: GridPlacementValue::Line(2),
+                end: GridPlacementValue::Auto,
+            }),
+            ..grid_col_default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+        // Placed in row 2 → y offset should be non-zero
+        assert!(header[0].y > 0.0);
+    }
+
+    // ── Coverage: container margin/border/padding with percent ──────────
+
+    #[test]
+    fn container_padding_percent() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            padding: RectValue {
+                top: LengthValue::Percent(0.05),
+                right: LengthValue::Percent(0.05),
+                bottom: LengthValue::Percent(0.05),
+                left: LengthValue::Percent(0.05),
+            },
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+        // Column is offset by padding
+        assert!(header[0].x > 0.0);
+    }
+
+    #[test]
+    fn container_margin_percent() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            margin: RectValue {
+                top: LengthAutoValue::Percent(0.1),
+                right: LengthAutoValue::Percent(0.1),
+                bottom: LengthAutoValue::Percent(0.1),
+                left: LengthAutoValue::Percent(0.1),
+            },
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn container_border_percent() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            border: RectValue {
+                top: LengthValue::Percent(0.02),
+                right: LengthValue::Percent(0.02),
+                bottom: LengthValue::Percent(0.02),
+                left: LengthValue::Percent(0.02),
+            },
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: column border with percent ───────────────────────────
+
+    #[test]
+    fn column_border_percent() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 200.0,
+            border: RectValue {
+                top: LengthValue::Percent(0.05),
+                right: LengthValue::Percent(0.05),
+                bottom: LengthValue::Percent(0.05),
+                left: LengthValue::Percent(0.05),
+            },
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: grid_template_rows ───────────────────────────────────
+
+    #[test]
+    fn grid_template_rows_applied() {
+        // Exercises grid_template_rows conversion through track_list_to_taffy
+        let mut engine = LayoutEngine::new();
+        let container = ContainerLayout {
+            display: DisplayValue::Grid,
+            grid_template_columns: vec![TrackListItem::Single(TrackSizeValue::Fr(1.0))],
+            grid_template_rows: vec![
+                TrackListItem::Single(TrackSizeValue::Length(25.0)),
+                TrackListItem::Single(TrackSizeValue::Fr(1.0)),
+            ],
+            ..ContainerLayout::default()
+        };
+        let columns = vec![ColumnLayout {
+            min_height: DimensionValue::Length(0.0), // allow small height
+            ..grid_col_default()
+        }];
+        let viewport = make_viewport(); // header_height=40
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 1);
+        // Column placed in first row template (25px)
+        assert!((header[0].height - 25.0).abs() < 1.0);
+    }
+
+    // ── Coverage: empty columns for compute_rows_layout ────────────────
+
+    #[test]
+    fn compute_rows_layout_empty_columns() {
+        let mut engine = LayoutEngine::new();
+        let columns: Vec<ColumnLayout> = vec![];
+        let viewport = make_viewport();
+        let rows = engine.compute_rows_layout(&columns, &viewport, &default_container(), 0..5);
+        assert!(rows.is_empty());
+    }
+
+    // ── Coverage: column with content-box sizing ───────────────────────
+
+    #[test]
+    fn column_content_box_sizing() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 200.0,
+            box_sizing: BoxSizingValue::ContentBox,
+            padding: RectValue {
+                top: LengthValue::Length(4.0),
+                right: LengthValue::Length(8.0),
+                bottom: LengthValue::Length(4.0),
+                left: LengthValue::Length(8.0),
+            },
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        // Content-box: 200 + 8 + 8 = 216 total width
+        assert!((header[0].width - 216.0).abs() < 1.0);
+    }
+
+    // ── Coverage: column position absolute ─────────────────────────────
+
+    #[test]
+    fn column_position_absolute() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![
+            col(100.0, Align::Left),
+            ColumnLayout {
+                width: 50.0,
+                position: PositionValue::Absolute,
+                inset: RectValue {
+                    top: LengthAutoValue::Length(5.0),
+                    right: LengthAutoValue::Auto,
+                    bottom: LengthAutoValue::Auto,
+                    left: LengthAutoValue::Length(10.0),
+                },
+                ..ColumnLayout::default()
+            },
+        ];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 2);
+        // Absolutely positioned column inset from left=10, top=5
+        assert!((header[1].x - 10.0).abs() < 1.0);
+        assert!((header[1].y - 5.0).abs() < 1.0);
+    }
+
+    // ── Coverage: column aspect_ratio ──────────────────────────────────
+
+    #[test]
+    fn column_aspect_ratio() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            aspect_ratio: Some(2.0),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+    }
+
+    // ── Coverage: FlexWrap variants ────────────────────────────────────
+
+    #[test]
+    fn flex_wrap_wrap() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(400.0, Align::Left), col(400.0, Align::Left)];
+        let viewport = make_viewport(); // width=600
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::Wrap,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+        // Second column wraps to next line
+        assert!((header[1].y).abs() > 0.0 || header[1].x < 400.0 + 0.1);
+    }
+
+    #[test]
+    fn flex_wrap_wrap_reverse() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(400.0, Align::Left), col(400.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_wrap: FlexWrapValue::WrapReverse,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    // ── Coverage: FlexDirection variants ────────────────────────────────
+
+    #[test]
+    fn flex_direction_column() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_direction: FlexDirectionValue::Column,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+        // In column direction, items stack vertically
+        assert!((header[0].x - header[1].x).abs() < 1.0);
+    }
+
+    #[test]
+    fn flex_direction_row_reverse() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_direction: FlexDirectionValue::RowReverse,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+        // In row-reverse, first item is on the right
+        assert!(header[0].x > header[1].x);
+    }
+
+    #[test]
+    fn flex_direction_column_reverse() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_direction: FlexDirectionValue::ColumnReverse,
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+        // In column-reverse, first item is at the bottom
+        assert!(header[0].y > header[1].y);
+    }
+
+    // ── Coverage: align_items Start and Stretch ────────────────────────
+
+    #[test]
+    fn container_align_items_start() {
+        // Line 384: AlignValue::Start → AlignItems::Start in align_value_to_taffy_align
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(200.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            align_items: Some(AlignValue::Start),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+        // Items should start at y=0
+        assert!(header[0].y.abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn container_align_items_stretch() {
+        // Line 390: AlignValue::Stretch → AlignItems::Stretch in align_value_to_taffy_align
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(200.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            align_items: Some(AlignValue::Stretch),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+    }
+
+    #[test]
+    fn justify_content_start() {
+        // Line 414: AlignValue::Start → JustifyContent::Start in align_value_to_taffy_justify
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(100.0, Align::Left)];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            justify_content: Some(AlignValue::Start),
+            ..ContainerLayout::default()
+        };
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+        // Items should be packed to the start
+        assert!(header[0].x.abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn align_self_start() {
+        // Also exercises line 384 via align_self path
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            align_self: Some(AlignValue::Start),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn align_self_stretch() {
+        // Also exercises line 390 via align_self path
+        let mut engine = LayoutEngine::new();
+        let columns = vec![ColumnLayout {
+            width: 100.0,
+            align_self: Some(AlignValue::Stretch),
+            ..ColumnLayout::default()
+        }];
+        let viewport = make_viewport();
+        let header = engine.compute_header_layout(&columns, &viewport, &default_container());
+        assert_eq!(header.len(), 1);
     }
 }

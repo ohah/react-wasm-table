@@ -153,4 +153,133 @@ mod tests {
         assert_eq!(rows[1], vec![json!("A"), json!(2)]);
         assert_eq!(rows[2], vec![json!("B"), json!(1)]);
     }
+
+    #[test]
+    fn test_compare_bool_values() {
+        let mut rows = vec![
+            vec![json!(true)],
+            vec![json!(false)],
+            vec![json!(true)],
+            vec![json!(false)],
+        ];
+        let columns = vec![ColumnDef {
+            key: "flag".into(),
+            header: "Flag".into(),
+            width: None,
+            sortable: true,
+            filterable: false,
+        }];
+        let configs = vec![SortConfig {
+            column_index: 0,
+            direction: SortDirection::Ascending,
+        }];
+
+        apply_sort(&mut rows, &columns, &configs);
+
+        // false (0) < true (1) in ascending order
+        assert_eq!(rows[0][0], json!(false));
+        assert_eq!(rows[1][0], json!(false));
+        assert_eq!(rows[2][0], json!(true));
+        assert_eq!(rows[3][0], json!(true));
+    }
+
+    #[test]
+    fn test_compare_null_values() {
+        let mut rows = vec![
+            vec![json!(2)],
+            vec![json!(null)],
+            vec![json!(1)],
+            vec![json!(null)],
+        ];
+        let columns = vec![ColumnDef {
+            key: "val".into(),
+            header: "Val".into(),
+            width: None,
+            sortable: true,
+            filterable: false,
+        }];
+        let configs = vec![SortConfig {
+            column_index: 0,
+            direction: SortDirection::Ascending,
+        }];
+
+        apply_sort(&mut rows, &columns, &configs);
+
+        // Null < any non-null, and Null == Null
+        assert_eq!(rows[0][0], json!(null));
+        assert_eq!(rows[1][0], json!(null));
+        assert_eq!(rows[2][0], json!(1));
+        assert_eq!(rows[3][0], json!(2));
+    }
+
+    #[test]
+    fn test_compare_fallback_stringify() {
+        // Arrays and objects hit the fallback branch that stringifies values
+        let mut rows = vec![
+            vec![json!([3, 2, 1])],
+            vec![json!([1, 2, 3])],
+            vec![json!({"a": 1})],
+        ];
+        let columns = vec![ColumnDef {
+            key: "val".into(),
+            header: "Val".into(),
+            width: None,
+            sortable: true,
+            filterable: false,
+        }];
+        let configs = vec![SortConfig {
+            column_index: 0,
+            direction: SortDirection::Ascending,
+        }];
+
+        apply_sort(&mut rows, &columns, &configs);
+
+        // Stringified: "[1,2,3]" < "[3,2,1]" < "{\"a\":1}" (lexicographic)
+        assert_eq!(rows[0][0], json!([1, 2, 3]));
+        assert_eq!(rows[1][0], json!([3, 2, 1]));
+        assert_eq!(rows[2][0], json!({"a": 1}));
+    }
+
+    #[test]
+    fn test_sort_identical_rows_returns_equal() {
+        // When all sort configs produce Equal for every pair, the fallback Equal on line 59 is hit
+        let mut rows = vec![
+            vec![json!("same"), json!(1)],
+            vec![json!("same"), json!(1)],
+            vec![json!("same"), json!(1)],
+        ];
+        let columns = vec![
+            ColumnDef {
+                key: "a".into(),
+                header: "A".into(),
+                width: None,
+                sortable: true,
+                filterable: false,
+            },
+            ColumnDef {
+                key: "b".into(),
+                header: "B".into(),
+                width: None,
+                sortable: true,
+                filterable: false,
+            },
+        ];
+        let configs = vec![
+            SortConfig {
+                column_index: 0,
+                direction: SortDirection::Ascending,
+            },
+            SortConfig {
+                column_index: 1,
+                direction: SortDirection::Ascending,
+            },
+        ];
+
+        apply_sort(&mut rows, &columns, &configs);
+
+        // All rows identical — order preserved, no panic
+        assert_eq!(rows[0], vec![json!("same"), json!(1)]);
+        assert_eq!(rows[1], vec![json!("same"), json!(1)]);
+        assert_eq!(rows[2], vec![json!("same"), json!(1)]);
+    }
 }

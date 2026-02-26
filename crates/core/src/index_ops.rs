@@ -284,4 +284,275 @@ mod tests {
             assert_eq!(row, index_sorted[i], "mismatch at position {i}");
         }
     }
+
+    // ── Coverage: sort_indices with empty configs (line 46) ──
+
+    #[test]
+    fn sort_indices_empty_configs_returns_unchanged() {
+        let rows = test_rows();
+        let cols = test_columns();
+        let mut indices = identity_indices(rows.len());
+        let original = indices.clone();
+
+        sort_indices(&mut indices, &rows, &cols, &[]);
+
+        assert_eq!(
+            indices, original,
+            "empty configs should not reorder indices"
+        );
+    }
+
+    // ── Coverage: compare_values multi-type comparisons (line 67, 80-88) ──
+
+    #[test]
+    fn sort_indices_multi_key_all_equal_returns_equal() {
+        // Two rows identical on all sort keys → compare_values returns Equal for all,
+        // hitting the final `Ordering::Equal` at line 67.
+        let rows = vec![
+            vec![json!("Alice"), json!(30)],
+            vec![json!("Alice"), json!(30)],
+        ];
+        let cols = test_columns();
+        let mut indices = identity_indices(rows.len());
+
+        sort_indices(
+            &mut indices,
+            &rows,
+            &cols,
+            &[
+                SortConfig {
+                    column_index: 0,
+                    direction: SortDirection::Ascending,
+                },
+                SortConfig {
+                    column_index: 1,
+                    direction: SortDirection::Ascending,
+                },
+            ],
+        );
+
+        // Order is stable; both rows are equal so indices stay as-is.
+        assert_eq!(indices, vec![0, 1]);
+    }
+
+    #[test]
+    fn compare_values_bool_ordering() {
+        // Exercises Bool vs Bool branch (line 81)
+        let rows = vec![vec![json!(true)], vec![json!(false)], vec![json!(true)]];
+        let cols = vec![ColumnDef {
+            key: "flag".into(),
+            header: "Flag".into(),
+            width: None,
+            sortable: true,
+            filterable: false,
+        }];
+        let mut indices = identity_indices(rows.len());
+
+        sort_indices(
+            &mut indices,
+            &rows,
+            &cols,
+            &[SortConfig {
+                column_index: 0,
+                direction: SortDirection::Ascending,
+            }],
+        );
+
+        // false < true, so row 1 (false) comes first
+        assert_eq!(indices[0], 1);
+    }
+
+    #[test]
+    fn compare_values_null_vs_null() {
+        // Exercises Null vs Null branch (line 82)
+        let rows = vec![vec![json!(null)], vec![json!(null)]];
+        let cols = vec![ColumnDef {
+            key: "x".into(),
+            header: "X".into(),
+            width: None,
+            sortable: true,
+            filterable: false,
+        }];
+        let mut indices = identity_indices(rows.len());
+
+        sort_indices(
+            &mut indices,
+            &rows,
+            &cols,
+            &[SortConfig {
+                column_index: 0,
+                direction: SortDirection::Ascending,
+            }],
+        );
+
+        // Both null → Equal, stable order preserved
+        assert_eq!(indices, vec![0, 1]);
+    }
+
+    #[test]
+    fn compare_values_null_vs_value_and_value_vs_null() {
+        // Exercises Null < non-Null (line 83) and non-Null > Null (line 84)
+        let rows = vec![
+            vec![json!(null)],
+            vec![json!(42)],
+            vec![json!(null)],
+            vec![json!(10)],
+        ];
+        let cols = vec![ColumnDef {
+            key: "v".into(),
+            header: "V".into(),
+            width: None,
+            sortable: true,
+            filterable: false,
+        }];
+        let mut indices = identity_indices(rows.len());
+
+        sort_indices(
+            &mut indices,
+            &rows,
+            &cols,
+            &[SortConfig {
+                column_index: 0,
+                direction: SortDirection::Ascending,
+            }],
+        );
+
+        // Nulls sort before numbers: [null, null, 10, 42]
+        assert_eq!(indices, vec![0, 2, 3, 1]);
+    }
+
+    #[test]
+    fn compare_values_fallback_stringify() {
+        // Exercises the fallback `_` arm (lines 86-88) that stringifies values
+        // e.g. Array vs Array, or Array vs Object
+        let rows = vec![
+            vec![json!([3, 2, 1])],
+            vec![json!([1, 2, 3])],
+            vec![json!({"a": 1})],
+        ];
+        let cols = vec![ColumnDef {
+            key: "data".into(),
+            header: "Data".into(),
+            width: None,
+            sortable: true,
+            filterable: false,
+        }];
+        let mut indices = identity_indices(rows.len());
+
+        sort_indices(
+            &mut indices,
+            &rows,
+            &cols,
+            &[SortConfig {
+                column_index: 0,
+                direction: SortDirection::Ascending,
+            }],
+        );
+
+        // Stringified: "[1,2,3]" < "[3,2,1]" < "{\"a\":1}"
+        assert_eq!(indices, vec![1, 0, 2]);
+    }
+
+    // ── Coverage: matches_condition operator branches (lines 101, 106, 110, 112, 115) ──
+
+    #[test]
+    fn filter_not_equals() {
+        let rows = test_rows();
+        let cols = test_columns();
+        let indices = identity_indices(rows.len());
+        let conditions = vec![FilterCondition {
+            column_key: "name".into(),
+            operator: crate::filtering::FilterOperator::NotEquals,
+            value: json!("Bob"),
+        }];
+
+        let result = filter_indices(&indices, &rows, &cols, &conditions);
+        // Everyone except Bob (index 1)
+        assert_eq!(result, vec![0, 2, 3]);
+    }
+
+    #[test]
+    fn filter_greater_than_or_equal() {
+        let rows = test_rows();
+        let cols = test_columns();
+        let indices = identity_indices(rows.len());
+        let conditions = vec![FilterCondition {
+            column_key: "age".into(),
+            operator: crate::filtering::FilterOperator::GreaterThanOrEqual,
+            value: json!(30),
+        }];
+
+        let result = filter_indices(&indices, &rows, &cols, &conditions);
+        // Alice(30) and Charlie(35)
+        assert_eq!(result, vec![0, 2]);
+    }
+
+    #[test]
+    fn filter_less_than() {
+        let rows = test_rows();
+        let cols = test_columns();
+        let indices = identity_indices(rows.len());
+        let conditions = vec![FilterCondition {
+            column_key: "age".into(),
+            operator: crate::filtering::FilterOperator::LessThan,
+            value: json!(28),
+        }];
+
+        let result = filter_indices(&indices, &rows, &cols, &conditions);
+        // Only Bob(25)
+        assert_eq!(result, vec![1]);
+    }
+
+    #[test]
+    fn filter_less_than_or_equal() {
+        let rows = test_rows();
+        let cols = test_columns();
+        let indices = identity_indices(rows.len());
+        let conditions = vec![FilterCondition {
+            column_key: "age".into(),
+            operator: crate::filtering::FilterOperator::LessThanOrEqual,
+            value: json!(28),
+        }];
+
+        let result = filter_indices(&indices, &rows, &cols, &conditions);
+        // Bob(25) and Alice Smith(28)
+        assert_eq!(result, vec![1, 3]);
+    }
+
+    // ── Coverage: Contains with non-string returns false (line 106) ──
+
+    #[test]
+    fn filter_contains_non_string_returns_false() {
+        let rows = test_rows();
+        let cols = test_columns();
+        let indices = identity_indices(rows.len());
+        // Try Contains on the numeric "age" column — cell is a number, not a string
+        let conditions = vec![FilterCondition {
+            column_key: "age".into(),
+            operator: crate::filtering::FilterOperator::Contains,
+            value: json!("30"),
+        }];
+
+        let result = filter_indices(&indices, &rows, &cols, &conditions);
+        // No rows match because cell values are numbers, not strings
+        assert_eq!(result, Vec::<u32>::new());
+    }
+
+    // ── Coverage: compare_numeric with non-numeric values (line 123) ──
+
+    #[test]
+    fn filter_greater_than_non_numeric_returns_false() {
+        let rows = test_rows();
+        let cols = test_columns();
+        let indices = identity_indices(rows.len());
+        // GreaterThan on string column — as_f64() returns None → false
+        let conditions = vec![FilterCondition {
+            column_key: "name".into(),
+            operator: crate::filtering::FilterOperator::GreaterThan,
+            value: json!("Alice"),
+        }];
+
+        let result = filter_indices(&indices, &rows, &cols, &conditions);
+        assert_eq!(result, Vec::<u32>::new());
+    }
 }

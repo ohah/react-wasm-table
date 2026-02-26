@@ -379,4 +379,103 @@ mod tests {
         let second = store.view_indices().to_vec();
         assert_eq!(first, second);
     }
+
+    // ── Coverage: columns() getter (lines 75-76) ──
+
+    #[test]
+    fn test_columns_getter() {
+        let mut store = DataStore::new();
+        assert!(store.columns().is_empty());
+
+        let cols = sample_columns();
+        store.set_columns(cols.clone());
+        assert_eq!(store.columns().len(), 2);
+        assert_eq!(store.columns()[0].key, "name");
+        assert_eq!(store.columns()[1].key, "age");
+    }
+
+    // ── Coverage: rows() getter (lines 208-209) ──
+
+    #[test]
+    fn test_rows_getter() {
+        let mut store = DataStore::new();
+        assert!(store.rows().is_empty());
+
+        store.set_data(sample_rows());
+        assert_eq!(store.rows().len(), 3);
+        assert_eq!(store.rows()[0][0], json!("Alice"));
+    }
+
+    // ── Coverage: row_height() getter (lines 218-219) ──
+
+    #[test]
+    fn test_row_height_getter() {
+        let mut store = DataStore::new();
+        // Default row_height is 40.0
+        assert!((store.row_height() - 40.0).abs() < f64::EPSILON);
+
+        store.set_scroll_config(25.0, 500.0, 3);
+        assert!((store.row_height() - 25.0).abs() < f64::EPSILON);
+    }
+
+    // ── Coverage: viewport_height() getter (lines 222-223) ──
+
+    #[test]
+    fn test_viewport_height_getter() {
+        let mut store = DataStore::new();
+        // Default viewport_height is 600.0
+        assert!((store.viewport_height() - 600.0).abs() < f64::EPSILON);
+
+        store.set_scroll_config(40.0, 800.0, 5);
+        assert!((store.viewport_height() - 800.0).abs() < f64::EPSILON);
+    }
+
+    // ── Coverage: overscan() getter (lines 226-227) ──
+
+    #[test]
+    fn test_overscan_getter() {
+        let mut store = DataStore::new();
+        // Default overscan is 5
+        assert_eq!(store.overscan(), 5);
+
+        store.set_scroll_config(40.0, 600.0, 10);
+        assert_eq!(store.overscan(), 10);
+    }
+
+    // ── Coverage: Default impl (lines 232-233) ──
+
+    #[test]
+    fn test_default_impl() {
+        let store = DataStore::default();
+        assert_eq!(store.row_count(), 0);
+        assert!(store.columns().is_empty());
+        assert!(store.rows().is_empty());
+        assert_eq!(store.generation(), 0);
+        assert!((store.row_height() - 40.0).abs() < f64::EPSILON);
+        assert!((store.viewport_height() - 600.0).abs() < f64::EPSILON);
+        assert_eq!(store.overscan(), 5);
+    }
+
+    // ── Coverage: query with filters — the else branch (line 123) ──
+
+    #[test]
+    fn test_query_with_filters() {
+        let mut store = DataStore::new();
+        store.set_columns(sample_columns());
+        store.set_data(sample_rows());
+        store.set_scroll_config(40.0, 400.0, 5);
+        store.set_filters(vec![crate::filtering::FilterCondition {
+            column_key: "age".into(),
+            operator: crate::filtering::FilterOperator::GreaterThan,
+            value: json!(28),
+        }]);
+
+        let result = store.query(0.0);
+        assert_eq!(result.total_count, 3);
+        assert_eq!(result.filtered_count, 2); // Alice(30), Charlie(35)
+        assert_eq!(result.rows.len(), 2);
+        // Verify the correct rows were kept (no sort, so original order)
+        assert_eq!(result.rows[0][0], json!("Alice"));
+        assert_eq!(result.rows[1][0], json!("Charlie"));
+    }
 }
