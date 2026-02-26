@@ -86,7 +86,6 @@ pub struct ColumnarStore {
     pub data: Vec<ColumnData>,
     pub row_count: usize,
     pub generation: u64,
-    // View management (mirrors DataStore's index indirection)
     view_indices: Vec<u32>,
     view_dirty: bool,
     sort_configs: Vec<SortConfig>,
