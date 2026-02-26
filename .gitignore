@@ -38,3 +38,6 @@ coverage-comment.md
 .env
 .env.local
 .env.*.local
+
+# Code review / workflow todos (local only)
+todos/

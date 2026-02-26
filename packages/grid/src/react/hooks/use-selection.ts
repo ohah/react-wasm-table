@@ -98,7 +98,8 @@ export function useSelection({
       const sm = selectionManagerRef.current;
       if ((e.ctrlKey || e.metaKey) && e.key === "c" && sm.hasSelection) {
         e.preventDefault();
-        const norm = sm.getNormalized()!;
+        const norm = sm.getNormalized();
+        if (!norm) return;
         const viewIndices = getMemoryBridge()?.getViewIndices();
         const strTable = getStringTable();
         const visStart = getVisStart();

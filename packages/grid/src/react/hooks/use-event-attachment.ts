@@ -5,7 +5,7 @@ import type { EditorManager } from "../../adapter/editor-manager";
 
 export interface UseEventAttachmentParams {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  eventManager: EventManager;
+  eventManagerRef: React.RefObject<EventManager>;
   editorManagerRef: React.RefObject<EditorManager>;
   handlers: {
     handleHeaderClick: (colIndex: number) => void;
@@ -25,7 +25,7 @@ export interface UseEventAttachmentParams {
 
 export function useEventAttachment({
   canvasRef,
-  eventManager,
+  eventManagerRef,
   editorManagerRef,
   handlers,
   rowHeight,
@@ -34,9 +34,9 @@ export function useEventAttachment({
 }: UseEventAttachmentParams) {
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const em = eventManagerRef.current;
+    if (!canvas || !em) return;
 
-    const em = eventManager;
     em.attach(
       canvas,
       {
@@ -68,7 +68,7 @@ export function useEventAttachment({
     };
   }, [
     canvasRef,
-    eventManager,
+    eventManagerRef,
     editorManagerRef,
     handlers.handleHeaderClick,
     handlers.handleCellDoubleClick,

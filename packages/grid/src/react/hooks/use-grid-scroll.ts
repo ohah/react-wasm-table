@@ -25,20 +25,28 @@ export function useGridScroll({
   const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoScrollDeltaRef = useRef({ dy: 0, dx: 0 });
 
-  const handleWheel = useCallback(
-    (deltaY: number, deltaX: number) => {
+  const applyScrollDelta = useCallback(
+    (dy: number, dx: number) => {
       const maxScrollY = Math.max(0, data.length * rowHeight - (height - headerHeight));
-      scrollTopRef.current = Math.max(0, Math.min(maxScrollY, scrollTopRef.current + deltaY));
+      scrollTopRef.current = Math.max(0, Math.min(maxScrollY, scrollTopRef.current + dy));
       const cols = columnRegistry.getAll();
+      // CssDimension: non-number width (string/"auto") falls back to 100 for scroll math
       const totalColWidth = cols.reduce(
         (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
         0,
       );
       const maxScrollX = Math.max(0, totalColWidth - width);
-      scrollLeftRef.current = Math.max(0, Math.min(maxScrollX, scrollLeftRef.current + deltaX));
+      scrollLeftRef.current = Math.max(0, Math.min(maxScrollX, scrollLeftRef.current + dx));
       invalidate();
     },
     [data.length, rowHeight, height, headerHeight, width, columnRegistry, invalidate],
+  );
+
+  const handleWheel = useCallback(
+    (deltaY: number, deltaX: number) => {
+      applyScrollDelta(deltaY, deltaX);
+    },
+    [applyScrollDelta],
   );
 
   const handleDragEdge = useCallback(
@@ -55,20 +63,11 @@ export function useGridScroll({
         autoScrollRef.current = setInterval(() => {
           const { dy: ady, dx: adx } = autoScrollDeltaRef.current;
           if (ady === 0 && adx === 0) return;
-          const maxScrollY = Math.max(0, data.length * rowHeight - (height - headerHeight));
-          scrollTopRef.current = Math.max(0, Math.min(maxScrollY, scrollTopRef.current + ady));
-          const cols = columnRegistry.getAll();
-          const totalColW = cols.reduce(
-            (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
-            0,
-          );
-          const maxScrollX = Math.max(0, totalColW - width);
-          scrollLeftRef.current = Math.max(0, Math.min(maxScrollX, scrollLeftRef.current + adx));
-          invalidate();
+          applyScrollDelta(ady, adx);
         }, 16);
       }
     },
-    [data.length, rowHeight, height, headerHeight, width, columnRegistry, invalidate],
+    [applyScrollDelta],
   );
 
   const stopAutoScroll = useCallback(() => {
