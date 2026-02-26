@@ -481,7 +481,10 @@ export function Grid({
                 0,
               );
               const maxScrollX = Math.max(0, totalColW - width);
-              scrollLeftRef.current = Math.max(0, Math.min(maxScrollX, scrollLeftRef.current + adx));
+              scrollLeftRef.current = Math.max(
+                0,
+                Math.min(maxScrollX, scrollLeftRef.current + adx),
+              );
               dirtyRef.current = true;
             }, 16);
           }
@@ -905,7 +908,12 @@ export function Grid({
             overflow: "hidden",
           }}
         >
-          <canvas ref={canvasRef} width={width} height={height} style={{ display: "block", touchAction: "none" }} />
+          <canvas
+            ref={canvasRef}
+            width={width}
+            height={height}
+            style={{ display: "block", touchAction: "none" }}
+          />
           <div
             ref={editorRef}
             style={{

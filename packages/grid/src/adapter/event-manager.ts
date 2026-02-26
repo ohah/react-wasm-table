@@ -384,9 +384,7 @@ export class EventManager {
         // Tap detection
         const now = performance.now();
         const elapsed = now - ts.startTime;
-        const dist = Math.sqrt(
-          (ts.lastX - ts.startX) ** 2 + (ts.lastY - ts.startY) ** 2,
-        );
+        const dist = Math.sqrt((ts.lastX - ts.startX) ** 2 + (ts.lastY - ts.startY) ** 2);
 
         if (dist < TAP_THRESHOLD && elapsed < TAP_DURATION) {
           const { x, y } = toContentCoords(ts.startX, ts.startY);
