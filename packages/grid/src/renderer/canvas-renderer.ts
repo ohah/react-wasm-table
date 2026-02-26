@@ -43,13 +43,6 @@ export class CanvasRenderer {
     return this.canvas.width / dpr;
   }
 
-  /** Get logical canvas height (CSS pixels). */
-  private canvasHeight(): number {
-    if (!this.canvas) return 0;
-    const dpr = window.devicePixelRatio || 1;
-    return this.canvas.height / dpr;
-  }
-
   /** Stroke a GridLineSpec onto the canvas context. */
   private strokeLines(ctx: CanvasRenderingContext2D, spec: GridLineSpec): void {
     ctx.beginPath();
@@ -83,12 +76,11 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || count === 0) return;
 
-    // Draw header background (extend to full canvas width, like CSS)
-    // Use headerHeight instead of first cell's height — with flex-wrap,
-    // individual cells may be shorter than the full header row.
+    // Draw header background at the Y position from the buffer (scrolls with content)
     const canvasW = this.canvasWidth();
+    const headerY = count > 0 ? readCellY(buf, start) : 0;
     ctx.fillStyle = theme.headerBackground;
-    ctx.fillRect(0, 0, canvasW, headerHeight);
+    ctx.fillRect(0, headerY, canvasW, headerHeight);
 
     // Draw header text
     for (let i = 0; i < count; i++) {
@@ -111,19 +103,12 @@ export class CanvasRenderer {
     count: number,
     getInstruction: (cellIdx: number) => RenderInstruction | undefined,
     theme: Theme,
-    headerHeight: number,
     rowHeight: number,
   ): void {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || count === 0) return;
 
     const canvasW = this.canvasWidth();
-    const canvasH = this.canvasHeight();
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, headerHeight, canvasW, canvasH - headerHeight);
-    ctx.clip();
 
     // Group by row for alternating backgrounds.
     // Use minY across all cells in a row + rowHeight for bounds —
@@ -166,7 +151,6 @@ export class CanvasRenderer {
       }
     }
 
-    ctx.restore();
   }
 
   /**
@@ -184,7 +168,6 @@ export class CanvasRenderer {
     if (!ctx || !this.canvas || totalCount === 0) return;
 
     const canvasW = this.canvasWidth();
-    const canvasH = this.canvasHeight();
 
     ctx.strokeStyle = theme.borderColor;
     ctx.lineWidth = 0.5;
@@ -194,17 +177,12 @@ export class CanvasRenderer {
       this.strokeLines(ctx, computeHeaderLinesFromBuffer(buf, headerCount, canvasW, headerHeight));
     }
 
-    // Data area grid lines (clipped)
+    // Data area grid lines
     if (totalCount > headerCount) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, headerHeight, canvasW, canvasH - headerHeight);
-      ctx.clip();
       this.strokeLines(
         ctx,
         computeDataLinesFromBuffer(buf, headerCount, totalCount, canvasW, rowHeight),
       );
-      ctx.restore();
     }
   }
 
