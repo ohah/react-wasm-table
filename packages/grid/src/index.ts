@@ -69,11 +69,11 @@ export type {
 } from "./grid-instance";
 
 // Hooks
-export { useGrid, useColumnRegistry, useWasm } from "./react/hooks";
+export { useGrid, useColumnRegistry } from "./react/hooks";
 
 // Contexts
-export { GridContext, WasmContext } from "./react/context";
-export type { GridContextValue, WasmContextValue } from "./react/context";
+export { GridContext } from "./react/context";
+export type { GridContextValue } from "./react/context";
 
 // Adapter
 export { ColumnRegistry } from "./adapter/column-registry";

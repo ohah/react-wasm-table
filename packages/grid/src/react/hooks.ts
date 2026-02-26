@@ -1,6 +1,6 @@
 import { useContext } from "react";
-import { GridContext, WasmContext } from "./context";
-import type { GridContextValue, WasmContextValue } from "./context";
+import { GridContext } from "./context";
+import type { GridContextValue } from "./context";
 
 /** Access the grid context. Throws if used outside <Grid>. */
 export function useGrid(): GridContextValue {
@@ -14,13 +14,4 @@ export function useGrid(): GridContextValue {
 /** Access the column registry from grid context. */
 export function useColumnRegistry() {
   return useGrid().columnRegistry;
-}
-
-/** Access the WASM engine context. Throws if used outside <Grid>. */
-export function useWasm(): WasmContextValue {
-  const ctx = useContext(WasmContext);
-  if (!ctx) {
-    throw new Error("useWasm must be used within a <Grid> component");
-  }
-  return ctx;
 }

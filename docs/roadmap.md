@@ -112,33 +112,32 @@ Step 0-1에서 추출한 hook들을 데모앱에서 활용하는 예제 페이�
 hook API의 사용성 피드백을 데모 페이지 제작 과정에서 얻을 수 있다.
 단, 반드시 선행은 아님 — 병렬 진행 가능.
 
-### Step 0-2. WASM Provider 분리
+### Step 0-2. WasmContext 제거 (TanStack 스타일) ✅ 완료
 
-WASM 초기화를 Grid에서 빼서, 사용자가 직접 제어하거나 여러 Grid 간 공유 가능하게.
+TanStack Table 벤치마킹 결과, Provider 패턴을 도입하지 않기로 결정.
+WASM 초기화는 Grid 내부의 구현 세부사항으로 유지하고, 외부에 노출하지 않는다.
+
+**설계 결정:**
+
+- **No Provider**: TanStack Table처럼 Provider/Context 없이 각 Grid가 독립적으로 동작
+- **No engine prop**: 엔진 인스턴스 외부 주입 불필요 — 상태가 섞이면 버그 유발
+- **WASM 모듈 로딩**: `wasm-loader.ts`의 싱글턴 캐싱으로 자동 처리 (사용자 신경 X)
+- **엔진 인스턴스**: Grid별 독립 생성 (`useWasmEngine` 내부 hook)
 
 ```tsx
-// 방법 A: Provider
-<WasmProvider wasmUrl="/table_core_bg.wasm">
-  <Grid ... />
-  <Grid ... />  {/* 엔진 공유 */}
-</WasmProvider>
-
-// 방법 B: Props injection (Provider 없이)
-const { engine, isReady } = useWasmEngine();
-<Grid engine={engine} ... />
-
-// 방법 C: 기존 방식도 유지 (하위 호환)
-<Grid ... />  {/* engine prop 없으면 내부에서 자동 초기화 */}
+// 사용자 API — Provider 없음, 그냥 Grid
+<Grid data={data1} columns={columns1} width={800} height={600} />
+<Grid data={data2} columns={columns2} width={400} height={300} />
+// 각 Grid가 자체 엔진, WASM .wasm 로딩은 내부 싱글턴 캐싱
 ```
 
-- Provider 방식과 prop injection 모두 지원
-- 기존 코드는 그대로 동작 (breaking change 없음)
+**변경 사항:**
 
-**대상 파일**:
-
-- `packages/grid/src/react/WasmProvider.tsx` — 새 파일
-- `packages/grid/src/react/hooks/use-wasm-engine.ts` — 새 파일
-- `packages/grid/src/react/Grid.tsx` — engine prop 추가, 내부 init을 fallback으로
+- `WasmContext`, `WasmContextValue` 제거 (`context.tsx`)
+- `useWasm()` hook 제거 (`hooks.ts`)
+- Grid.tsx에서 `<WasmContext.Provider>` 래핑 제거
+- 공개 API에서 `WasmContext`, `useWasm` export 제거
+- `useWasmEngine`은 Grid 내부 hook으로만 유지 (비공개)
 
 ### Step 0-3. 이벤트 콜백 개방
 

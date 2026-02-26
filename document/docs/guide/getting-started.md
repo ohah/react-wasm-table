@@ -9,23 +9,22 @@ bun add @ohah/react-wasm-table
 ## Quick Start
 
 ```tsx
-import { WasmProvider, Table } from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 
+type Row = { name: string; age: number };
+
+const helper = createColumnHelper<Row>();
 const columns = [
-  { key: "name", header: "Name", sortable: true },
-  { key: "age", header: "Age", sortable: true },
+  helper.accessor("name", { header: "Name", size: 200 }),
+  helper.accessor("age", { header: "Age", size: 100 }),
 ];
 
-const data = [
-  ["Alice", 30],
-  ["Bob", 25],
+const data: Row[] = [
+  { name: "Alice", age: 30 },
+  { name: "Bob", age: 25 },
 ];
 
 function App() {
-  return (
-    <WasmProvider>
-      <Table columns={columns} data={data} height={400} />
-    </WasmProvider>
-  );
+  return <Grid data={data} columns={columns} width={600} height={400} />;
 }
 ```
