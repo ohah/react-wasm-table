@@ -33,6 +33,8 @@ export function resolveColumns<TData>(
       ...(typeof def.header === "string" && { header: def.header }),
       // Sorting: enableSorting → sortable
       ...(def.enableSorting !== undefined && { sortable: def.enableSorting }),
+      // Selection: enableSelection → selectable
+      ...(def.enableSelection !== undefined && { selectable: def.enableSelection }),
       // Our extensions pass through
       ...(def.align !== undefined && { align: def.align }),
       ...(def.flexGrow !== undefined && { flexGrow: def.flexGrow }),
