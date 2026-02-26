@@ -173,8 +173,29 @@ export interface BadgeInstruction {
   style?: Partial<BadgeStyle>;
 }
 
+/** A flex container instruction (mini layout within a cell). */
+export interface FlexInstruction {
+  type: "flex";
+  direction?: "row" | "column";
+  gap?: number;
+  align?: string;
+  justify?: string;
+  children: RenderInstruction[];
+}
+
+/** A stub instruction for not-yet-implemented components. */
+export interface StubInstruction {
+  type: "stub";
+  component: string;
+  props?: Record<string, unknown>;
+}
+
 /** Union of all render instruction types. */
-export type RenderInstruction = TextInstruction | BadgeInstruction;
+export type RenderInstruction =
+  | TextInstruction
+  | BadgeInstruction
+  | FlexInstruction
+  | StubInstruction;
 
 /** Styling for text cells. */
 export interface TextStyle {
@@ -218,63 +239,7 @@ export const DEFAULT_THEME: Theme = {
   headerFontSize: 13,
 };
 
-// ── Column definition (object-based API) ──────────────────────────────
-
-/** Object-based column definition (react-table style, flex/grid child). */
-export interface ColumnDef extends BoxModelProps {
-  /** Unique column identifier. */
-  id: string;
-  /** Fixed width in pixels or CSS dimension. */
-  width?: CssDimension;
-  /** Minimum width. */
-  minWidth?: CssDimension;
-  /** Maximum width. */
-  maxWidth?: CssDimension;
-  /** Flex grow factor. */
-  flexGrow?: number;
-  /** Flex shrink factor. */
-  flexShrink?: number;
-  /** Flex basis. */
-  flexBasis?: CssDimension;
-  /** Height. */
-  height?: CssDimension;
-  /** Minimum height. */
-  minHeight?: CssDimension;
-  /** Maximum height. */
-  maxHeight?: CssDimension;
-  /** Align self (overrides container align-items). */
-  alignSelf?: CssAlignItems;
-  /** CSS position. */
-  position?: CssPosition;
-  /** Inset shorthand. */
-  inset?: CssRect<CssLengthAuto>;
-  /** Inset top. */
-  insetTop?: CssLengthAuto;
-  /** Inset right. */
-  insetRight?: CssLengthAuto;
-  /** Inset bottom. */
-  insetBottom?: CssLengthAuto;
-  /** Inset left. */
-  insetLeft?: CssLengthAuto;
-  /** Grid row placement (e.g., `1`, `"span 2"`, `[1, 3]`). */
-  gridRow?: CssGridLine;
-  /** Grid column placement (e.g., `1`, `"span 2"`, `[1, "span 2"]`). */
-  gridColumn?: CssGridLine;
-  /** Justify self (overrides container justify-items). */
-  justifySelf?: CssAlignItems;
-  /** Header text. */
-  header?: string;
-  /** Content alignment. */
-  align?: "left" | "center" | "right";
-  /** Whether the column is sortable. */
-  sortable?: boolean;
-  /** Editor type for inline editing. */
-  editor?: "text" | "number" | "select";
-  /** Render function: receives cell value, returns a render instruction. */
-  render?: (value: unknown) => RenderInstruction;
-}
-
-// ── Column props (JSX API) ────────────────────────────────────────────
+// ── Column props (internal) ───────────────────────────────────────────
 
 /** Props for the <Column> component (flex/grid child). */
 export interface ColumnProps extends BoxModelProps {
@@ -346,10 +311,19 @@ export interface GridProps extends BoxModelProps {
   headerHeight?: number;
   /** Theme overrides. */
   theme?: Partial<Theme>;
-  /** Object-based column definitions (react-table style). Takes precedence over children. */
-  columns?: ColumnDef[];
+  /** Column definitions (TanStack-compatible). Takes precedence over children. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  columns?: import("./tanstack-types").GridColumnDef<any, any>[];
   /** Children must be <Column> elements. Ignored when `columns` prop is provided. */
   children?: React.ReactNode;
+
+  // TanStack-compatible state management
+  /** Controlled sorting state (TanStack-compatible). */
+  sorting?: import("./tanstack-types").SortingState;
+  /** Callback when sorting changes (controlled mode). */
+  onSortingChange?: (sorting: import("./tanstack-types").SortingState) => void;
+  /** Initial state for uncontrolled mode. */
+  initialState?: { sorting?: import("./tanstack-types").SortingState };
   /** CSS display. @default "flex" */
   display?: CssDisplay;
   /** Flex direction. @default "row" */
