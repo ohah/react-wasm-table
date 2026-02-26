@@ -1,8 +1,6 @@
 // React components
 export { Grid } from "./react/Grid";
 export { Column } from "./react/Column";
-export { RowStyle } from "./react/RowStyle";
-export type { RowStyleProps } from "./react/RowStyle";
 export { ScrollBar } from "./react/ScrollBar";
 export type { ScrollBarProps } from "./react/ScrollBar";
 

@@ -60,21 +60,4 @@ export class MemoryBridge {
     }
     return this.cachedViewIndices;
   }
-
-  /**
-   * Get a Float64Array view for a numeric column.
-   * Returns null if column is not Float64/Bool.
-   */
-  getColumnFloat64(colIdx: number): Float64Array | null {
-    const info = this.engine.getColumnFloat64Info(colIdx);
-    if (info.length < 2) return null;
-    const [offset, len] = info;
-    return new Float64Array(this.memory.buffer, offset, len);
-  }
-
-  /** Invalidate all cached views (call when memory may have grown). */
-  invalidate(): void {
-    this.cachedLayoutBuf = null;
-    this.cachedViewIndices = null;
-  }
 }

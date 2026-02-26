@@ -1,11 +1,87 @@
 import { describe, expect, it } from "bun:test";
 import {
-  computeHeaderLines,
-  computeDataLines,
   computeHeaderLinesFromBuffer,
   computeDataLinesFromBuffer,
+  type GridLineSpec,
+  type HLine,
+  type VLine,
 } from "../grid-lines";
 import type { CellLayout } from "../../types";
+
+// ── Reference implementations (object-based, for comparison tests) ───
+
+function computeHeaderLines(
+  layouts: CellLayout[],
+  canvasW: number,
+  headerHeight: number,
+): GridLineSpec {
+  if (layouts.length === 0) return { horizontal: [], vertical: [] };
+
+  let gridMaxX = 0;
+  for (const layout of layouts) {
+    gridMaxX = Math.max(gridMaxX, layout.x + layout.width);
+  }
+
+  const headerY = layouts[0]!.y;
+  let firstX = Infinity;
+  for (const layout of layouts) {
+    firstX = Math.min(firstX, layout.x);
+  }
+  const horizontal: HLine[] = [
+    { y: headerY + 0.25, x1: 0, x2: canvasW },
+    { y: headerY + headerHeight - 0.25, x1: 0, x2: canvasW },
+  ];
+
+  const vertical: VLine[] = [{ x: firstX + 0.25, y1: headerY, y2: headerY + headerHeight }];
+
+  const colEdges = new Set<number>();
+  for (const layout of layouts) {
+    colEdges.add(layout.x + layout.width);
+  }
+  for (const edge of colEdges) {
+    const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
+    vertical.push({ x, y1: headerY, y2: headerY + headerHeight });
+  }
+
+  return { horizontal, vertical };
+}
+
+function computeDataLines(layouts: CellLayout[], canvasW: number): GridLineSpec {
+  if (layouts.length === 0) return { horizontal: [], vertical: [] };
+
+  let gridMaxX = 0;
+  for (const layout of layouts) {
+    gridMaxX = Math.max(gridMaxX, layout.x + layout.width);
+  }
+
+  const colEdges = new Set<number>();
+  const rowEdges = new Set<number>();
+  let minY = Infinity;
+  let maxY = -Infinity;
+  let firstColX = Infinity;
+
+  for (const layout of layouts) {
+    colEdges.add(layout.x + layout.width);
+    rowEdges.add(layout.y + layout.height);
+    minY = Math.min(minY, layout.y);
+    maxY = Math.max(maxY, layout.y + layout.height);
+    firstColX = Math.min(firstColX, layout.x);
+  }
+
+  const horizontal: HLine[] = [];
+  for (const edge of rowEdges) {
+    const y = edge >= maxY ? edge - 0.5 : edge + 0.5;
+    horizontal.push({ y, x1: 0, x2: canvasW });
+  }
+
+  const vertical: VLine[] = [{ x: firstColX + 0.25, y1: minY, y2: maxY }];
+  for (const edge of colEdges) {
+    const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
+    vertical.push({ x, y1: minY, y2: maxY });
+  }
+
+  return { horizontal, vertical };
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -18,7 +94,7 @@ function cell(
   width: number,
   height: number,
 ): CellLayout {
-  return { row, col, x, y, width, height };
+  return { row, col, x, y, width, height, contentAlign: "left" };
 }
 
 /**

@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-
 /// Input parameters for virtual scroll calculation.
 #[derive(Debug, Clone)]
 pub struct ScrollState {
@@ -11,11 +9,10 @@ pub struct ScrollState {
 }
 
 /// The computed virtual slice indicating which rows to render.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct VirtualSlice {
     pub start_index: usize,
     pub end_index: usize,
-    pub offset_y: f64,
     pub total_height: f64,
     pub visible_count: usize,
 }
@@ -26,7 +23,6 @@ pub fn compute_virtual_slice(state: &ScrollState) -> VirtualSlice {
         return VirtualSlice {
             start_index: 0,
             end_index: 0,
-            offset_y: 0.0,
             total_height: 0.0,
             visible_count: 0,
         };
@@ -40,12 +36,9 @@ pub fn compute_virtual_slice(state: &ScrollState) -> VirtualSlice {
     let start_index = first_visible.saturating_sub(state.overscan);
     let end_index = (first_visible + visible_count + state.overscan).min(state.total_rows);
 
-    let offset_y = start_index as f64 * state.row_height;
-
     VirtualSlice {
         start_index,
         end_index,
-        offset_y,
         total_height,
         visible_count,
     }
@@ -69,7 +62,6 @@ mod tests {
 
         assert_eq!(slice.start_index, 0);
         assert_eq!(slice.end_index, 15); // 10 visible + 5 overscan
-        assert_eq!(slice.offset_y, 0.0);
         assert_eq!(slice.total_height, 40000.0);
         assert_eq!(slice.visible_count, 10);
     }
@@ -88,7 +80,6 @@ mod tests {
 
         assert_eq!(slice.start_index, 45); // 50 - 5 overscan
         assert_eq!(slice.end_index, 65); // 50 + 10 visible + 5 overscan
-        assert_eq!(slice.offset_y, 1800.0); // 45 * 40
     }
 
     #[test]

@@ -1,6 +1,9 @@
 import type { CellLayout } from "../types";
 
-/** Render a debug overlay showing cell layout boundaries on the canvas. */
+/**
+ * Render a debug overlay showing cell layout boundaries on the canvas.
+ * Draws red cell outlines with row,col labels. Pass CellLayout[] from the layout buffer.
+ */
 export function renderDebugOverlay(ctx: CanvasRenderingContext2D, layouts: CellLayout[]): void {
   ctx.save();
   ctx.strokeStyle = "rgba(255, 0, 0, 0.6)";

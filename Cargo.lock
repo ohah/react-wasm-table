@@ -204,8 +204,6 @@ name = "react-wasm-table-core"
 version = "0.1.0"
 dependencies = [
  "log",
- "serde",
- "serde_json",
  "taffy",
 ]
 
@@ -218,7 +216,6 @@ dependencies = [
  "react-wasm-table-core",
  "serde",
  "serde-wasm-bindgen",
- "serde_json",
  "wasm-bindgen",
  "wasm-bindgen-test",
 ]

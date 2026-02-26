@@ -2,7 +2,8 @@ import type { CellLayout } from "../types";
 
 /**
  * Install a dev-tools inspector that shows cell info on hover.
- * Only active in development mode.
+ * Attaches a tooltip to the canvas that displays row, col, x, y, w, h on mouseover.
+ * Returns a cleanup function to remove the event listeners and tooltip.
  */
 export function installInspector(
   canvas: HTMLCanvasElement,

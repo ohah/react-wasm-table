@@ -10,7 +10,7 @@ use react_wasm_table_core::layout::{
     RepeatValue, TrackListItem, TrackSizeValue, Viewport,
 };
 use react_wasm_table_core::layout_buffer;
-use react_wasm_table_core::types::{ColumnDef, SortConfig, SortDirection};
+use react_wasm_table_core::types::{SortConfig, SortDirection};
 use wasm_bindgen::prelude::*;
 
 /// The main WASM-exposed table engine.
@@ -47,22 +47,6 @@ impl TableEngine {
         ]
     }
 
-    /// Return the number of cells in the last layout computation.
-    #[wasm_bindgen(js_name = getLayoutCellCount)]
-    pub fn get_layout_cell_count(&self) -> usize {
-        self.layout_cell_count
-    }
-
-    // ── Column metadata ───────────────────────────────────────────────
-
-    /// Set columns on the columnar store.
-    #[wasm_bindgen(js_name = setColumnarColumns)]
-    pub fn set_columnar_columns(&mut self, columns: JsValue) -> Result<(), JsError> {
-        let columns: Vec<ColumnDef> = serde_wasm_bindgen::from_value(columns)?;
-        self.columnar.set_columns(columns);
-        Ok(())
-    }
-
     /// Get Float64 column pointer info: [offset, length].
     /// Returns empty vec if column is not Float64.
     #[wasm_bindgen(js_name = getColumnFloat64Info)]
@@ -70,24 +54,6 @@ impl TableEngine {
         self.columnar
             .get_float64_ptr(col_idx)
             .map_or_else(Vec::new, |(ptr, len)| vec![ptr as usize, len])
-    }
-
-    /// Get column type: 0=Float64, 1=String, 2=Bool, -1=invalid.
-    #[wasm_bindgen(js_name = getColumnType)]
-    pub fn get_column_type(&self, col_idx: usize) -> i32 {
-        use react_wasm_table_core::columnar_store::ColumnType;
-        match self.columnar.column_type(col_idx) {
-            Some(ColumnType::Float64) => 0,
-            Some(ColumnType::String) => 1,
-            Some(ColumnType::Bool) => 2,
-            None => -1,
-        }
-    }
-
-    /// Get the columnar store generation.
-    #[wasm_bindgen(js_name = getColumnarGeneration)]
-    pub fn get_columnar_generation(&self) -> u64 {
-        self.columnar.generation
     }
 
     // ── TypedArray direct ingestion (serde bypass) ────────────────────

@@ -370,13 +370,7 @@ export interface GridProps extends BoxModelProps {
 export interface WasmTableEngine {
   // Layout buffer (zero-copy pointer API)
   getLayoutBufferInfo(): Uint32Array;
-  getLayoutCellCount(): number;
-
-  // Column metadata
-  setColumnarColumns(columns: unknown): void;
   getColumnFloat64Info(colIdx: number): Uint32Array;
-  getColumnType(colIdx: number): number;
-  getColumnarGeneration(): bigint;
 
   // TypedArray direct ingestion (no serde for numerics)
   initColumnar(colCount: number, rowCount: number): void;
