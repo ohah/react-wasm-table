@@ -35,6 +35,7 @@ const sections = [
       { to: "/padding", label: "padding" },
       { to: "/margin", label: "margin" },
       { to: "/overflow", label: "overflow" },
+      { to: "/scrollbar", label: "scrollbar" },
     ],
   },
 ];

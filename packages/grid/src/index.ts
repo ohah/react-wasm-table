@@ -3,6 +3,8 @@ export { Grid } from "./react/Grid";
 export { Column } from "./react/Column";
 export { RowStyle } from "./react/RowStyle";
 export type { RowStyleProps } from "./react/RowStyle";
+export { ScrollBar } from "./react/ScrollBar";
+export type { ScrollBarProps } from "./react/ScrollBar";
 
 // Canvas JSX components
 export {
@@ -79,7 +81,7 @@ export type { GridContextValue, WasmContextValue } from "./react/context";
 export { ColumnRegistry } from "./adapter/column-registry";
 export { InstructionBuilder } from "./adapter/instruction-builder";
 export { EventManager } from "./adapter/event-manager";
-export type { GridEventHandlers } from "./adapter/event-manager";
+export type { GridEventHandlers, ScrollNormalization } from "./adapter/event-manager";
 export { EditorManager } from "./adapter/editor-manager";
 
 // Renderer

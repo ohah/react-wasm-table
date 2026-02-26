@@ -32,6 +32,7 @@ import {
 import { MemoryBridge } from "../adapter/memory-bridge";
 import { StringTable } from "../adapter/string-table";
 import { ingestData } from "../adapter/data-ingestor";
+import { ScrollBar, syncScrollBarPosition } from "./ScrollBar";
 
 const DEFAULT_ROW_HEIGHT = 36;
 const DEFAULT_HEADER_HEIGHT = 40;
@@ -204,6 +205,8 @@ export function Grid({
 }: GridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const vScrollbarRef = useRef<HTMLDivElement>(null);
+  const hScrollbarRef = useRef<HTMLDivElement>(null);
 
   const columnRegistry = useMemo(() => new ColumnRegistry(), []);
   const [engine, setEngine] = useState<WasmTableEngine | null>(null);
@@ -223,6 +226,7 @@ export function Grid({
   const eventManagerRef = useRef(new EventManager());
   const editorManagerRef = useRef(new EditorManager());
   const scrollTopRef = useRef(0);
+  const scrollLeftRef = useRef(0);
   const dirtyRef = useRef(true);
   const rafRef = useRef<number>(0);
   // TanStack-compatible sorting state (uncontrolled internal state)
@@ -390,26 +394,34 @@ export function Grid({
     if (!canvas) return;
 
     const em = eventManagerRef.current;
-    em.attach(canvas, {
-      onHeaderClick: handleHeaderClick,
-      onCellClick: () => {
-        // Close any open editor on click elsewhere
-        if (editorManagerRef.current.isEditing) {
-          editorManagerRef.current.cancel();
-        }
+    em.attach(
+      canvas,
+      {
+        onHeaderClick: handleHeaderClick,
+        onCellClick: () => {
+          // Close any open editor on click elsewhere
+          if (editorManagerRef.current.isEditing) {
+            editorManagerRef.current.cancel();
+          }
+        },
+        onCellDoubleClick: handleCellDoubleClick,
+        onScroll: (deltaY: number, deltaX: number) => {
+          const maxScrollY = Math.max(0, data.length * rowHeight - (height - headerHeight));
+          scrollTopRef.current = Math.max(0, Math.min(maxScrollY, scrollTopRef.current + deltaY));
+          const cols = columnRegistry.getAll();
+          const totalColWidth = cols.reduce((sum, c) => sum + (typeof c.width === "number" ? c.width : 100), 0);
+          const maxScrollX = Math.max(0, totalColWidth - width);
+          scrollLeftRef.current = Math.max(0, Math.min(maxScrollX, scrollLeftRef.current + deltaX));
+          dirtyRef.current = true;
+        },
       },
-      onCellDoubleClick: handleCellDoubleClick,
-      onScroll: (deltaY: number) => {
-        const maxScroll = Math.max(0, data.length * rowHeight - (height - headerHeight));
-        scrollTopRef.current = Math.max(0, Math.min(maxScroll, scrollTopRef.current + deltaY));
-        dirtyRef.current = true;
-      },
-    });
+      { lineHeight: rowHeight, pageHeight: height - headerHeight },
+    );
 
     return () => {
       em.detach();
     };
-  }, [handleHeaderClick, handleCellDoubleClick, rowHeight, data.length, headerHeight, height]);
+  }, [handleHeaderClick, handleCellDoubleClick, rowHeight, data.length, headerHeight, height, columnRegistry, width]);
 
   // Render loop — unified hot path (single WASM call per frame)
   useEffect(() => {
@@ -500,6 +512,10 @@ export function Grid({
           justifySelf: col.justifySelf,
         }));
 
+        // Map "auto" → "scroll" for Taffy (no "auto" in Taffy)
+        const taffyOverflowX = overflowX === "auto" ? "scroll" : overflowX;
+        const taffyOverflowY = overflowY === "auto" ? "scroll" : overflowY;
+
         const containerLayout = {
           display,
           flexDirection,
@@ -510,8 +526,8 @@ export function Grid({
           alignItems,
           alignContent,
           justifyContent,
-          overflowX,
-          overflowY,
+          overflowX: taffyOverflowX,
+          overflowY: taffyOverflowY,
           scrollbarWidth,
           padding: buildLengthRect(padding, paddingTop, paddingRight, paddingBottom, paddingLeft),
           margin: buildLengthAutoRect(margin, marginTop, marginRight, marginBottom, marginLeft),
@@ -594,8 +610,14 @@ export function Grid({
           return h;
         });
 
-        // Draw
+        // Draw — apply horizontal scroll via canvas translate
         renderer.clear();
+        const ctx = renderer.context;
+        const scrollLeft = scrollLeftRef.current;
+        if (ctx && scrollLeft !== 0) {
+          ctx.save();
+          ctx.translate(-scrollLeft, 0);
+        }
         renderer.drawHeaderFromBuffer(
           layoutBuf,
           0,
@@ -631,6 +653,13 @@ export function Grid({
           headerHeight,
           rowHeight,
         );
+        if (ctx && scrollLeft !== 0) {
+          ctx.restore();
+        }
+
+        // Sync native scrollbar positions (canvas wheel → scrollbar DOM)
+        syncScrollBarPosition(vScrollbarRef.current, scrollTopRef.current, "vertical");
+        syncScrollBarPosition(hScrollbarRef.current, scrollLeftRef.current, "horizontal");
       }
 
       rafRef.current = requestAnimationFrame(loop);
@@ -688,6 +717,39 @@ export function Grid({
     sorting,
   ]);
 
+  // Scrollbar visibility
+  const totalContentHeight = data.length * rowHeight + headerHeight;
+  const needsVerticalScroll = totalContentHeight > height;
+
+  const columns = columnRegistry.getAll();
+  const totalContentWidth = columns.reduce(
+    (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
+    0,
+  );
+  const needsHorizontalScroll = totalContentWidth > width;
+
+  const showVerticalScrollbar =
+    overflowY === "scroll" ||
+    (overflowY === "auto" && needsVerticalScroll) ||
+    (overflowY === undefined && needsVerticalScroll);
+
+  const showHorizontalScrollbar =
+    overflowX === "scroll" ||
+    (overflowX === "auto" && needsHorizontalScroll) ||
+    (overflowX === undefined && needsHorizontalScroll);
+
+  const handleVScrollChange = useCallback((pos: number) => {
+    if (Math.abs(scrollTopRef.current - pos) < 0.5) return;
+    scrollTopRef.current = pos;
+    dirtyRef.current = true;
+  }, []);
+
+  const handleHScrollChange = useCallback((pos: number) => {
+    if (Math.abs(scrollLeftRef.current - pos) < 0.5) return;
+    scrollLeftRef.current = pos;
+    dirtyRef.current = true;
+  }, []);
+
   return (
     <GridContext.Provider value={{ columnRegistry }}>
       <WasmContext.Provider value={{ engine, isReady: engine !== null }}>
@@ -711,6 +773,24 @@ export function Grid({
               pointerEvents: "none",
             }}
           />
+          {showVerticalScrollbar && (
+            <ScrollBar
+              ref={vScrollbarRef}
+              orientation="vertical"
+              contentSize={totalContentHeight}
+              viewportSize={height}
+              onScrollChange={handleVScrollChange}
+            />
+          )}
+          {showHorizontalScrollbar && (
+            <ScrollBar
+              ref={hScrollbarRef}
+              orientation="horizontal"
+              contentSize={totalContentWidth}
+              viewportSize={width}
+              onScrollChange={handleHScrollChange}
+            />
+          )}
           {!columnsProp && children}
         </div>
       </WasmContext.Provider>

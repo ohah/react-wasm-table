@@ -5,7 +5,15 @@ export interface GridEventHandlers {
   onCellClick?: (coord: CellCoord) => void;
   onCellDoubleClick?: (coord: CellCoord) => void;
   onHeaderClick?: (colIndex: number) => void;
-  onScroll?: (deltaY: number) => void;
+  onScroll?: (deltaY: number, deltaX: number) => void;
+}
+
+/** Options for deltaMode normalization. */
+export interface ScrollNormalization {
+  /** Pixels per line for deltaMode=1 (DOM_DELTA_LINE). Typically rowHeight. */
+  lineHeight: number;
+  /** Pixels per page for deltaMode=2 (DOM_DELTA_PAGE). Typically viewport height. */
+  pageHeight: number;
 }
 
 /** Find which cell a point (x, y) falls within. */
@@ -31,6 +39,7 @@ export class EventManager {
   private controller: AbortController | null = null;
   private headerLayouts: CellLayout[] = [];
   private rowLayouts: CellLayout[] = [];
+  private scrollbarWidth: number | null = null;
 
   /** Update the layouts used for hit-testing. */
   setLayouts(headerLayouts: CellLayout[], rowLayouts: CellLayout[]): void {
@@ -38,8 +47,17 @@ export class EventManager {
     this.rowLayouts = rowLayouts;
   }
 
+  /** Set the scrollbar region width to exclude from hit-testing. */
+  setScrollbarRegion(width: number | null): void {
+    this.scrollbarWidth = width;
+  }
+
   /** Attach event listeners to a canvas element. */
-  attach(canvas: HTMLCanvasElement, handlers: GridEventHandlers): void {
+  attach(
+    canvas: HTMLCanvasElement,
+    handlers: GridEventHandlers,
+    scrollNorm?: ScrollNormalization,
+  ): void {
     this.detach();
     this.controller = new AbortController();
     const { signal } = this.controller;
@@ -50,6 +68,9 @@ export class EventManager {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
+
+        // Ignore clicks in scrollbar region
+        if (this.scrollbarWidth != null && x > rect.width - this.scrollbarWidth) return;
 
         // Check header first
         const headerHit = findCell(x, y, this.headerLayouts);
@@ -82,11 +103,26 @@ export class EventManager {
       { signal },
     );
 
+    const lineH = scrollNorm?.lineHeight ?? 36;
+    const pageH = scrollNorm?.pageHeight ?? 400;
+
     canvas.addEventListener(
       "wheel",
       (e: WheelEvent) => {
         e.preventDefault();
-        handlers.onScroll?.(e.deltaY);
+        let dy = e.deltaY;
+        let dx = e.deltaX;
+        // Normalize deltaMode to pixels
+        if (e.deltaMode === 1) {
+          // DOM_DELTA_LINE (Firefox mouse wheel)
+          dy *= lineH;
+          dx *= lineH;
+        } else if (e.deltaMode === 2) {
+          // DOM_DELTA_PAGE
+          dy *= pageH;
+          dx *= pageH;
+        }
+        handlers.onScroll?.(dy, dx);
       },
       { signal, passive: false },
     );

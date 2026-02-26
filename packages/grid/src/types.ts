@@ -56,7 +56,7 @@ export type CssPosition = "relative" | "absolute";
 export type CssBoxSizing = "border-box" | "content-box";
 
 /** CSS overflow property. */
-export type CssOverflow = "visible" | "clip" | "hidden" | "scroll";
+export type CssOverflow = "visible" | "clip" | "hidden" | "scroll" | "auto";
 
 /** CSS flex-direction property. */
 export type CssFlexDirection = "row" | "column" | "row-reverse" | "column-reverse";
