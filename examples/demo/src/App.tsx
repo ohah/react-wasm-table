@@ -15,6 +15,7 @@ import { Overflow } from "./pages/Overflow";
 import { Position } from "./pages/Position";
 import { GridTemplate } from "./pages/GridTemplate";
 import { Scrollbar } from "./pages/Scrollbar";
+import { Selection } from "./pages/Selection";
 import { StressTest } from "./pages/StressTest";
 import { FpsCounter } from "./components/FpsCounter";
 
@@ -41,6 +42,7 @@ export function App() {
           <Route path="/position" element={<Position />} />
           <Route path="/grid-template" element={<GridTemplate />} />
           <Route path="/scrollbar" element={<Scrollbar />} />
+          <Route path="/selection" element={<Selection />} />
           <Route path="/stress-test" element={<StressTest />} />
         </Routes>
       </main>
