@@ -17,6 +17,7 @@ import { ColumnRegistry } from "../adapter/column-registry";
 import { InstructionBuilder } from "../adapter/instruction-builder";
 import { EventManager } from "../adapter/event-manager";
 import { EditorManager } from "../adapter/editor-manager";
+import { SelectionManager, buildTSV } from "../adapter/selection-manager";
 import { CanvasRenderer } from "../renderer/canvas-renderer";
 import { GridContext, WasmContext } from "./context";
 import { initWasm, createTableEngine, getWasmMemory } from "../wasm-loader";
@@ -164,6 +165,12 @@ export function Grid({
   // TanStack-compatible sorting
   sorting: sortingProp,
   onSortingChange: onSortingChangeProp,
+  // Selection (controlled/uncontrolled)
+  selection: selectionProp,
+  onSelectionChange: onSelectionChangeProp,
+  selectionStyle,
+  onCopy: onCopyProp,
+  onPaste: onPasteProp,
   initialState,
   // Container flex props
   display,
@@ -240,6 +247,10 @@ export function Grid({
   const totalCellCountRef = useRef(0);
   const memoryBridgeRef = useRef<MemoryBridge | null>(null);
   const stringTableRef = useRef(new StringTable());
+  const selectionManagerRef = useRef(new SelectionManager());
+  const visStartRef = useRef(0);
+  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoScrollDeltaRef = useRef({ dy: 0, dx: 0 });
 
   // Initialize WASM engine
   useEffect(() => {
@@ -285,6 +296,35 @@ export function Grid({
       editorManagerRef.current.setContainer(editorRef.current);
     }
   }, []);
+
+  // Attach hidden textarea for clipboard + selection change notification
+  useEffect(() => {
+    const container = canvasRef.current?.parentElement;
+    if (!container) return;
+    const sm = selectionManagerRef.current;
+    sm.setOnDirty(() => {
+      dirtyRef.current = true;
+      onSelectionChangeProp?.(sm.getNormalized());
+    });
+    sm.attachClipboard(container);
+    return () => sm.detachClipboard();
+  }, [onSelectionChangeProp]);
+
+  // Sync controlled selection prop → SelectionManager
+  useEffect(() => {
+    if (selectionProp === undefined) return; // uncontrolled
+    const sm = selectionManagerRef.current;
+    if (selectionProp === null) {
+      sm.clear();
+    } else {
+      sm.setRange({
+        startRow: selectionProp.minRow,
+        startCol: selectionProp.minCol,
+        endRow: selectionProp.maxRow,
+        endCol: selectionProp.maxCol,
+      });
+    }
+  }, [selectionProp]);
 
   // Ingest data via columnar TypedArray path (serde bypass)
   useEffect(() => {
@@ -384,6 +424,7 @@ export function Grid({
       const currentValue = rowData[col.id];
 
       editorManagerRef.current.open(coord, layout, col.editor, currentValue);
+      selectionManagerRef.current.clear();
     },
     [columnRegistry, data],
   );
@@ -405,6 +446,75 @@ export function Grid({
           }
         },
         onCellDoubleClick: handleCellDoubleClick,
+        onCellMouseDown: (coord, shiftKey) => {
+          if (editorManagerRef.current.isEditing) editorManagerRef.current.cancel();
+          const sm = selectionManagerRef.current;
+          if (shiftKey && sm.hasSelection) {
+            sm.extendTo(coord.row, coord.col);
+          } else {
+            sm.start(coord.row, coord.col);
+          }
+        },
+        onCellMouseMove: (coord) => {
+          const sm = selectionManagerRef.current;
+          if (sm.isDragging) sm.extend(coord.row, coord.col);
+        },
+        onDragEdge: (dy, dx) => {
+          autoScrollDeltaRef.current = { dy, dx };
+          if (dy === 0 && dx === 0) {
+            // Mouse moved away from edge — stop auto-scroll
+            if (autoScrollRef.current) {
+              clearInterval(autoScrollRef.current);
+              autoScrollRef.current = null;
+            }
+            return;
+          }
+          if (!autoScrollRef.current) {
+            autoScrollRef.current = setInterval(() => {
+              const { dy: ady, dx: adx } = autoScrollDeltaRef.current;
+              if (ady === 0 && adx === 0) return;
+              const maxScrollY = Math.max(0, data.length * rowHeight - (height - headerHeight));
+              scrollTopRef.current = Math.max(0, Math.min(maxScrollY, scrollTopRef.current + ady));
+              const cols = columnRegistry.getAll();
+              const totalColW = cols.reduce(
+                (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
+                0,
+              );
+              const maxScrollX = Math.max(0, totalColW - width);
+              scrollLeftRef.current = Math.max(0, Math.min(maxScrollX, scrollLeftRef.current + adx));
+              dirtyRef.current = true;
+            }, 16);
+          }
+        },
+        onCellMouseUp: () => {
+          selectionManagerRef.current.finish();
+          if (autoScrollRef.current) {
+            clearInterval(autoScrollRef.current);
+            autoScrollRef.current = null;
+          }
+          autoScrollDeltaRef.current = { dy: 0, dx: 0 };
+        },
+        onKeyDown: (e) => {
+          const sm = selectionManagerRef.current;
+          if ((e.ctrlKey || e.metaKey) && e.key === "c" && sm.hasSelection) {
+            e.preventDefault();
+            const norm = sm.getNormalized()!;
+            const viewIndices = memoryBridgeRef.current?.getViewIndices();
+            const strTable = stringTableRef.current;
+            const getText = (viewRow: number, col: number) => {
+              const actualRow = viewIndices?.[viewRow - visStartRef.current] ?? viewRow;
+              return strTable.get(col, actualRow);
+            };
+            const tsv = buildTSV(norm, getText);
+            const custom = onCopyProp?.(tsv, norm);
+            sm.writeToClipboardText(typeof custom === "string" ? custom : tsv);
+          }
+          if ((e.ctrlKey || e.metaKey) && e.key === "v" && onPasteProp) {
+            // Paste stub: read clipboard and delegate to onPaste callback
+            // Full implementation is future work
+          }
+          if (e.key === "Escape") sm.clear();
+        },
         onScroll: (deltaY: number, deltaX: number) => {
           const maxScrollY = Math.max(0, data.length * rowHeight - (height - headerHeight));
           scrollTopRef.current = Math.max(0, Math.min(maxScrollY, scrollTopRef.current + deltaY));
@@ -433,6 +543,8 @@ export function Grid({
     height,
     columnRegistry,
     width,
+    onCopyProp,
+    onPasteProp,
   ]);
 
   // Render loop — unified hot path (single WASM call per frame)
@@ -572,6 +684,9 @@ export function Grid({
         const headerCount = colCount;
         const dataCount = cellCount - headerCount;
 
+        // Store visStart for selection clipboard row mapping
+        visStartRef.current = visStart;
+
         // Zero-copy reads from WASM memory
         const layoutBuf = bridge.getLayoutBuffer();
         const viewIndices = bridge.getViewIndices();
@@ -610,6 +725,16 @@ export function Grid({
         headerLayoutsRef.current = normalizedHeaders;
         rowLayoutsRef.current = normalizedRows;
         eventManagerRef.current.setLayouts(normalizedHeaders, normalizedRows);
+        eventManagerRef.current.setScrollOffset(scrollLeftRef.current);
+
+        // During drag auto-scroll, re-hit-test at last mouse position to extend selection
+        const sm = selectionManagerRef.current;
+        if (sm.isDragging) {
+          const hit = eventManagerRef.current.hitTestAtLastPos();
+          if (hit) {
+            sm.extend(hit.row, hit.col);
+          }
+        }
 
         // Prepare header labels with sort indicators
         const headers = columns.map((c) => c.header ?? c.id);
@@ -665,6 +790,11 @@ export function Grid({
           headerHeight,
           rowHeight,
         );
+        // Draw selection highlight (topmost layer, inside scroll transform)
+        const sel = selectionManagerRef.current.getNormalized();
+        if (sel) {
+          renderer.drawSelection(layoutBuf, headerCount, cellCount, sel, theme, selectionStyle);
+        }
         if (ctx && scrollLeft !== 0) {
           ctx.restore();
         }
@@ -727,6 +857,8 @@ export function Grid({
     justifyItems,
     // Sorting
     sorting,
+    // Selection style
+    selectionStyle,
   ]);
 
   // Scrollbar visibility
@@ -773,7 +905,7 @@ export function Grid({
             overflow: "hidden",
           }}
         >
-          <canvas ref={canvasRef} width={width} height={height} style={{ display: "block" }} />
+          <canvas ref={canvasRef} width={width} height={height} style={{ display: "block", touchAction: "none" }} />
           <div
             ref={editorRef}
             style={{
