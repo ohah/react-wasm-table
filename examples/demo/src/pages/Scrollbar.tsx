@@ -64,9 +64,8 @@ export function Scrollbar() {
     <>
       <h1>Scrollbar</h1>
       <p>
-        Native browser scrollbar rendered via an overlay DOM div with{" "}
-        <code>overflow: scroll</code>. The scrollbar syncs bidirectionally with canvas
-        wheel events.
+        Native browser scrollbar rendered via an overlay DOM div with <code>overflow: scroll</code>.
+        The scrollbar syncs bidirectionally with canvas wheel events.
       </p>
 
       {/* ── overflowY control ───────────────────────────────── */}
@@ -117,19 +116,13 @@ export function Scrollbar() {
       {/* ── 2. No Scroll (few rows) ────────────────────────── */}
       <h2>No Scroll (8 rows, auto)</h2>
       <p>
-        <code>overflowY=&quot;auto&quot;</code> with few rows — scrollbar hidden because
-        content fits.
+        <code>overflowY=&quot;auto&quot;</code> with few rows — scrollbar hidden because content
+        fits.
       </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
-          <Grid
-            data={smallData}
-            width={550}
-            height={400}
-            overflowY="auto"
-            columns={smallColumns}
-          />
+          <Grid data={smallData} width={550} height={400} overflowY="auto" columns={smallColumns} />
         </div>
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
@@ -146,8 +139,7 @@ export function Scrollbar() {
       {/* ── 3. Always Visible ───────────────────────────────── */}
       <h2>Always Visible (scroll)</h2>
       <p>
-        <code>overflowY=&quot;scroll&quot;</code> — scrollbar always visible even when
-        content fits.
+        <code>overflowY=&quot;scroll&quot;</code> — scrollbar always visible even when content fits.
       </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
