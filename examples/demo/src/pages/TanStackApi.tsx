@@ -33,13 +33,38 @@ function generatePeople(count: number): Person[] {
   };
   const rand = rng(123);
   const firstNames = [
-    "Alice", "Bob", "Charlie", "Diana", "Eve", "Frank",
-    "Grace", "Hank", "Ivy", "Jack", "Karen", "Leo",
-    "Mia", "Noah", "Olivia", "Paul", "Quinn", "Ruby",
+    "Alice",
+    "Bob",
+    "Charlie",
+    "Diana",
+    "Eve",
+    "Frank",
+    "Grace",
+    "Hank",
+    "Ivy",
+    "Jack",
+    "Karen",
+    "Leo",
+    "Mia",
+    "Noah",
+    "Olivia",
+    "Paul",
+    "Quinn",
+    "Ruby",
   ];
   const lastNames = [
-    "Kim", "Lee", "Park", "Choi", "Smith", "Johnson",
-    "Brown", "Garcia", "Miller", "Davis", "Tanaka", "Sato",
+    "Kim",
+    "Lee",
+    "Park",
+    "Choi",
+    "Smith",
+    "Johnson",
+    "Brown",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Tanaka",
+    "Sato",
   ];
 
   return Array.from({ length: count }, () => ({
@@ -80,12 +105,7 @@ const columns = [
     enableSorting: true,
     align: "right",
     padding: [0, 8],
-    cell: (info) => (
-      <Text
-        value={String(info.getValue())}
-        fontWeight="bold"
-      />
-    ),
+    cell: (info) => <Text value={String(info.getValue())} fontWeight="bold" />,
   }),
   helper.accessor("department", {
     header: "Dept",
@@ -93,12 +113,7 @@ const columns = [
     enableSorting: true,
     padding: [0, 8],
     cell: (info) => (
-      <Badge
-        value={info.getValue()}
-        color="#333"
-        backgroundColor="#e3f2fd"
-        borderRadius={4}
-      />
+      <Badge value={info.getValue()} color="#333" backgroundColor="#e3f2fd" borderRadius={4} />
     ),
   }),
   helper.accessor("status", {
@@ -108,8 +123,7 @@ const columns = [
     padding: [0, 8],
     cell: (info) => {
       const v = info.getValue();
-      const bg =
-        v === "Active" ? "#4caf50" : v === "On Leave" ? "#ff9800" : "#9e9e9e";
+      const bg = v === "Active" ? "#4caf50" : v === "On Leave" ? "#ff9800" : "#9e9e9e";
       return <Badge value={v} color="white" backgroundColor={bg} borderRadius={4} />;
     },
   }),
@@ -198,9 +212,9 @@ export function TanStackApi() {
     <>
       <h1>TanStack Table API</h1>
       <p>
-        TanStack-compatible column definitions with <code>createColumnHelper</code>,
-        JSX canvas components (<code>&lt;Text&gt;</code>, <code>&lt;Badge&gt;</code>,{" "}
-        <code>&lt;Flex&gt;</code>), column groups, and controlled sorting.
+        TanStack-compatible column definitions with <code>createColumnHelper</code>, JSX canvas
+        components (<code>&lt;Text&gt;</code>, <code>&lt;Badge&gt;</code>, <code>&lt;Flex&gt;</code>
+        ), column groups, and controlled sorting.
       </p>
 
       <div style={{ marginBottom: 16 }}>
@@ -226,8 +240,7 @@ export function TanStackApi() {
 
       {sorting.length > 0 && (
         <p style={{ color: "#1976d2", fontSize: 14 }}>
-          Sorted by: <strong>{sorting[0]!.id}</strong> ({sorting[0]!.desc ? "desc" : "asc"})
-          {" · "}
+          Sorted by: <strong>{sorting[0]!.id}</strong> ({sorting[0]!.desc ? "desc" : "asc"}){" · "}
           <button
             onClick={() => setSorting([])}
             style={{
@@ -254,9 +267,7 @@ export function TanStackApi() {
       />
 
       <details style={{ marginTop: 16 }}>
-        <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
-          View Code
-        </summary>
+        <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 14 }}>View Code</summary>
         <pre
           style={{
             background: "#f5f5f5",

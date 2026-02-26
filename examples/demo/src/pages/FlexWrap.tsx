@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, type CssFlexWrap } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssGrid, CssColumn } from "../components/CssGrid";
+import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -68,12 +68,7 @@ export function FlexWrap() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid data={data} width={500} height={400} flexWrap={wrap}>
-            <CssColumn id="name" width={200} header="Name" />
-            <CssColumn id="dept" width={200} header="Department" />
-            <CssColumn id="salary" width={200} header="Salary" align="right" />
-            <CssColumn id="score" width={200} header="Score" align="right" />
-          </CssGrid>
+          <CssGrid data={data} width={500} height={400} flexWrap={wrap} columns={columns} />
         </div>
       </div>
     </>

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssGrid, CssColumn } from "../components/CssGrid";
+import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -49,12 +49,7 @@ export function Gap() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid data={data} width={800} height={400} gap={gapValue}>
-            <CssColumn id="name" width={180} header="Name" />
-            <CssColumn id="dept" width={120} header="Department" />
-            <CssColumn id="salary" width={100} header="Salary" align="right" />
-            <CssColumn id="score" width={80} header="Score" align="right" />
-          </CssGrid>
+          <CssGrid data={data} width={800} height={400} gap={gapValue} columns={columns} />
         </div>
       </div>
     </>

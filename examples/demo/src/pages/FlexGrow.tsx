@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, type CssDimension } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssGrid, CssColumn } from "../components/CssGrid";
+import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number };
 
@@ -41,8 +41,19 @@ export function FlexGrow() {
   const helper = createColumnHelper<SmallRow>();
   const columns = [
     helper.accessor("name", { header: "Name", size: 150, flexGrow: grow1, padding: [0, 8] }),
-    helper.accessor("dept", { header: "Department", flexGrow: grow2, flexBasis: basisProp, padding: [0, 8] }),
-    helper.accessor("salary", { header: "Salary", size: 300, align: "right", flexShrink: shrink, padding: [0, 8] }),
+    helper.accessor("dept", {
+      header: "Department",
+      flexGrow: grow2,
+      flexBasis: basisProp,
+      padding: [0, 8],
+    }),
+    helper.accessor("salary", {
+      header: "Salary",
+      size: 300,
+      align: "right",
+      flexShrink: shrink,
+      padding: [0, 8],
+    }),
   ];
 
   return (
@@ -105,11 +116,11 @@ export function FlexGrow() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`<Grid width={800} columns={[
-  { accessorKey: "name", size: 150, flexGrow: ${grow1} },
-  { accessorKey: "dept", flexGrow: ${grow2}, flexBasis: "${basis}" },
-  { accessorKey: "salary", size: 300, flexShrink: ${shrink} },
-]} />`}
+        {`helper.accessor("name", { size: 150, flexGrow: ${grow1} })
+helper.accessor("dept", { flexGrow: ${grow2}, flexBasis: "${basis}" })
+helper.accessor("salary", { size: 300, flexShrink: ${shrink} })
+
+<Grid width={800} columns={columns} />`}
       </pre>
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
@@ -120,11 +131,7 @@ export function FlexGrow() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid data={data} width={800} height={400}>
-            <CssColumn id="name" width={150} header="Name" flexGrow={grow1} />
-            <CssColumn id="dept" header="Department" flexGrow={grow2} flexBasis={basisProp} />
-            <CssColumn id="salary" width={300} header="Salary" align="right" flexShrink={shrink} />
-          </CssGrid>
+          <CssGrid data={data} width={800} height={400} columns={columns} />
         </div>
       </div>
     </>

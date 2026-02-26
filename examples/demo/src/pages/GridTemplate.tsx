@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 import type { CssGridAutoFlow } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssGrid, CssColumn } from "../components/CssGrid";
+import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number };
 const helper = createColumnHelper<SmallRow>();
@@ -136,11 +136,8 @@ export function GridTemplate() {
             gridTemplateColumns={templateCols}
             gridAutoFlow={autoFlow}
             gap={gapValue}
-          >
-            <CssColumn id="name" header="Name" />
-            <CssColumn id="dept" header="Department" />
-            <CssColumn id="salary" header="Salary" align="right" />
-          </CssGrid>
+            columns={columns}
+          />
         </div>
       </div>
     </>

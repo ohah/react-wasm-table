@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, type CssJustifyContent } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssGrid, CssColumn } from "../components/CssGrid";
+import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number };
 const helper = createColumnHelper<SmallRow>();
@@ -77,11 +77,13 @@ export function JustifyContent() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid data={data} width={800} height={400} justifyContent={justify}>
-            <CssColumn id="name" width={150} header="Name" />
-            <CssColumn id="dept" width={120} header="Department" />
-            <CssColumn id="salary" width={100} header="Salary" align="right" />
-          </CssGrid>
+          <CssGrid
+            data={data}
+            width={800}
+            height={400}
+            justifyContent={justify}
+            columns={columns}
+          />
         </div>
       </div>
     </>
