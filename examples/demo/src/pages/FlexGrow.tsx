@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
-import { Grid, Column } from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper, type CssDimension } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 import { CssGrid, CssColumn } from "../components/CssGrid";
+
+type SmallRow = { name: string; dept: string; salary: number };
 
 const BASIS_OPTIONS = [
   { label: "auto", value: "auto" },
@@ -33,8 +35,15 @@ export function FlexGrow() {
   const [basis, setBasis] = useState("auto");
   const data = useMemo(() => generateSmallData(), []);
 
-  const basisProp =
+  const basisProp: CssDimension =
     basis === "auto" ? "auto" : basis.includes("%") ? (basis as `${number}%`) : Number(basis);
+
+  const helper = createColumnHelper<SmallRow>();
+  const columns = [
+    helper.accessor("name", { header: "Name", size: 150, flexGrow: grow1, padding: [0, 8] }),
+    helper.accessor("dept", { header: "Department", flexGrow: grow2, flexBasis: basisProp, padding: [0, 8] }),
+    helper.accessor("salary", { header: "Salary", size: 300, align: "right", flexShrink: shrink, padding: [0, 8] }),
+  ];
 
   return (
     <>
@@ -96,34 +105,17 @@ export function FlexGrow() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`<Grid width={800} ...>
-  <Column id="name" width={150} flexGrow={${grow1}} />
-  <Column id="dept" flexGrow={${grow2}} flexBasis="${basis}" />
-  <Column id="salary" width={300} flexShrink={${shrink}} />
-</Grid>`}
+        {`<Grid width={800} columns={[
+  { accessorKey: "name", size: 150, flexGrow: ${grow1} },
+  { accessorKey: "dept", flexGrow: ${grow2}, flexBasis: "${basis}" },
+  { accessorKey: "salary", size: 300, flexShrink: ${shrink} },
+]} />`}
       </pre>
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
-          <Grid data={data} width={800} height={400}>
-            <Column id="name" width={150} header="Name" flexGrow={grow1} padding={[0, 8]} />
-            <Column
-              id="dept"
-              header="Department"
-              flexGrow={grow2}
-              flexBasis={basisProp}
-              padding={[0, 8]}
-            />
-            <Column
-              id="salary"
-              width={300}
-              header="Salary"
-              align="right"
-              flexShrink={shrink}
-              padding={[0, 8]}
-            />
-          </Grid>
+          <Grid data={data} width={800} height={400} columns={columns} />
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
