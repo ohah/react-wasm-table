@@ -3,7 +3,6 @@
 #![allow(clippy::doc_markdown)]
 
 use react_wasm_table_core::columnar_store::ColumnarStore;
-use react_wasm_table_core::data_store::ColumnDef;
 use react_wasm_table_core::layout::{
     Align, AlignValue, BoxSizingValue, ColumnLayout, ContainerLayout, DimensionValue, DisplayValue,
     FlexDirectionValue, FlexWrapValue, GridAutoFlowValue, GridLineValue, GridPlacementValue,
@@ -11,7 +10,7 @@ use react_wasm_table_core::layout::{
     RepeatValue, TrackListItem, TrackSizeValue, Viewport,
 };
 use react_wasm_table_core::layout_buffer;
-use react_wasm_table_core::sorting::{SortConfig, SortDirection};
+use react_wasm_table_core::types::{ColumnDef, SortConfig, SortDirection};
 use wasm_bindgen::prelude::*;
 
 /// The main WASM-exposed table engine.
