@@ -85,6 +85,23 @@ const DATA_SPACED = [
   cell(1, 2, 591, 40, 100, 36),
 ];
 
+// Row-reverse: 3 columns, cell index 0 is rightmost (as Taffy computes for row-reverse)
+// Total width = 150+120+100 = 370, container = 800 → items start at x=430
+const HEADER_ROW_REVERSE = [
+  cell(0, 0, 650, 0, 150, 40), // Name: rightmost (index 0)
+  cell(0, 1, 530, 0, 120, 40), // Dept: middle
+  cell(0, 2, 430, 0, 100, 40), // Score: leftmost (index 2)
+];
+
+const DATA_ROW_REVERSE = [
+  cell(1, 0, 650, 40, 150, 36),
+  cell(1, 1, 530, 40, 120, 36),
+  cell(1, 2, 430, 40, 100, 36),
+  cell(2, 0, 650, 76, 150, 36),
+  cell(2, 1, 530, 76, 120, 36),
+  cell(2, 2, 430, 76, 100, 36),
+];
+
 const CANVAS_W = 800;
 const HEADER_H = 40;
 
@@ -141,6 +158,13 @@ describe("computeHeaderLines", () => {
     const rightBorder = spec.vertical.find((v) => Math.abs(v.x - (gridMaxX - 0.25)) < 1);
     expect(rightBorder).toBeDefined();
   });
+
+  it("left border uses minimum x in row-reverse (cell 0 is rightmost)", () => {
+    const spec = computeHeaderLines(HEADER_ROW_REVERSE, CANVAS_W, HEADER_H);
+    const leftBorder = spec.vertical[0]!;
+    // Should be at x=430 (Score), NOT x=650 (Name / cell index 0)
+    expect(leftBorder.x).toBeCloseTo(430 + 0.25, 5);
+  });
 });
 
 // ── computeDataLines ────────────────────────────────────────────────
@@ -191,6 +215,12 @@ describe("computeDataLines", () => {
       expect(v.y2).toBe(112); // last row y + height
     }
   });
+
+  it("left border uses minimum x in row-reverse", () => {
+    const spec = computeDataLines(DATA_ROW_REVERSE, CANVAS_W);
+    const leftBorder = spec.vertical[0]!;
+    expect(leftBorder.x).toBeCloseTo(430 + 0.25, 5);
+  });
 });
 
 // ── Buffer-based: computeHeaderLinesFromBuffer ──────────────────────
@@ -213,6 +243,18 @@ describe("computeHeaderLinesFromBuffer", () => {
     const bufSpec = computeHeaderLinesFromBuffer(
       toBuffer(HEADER_OFFSET),
       HEADER_OFFSET.length,
+      CANVAS_W,
+      HEADER_H,
+    );
+    expect(bufSpec.horizontal).toEqual(objSpec.horizontal);
+    expect(bufSpec.vertical).toEqual(objSpec.vertical);
+  });
+
+  it("matches object-based output for row-reverse cells", () => {
+    const objSpec = computeHeaderLines(HEADER_ROW_REVERSE, CANVAS_W, HEADER_H);
+    const bufSpec = computeHeaderLinesFromBuffer(
+      toBuffer(HEADER_ROW_REVERSE),
+      HEADER_ROW_REVERSE.length,
       CANVAS_W,
       HEADER_H,
     );
@@ -246,6 +288,23 @@ describe("computeDataLinesFromBuffer", () => {
     const bufSpec = computeDataLinesFromBuffer(
       buf,
       HEADER_OFFSET.length,
+      allLayouts.length,
+      CANVAS_W,
+      36,
+    );
+
+    expect(bufSpec.horizontal).toEqual(objSpec.horizontal);
+    expect(bufSpec.vertical).toEqual(objSpec.vertical);
+  });
+
+  it("matches object-based output for row-reverse cells", () => {
+    const allLayouts = [...HEADER_ROW_REVERSE, ...DATA_ROW_REVERSE];
+    const buf = toBuffer(allLayouts);
+
+    const objSpec = computeDataLines(DATA_ROW_REVERSE, CANVAS_W);
+    const bufSpec = computeDataLinesFromBuffer(
+      buf,
+      HEADER_ROW_REVERSE.length,
       allLayouts.length,
       CANVAS_W,
       36,
