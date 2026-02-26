@@ -8,6 +8,7 @@ const TAP_DURATION = 200; // max ms for a tap
 const DOUBLE_TAP_INTERVAL = 300; // ms between taps for double-tap
 const DOUBLE_TAP_DISTANCE = 20; // max px between taps for double-tap
 const LONG_PRESS_DURATION = 500; // ms hold → selection drag mode
+const MOUSE_DRAG_THRESHOLD = 5; // px movement before mousemove triggers drag-extend
 
 /** Callback signatures for grid events. */
 export interface GridEventHandlers {
@@ -96,6 +97,10 @@ export class EventManager {
   private lastTapX = 0;
   private lastTapY = 0;
 
+  // Mouse drag state
+  private mouseDownPos: { x: number; y: number } | null = null;
+  private mouseDragActive = false;
+
   /** Update the layouts used for hit-testing. */
   setLayouts(headerLayouts: CellLayout[], rowLayouts: CellLayout[]): void {
     this.headerLayouts = headerLayouts;
@@ -174,6 +179,9 @@ export class EventManager {
       "mousedown",
       (e: MouseEvent) => {
         const { x, y } = toContentCoords(e.clientX, e.clientY);
+        this.mouseDownPos = { x: e.clientX, y: e.clientY };
+        this.mouseDragActive = false;
+        this.lastViewportPos = null;
 
         const rowHit = findCell(x, y, this.rowLayouts);
         if (rowHit) {
@@ -193,6 +201,14 @@ export class EventManager {
         const viewportX = e.clientX - rect.left;
         const viewportY = e.clientY - rect.top;
         this.lastViewportPos = { x: viewportX, y: viewportY };
+
+        // Require minimum mouse movement before activating drag-extend
+        if (!this.mouseDragActive && this.mouseDownPos) {
+          const dx = e.clientX - this.mouseDownPos.x;
+          const dy = e.clientY - this.mouseDownPos.y;
+          if (Math.sqrt(dx * dx + dy * dy) < MOUSE_DRAG_THRESHOLD) return;
+          this.mouseDragActive = true;
+        }
 
         const x = viewportX + this.scrollLeft;
         const y = viewportY;
@@ -227,6 +243,8 @@ export class EventManager {
     window.addEventListener(
       "mouseup",
       () => {
+        this.mouseDownPos = null;
+        this.mouseDragActive = false;
         handlers.onCellMouseUp?.();
       },
       { signal },
