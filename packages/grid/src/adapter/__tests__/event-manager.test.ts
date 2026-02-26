@@ -154,6 +154,89 @@ describe("EventManager", () => {
     });
   });
 
+  describe("mouse drag threshold", () => {
+    it("does not fire onCellMouseMove until mouse moves beyond threshold", () => {
+      const onMouseMove = mock(() => {});
+      // Two cells side by side
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 100, 36), makeLayout(0, 1, 100, 0, 100, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCellMouseMove: onMouseMove });
+
+      // mousedown on first cell
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
+
+      // tiny move (2px) — below MOUSE_DRAG_THRESHOLD (5px)
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 52, clientY: 10, buttons: 1, bubbles: true }),
+      );
+      expect(onMouseMove).not.toHaveBeenCalled();
+    });
+
+    it("fires onCellMouseMove once mouse moves beyond threshold", () => {
+      const onMouseMove = mock(() => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 100, 36), makeLayout(0, 1, 100, 0, 100, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCellMouseMove: onMouseMove });
+
+      // mousedown at (50, 10)
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
+
+      // move 6px — beyond threshold
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 56, clientY: 10, buttons: 1, bubbles: true }),
+      );
+      expect(onMouseMove).toHaveBeenCalledTimes(1);
+    });
+
+    it("clears lastViewportPos on mousedown to prevent stale hit-test", () => {
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 100, 36), makeLayout(0, 1, 100, 0, 100, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, {});
+
+      // First click: mousemove stores lastViewportPos
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 60, clientY: 10, buttons: 1, bubbles: true }),
+      );
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      expect(em.hitTestAtLastPos()).not.toBeNull();
+
+      // Second mousedown: should clear lastViewportPos
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 150, clientY: 10, bubbles: true }),
+      );
+      expect(em.hitTestAtLastPos()).toBeNull();
+    });
+
+    it("resets drag state on mouseup", () => {
+      const onMouseMove = mock(() => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCellMouseMove: onMouseMove });
+
+      // First click-release cycle
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+
+      // Second click — small move should be blocked again
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 52, clientY: 10, buttons: 1, bubbles: true }),
+      );
+      expect(onMouseMove).not.toHaveBeenCalled();
+    });
+  });
+
   describe("mouseup handler", () => {
     it("fires onCellMouseUp on window mouseup", () => {
       const onMouseUp = mock(() => {});
