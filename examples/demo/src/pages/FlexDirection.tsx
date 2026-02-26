@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
-import { Grid, Column, type CssFlexDirection } from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper, type CssFlexDirection } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 import { CssGrid, CssColumn } from "../components/CssGrid";
+
+type SmallRow = { name: string; dept: string; salary: number; score: number };
+const helper = createColumnHelper<SmallRow>();
 
 const options: CssFlexDirection[] = ["row", "column", "row-reverse", "column-reverse"];
 
@@ -19,6 +22,13 @@ const btnActive: React.CSSProperties = {
   color: "#fff",
   border: "1px solid #1976d2",
 };
+
+const columns = [
+  helper.accessor("name", { header: "Name", size: 180, padding: [0, 8] }),
+  helper.accessor("dept", { header: "Department", size: 120, padding: [0, 8] }),
+  helper.accessor("salary", { header: "Salary", size: 100, align: "right", padding: [0, 8] }),
+  helper.accessor("score", { header: "Score", size: 80, align: "right", padding: [0, 8] }),
+];
 
 export function FlexDirection() {
   const [direction, setDirection] = useState<CssFlexDirection>("row");
@@ -54,22 +64,13 @@ export function FlexDirection() {
           fontSize: 13,
         }}
       >
-        {`<Grid flexDirection="${direction}" ...>
-  <Column id="name" width={180} />
-  <Column id="dept" width={120} />
-  <Column id="salary" width={100} />
-</Grid>`}
+        {`<Grid flexDirection="${direction}" columns={columns} ...>`}
       </pre>
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
-          <Grid data={data} width={800} height={h} flexDirection={direction}>
-            <Column id="name" width={180} header="Name" padding={[0, 8]} />
-            <Column id="dept" width={120} header="Department" padding={[0, 8]} />
-            <Column id="salary" width={100} header="Salary" align="right" padding={[0, 8]} />
-            <Column id="score" width={80} header="Score" align="right" padding={[0, 8]} />
-          </Grid>
+          <Grid data={data} width={800} height={h} flexDirection={direction} columns={columns} />
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>

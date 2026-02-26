@@ -1,8 +1,11 @@
 import { useState, useMemo } from "react";
-import { Grid, Column } from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 import type { CssGridAutoFlow } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 import { CssGrid, CssColumn } from "../components/CssGrid";
+
+type SmallRow = { name: string; dept: string; salary: number };
+const helper = createColumnHelper<SmallRow>();
 
 const PRESETS = [
   { label: "1fr 1fr 1fr", value: "1fr 1fr 1fr" },
@@ -31,6 +34,12 @@ const btnActive: React.CSSProperties = {
   color: "#fff",
   border: "1px solid #1976d2",
 };
+
+const columns = [
+  helper.accessor("name", { header: "Name", padding: [0, 8] }),
+  helper.accessor("dept", { header: "Department", padding: [0, 8] }),
+  helper.accessor("salary", { header: "Salary", align: "right", padding: [0, 8] }),
+];
 
 export function GridTemplate() {
   const [templateCols, setTemplateCols] = useState("1fr 1fr 1fr");
@@ -98,11 +107,8 @@ export function GridTemplate() {
         {`<Grid display="grid"
   gridTemplateColumns="${templateCols}"
   gridAutoFlow="${autoFlow}"
-  gap={${gapValue}} ...>
-  <Column id="name" header="Name" />
-  <Column id="dept" header="Department" />
-  <Column id="salary" header="Salary" align="right" />
-</Grid>`}
+  gap={${gapValue}}
+  columns={columns} />`}
       </pre>
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
@@ -116,11 +122,8 @@ export function GridTemplate() {
             gridTemplateColumns={templateCols}
             gridAutoFlow={autoFlow}
             gap={gapValue}
-          >
-            <Column id="name" header="Name" padding={[0, 8]} />
-            <Column id="dept" header="Department" padding={[0, 8]} />
-            <Column id="salary" header="Salary" align="right" padding={[0, 8]} />
-          </Grid>
+            columns={columns}
+          />
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>

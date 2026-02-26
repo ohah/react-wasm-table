@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
-import { Grid, Column, type CssJustifyContent } from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper, type CssJustifyContent } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 import { CssGrid, CssColumn } from "../components/CssGrid";
+
+type SmallRow = { name: string; dept: string; salary: number };
+const helper = createColumnHelper<SmallRow>();
 
 const options: CssJustifyContent[] = [
   "start",
@@ -30,6 +33,12 @@ const btnActive: React.CSSProperties = {
   border: "1px solid #1976d2",
 };
 
+const columns = [
+  helper.accessor("name", { header: "Name", size: 150, padding: [0, 8] }),
+  helper.accessor("dept", { header: "Department", size: 120, padding: [0, 8] }),
+  helper.accessor("salary", { header: "Salary", size: 100, align: "right", padding: [0, 8] }),
+];
+
 export function JustifyContent() {
   const [justify, setJustify] = useState<CssJustifyContent>("start");
   const data = useMemo(() => generateSmallData(), []);
@@ -56,22 +65,14 @@ export function JustifyContent() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`<Grid justifyContent="${justify}" width={800} ...>
-  <Column id="name" width={150} />
-  <Column id="dept" width={120} />
-  <Column id="salary" width={100} />
-</Grid>
+        {`<Grid justifyContent="${justify}" width={800} columns={columns} ...>
 // Total column width: 370px < 800px container`}
       </pre>
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
-          <Grid data={data} width={800} height={400} justifyContent={justify}>
-            <Column id="name" width={150} header="Name" padding={[0, 8]} />
-            <Column id="dept" width={120} header="Department" padding={[0, 8]} />
-            <Column id="salary" width={100} header="Salary" align="right" padding={[0, 8]} />
-          </Grid>
+          <Grid data={data} width={800} height={400} justifyContent={justify} columns={columns} />
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>

@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
-import { Grid, Column, type CssFlexWrap } from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper, type CssFlexWrap } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 import { CssGrid, CssColumn } from "../components/CssGrid";
+
+type SmallRow = { name: string; dept: string; salary: number; score: number };
+const helper = createColumnHelper<SmallRow>();
 
 const options: CssFlexWrap[] = ["nowrap", "wrap", "wrap-reverse"];
 
@@ -19,6 +22,13 @@ const btnActive: React.CSSProperties = {
   color: "#fff",
   border: "1px solid #1976d2",
 };
+
+const columns = [
+  helper.accessor("name", { header: "Name", size: 200, padding: [0, 8] }),
+  helper.accessor("dept", { header: "Department", size: 200, padding: [0, 8] }),
+  helper.accessor("salary", { header: "Salary", size: 200, align: "right", padding: [0, 8] }),
+  helper.accessor("score", { header: "Score", size: 200, align: "right", padding: [0, 8] }),
+];
 
 export function FlexWrap() {
   const [wrap, setWrap] = useState<CssFlexWrap>("nowrap");
@@ -46,20 +56,14 @@ export function FlexWrap() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`<Grid flexWrap="${wrap}" width={500} ...>
-  <Column width={200} /> × 4 (total 800px > 500px container)
-</Grid>`}
+        {`<Grid flexWrap="${wrap}" width={500} columns={columns} ...>
+  (4 columns × 200px = 800px > 500px container)`}
       </pre>
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
-          <Grid data={data} width={500} height={400} flexWrap={wrap}>
-            <Column id="name" width={200} header="Name" padding={[0, 8]} />
-            <Column id="dept" width={200} header="Department" padding={[0, 8]} />
-            <Column id="salary" width={200} header="Salary" align="right" padding={[0, 8]} />
-            <Column id="score" width={200} header="Score" align="right" padding={[0, 8]} />
-          </Grid>
+          <Grid data={data} width={500} height={400} flexWrap={wrap} columns={columns} />
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
