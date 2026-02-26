@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, type CssOverflow } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssGrid, CssColumn } from "../components/CssGrid";
+import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -102,12 +102,8 @@ export function Overflow() {
             height={400}
             overflowX={overflowXValue}
             overflowY={overflowYValue}
-          >
-            <CssColumn id="name" width={180} header="Name" />
-            <CssColumn id="dept" width={120} header="Department" />
-            <CssColumn id="salary" width={100} header="Salary" align="right" />
-            <CssColumn id="score" width={80} header="Score" align="right" />
-          </CssGrid>
+            columns={columns}
+          />
         </div>
       </div>
     </>

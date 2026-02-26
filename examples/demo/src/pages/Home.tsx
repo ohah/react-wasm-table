@@ -1,11 +1,5 @@
 import { useState, useMemo } from "react";
-import {
-  Grid,
-  createColumnHelper,
-  Text,
-  Badge,
-  type SortingState,
-} from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper, Text, Badge, type SortingState } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
 
 type Employee = {
@@ -49,12 +43,7 @@ const columns = [
     enableSorting: true,
     padding: [0, 8],
     cell: (info) => (
-      <Badge
-        value={info.getValue()}
-        color="#333"
-        backgroundColor="#e0e0e0"
-        borderRadius={4}
-      />
+      <Badge value={info.getValue()} color="#333" backgroundColor="#e0e0e0" borderRadius={4} />
     ),
   }),
   helper.accessor("title", {

@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useMemo, type CSSProperties } from "react";
 import {
-  ColumnRegistry,
+  resolveColumns,
   type ColumnProps,
   type GridProps,
   type CssRect,
@@ -8,17 +8,8 @@ import {
   type CssLengthAuto,
   type CssDimension,
   type CssGridLine,
+  type GridColumnDef,
 } from "@ohah/react-wasm-table";
-
-// ── Context ─────────────────────────────────────────────────────────
-
-const CssGridContext = createContext<ColumnRegistry | null>(null);
-
-function useCssGridRegistry(): ColumnRegistry {
-  const ctx = useContext(CssGridContext);
-  if (!ctx) throw new Error("CssColumn must be used within <CssGrid>");
-  return ctx;
-}
 
 // ── CSS value converters ────────────────────────────────────────────
 
@@ -81,97 +72,9 @@ function cssGridLine(v: CssGridLine | undefined): string | undefined {
   return v;
 }
 
-// ── CssColumn ───────────────────────────────────────────────────────
-
-export function CssColumn(props: ColumnProps): null {
-  const registry = useCssGridRegistry();
-  const {
-    id,
-    width,
-    minWidth,
-    maxWidth,
-    flexGrow,
-    flexShrink,
-    flexBasis,
-    height: h,
-    minHeight,
-    maxHeight,
-    alignSelf,
-    position,
-    inset,
-    insetTop,
-    insetRight,
-    insetBottom,
-    insetLeft,
-    gridRow,
-    gridColumn,
-    justifySelf,
-    header,
-    align,
-    padding: pad,
-    paddingTop: padT,
-    paddingRight: padR,
-    paddingBottom: padB,
-    paddingLeft: padL,
-    margin: mar,
-    marginTop: marT,
-    marginRight: marR,
-    marginBottom: marB,
-    marginLeft: marL,
-    boxSizing,
-    aspectRatio,
-  } = props;
-
-  useEffect(() => {
-    registry.register(id, props);
-    return () => {
-      registry.unregister(id);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    registry,
-    id,
-    width,
-    minWidth,
-    maxWidth,
-    flexGrow,
-    flexShrink,
-    flexBasis,
-    h,
-    minHeight,
-    maxHeight,
-    alignSelf,
-    position,
-    inset,
-    insetTop,
-    insetRight,
-    insetBottom,
-    insetLeft,
-    gridRow,
-    gridColumn,
-    justifySelf,
-    header,
-    align,
-    pad,
-    padT,
-    padR,
-    padB,
-    padL,
-    mar,
-    marT,
-    marR,
-    marB,
-    marL,
-    boxSizing,
-    aspectRatio,
-  ]);
-
-  return null;
-}
-
 // ── CssGrid ─────────────────────────────────────────────────────────
 
-type CssGridProps = Omit<GridProps, "theme" | "columns" | "engineRef" | "scrollbarWidth">;
+type CssGridProps = Omit<GridProps, "theme" | "engineRef" | "scrollbarWidth">;
 
 const DEFAULT_ROW_HEIGHT = 36;
 const DEFAULT_HEADER_HEIGHT = 40;
@@ -183,9 +86,9 @@ export function CssGrid({
   data,
   width,
   height,
+  columns: columnDefs = [],
   rowHeight = DEFAULT_ROW_HEIGHT,
   headerHeight = DEFAULT_HEADER_HEIGHT,
-  children,
   // Container flex/grid props
   display,
   flexDirection,
@@ -217,18 +120,10 @@ export function CssGrid({
   marginBottom,
   marginLeft,
 }: CssGridProps) {
-  const registry = useMemo(() => new ColumnRegistry(), []);
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    const unsub = registry.onChange(() => setTick((t) => t + 1));
-    // Children's effects may have already registered columns before this effect ran
-    // (React fires children effects before parent effects)
-    if (registry.size > 0) setTick((t) => t + 1);
-    return unsub;
-  }, [registry]);
-
-  const columns = registry.getAll();
+  const columns = useMemo(
+    () => resolveColumns(columnDefs as GridColumnDef<any, any>[], data),
+    [columnDefs, data],
+  );
   const isGrid = display === "grid";
 
   // ── Row style (applied to header + each data row) ───────────────
@@ -336,48 +231,45 @@ export function CssGrid({
   };
 
   return (
-    <CssGridContext.Provider value={registry}>
-      {children}
-      <div style={containerStyle}>
-        {/* Header row */}
-        <div
-          style={{
-            ...rowStyle,
-            height: headerHeight,
-            minHeight: headerHeight,
-            borderTop: "0.5px solid #000",
-            borderBottom: "0.5px solid #000",
-            backgroundColor: "#f5f5f5",
-            color: "#333",
-            fontWeight: 600,
-          }}
-        >
-          {columns.map((col, i) => (
-            <div key={col.id} style={cellStyle(col, i)}>
-              {col.header ?? col.id}
-            </div>
-          ))}
-        </div>
-        {/* Data rows */}
-        {data.map((row, rowIdx) => (
-          <div
-            key={rowIdx}
-            style={{
-              ...rowStyle,
-              height: rowHeight,
-              minHeight: rowHeight,
-              borderBottom: "0.5px solid #000",
-              backgroundColor: rowIdx % 2 === 0 ? "#fff" : "rgba(255,255,255,0.96)",
-            }}
-          >
-            {columns.map((col, colIdx) => (
-              <div key={col.id} style={cellStyle(col, colIdx)}>
-                {String(row[col.id] ?? "")}
-              </div>
-            ))}
+    <div style={containerStyle}>
+      {/* Header row */}
+      <div
+        style={{
+          ...rowStyle,
+          height: headerHeight,
+          minHeight: headerHeight,
+          borderTop: "0.5px solid #000",
+          borderBottom: "0.5px solid #000",
+          backgroundColor: "#f5f5f5",
+          color: "#333",
+          fontWeight: 600,
+        }}
+      >
+        {columns.map((col, i) => (
+          <div key={col.id} style={cellStyle(col, i)}>
+            {col.header ?? col.id}
           </div>
         ))}
       </div>
-    </CssGridContext.Provider>
+      {/* Data rows */}
+      {data.map((row, rowIdx) => (
+        <div
+          key={rowIdx}
+          style={{
+            ...rowStyle,
+            height: rowHeight,
+            minHeight: rowHeight,
+            borderBottom: "0.5px solid #000",
+            backgroundColor: rowIdx % 2 === 0 ? "#fff" : "rgba(255,255,255,0.96)",
+          }}
+        >
+          {columns.map((col, colIdx) => (
+            <div key={col.id} style={cellStyle(col, colIdx)}>
+              {String(row[col.id] ?? "")}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }

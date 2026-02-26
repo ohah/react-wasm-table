@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssGrid, CssColumn } from "../components/CssGrid";
+import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 
@@ -54,10 +54,10 @@ export function Padding() {
       </div>
 
       <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`<Grid padding={${containerPad}} columns={[
-  { accessorKey: "name", size: 180, padding: ${cellPad} },
-  ...
-]} />`}
+        {`helper.accessor("name", { size: 180, padding: ${cellPad} })
+helper.accessor("dept", { size: 120, padding: ${cellPad} })
+
+<Grid padding={${containerPad}} columns={columns} />`}
       </pre>
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
@@ -68,12 +68,7 @@ export function Padding() {
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid data={data} width={800} height={400} padding={containerPad}>
-            <CssColumn id="name" width={180} header="Name" padding={cellPad} />
-            <CssColumn id="dept" width={120} header="Department" padding={cellPad} />
-            <CssColumn id="salary" width={100} header="Salary" align="right" padding={cellPad} />
-            <CssColumn id="score" width={80} header="Score" align="right" padding={cellPad} />
-          </CssGrid>
+          <CssGrid data={data} width={800} height={400} padding={containerPad} columns={columns} />
         </div>
       </div>
     </>
