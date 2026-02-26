@@ -1,7 +1,5 @@
 import type { CellCoord, CellLayout } from "../types";
 
-export type EditorCommitCallback = (coord: CellCoord, value: unknown) => void;
-
 /**
  * Manages DOM overlay editors for inline cell editing.
  * Positions editor elements over canvas cells and handles value commit/cancel.
@@ -10,16 +8,10 @@ export class EditorManager {
   private container: HTMLDivElement | null = null;
   private activeInput: HTMLInputElement | null = null;
   private activeCoord: CellCoord | null = null;
-  private onCommit: EditorCommitCallback | null = null;
 
   /** Set the container div for editor overlays. */
   setContainer(div: HTMLDivElement): void {
     this.container = div;
-  }
-
-  /** Set the callback for when a value is committed. */
-  setOnCommit(cb: EditorCommitCallback): void {
-    this.onCommit = cb;
   }
 
   /** Open an editor for the given cell. */
@@ -83,13 +75,7 @@ export class EditorManager {
     const value =
       this.activeInput.type === "number" ? Number(this.activeInput.value) : this.activeInput.value;
 
-    const coord = this.activeCoord;
     this.cleanup();
-
-    if (coord && this.onCommit) {
-      this.onCommit(coord, value);
-    }
-
     return value;
   }
 

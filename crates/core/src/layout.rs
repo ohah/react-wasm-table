@@ -1,11 +1,10 @@
-use serde::Serialize;
 use taffy::prelude::*;
 use taffy::{GridAutoFlow, GridTemplateRepetition, MinMax, Overflow, Point, TaffyTree};
 
 use crate::layout_buffer;
 
 /// Text alignment within a cell.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Align {
     #[default]
     Left,
@@ -14,7 +13,7 @@ pub enum Align {
 }
 
 /// A CSS dimension value: length(px), percent, or auto.
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum DimensionValue {
     #[default]
     Auto,
@@ -23,7 +22,7 @@ pub enum DimensionValue {
 }
 
 /// A CSS length value: length(px) or percent (no auto).
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum LengthValue {
     #[default]
     Zero,
@@ -32,7 +31,7 @@ pub enum LengthValue {
 }
 
 /// A CSS length value that also supports auto.
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum LengthAutoValue {
     #[default]
     Auto,
@@ -41,7 +40,7 @@ pub enum LengthAutoValue {
 }
 
 /// Rect with top/right/bottom/left values.
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct RectValue<T: Default + Copy> {
     pub top: T,
     pub right: T,
@@ -63,7 +62,7 @@ impl RectValue<LengthAutoValue> {
 }
 
 /// CSS overflow enum.
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum OverflowValue {
     #[default]
     Visible,
@@ -73,7 +72,7 @@ pub enum OverflowValue {
 }
 
 /// CSS display enum. Maps to Taffy's Display (Flex, Grid, Block, None).
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum DisplayValue {
     #[default]
     Flex,
@@ -83,7 +82,7 @@ pub enum DisplayValue {
 }
 
 /// CSS grid-auto-flow enum.
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum GridAutoFlowValue {
     #[default]
     Row,
@@ -93,7 +92,7 @@ pub enum GridAutoFlowValue {
 }
 
 /// A single track sizing value (e.g., `1fr`, `200px`, `auto`, `minmax(100px, 1fr)`).
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub enum TrackSizeValue {
     Length(f32),
     Percent(f32),
@@ -107,14 +106,14 @@ pub enum TrackSizeValue {
 }
 
 /// An item in a grid track list: either a single track or a `repeat()`.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub enum TrackListItem {
     Single(TrackSizeValue),
     Repeat(RepeatValue, Vec<TrackSizeValue>),
 }
 
 /// The repeat count for a CSS `repeat()` function.
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy)]
 pub enum RepeatValue {
     Count(u16),
     AutoFill,
@@ -122,7 +121,7 @@ pub enum RepeatValue {
 }
 
 /// Grid placement value for a single edge (start or end).
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum GridPlacementValue {
     #[default]
     Auto,
@@ -131,14 +130,14 @@ pub enum GridPlacementValue {
 }
 
 /// Grid line value with start/end placement (e.g., `grid-row: 1 / span 2`).
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy)]
 pub struct GridLineValue {
     pub start: GridPlacementValue,
     pub end: GridPlacementValue,
 }
 
 /// CSS flex-direction enum.
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum FlexDirectionValue {
     #[default]
     Row,
@@ -148,7 +147,7 @@ pub enum FlexDirectionValue {
 }
 
 /// CSS flex-wrap enum.
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum FlexWrapValue {
     #[default]
     NoWrap,
@@ -157,7 +156,7 @@ pub enum FlexWrapValue {
 }
 
 /// CSS alignment enum (for align-items, align-content, justify-content, align-self).
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy)]
 pub enum AlignValue {
     Start,
     End,
@@ -172,7 +171,7 @@ pub enum AlignValue {
 }
 
 /// CSS position enum.
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum PositionValue {
     #[default]
     Relative,
@@ -180,7 +179,7 @@ pub enum PositionValue {
 }
 
 /// CSS box-sizing enum.
-#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum BoxSizingValue {
     #[default]
     BorderBox,
@@ -188,7 +187,7 @@ pub enum BoxSizingValue {
 }
 
 /// Layout configuration for a single column (flex/grid child).
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub struct ColumnLayout {
     pub width: f32,
     pub flex_grow: f32,
@@ -244,7 +243,7 @@ impl Default for ColumnLayout {
 }
 
 /// Container layout configuration (flex/grid parent).
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub struct ContainerLayout {
     pub display: DisplayValue,
     // Flex properties
@@ -300,7 +299,7 @@ impl Default for ContainerLayout {
 }
 
 /// Viewport dimensions and scroll state.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub struct Viewport {
     pub width: f32,
     pub height: f32,
@@ -310,18 +309,6 @@ pub struct Viewport {
     /// Approximate single-line text height (fontSize * lineHeightRatio).
     /// Used as default min-height for auto-height columns.
     pub line_height: f32,
-}
-
-/// Computed layout for a single cell.
-#[derive(Debug, Clone, Serialize)]
-pub struct CellLayout {
-    pub row: usize,
-    pub col: usize,
-    pub x: f32,
-    pub y: f32,
-    pub width: f32,
-    pub height: f32,
-    pub content_align: Align,
 }
 
 /// Column position from Taffy layout result (includes cross-axis info).
@@ -777,84 +764,6 @@ impl LayoutEngine {
         }
     }
 
-    /// Compute header cell layouts for the given columns and viewport.
-    pub fn compute_header_layout(
-        &mut self,
-        columns: &[ColumnLayout],
-        viewport: &Viewport,
-        container: &ContainerLayout,
-    ) -> Vec<CellLayout> {
-        let positions = self.compute_column_positions(
-            columns,
-            container,
-            viewport.width,
-            viewport.header_height,
-            viewport.line_height,
-        );
-
-        positions
-            .into_iter()
-            .enumerate()
-            .map(|(col_idx, pos)| CellLayout {
-                row: 0,
-                col: col_idx,
-                x: pos.x,
-                y: pos.y,
-                width: pos.width,
-                height: pos.height,
-                content_align: columns
-                    .get(col_idx)
-                    .map_or_else(Align::default, |c| c.align),
-            })
-            .collect()
-    }
-
-    /// Compute row cell layouts for visible rows.
-    pub fn compute_rows_layout(
-        &mut self,
-        columns: &[ColumnLayout],
-        viewport: &Viewport,
-        container: &ContainerLayout,
-        visible_range: std::ops::Range<usize>,
-    ) -> Vec<CellLayout> {
-        if visible_range.is_empty() || columns.is_empty() {
-            return Vec::new();
-        }
-
-        // Compute column positions once — all rows share the same x/width
-        let positions = self.compute_column_positions(
-            columns,
-            container,
-            viewport.width,
-            viewport.row_height,
-            viewport.line_height,
-        );
-
-        let mut result =
-            Vec::with_capacity((visible_range.end - visible_range.start) * columns.len());
-
-        for row_idx in visible_range {
-            // Position relative to the canvas viewport: absolute position minus scroll offset.
-            let row_base_y = (row_idx as f32).mul_add(viewport.row_height, viewport.header_height)
-                - viewport.scroll_top;
-            for (col_idx, pos) in positions.iter().enumerate() {
-                result.push(CellLayout {
-                    row: row_idx,
-                    col: col_idx,
-                    x: pos.x,
-                    y: row_base_y + pos.y,
-                    width: pos.width,
-                    height: pos.height,
-                    content_align: columns
-                        .get(col_idx)
-                        .map_or_else(Align::default, |c| c.align),
-                });
-            }
-        }
-
-        result
-    }
-
     /// Compute header + visible row layouts into a pre-allocated flat f32 buffer.
     /// Returns the number of cells written.
     ///
@@ -970,6 +879,98 @@ impl LayoutEngine {
 impl Default for LayoutEngine {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Computed layout for a single cell (test-only).
+#[cfg(test)]
+#[derive(Debug, Clone)]
+pub struct CellLayout {
+    pub row: usize,
+    pub col: usize,
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub content_align: Align,
+}
+
+#[cfg(test)]
+impl LayoutEngine {
+    /// Compute header cell layouts for the given columns and viewport.
+    pub fn compute_header_layout(
+        &mut self,
+        columns: &[ColumnLayout],
+        viewport: &Viewport,
+        container: &ContainerLayout,
+    ) -> Vec<CellLayout> {
+        let positions = self.compute_column_positions(
+            columns,
+            container,
+            viewport.width,
+            viewport.header_height,
+            viewport.line_height,
+        );
+
+        positions
+            .into_iter()
+            .enumerate()
+            .map(|(col_idx, pos)| CellLayout {
+                row: 0,
+                col: col_idx,
+                x: pos.x,
+                y: pos.y,
+                width: pos.width,
+                height: pos.height,
+                content_align: columns
+                    .get(col_idx)
+                    .map_or_else(Align::default, |c| c.align),
+            })
+            .collect()
+    }
+
+    /// Compute row cell layouts for visible rows.
+    pub fn compute_rows_layout(
+        &mut self,
+        columns: &[ColumnLayout],
+        viewport: &Viewport,
+        container: &ContainerLayout,
+        visible_range: std::ops::Range<usize>,
+    ) -> Vec<CellLayout> {
+        if visible_range.is_empty() || columns.is_empty() {
+            return Vec::new();
+        }
+
+        let positions = self.compute_column_positions(
+            columns,
+            container,
+            viewport.width,
+            viewport.row_height,
+            viewport.line_height,
+        );
+
+        let mut result =
+            Vec::with_capacity((visible_range.end - visible_range.start) * columns.len());
+
+        for row_idx in visible_range {
+            let row_base_y = (row_idx as f32).mul_add(viewport.row_height, viewport.header_height)
+                - viewport.scroll_top;
+            for (col_idx, pos) in positions.iter().enumerate() {
+                result.push(CellLayout {
+                    row: row_idx,
+                    col: col_idx,
+                    x: pos.x,
+                    y: row_base_y + pos.y,
+                    width: pos.width,
+                    height: pos.height,
+                    content_align: columns
+                        .get(col_idx)
+                        .map_or_else(Align::default, |c| c.align),
+                });
+            }
+        }
+
+        result
     }
 }
 

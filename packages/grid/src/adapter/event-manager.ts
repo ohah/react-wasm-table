@@ -39,17 +39,10 @@ export class EventManager {
   private controller: AbortController | null = null;
   private headerLayouts: CellLayout[] = [];
   private rowLayouts: CellLayout[] = [];
-  private scrollbarWidth: number | null = null;
-
   /** Update the layouts used for hit-testing. */
   setLayouts(headerLayouts: CellLayout[], rowLayouts: CellLayout[]): void {
     this.headerLayouts = headerLayouts;
     this.rowLayouts = rowLayouts;
-  }
-
-  /** Set the scrollbar region width to exclude from hit-testing. */
-  setScrollbarRegion(width: number | null): void {
-    this.scrollbarWidth = width;
   }
 
   /** Attach event listeners to a canvas element. */
@@ -68,9 +61,6 @@ export class EventManager {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-
-        // Ignore clicks in scrollbar region
-        if (this.scrollbarWidth != null && x > rect.width - this.scrollbarWidth) return;
 
         // Check header first
         const headerHit = findCell(x, y, this.headerLayouts);

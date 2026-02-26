@@ -20,7 +20,10 @@ function isDebugEnabled(namespace: string): boolean {
   });
 }
 
-/** Create a logger. Enabled when localStorage "debug" matches the namespace. */
+/**
+ * Create a logger. Enabled when localStorage "debug" matches the namespace.
+ * Usage: `localStorage.setItem("debug", "grid")` to enable, or `"*"` for all namespaces.
+ */
 export function createLogger(namespace = "grid"): Logger {
   if (isDebugEnabled(namespace)) {
     const prefix = `[${namespace}]`;

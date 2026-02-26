@@ -60,18 +60,6 @@ pub fn write_cell(
     buf[base + FIELD_RESERVED] = 0.0;
 }
 
-/// Read a cell's row index from the buffer.
-#[inline]
-pub fn read_row(buf: &[f32], cell_idx: usize) -> usize {
-    buf[cell_idx * LAYOUT_STRIDE + FIELD_ROW] as usize
-}
-
-/// Read a cell's column index from the buffer.
-#[inline]
-pub fn read_col(buf: &[f32], cell_idx: usize) -> usize {
-    buf[cell_idx * LAYOUT_STRIDE + FIELD_COL] as usize
-}
-
 /// Required buffer length (in f32 elements) for `cell_count` cells.
 #[inline]
 pub const fn buf_len(cell_count: usize) -> usize {
@@ -84,6 +72,14 @@ mod tests {
 
     const NO_PADDING: [f32; 4] = [0.0; 4];
     const NO_BORDER: [f32; 4] = [0.0; 4];
+
+    fn read_row(buf: &[f32], cell_idx: usize) -> usize {
+        buf[cell_idx * LAYOUT_STRIDE + FIELD_ROW] as usize
+    }
+
+    fn read_col(buf: &[f32], cell_idx: usize) -> usize {
+        buf[cell_idx * LAYOUT_STRIDE + FIELD_COL] as usize
+    }
 
     #[test]
     fn write_and_read_cell() {

@@ -77,6 +77,8 @@ export function Flex(props: {
 }
 
 // ── Stub components (future support) ────────────────────────────────
+// These return StubInstruction objects for not-yet-implemented canvas components.
+// The renderer ignores them for now; they exist to reserve the API surface.
 
 function stub(component: string) {
   return (props: Record<string, unknown>): CanvasElement =>
