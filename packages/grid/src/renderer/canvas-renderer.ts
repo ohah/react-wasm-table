@@ -1,4 +1,4 @@
-import type { RenderInstruction, Theme } from "../types";
+import type { NormalizedRange, RenderInstruction, SelectionStyle, Theme } from "../types";
 import { drawTextCellFromBuffer, drawBadgeFromBuffer } from "./draw-primitives";
 import {
   computeHeaderLinesFromBuffer,
@@ -6,6 +6,7 @@ import {
   type GridLineSpec,
 } from "./grid-lines";
 import { readCellRow, readCellY } from "../adapter/layout-reader";
+import { computeSelectionRect } from "./selection-rect";
 
 /**
  * Draws the grid onto a <canvas> 2D context.
@@ -205,6 +206,34 @@ export class CanvasRenderer {
         computeDataLinesFromBuffer(buf, headerCount, totalCount, canvasW, rowHeight),
       );
     }
+  }
+
+  /**
+   * Draw selection highlight over the selected cell range.
+   * Should be called last (topmost layer) in the draw pass.
+   */
+  drawSelection(
+    buf: Float32Array,
+    headerCount: number,
+    totalCount: number,
+    selection: NormalizedRange,
+    theme: Theme,
+    style?: SelectionStyle,
+  ): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+
+    const rect = computeSelectionRect(buf, headerCount, totalCount, selection);
+    if (!rect) return;
+
+    // Semi-transparent fill
+    ctx.fillStyle = style?.background ?? theme.selectedBackground + "80";
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+
+    // Border
+    ctx.strokeStyle = style?.borderColor ?? "#1976d2";
+    ctx.lineWidth = style?.borderWidth ?? 2;
+    ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
   }
 
   /** Get the 2D context (or null if not attached). */
