@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router";
 import { setWasmUrl } from "@ohah/react-wasm-table";
 import { Sidebar } from "./components/Sidebar";
 import { Home } from "./pages/Home";
+import { TanStackApi } from "./pages/TanStackApi";
 import { FlexDirection } from "./pages/FlexDirection";
 import { FlexWrap } from "./pages/FlexWrap";
 import { FlexGrow } from "./pages/FlexGrow";
@@ -23,6 +24,7 @@ export function App() {
       <main style={{ flex: 1, overflow: "auto", padding: 24 }}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/tanstack-api" element={<TanStackApi />} />
           <Route path="/flex-direction" element={<FlexDirection />} />
           <Route path="/flex-wrap" element={<FlexWrap />} />
           <Route path="/flex-grow" element={<FlexGrow />} />

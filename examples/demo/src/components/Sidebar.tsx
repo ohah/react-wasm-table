@@ -3,7 +3,10 @@ import { NavLink } from "react-router";
 const sections = [
   {
     title: "Basic",
-    links: [{ to: "/", label: "Home (50k rows)" }],
+    links: [
+      { to: "/", label: "Home (50k rows)" },
+      { to: "/tanstack-api", label: "TanStack API" },
+    ],
   },
   {
     title: "Grid Container",
