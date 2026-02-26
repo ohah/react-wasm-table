@@ -11,6 +11,8 @@ import type {
   CssGridLine,
 } from "../types";
 import { DEFAULT_THEME } from "../types";
+import type { SortingState } from "../tanstack-types";
+import { resolveColumns } from "../resolve-columns";
 import { ColumnRegistry } from "../adapter/column-registry";
 import { InstructionBuilder } from "../adapter/instruction-builder";
 import { EventManager } from "../adapter/event-manager";
@@ -158,6 +160,10 @@ export function Grid({
   theme: themeOverrides,
   columns: columnsProp,
   children,
+  // TanStack-compatible sorting
+  sorting: sortingProp,
+  onSortingChange: onSortingChangeProp,
+  initialState,
   // Container flex props
   display,
   flexDirection,
@@ -204,16 +210,12 @@ export function Grid({
 
   const theme: Theme = useMemo(() => ({ ...DEFAULT_THEME, ...themeOverrides }), [themeOverrides]);
 
-  // Sync object-based columns prop → ColumnRegistry
+  // Sync columns prop → ColumnRegistry (TanStack GridColumnDef[])
   useEffect(() => {
     if (!columnsProp) return;
-    // Convert ColumnDef[] → ColumnProps[] (render → children)
-    const asProps = columnsProp.map(({ render, ...rest }): import("../types").ColumnProps => ({
-      ...rest,
-      ...(render ? { children: render } : {}),
-    }));
-    columnRegistry.setAll(asProps);
-  }, [columnsProp, columnRegistry]);
+    const resolved = resolveColumns(columnsProp, data);
+    columnRegistry.setAll(resolved);
+  }, [columnsProp, columnRegistry, data]);
 
   // Refs for render loop — avoid React re-renders on scroll
   const rendererRef = useRef<CanvasRenderer | null>(null);
@@ -223,7 +225,11 @@ export function Grid({
   const scrollTopRef = useRef(0);
   const dirtyRef = useRef(true);
   const rafRef = useRef<number>(0);
-  const sortStateRef = useRef<{ columnId: string; direction: "asc" | "desc" } | null>(null);
+  // TanStack-compatible sorting state (uncontrolled internal state)
+  const [internalSorting, setInternalSorting] = useState<SortingState>(
+    initialState?.sorting ?? [],
+  );
+  const sorting = sortingProp ?? internalSorting;
   const headerLayoutsRef = useRef<CellLayout[]>([]);
   const rowLayoutsRef = useRef<CellLayout[]>([]);
   // Buffer-based layout refs
@@ -303,7 +309,7 @@ export function Grid({
     });
   }, [columnRegistry]);
 
-  // Header click sort handler
+  // Header click sort handler (TanStack-compatible)
   const handleHeaderClick = useCallback(
     (colIndex: number) => {
       if (!engine) return;
@@ -311,34 +317,34 @@ export function Grid({
       const col = columns[colIndex];
       if (!col?.sortable) return;
 
-      const current = sortStateRef.current;
-      let next: typeof current;
-
-      if (current?.columnId === col.id) {
-        if (current.direction === "asc") {
-          next = { columnId: col.id, direction: "desc" };
-        } else {
-          next = null; // remove sort
-        }
+      const existing = sorting.find((s) => s.id === col.id);
+      let next: SortingState;
+      if (!existing) {
+        next = [{ id: col.id, desc: false }];
+      } else if (!existing.desc) {
+        next = [{ id: col.id, desc: true }];
       } else {
-        next = { columnId: col.id, direction: "asc" };
+        next = [];
       }
-
-      sortStateRef.current = next;
-
-      if (next) {
-        engine.setColumnarSort([
-          {
-            columnIndex: colIndex,
-            direction: next.direction === "desc" ? "desc" : "asc",
-          },
-        ]);
+      if (onSortingChangeProp) {
+        onSortingChangeProp(next);
+      } else {
+        setInternalSorting(next);
+      }
+      // Apply to WASM engine
+      if (next.length > 0) {
+        engine.setColumnarSort(
+          next.map((s) => ({
+            columnIndex: columns.findIndex((c) => c.id === s.id),
+            direction: s.desc ? "desc" : "asc",
+          })),
+        );
       } else {
         engine.setColumnarSort([]);
       }
       dirtyRef.current = true;
     },
-    [engine, columnRegistry],
+    [engine, columnRegistry, sorting, onSortingChangeProp],
   );
 
   // Cell double-click → editor
@@ -579,13 +585,13 @@ export function Grid({
         rowLayoutsRef.current = normalizedRows;
         eventManagerRef.current.setLayouts(normalizedHeaders, normalizedRows);
 
-        // Prepare header labels
+        // Prepare header labels with sort indicators
         const headers = columns.map((c) => c.header ?? c.id);
-        const sortCol = sortStateRef.current;
         const headersWithSort = headers.map((h, i) => {
           const col = columns[i];
-          if (sortCol && col?.id === sortCol.columnId) {
-            return `${h} ${sortCol.direction === "asc" ? "\u25B2" : "\u25BC"}`;
+          const sortEntry = sorting.find((s) => s.id === col?.id);
+          if (sortEntry) {
+            return `${h} ${sortEntry.desc ? "\u25BC" : "\u25B2"}`;
           }
           return h;
         });
@@ -680,6 +686,8 @@ export function Grid({
     gridAutoColumns,
     gridAutoFlow,
     justifyItems,
+    // Sorting
+    sorting,
   ]);
 
   return (
