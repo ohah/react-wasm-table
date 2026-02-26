@@ -2,7 +2,14 @@ import { describe, expect, it, mock, beforeEach, afterEach } from "bun:test";
 import { EventManager } from "../event-manager";
 import type { CellCoord, CellLayout } from "../../types";
 
-function makeLayout(row: number, col: number, x: number, y: number, w: number, h: number): CellLayout {
+function makeLayout(
+  row: number,
+  col: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): CellLayout {
   return { row, col, x, y, width: w, height: h, contentAlign: "left" };
 }
 
@@ -88,7 +95,10 @@ describe("EventManager", () => {
         new MouseEvent("mousedown", { clientX: 150, clientY: 60, shiftKey: true, bubbles: true }),
       );
       expect(onMouseDown).toHaveBeenCalledTimes(1);
-      expect((onMouseDown.mock.calls[0] as unknown as [CellCoord, boolean])[0]).toEqual({ row: 2, col: 1 });
+      expect((onMouseDown.mock.calls[0] as unknown as [CellCoord, boolean])[0]).toEqual({
+        row: 2,
+        col: 1,
+      });
       expect((onMouseDown.mock.calls[0] as unknown as [CellCoord, boolean])[1]).toBe(true);
     });
 
@@ -276,7 +286,10 @@ describe("EventManager", () => {
       canvas.dispatchEvent(createTouchEvent("touchend", []));
 
       expect(onCellMouseDown).toHaveBeenCalledTimes(1);
-      expect((onCellMouseDown.mock.calls[0] as unknown as [CellCoord, boolean])[0]).toEqual({ row: 1, col: 0 });
+      expect((onCellMouseDown.mock.calls[0] as unknown as [CellCoord, boolean])[0]).toEqual({
+        row: 1,
+        col: 0,
+      });
       expect((onCellMouseDown.mock.calls[0] as unknown as [CellCoord, boolean])[1]).toBe(false);
       expect(onCellMouseUp).toHaveBeenCalledTimes(1);
     });
@@ -296,7 +309,10 @@ describe("EventManager", () => {
       canvas.dispatchEvent(createTouchEvent("touchend", []));
 
       expect(onCellDoubleClick).toHaveBeenCalledTimes(1);
-      expect((onCellDoubleClick.mock.calls[0] as unknown as [CellCoord])[0]).toEqual({ row: 1, col: 0 });
+      expect((onCellDoubleClick.mock.calls[0] as unknown as [CellCoord])[0]).toEqual({
+        row: 1,
+        col: 0,
+      });
     });
 
     it("drag fires onScroll with correct delta", () => {
@@ -313,7 +329,10 @@ describe("EventManager", () => {
 
       expect(onScroll).toHaveBeenCalled();
       // Finger moved up (y decreased) → onScroll receives positive deltaY (content scrolls down)
-      const lastCall = onScroll.mock.calls[onScroll.mock.calls.length - 1] as unknown as [number, number];
+      const lastCall = onScroll.mock.calls[onScroll.mock.calls.length - 1] as unknown as [
+        number,
+        number,
+      ];
       expect(lastCall[0]).toBeGreaterThan(0); // positive deltaY = scroll down
     });
 
@@ -345,10 +364,7 @@ describe("EventManager", () => {
       const onCellMouseDown = mock(() => {});
       const onCellMouseMove = mock(() => {});
       const onCellMouseUp = mock(() => {});
-      const rowLayouts = [
-        makeLayout(0, 0, 0, 0, 200, 36),
-        makeLayout(1, 0, 0, 36, 200, 36),
-      ];
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36), makeLayout(1, 0, 0, 36, 200, 36)];
       em.setLayouts([], rowLayouts);
       em.attach(canvas, { onCellMouseDown, onCellMouseMove, onCellMouseUp });
 
@@ -390,10 +406,12 @@ describe("EventManager", () => {
       em.attach(canvas, { onScroll, onCellClick });
 
       // Two-finger touch
-      canvas.dispatchEvent(createTouchEvent("touchstart", [
-        { clientX: 50, clientY: 50 },
-        { clientX: 100, clientY: 100 },
-      ]));
+      canvas.dispatchEvent(
+        createTouchEvent("touchstart", [
+          { clientX: 50, clientY: 50 },
+          { clientX: 100, clientY: 100 },
+        ]),
+      );
       canvas.dispatchEvent(createTouchEvent("touchend", []));
 
       expect(onScroll).not.toHaveBeenCalled();
