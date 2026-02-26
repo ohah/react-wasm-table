@@ -1,8 +1,10 @@
 import type { ColumnProps, RenderInstruction } from "../types";
+import { resolveInstruction } from "../resolve-instruction";
 
 /**
  * Builds RenderInstruction objects from cell values using column render props.
  * If no render prop is provided, creates a default text instruction.
+ * Supports JSX returns (ReactElements) via resolveInstruction.
  */
 export class InstructionBuilder {
   /** Build a render instruction for a cell value. */
@@ -11,9 +13,7 @@ export class InstructionBuilder {
     if (column.children) {
       try {
         const result = column.children(value);
-        if (result && typeof result === "object" && "type" in result) {
-          return result;
-        }
+        return resolveInstruction(result);
       } catch {
         // Fall through to default text
       }

@@ -148,6 +148,28 @@ export class CanvasRenderer {
         case "badge":
           drawBadgeFromBuffer(ctx, buf, i, instruction.value, instruction.style);
           break;
+        case "stub":
+          drawTextCellFromBuffer(ctx, buf, i, `[${instruction.component}]`, {
+            color: "#999",
+            fontWeight: "normal",
+            fontSize: theme.fontSize,
+          });
+          break;
+        case "flex":
+          // Render first child as fallback; full flex layout is future work
+          if (instruction.children.length > 0) {
+            const first = instruction.children[0]!;
+            if (first.type === "text") {
+              drawTextCellFromBuffer(ctx, buf, i, first.value, {
+                color: first.style?.color ?? theme.cellColor,
+                fontWeight: first.style?.fontWeight ?? "normal",
+                fontSize: first.style?.fontSize ?? theme.fontSize,
+              });
+            } else if (first.type === "badge") {
+              drawBadgeFromBuffer(ctx, buf, i, first.value, first.style);
+            }
+          }
+          break;
       }
     }
 
