@@ -163,7 +163,7 @@ export interface GroupColumnDef<TData, TValue = unknown>
   id?: string;
   accessorKey?: never;
   accessorFn?: never;
-  columns: GridColumnDef<TData>[];
+  columns: GridColumnDef<TData, any>[];
 }
 
 /** Union of all column definition types. */
