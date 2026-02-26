@@ -903,7 +903,8 @@ impl LayoutEngine {
             viewport.line_height,
         );
 
-        // Write header cells
+        // Write header cells (scroll with content, not sticky)
+        let header_y = -viewport.scroll_top;
         for (col_idx, pos) in positions.iter().enumerate() {
             layout_buffer::write_cell(
                 buf,
@@ -911,7 +912,7 @@ impl LayoutEngine {
                 0,
                 col_idx,
                 pos.x,
-                pos.y,
+                header_y + pos.y,
                 pos.width,
                 pos.height,
                 columns
@@ -1267,8 +1268,8 @@ mod tests {
             engine.compute_into_buffer(&columns, &viewport, &default_container(), 5..15, &mut buf);
         assert_eq!(count, total_cells);
 
-        // Header at y=0 regardless of scroll
-        assert!((buf[layout_buffer::FIELD_Y] - 0.0).abs() < 0.1);
+        // Header scrolls with content: y = -scroll_top = -360
+        assert!((buf[layout_buffer::FIELD_Y] - -360.0).abs() < 0.1);
 
         // Row 5: y = 40 + 5*36 - 360 = -140
         let base = 1 * layout_buffer::LAYOUT_STRIDE;

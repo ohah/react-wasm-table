@@ -617,7 +617,6 @@ export function Grid({
             return { type: "text" as const, value: text };
           },
           theme,
-          headerHeight,
           rowHeight,
         );
         renderer.drawGridLinesFromBuffer(

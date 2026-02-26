@@ -38,14 +38,16 @@ export function computeHeaderLines(
     gridMaxX = Math.max(gridMaxX, layout.x + layout.width);
   }
 
+  // Read header Y from layout (scrolls with content)
+  const headerY = layouts[0]!.y;
   const firstX = layouts[0]!.x;
   const horizontal: HLine[] = [
-    { y: 0.25, x1: 0, x2: canvasW }, // top border
-    { y: headerHeight - 0.25, x1: 0, x2: canvasW }, // bottom border
+    { y: headerY + 0.25, x1: 0, x2: canvasW },
+    { y: headerY + headerHeight - 0.25, x1: 0, x2: canvasW },
   ];
 
   const vertical: VLine[] = [
-    { x: firstX + 0.25, y1: 0, y2: headerHeight }, // left border of first cell
+    { x: firstX + 0.25, y1: headerY, y2: headerY + headerHeight },
   ];
 
   const colEdges = new Set<number>();
@@ -54,7 +56,7 @@ export function computeHeaderLines(
   }
   for (const edge of colEdges) {
     const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
-    vertical.push({ x, y1: 0, y2: headerHeight });
+    vertical.push({ x, y1: headerY, y2: headerY + headerHeight });
   }
 
   return { horizontal, vertical };
@@ -120,13 +122,15 @@ export function computeHeaderLinesFromBuffer(
     gridMaxX = Math.max(gridMaxX, readCellX(buf, i) + readCellWidth(buf, i));
   }
 
+  // Read header Y from buffer (scrolls with content)
+  const headerY = readCellY(buf, 0);
   const firstX = readCellX(buf, 0);
   const horizontal: HLine[] = [
-    { y: 0.25, x1: 0, x2: canvasW },
-    { y: headerHeight - 0.25, x1: 0, x2: canvasW },
+    { y: headerY + 0.25, x1: 0, x2: canvasW },
+    { y: headerY + headerHeight - 0.25, x1: 0, x2: canvasW },
   ];
 
-  const vertical: VLine[] = [{ x: firstX + 0.25, y1: 0, y2: headerHeight }];
+  const vertical: VLine[] = [{ x: firstX + 0.25, y1: headerY, y2: headerY + headerHeight }];
 
   const colEdges = new Set<number>();
   for (let i = 0; i < headerCount; i++) {
@@ -134,7 +138,7 @@ export function computeHeaderLinesFromBuffer(
   }
   for (const edge of colEdges) {
     const x = edge >= gridMaxX ? edge - 0.25 : edge + 0.5;
-    vertical.push({ x, y1: 0, y2: headerHeight });
+    vertical.push({ x, y1: headerY, y2: headerY + headerHeight });
   }
 
   return { horizontal, vertical };
