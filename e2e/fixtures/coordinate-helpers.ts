@@ -5,7 +5,7 @@
  * in examples/demo/src/App.tsx.
  */
 
-/** Column widths in pixel order (matches demo ColumnDef[]) */
+/** Column widths in pixel order (matches demo column definitions) */
 export const COLUMN_WIDTHS = [70, 180, 260, 130, 180, 110, 110, 80, 80, 80];
 
 export const HEADER_HEIGHT = 40;
