@@ -74,6 +74,8 @@ export interface ColumnDefBase<TData, TValue = unknown> {
   // Sorting
   /** Enable sorting for this column. Maps to internal `sortable`. */
   enableSorting?: boolean;
+  /** Enable selection starting from this column. Maps to internal `selectable`. @default true */
+  enableSelection?: boolean;
   /** Custom sort function (future support). */
   sortingFn?: string;
 
