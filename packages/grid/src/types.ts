@@ -146,6 +146,22 @@ export interface CellCoord {
   col: number;
 }
 
+/** A cell range defined by start (anchor) and end cells. */
+export interface CellRange {
+  startRow: number;
+  startCol: number;
+  endRow: number;
+  endCol: number;
+}
+
+/** A normalized (min/max) cell range for iteration. */
+export interface NormalizedRange {
+  minRow: number;
+  maxRow: number;
+  minCol: number;
+  maxCol: number;
+}
+
 /** Computed layout rectangle for a single cell (from WASM). */
 export interface CellLayout {
   row: number;
@@ -155,6 +171,18 @@ export interface CellLayout {
   width: number;
   height: number;
   contentAlign: "left" | "center" | "right";
+}
+
+// ── Selection style ─────────────────────────────────────────────────────
+
+/** Selection highlight style. */
+export interface SelectionStyle {
+  /** Fill color (with alpha). @default theme.selectedBackground + "80" */
+  background?: string;
+  /** Border color. @default "#1976d2" */
+  borderColor?: string;
+  /** Border width in px. @default 2 */
+  borderWidth?: number;
 }
 
 // ── Render instructions ────────────────────────────────────────────────
@@ -322,8 +350,24 @@ export interface GridProps extends BoxModelProps {
   sorting?: import("./tanstack-types").SortingState;
   /** Callback when sorting changes (controlled mode). */
   onSortingChange?: (sorting: import("./tanstack-types").SortingState) => void;
+
+  // Selection state management (controlled/uncontrolled)
+  /** Controlled selection state. undefined = uncontrolled, null = no selection. */
+  selection?: NormalizedRange | null;
+  /** Callback when selection changes (controlled mode). */
+  onSelectionChange?: (selection: NormalizedRange | null) => void;
+  /** Selection highlight style overrides. */
+  selectionStyle?: SelectionStyle;
+  /** Called after building TSV for copy. Return string to override clipboard content. */
+  onCopy?: (tsv: string, range: NormalizedRange) => string | void;
+  /** Paste handler stub. Called on Ctrl/Cmd+V with clipboard text and target cell. */
+  onPaste?: (text: string, target: CellCoord) => void;
+
   /** Initial state for uncontrolled mode. */
-  initialState?: { sorting?: import("./tanstack-types").SortingState };
+  initialState?: {
+    sorting?: import("./tanstack-types").SortingState;
+    selection?: NormalizedRange | null;
+  };
   /** CSS display. @default "flex" */
   display?: CssDisplay;
   /** Flex direction. @default "row" */
