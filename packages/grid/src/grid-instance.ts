@@ -84,14 +84,14 @@ export interface GridInstance<TData = unknown> {
 // ── Builder ─────────────────────────────────────────────────────────
 
 interface BuildOptions<TData> {
-  columns: GridColumnDef<TData>[];
+  columns: GridColumnDef<TData, any>[];
   state: GridState;
   onSortingChange: (updater: SortingUpdater) => void;
 }
 
 /** Build GridColumn instances from column definitions. */
 function buildGridColumns<TData>(
-  defs: GridColumnDef<TData>[],
+  defs: GridColumnDef<TData, any>[],
   state: GridState,
   onSortingChange: (updater: SortingUpdater) => void,
   depth: number = 0,
@@ -184,7 +184,7 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
 }
 
 /** Extract or derive column ID from a definition. */
-function getColumnId<TData>(def: GridColumnDef<TData>): string {
+function getColumnId<TData>(def: GridColumnDef<TData, any>): string {
   if ("id" in def && def.id) return def.id;
   if ("accessorKey" in def && def.accessorKey) return def.accessorKey as string;
   return `col_${Math.random().toString(36).slice(2, 8)}`;

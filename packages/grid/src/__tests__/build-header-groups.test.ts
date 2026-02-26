@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { createColumnHelper } from "../column-helper";
 import { buildGridInstance } from "../grid-instance";
 import { buildHeaderGroups } from "../build-header-groups";
+import type { GridColumnDef } from "../tanstack-types";
 
 type Person = {
   firstName: string;
@@ -12,7 +13,7 @@ type Person = {
 
 const helper = createColumnHelper<Person>();
 
-function build(columns: Parameters<typeof buildGridInstance>[0]["columns"]) {
+function build(columns: GridColumnDef<Person, any>[]) {
   const instance = buildGridInstance({
     columns,
     state: { sorting: [] },
