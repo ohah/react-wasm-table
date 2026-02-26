@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from "react";
-import type { CellLayout } from "../../types";
+import type { CellCoord, CellLayout } from "../../types";
 import type { ColumnRegistry } from "../../adapter/column-registry";
 import type { SelectionManager } from "../../adapter/selection-manager";
 import { EditorManager } from "../../adapter/editor-manager";
@@ -42,7 +42,7 @@ export function useEditing({
   }, [editorRef]);
 
   const handleCellDoubleClick = useCallback(
-    (coord: { row: number; col: number }) => {
+    (coord: CellCoord) => {
       const columns = columnRegistry.getAll();
       const col = columns[coord.col];
       if (!col?.editor) return;

@@ -28,8 +28,8 @@ export function resolveRect<T>(
   right?: T,
   bottom?: T,
   left?: T,
-  resolver: (v: T | undefined) => number | string | undefined = (v) =>
-    v as unknown as number | string | undefined,
+  resolver: (v: T | undefined) => number | string | undefined = ((v: unknown) =>
+    v as number | string | undefined) as (v: T | undefined) => number | string | undefined,
 ):
   | {
       top?: number | string;

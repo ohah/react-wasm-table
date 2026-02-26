@@ -145,6 +145,10 @@ export function Grid({
     headerHeight,
     invalidate,
   });
+  const getVisStart = useCallback(() => visStartRef.current, []);
+  const getMemoryBridge = useCallback(() => memoryBridgeRef.current, []);
+  const getStringTable = useCallback(() => stringTableRef.current, []);
+
   const {
     selectionManagerRef,
     handleCellMouseDown,
@@ -160,9 +164,9 @@ export function Grid({
     onPaste: onPasteProp,
     columnRegistry,
     invalidate,
-    getVisStart: () => visStartRef.current,
-    getMemoryBridge: () => memoryBridgeRef.current,
-    getStringTable: () => stringTableRef.current,
+    getVisStart,
+    getMemoryBridge,
+    getStringTable,
   });
   const { editorManagerRef, handleCellDoubleClick } = useEditing({
     editorRef,
@@ -183,7 +187,7 @@ export function Grid({
 
   useEventAttachment({
     canvasRef,
-    eventManager: eventManagerRef.current,
+    eventManagerRef,
     editorManagerRef,
     handlers: {
       handleHeaderClick,
@@ -344,6 +348,7 @@ export function Grid({
       >
         <canvas
           ref={canvasRef}
+          data-grid-canvas
           width={width}
           height={height}
           style={{ display: "block", touchAction: "none" }}

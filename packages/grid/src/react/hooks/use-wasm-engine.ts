@@ -13,27 +13,31 @@ export function useWasmEngine({ engineRef }: UseWasmEngineParams) {
 
   useEffect(() => {
     let cancelled = false;
-    initWasm().then(() => {
-      if (!cancelled) {
-        const eng = createTableEngine();
-        setEngine(eng);
-        if (engineRef) {
-          engineRef.current = eng;
+    initWasm()
+      .then(() => {
+        if (!cancelled) {
+          const eng = createTableEngine();
+          setEngine(eng);
+          if (engineRef) {
+            engineRef.current = eng;
+          }
+          if (typeof window !== "undefined" && import.meta.env?.DEV) {
+            Object.defineProperty(window, "__engine", {
+              value: eng,
+              writable: true,
+              configurable: true,
+            });
+            eng.enableDebugLog?.();
+          }
+          const mem = getWasmMemory();
+          if (mem) {
+            memoryBridgeRef.current = new MemoryBridge(eng, mem);
+          }
         }
-        if (typeof window !== "undefined" && import.meta.env?.DEV) {
-          Object.defineProperty(window, "__engine", {
-            value: eng,
-            writable: true,
-            configurable: true,
-          });
-          eng.enableDebugLog?.();
-        }
-        const mem = getWasmMemory();
-        if (mem) {
-          memoryBridgeRef.current = new MemoryBridge(eng, mem);
-        }
-      }
-    });
+      })
+      .catch((err) => {
+        if (!cancelled) console.error(err);
+      });
     return () => {
       cancelled = true;
     };

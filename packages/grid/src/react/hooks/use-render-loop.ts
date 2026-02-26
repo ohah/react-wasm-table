@@ -446,18 +446,7 @@ export function useRenderLoop({
       cancelAnimationFrame(rafRef.current);
     };
   }, [
-    engine,
-    columnRegistry,
-    width,
-    height,
-    rowHeight,
-    headerHeight,
-    theme,
-    data,
-    containerProps,
-    sorting,
-    enableSelection,
-    selectionStyle,
+    /* refs */
     memoryBridgeRef,
     stringTableRef,
     selectionManagerRef,
@@ -467,6 +456,20 @@ export function useRenderLoop({
     dirtyRef,
     vScrollbarRef,
     hScrollbarRef,
+    /* layout */
+    engine,
+    columnRegistry,
+    width,
+    height,
+    rowHeight,
+    headerHeight,
+    theme,
+    /* data & callbacks */
+    data,
+    containerProps,
+    sorting,
+    enableSelection,
+    selectionStyle,
     onLayoutComputed,
     onVisStartComputed,
   ]);
