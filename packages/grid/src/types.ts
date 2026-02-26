@@ -317,6 +317,8 @@ export interface ColumnProps extends BoxModelProps {
   align?: "left" | "center" | "right";
   /** Whether the column is sortable. */
   sortable?: boolean;
+  /** Whether selection can start from this column. @default true */
+  selectable?: boolean;
   /** Editor type for inline editing. */
   editor?: "text" | "number" | "select";
   /** Render function: receives cell value, returns a render instruction. */
@@ -363,6 +365,8 @@ export interface GridProps extends BoxModelProps {
   /** Paste handler stub. Called on Ctrl/Cmd+V with clipboard text and target cell. */
   onPaste?: (text: string, target: CellCoord) => void;
 
+  /** Enable cell selection. @default true */
+  enableSelection?: boolean;
   /** Initial state for uncontrolled mode. */
   initialState?: {
     sorting?: import("./tanstack-types").SortingState;
