@@ -222,7 +222,16 @@ export function CssGrid({
       alignItems: "center",
       justifyContent: alignToJustify(col.align),
       borderRight: "0.5px solid #000",
-      ...(colIdx === 0 ? { borderLeft: "0.5px solid #000" } : {}),
+      borderLeft:
+        flexDirection === "row-reverse"
+          ? colIdx === columns.length - 1
+            ? "0.5px solid #000"
+            : undefined
+          : flexDirection === "column" || flexDirection === "column-reverse"
+            ? "0.5px solid #000"
+            : colIdx === 0
+              ? "0.5px solid #000"
+              : undefined,
       boxSizing: col.boxSizing || "border-box",
       overflow: "hidden",
       whiteSpace: "nowrap",

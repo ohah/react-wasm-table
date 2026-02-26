@@ -15,12 +15,15 @@ import { Overflow } from "./pages/Overflow";
 import { Position } from "./pages/Position";
 import { GridTemplate } from "./pages/GridTemplate";
 import { Scrollbar } from "./pages/Scrollbar";
+import { StressTest } from "./pages/StressTest";
+import { FpsCounter } from "./components/FpsCounter";
 
 setWasmUrl("/react_wasm_table_wasm_bg.wasm");
 
 export function App() {
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "system-ui, sans-serif" }}>
+      <FpsCounter />
       <Sidebar />
       <main style={{ flex: 1, overflow: "auto", padding: 24 }}>
         <Routes>
@@ -38,6 +41,7 @@ export function App() {
           <Route path="/position" element={<Position />} />
           <Route path="/grid-template" element={<GridTemplate />} />
           <Route path="/scrollbar" element={<Scrollbar />} />
+          <Route path="/stress-test" element={<StressTest />} />
         </Routes>
       </main>
     </div>

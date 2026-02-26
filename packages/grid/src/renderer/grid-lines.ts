@@ -40,7 +40,10 @@ export function computeHeaderLines(
 
   // Read header Y from layout (scrolls with content)
   const headerY = layouts[0]!.y;
-  const firstX = layouts[0]!.x;
+  let firstX = Infinity;
+  for (const layout of layouts) {
+    firstX = Math.min(firstX, layout.x);
+  }
   const horizontal: HLine[] = [
     { y: headerY + 0.25, x1: 0, x2: canvasW },
     { y: headerY + headerHeight - 0.25, x1: 0, x2: canvasW },
@@ -122,7 +125,10 @@ export function computeHeaderLinesFromBuffer(
 
   // Read header Y from buffer (scrolls with content)
   const headerY = readCellY(buf, 0);
-  const firstX = readCellX(buf, 0);
+  let firstX = Infinity;
+  for (let i = 0; i < headerCount; i++) {
+    firstX = Math.min(firstX, readCellX(buf, i));
+  }
   const horizontal: HLine[] = [
     { y: headerY + 0.25, x1: 0, x2: canvasW },
     { y: headerY + headerHeight - 0.25, x1: 0, x2: canvasW },
