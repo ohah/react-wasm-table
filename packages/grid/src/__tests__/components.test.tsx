@@ -45,9 +45,7 @@ describe("Canvas components", () => {
     });
 
     it("returns a BadgeInstruction via JSX + resolveInstruction", () => {
-      const element = (
-        <Badge value="Done" color="white" backgroundColor="green" />
-      );
+      const element = <Badge value="Done" color="white" backgroundColor="green" />;
       const result = resolveInstruction(element);
       expect(result.type).toBe("badge");
       expect(result.value).toBe("Done");

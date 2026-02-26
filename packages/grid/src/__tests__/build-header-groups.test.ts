@@ -157,9 +157,7 @@ describe("buildHeaderGroups", () => {
   });
 
   it("handles single column (no grouping)", () => {
-    const groups = build([
-      helper.accessor("firstName", { header: "First" }),
-    ]);
+    const groups = build([helper.accessor("firstName", { header: "First" })]);
     expect(groups).toHaveLength(1);
     expect(groups[0]!.headers).toHaveLength(1);
     expect(groups[0]!.headers[0]!.colSpan).toBe(1);
@@ -205,9 +203,7 @@ describe("buildHeaderGroups", () => {
   });
 
   it("getContext returns header context", () => {
-    const groups = build([
-      helper.accessor("firstName", { header: "First" }),
-    ]);
+    const groups = build([helper.accessor("firstName", { header: "First" })]);
 
     const ctx = groups[0]!.headers[0]!.getContext();
     expect(ctx.column.id).toBe("firstName");

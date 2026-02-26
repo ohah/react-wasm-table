@@ -59,9 +59,7 @@ export interface ColumnDefBase<TData, TValue = unknown> {
   /** Header label or render function. */
   header?: string | ((ctx: HeaderContext<TData, TValue>) => string);
   /** Cell render function. Returns RenderInstruction, JSX ReactElement, or string. */
-  cell?:
-    | string
-    | ((info: CellContext<TData, TValue>) => RenderInstruction | ReactElement | string);
+  cell?: string | ((info: CellContext<TData, TValue>) => RenderInstruction | ReactElement | string);
   /** Footer label or render function. */
   footer?: string;
 
@@ -131,8 +129,10 @@ export interface ColumnDefBase<TData, TValue = unknown> {
 }
 
 /** Column defined by an accessor key (property name). */
-export interface AccessorKeyColumnDef<TData, TValue = unknown>
-  extends ColumnDefBase<TData, TValue> {
+export interface AccessorKeyColumnDef<TData, TValue = unknown> extends ColumnDefBase<
+  TData,
+  TValue
+> {
   id?: string;
   accessorKey: keyof TData & string;
   accessorFn?: never;
@@ -140,8 +140,7 @@ export interface AccessorKeyColumnDef<TData, TValue = unknown>
 }
 
 /** Column defined by an accessor function. */
-export interface AccessorFnColumnDef<TData, TValue = unknown>
-  extends ColumnDefBase<TData, TValue> {
+export interface AccessorFnColumnDef<TData, TValue = unknown> extends ColumnDefBase<TData, TValue> {
   id: string;
   accessorFn: (row: TData, index: number) => TValue;
   accessorKey?: never;
@@ -149,8 +148,7 @@ export interface AccessorFnColumnDef<TData, TValue = unknown>
 }
 
 /** Display-only column (no data accessor). */
-export interface DisplayColumnDef<TData, TValue = unknown>
-  extends ColumnDefBase<TData, TValue> {
+export interface DisplayColumnDef<TData, TValue = unknown> extends ColumnDefBase<TData, TValue> {
   id: string;
   accessorKey?: never;
   accessorFn?: never;
@@ -158,8 +156,7 @@ export interface DisplayColumnDef<TData, TValue = unknown>
 }
 
 /** Group column (contains sub-columns). */
-export interface GroupColumnDef<TData, TValue = unknown>
-  extends ColumnDefBase<TData, TValue> {
+export interface GroupColumnDef<TData, TValue = unknown> extends ColumnDefBase<TData, TValue> {
   id?: string;
   accessorKey?: never;
   accessorFn?: never;

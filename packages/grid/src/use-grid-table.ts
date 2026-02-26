@@ -37,9 +37,7 @@ export interface UseGridTableOptions<TData> {
  * });
  * ```
  */
-export function useGridTable<TData>(
-  options: UseGridTableOptions<TData>,
-): GridInstance<TData> {
+export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridInstance<TData> {
   const {
     data,
     columns,
@@ -49,16 +47,13 @@ export function useGridTable<TData>(
   } = options;
 
   // Internal state for uncontrolled mode
-  const [internalSorting, setInternalSorting] = useState<SortingState>(
-    initialState?.sorting ?? [],
-  );
+  const [internalSorting, setInternalSorting] = useState<SortingState>(initialState?.sorting ?? []);
 
   // Resolve controlled vs uncontrolled
   const sorting = controlledState?.sorting ?? internalSorting;
   const onSortingChange = useCallback(
     (updater: SortingUpdater) => {
-      const next =
-        typeof updater === "function" ? updater(sorting) : updater;
+      const next = typeof updater === "function" ? updater(sorting) : updater;
       if (controlledOnSortingChange) {
         controlledOnSortingChange(next);
       } else {

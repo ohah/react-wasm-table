@@ -5,9 +5,7 @@ import type { RenderInstruction } from "./types";
 function isRenderInstruction(value: unknown): value is RenderInstruction {
   if (value == null || typeof value !== "object") return false;
   const type = (value as Record<string, unknown>).type;
-  return (
-    type === "text" || type === "badge" || type === "flex" || type === "stub"
-  );
+  return type === "text" || type === "badge" || type === "flex" || type === "stub";
 }
 
 /**
@@ -25,9 +23,7 @@ export function resolveInstruction(result: unknown): RenderInstruction {
 
   // 2. ReactElement from JSX — call the component function
   if (isValidElement(result) && typeof result.type === "function") {
-    const resolved = (result.type as (props: unknown) => RenderInstruction)(
-      result.props,
-    );
+    const resolved = (result.type as (props: unknown) => RenderInstruction)(result.props);
     if (isRenderInstruction(resolved)) return resolved;
   }
 

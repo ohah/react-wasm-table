@@ -24,9 +24,7 @@ export interface ColumnHelper<TData> {
   display(column: DisplayColumnDef<TData>): DisplayColumnDef<TData>;
 
   /** Define a group column (contains sub-columns). */
-  group(
-    column: Omit<GroupColumnDef<TData>, "accessorKey" | "accessorFn">,
-  ): GroupColumnDef<TData>;
+  group(column: Omit<GroupColumnDef<TData>, "accessorKey" | "accessorFn">): GroupColumnDef<TData>;
 }
 
 /**
