@@ -300,6 +300,18 @@ describe("resolveColumns", () => {
     expect("gridRow" in result[0]!).toBe(false);
   });
 
+  it("maps enableSelection → selectable", () => {
+    const defs = [
+      helper.accessor("firstName", { header: "First", enableSelection: false }),
+      helper.accessor("lastName", { header: "Last", enableSelection: true }),
+      helper.accessor("age", { header: "Age" }),
+    ];
+    const result = resolveColumns(defs, []);
+    expect(result[0]!.selectable).toBe(false);
+    expect(result[1]!.selectable).toBe(true);
+    expect("selectable" in result[2]!).toBe(false);
+  });
+
   it("cell with JSX-like return resolves via resolveInstruction", () => {
     const defs = [
       helper.accessor("age", {
