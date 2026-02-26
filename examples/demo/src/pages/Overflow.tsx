@@ -6,7 +6,7 @@ import { CssGrid } from "../components/CssGrid";
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
 
-const options: CssOverflow[] = ["visible", "clip", "hidden", "scroll"];
+const options: CssOverflow[] = ["visible", "clip", "hidden", "scroll", "auto"];
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
