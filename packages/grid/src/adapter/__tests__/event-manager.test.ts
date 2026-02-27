@@ -732,4 +732,158 @@ describe("EventManager", () => {
       expect(type).toBe("dblclick");
     });
   });
+
+  describe("touch event passthrough", () => {
+    it("fires onTouchStart with native event, coords, and hitTest", () => {
+      const onTouchStart = mock(
+        (_native: TouchEvent, _coords: EventCoords, _hitTest: HitTestResult) => {},
+      );
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onTouchStart });
+
+      canvas.dispatchEvent(createTouchEvent("touchstart", [{ clientX: 50, clientY: 10 }]));
+      expect(onTouchStart).toHaveBeenCalledTimes(1);
+
+      const [native, coords, hitTest] = onTouchStart.mock.calls[0] as unknown as [
+        TouchEvent,
+        EventCoords,
+        HitTestResult,
+      ];
+      expect(native).toBeDefined();
+      expect(coords.viewportX).toBe(50);
+      expect(coords.viewportY).toBe(10);
+      expect(coords.contentX).toBe(50);
+      expect(hitTest.type).toBe("cell");
+      expect(hitTest.cell).toEqual({ row: 0, col: 0 });
+    });
+
+    it("fires onTouchMove with coords and hitTest", () => {
+      const onTouchMove = mock(
+        (_native: TouchEvent, _coords: EventCoords, _hitTest: HitTestResult) => {},
+      );
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onTouchMove });
+
+      // Start touch first
+      canvas.dispatchEvent(createTouchEvent("touchstart", [{ clientX: 50, clientY: 10 }]));
+      canvas.dispatchEvent(createTouchEvent("touchmove", [{ clientX: 60, clientY: 15 }]));
+
+      expect(onTouchMove).toHaveBeenCalledTimes(1);
+      const [, coords, hitTest] = onTouchMove.mock.calls[0] as unknown as [
+        TouchEvent,
+        EventCoords,
+        HitTestResult,
+      ];
+      expect(coords.viewportX).toBe(60);
+      expect(coords.viewportY).toBe(15);
+      expect(hitTest.type).toBe("cell");
+    });
+
+    it("fires onTouchEnd with coords and hitTest", () => {
+      const onTouchEnd = mock(
+        (_native: TouchEvent, _coords: EventCoords, _hitTest: HitTestResult) => {},
+      );
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onTouchEnd });
+
+      canvas.dispatchEvent(createTouchEvent("touchstart", [{ clientX: 50, clientY: 10 }]));
+      canvas.dispatchEvent(createTouchEvent("touchend", [{ clientX: 50, clientY: 10 }]));
+
+      expect(onTouchEnd).toHaveBeenCalledTimes(1);
+      const [, coords, hitTest] = onTouchEnd.mock.calls[0] as unknown as [
+        TouchEvent,
+        EventCoords,
+        HitTestResult,
+      ];
+      expect(coords.viewportX).toBe(50);
+      expect(coords.viewportY).toBe(10);
+      expect(hitTest.type).toBe("cell");
+    });
+
+    it("onTouchStart returning false cancels internal handling", () => {
+      const onCellClick = mock(() => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, {
+        onTouchStart: () => false,
+        onCellClick,
+      });
+
+      // Tap (touchstart + immediate touchend) normally triggers onCellClick
+      canvas.dispatchEvent(createTouchEvent("touchstart", [{ clientX: 50, clientY: 10 }]));
+      canvas.dispatchEvent(createTouchEvent("touchend", [{ clientX: 50, clientY: 10 }]));
+
+      // Blocked by onTouchStart returning false — touchState never set, so no tap detection
+      expect(onCellClick).not.toHaveBeenCalled();
+    });
+
+    it("onTouchEnd returning false cancels tap detection", () => {
+      const onCellClick = mock(() => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, {
+        onTouchEnd: () => false,
+        onCellClick,
+      });
+
+      canvas.dispatchEvent(createTouchEvent("touchstart", [{ clientX: 50, clientY: 10 }]));
+      canvas.dispatchEvent(createTouchEvent("touchend", [{ clientX: 50, clientY: 10 }]));
+
+      expect(onCellClick).not.toHaveBeenCalled();
+    });
+
+    it("onTouchMove returning false cancels internal scroll", () => {
+      const onScroll = mock(() => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, {
+        onTouchMove: () => false,
+        onScroll,
+      });
+
+      canvas.dispatchEvent(createTouchEvent("touchstart", [{ clientX: 50, clientY: 10 }]));
+      // Move enough to trigger scrolling
+      canvas.dispatchEvent(createTouchEvent("touchmove", [{ clientX: 50, clientY: 60 }]));
+
+      expect(onScroll).not.toHaveBeenCalled();
+    });
+
+    it("hitTest returns empty when touch is outside cells", () => {
+      const onTouchStart = mock(
+        (_native: TouchEvent, _coords: EventCoords, _hitTest: HitTestResult) => {},
+      );
+      em.setLayouts([], []);
+      em.attach(canvas, { onTouchStart });
+
+      canvas.dispatchEvent(createTouchEvent("touchstart", [{ clientX: 50, clientY: 10 }]));
+      expect(onTouchStart).toHaveBeenCalledTimes(1);
+      const [, , hitTest] = onTouchStart.mock.calls[0] as unknown as [
+        TouchEvent,
+        EventCoords,
+        HitTestResult,
+      ];
+      expect(hitTest.type).toBe("empty");
+    });
+
+    it("hitTest returns header when touch is on header", () => {
+      const onTouchStart = mock(
+        (_native: TouchEvent, _coords: EventCoords, _hitTest: HitTestResult) => {},
+      );
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onTouchStart });
+
+      canvas.dispatchEvent(createTouchEvent("touchstart", [{ clientX: 50, clientY: 10 }]));
+      const [, , hitTest] = onTouchStart.mock.calls[0] as unknown as [
+        TouchEvent,
+        EventCoords,
+        HitTestResult,
+      ];
+      expect(hitTest.type).toBe("header");
+      expect(hitTest.colIndex).toBe(0);
+    });
+  });
 });
