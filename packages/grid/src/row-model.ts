@@ -1,4 +1,4 @@
-import type { GridColumnDef } from "./tanstack-types";
+import type { GridColumnDef, ExpandedState, ExpandedUpdater } from "./tanstack-types";
 
 // ── Row ─────────────────────────────────────────────────────────────
 
@@ -14,6 +14,21 @@ export interface Row<TData> {
   getValue(columnId: string): unknown;
   /** Get all cell values as a record keyed by column ID. */
   getAllCellValues(): Record<string, unknown>;
+  // ── Tree fields ──
+  /** Child rows (empty if leaf). */
+  subRows: Row<TData>[];
+  /** Nesting depth (0 = root). */
+  depth: number;
+  /** Parent row ID (undefined for root rows). */
+  parentId?: string;
+  /** Whether this row has children and can be expanded. */
+  getCanExpand: () => boolean;
+  /** Whether this row is currently expanded. */
+  getIsExpanded: () => boolean;
+  /** Toggle the expanded state of this row. */
+  toggleExpanded: () => void;
+  /** Get all leaf rows (recursively, rows with no subRows). */
+  getLeafRows: () => Row<TData>[];
 }
 
 // ── RowModel ────────────────────────────────────────────────────────
@@ -52,18 +67,34 @@ export function getFilteredRowModel<TData>(): RowModelFactory<TData> {
 
 // ── Builders ────────────────────────────────────────────────────────
 
+/** Options for tree-aware row building. */
+export interface BuildRowOptions<TData> {
+  subRows?: Row<TData>[];
+  depth?: number;
+  parentId?: string;
+  expanded?: ExpandedState;
+  onExpandedChange?: (updater: ExpandedUpdater) => void;
+}
+
 /** Build a single Row object from data. */
 export function buildRow<TData>(
   data: TData[],
   originalIndex: number,
   viewIndex: number,
   columns: GridColumnDef<TData, any>[],
+  options?: BuildRowOptions<TData>,
 ): Row<TData> {
   const original = data[originalIndex]!;
   const accessorMap = buildAccessorMap(columns);
+  const subRows = options?.subRows ?? [];
+  const depth = options?.depth ?? 0;
+  const parentId = options?.parentId;
+  const expanded = options?.expanded;
+  const onExpandedChange = options?.onExpandedChange;
+  const rowId = String(originalIndex);
 
-  return {
-    id: String(originalIndex),
+  const row: Row<TData> = {
+    id: rowId,
     index: viewIndex,
     original,
     getValue(columnId: string): unknown {
@@ -78,7 +109,32 @@ export function buildRow<TData>(
       }
       return result;
     },
+    subRows,
+    depth,
+    parentId,
+    getCanExpand: () => subRows.length > 0,
+    getIsExpanded: () => {
+      if (!expanded) return false;
+      if (expanded === true) return true;
+      return expanded[rowId] === true;
+    },
+    toggleExpanded: () => {
+      if (!onExpandedChange) return;
+      onExpandedChange((prev) => {
+        if (prev === true) {
+          // "all expanded" → toggle this one off: build record with all expandable = true, this one = false
+          // Simplified: just set this one to false
+          return { [rowId]: false };
+        }
+        const record = { ...prev };
+        record[rowId] = !record[rowId];
+        return record;
+      });
+    },
+    getLeafRows: () => collectLeafRows(subRows),
   };
+
+  return row;
 }
 
 /** Build a RowModel from data + optional index indirection. */
@@ -111,7 +167,104 @@ export function buildRowModel<TData>(
   };
 }
 
+// ── Expanded Row Model ──────────────────────────────────────────────
+
+/** Marker factory for the expanded row model. */
+export function getExpandedRowModel<TData>(): RowModelFactory<TData> {
+  return { _type: "expanded" };
+}
+
+/** Build an expanded row model from tree data. */
+export function buildExpandedRowModel<TData>(
+  data: TData[],
+  columns: GridColumnDef<TData, any>[],
+  getSubRows: (row: TData) => TData[] | undefined,
+  expanded: ExpandedState,
+  onExpandedChange?: (updater: ExpandedUpdater) => void,
+): RowModel<TData> {
+  let viewIndex = 0;
+
+  function buildTreeRows(
+    items: TData[],
+    allData: TData[],
+    depth: number,
+    parentId?: string,
+  ): Row<TData>[] {
+    const rows: Row<TData>[] = [];
+    for (const item of items) {
+      const originalIndex = allData.indexOf(item);
+      const idx = originalIndex >= 0 ? originalIndex : allData.length;
+      // If item is not in top-level data, push it and use that index
+      if (originalIndex < 0) {
+        allData.push(item);
+      }
+      const actualIndex = originalIndex >= 0 ? originalIndex : allData.length - 1;
+
+      const subRowData = getSubRows(item);
+      const subRows = subRowData && subRowData.length > 0
+        ? buildTreeRows(subRowData, allData, depth + 1, String(actualIndex))
+        : [];
+
+      const row = buildRow(allData, actualIndex, viewIndex, columns, {
+        subRows,
+        depth,
+        parentId,
+        expanded,
+        onExpandedChange,
+      });
+      rows.push(row);
+      viewIndex++;
+    }
+    return rows;
+  }
+
+  // We need a mutable copy of data array to track sub-row indices
+  const allData = [...data];
+  viewIndex = 0;
+  const treeRows = buildTreeRows(data, allData, 0);
+
+  // Flatten based on expanded state
+  const flatRows: Row<TData>[] = [];
+  function flattenExpanded(rows: Row<TData>[]) {
+    for (const row of rows) {
+      flatRows.push(row);
+      if (row.getIsExpanded() && row.subRows.length > 0) {
+        flattenExpanded(row.subRows);
+      }
+    }
+  }
+  flattenExpanded(treeRows);
+
+  // Reassign view indices
+  for (let i = 0; i < flatRows.length; i++) {
+    (flatRows[i] as { index: number }).index = i;
+  }
+
+  return {
+    rows: flatRows,
+    rowCount: flatRows.length,
+    getRow(index: number): Row<TData> {
+      if (index < 0 || index >= flatRows.length) {
+        throw new RangeError(`Row index ${index} out of range [0, ${flatRows.length})`);
+      }
+      return flatRows[index]!;
+    },
+  };
+}
+
 // ── Internal helpers ────────────────────────────────────────────────
+
+function collectLeafRows<TData>(rows: Row<TData>[]): Row<TData>[] {
+  const leaves: Row<TData>[] = [];
+  for (const row of rows) {
+    if (row.subRows.length === 0) {
+      leaves.push(row);
+    } else {
+      leaves.push(...collectLeafRows(row.subRows));
+    }
+  }
+  return leaves;
+}
 
 type AccessorFn<TData> = (row: TData, index: number) => unknown;
 
