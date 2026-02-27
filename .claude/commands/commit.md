@@ -19,5 +19,6 @@ Instructions:
    - `chore:` for build/tooling changes
    - `test:` for test additions/changes
 5. The commit message should be in English, 1-2 sentences focusing on "why" not "what"
-6. **Never include any \"Made with Cursor\" / \"Made-with: Cursor\" or similar tool attribution text in the commit message.**
-7. Create the commit
+6. **Never include any "Made with Cursor" / "Made-with: Cursor" or similar tool attribution text in the commit message.**
+7. **Always run the strip script before committing:** write the commit message to a temporary file, run `./scripts/strip-commit-attribution.sh <file>` to remove any tool-attribution lines, then create the commit with `git commit -F <file>`. This ensures "Made with Cursor" and similar text are never included.
+8. Create the commit
