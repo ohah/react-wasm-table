@@ -33,18 +33,26 @@ export class SelectionManager {
   private range: CellRange | null = null;
   private dragging = false;
   private textarea: HTMLTextAreaElement | null = null;
-  private onDirty: (() => void) | null = null;
+  // Support multiple listeners so a shared SelectionManager can notify all grids.
+  private dirtyListeners = new Set<() => void>();
 
-  /** Set callback invoked when selection visually changes. */
+  /** Register callback(s) invoked when selection visually changes. */
   setOnDirty(cb: () => void): void {
-    this.onDirty = cb;
+    this.dirtyListeners.add(cb);
+  }
+
+  private notifyDirty(): void {
+    if (this.dirtyListeners.size === 0) return;
+    for (const cb of this.dirtyListeners) {
+      cb();
+    }
   }
 
   /** Start drag selection (mousedown). */
   start(row: number, col: number): void {
     this.range = { startRow: row, startCol: col, endRow: row, endCol: col };
     this.dragging = true;
-    this.onDirty?.();
+    this.notifyDirty();
   }
 
   /** Extend selection during drag (mousemove). Only fires onDirty if range actually changed. */
@@ -53,7 +61,7 @@ export class SelectionManager {
     if (this.range.endRow === row && this.range.endCol === col) return;
     this.range.endRow = row;
     this.range.endCol = col;
-    this.onDirty?.();
+    this.notifyDirty();
   }
 
   /** Finish drag (mouseup). No visual change. */
@@ -66,7 +74,7 @@ export class SelectionManager {
     if (!this.range) return;
     this.range.endRow = row;
     this.range.endCol = col;
-    this.onDirty?.();
+    this.notifyDirty();
   }
 
   /** Set range from external controlled state. */
@@ -83,14 +91,14 @@ export class SelectionManager {
       this.range.endCol !== range.endCol;
     if (!changed) return;
     this.range = { ...range };
-    this.onDirty?.();
+    this.notifyDirty();
   }
 
   /** Clear selection. */
   clear(): void {
     if (!this.range) return;
     this.range = null;
-    this.onDirty?.();
+    this.notifyDirty();
   }
 
   /** Get the raw range (nullable). */
