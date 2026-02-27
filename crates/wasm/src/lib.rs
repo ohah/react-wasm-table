@@ -164,7 +164,7 @@ impl TableEngine {
 
     /// Unified hot path: rebuild view + virtual slice + layout buffer.
     /// Returns metadata as Float64Array:
-    /// [cell_count, visible_start, visible_end, total_height, filtered_count, generation, total_count, visible_count]
+    /// [cell_count, visible_start, visible_end, total_height, filtered_count, generation, total_count, visible_count, effective_row_height]
     #[wasm_bindgen(js_name = updateViewportColumnar)]
     pub fn update_viewport_columnar(
         &mut self,
@@ -183,20 +183,8 @@ impl TableEngine {
             self.columnar.view_indices().len(),
         );
 
-        // 2. Compute virtual slice
-        let total_count = self.columnar.row_count;
-        let filtered_count = self.columnar.view_indices().len();
-        let scroll_state = react_wasm_table_core::virtual_scroll::ScrollState {
-            scroll_top,
-            viewport_height: self.columnar.viewport_height(),
-            row_height: self.columnar.row_height(),
-            total_rows: filtered_count,
-            overscan: self.columnar.overscan(),
-        };
-        let virtual_slice =
-            react_wasm_table_core::virtual_scroll::compute_virtual_slice(&scroll_state);
-
-        // 3. Parse viewport + columns + container for layout
+        // 2. Parse viewport + columns + container BEFORE virtual scroll
+        //    (needed to compute effective row height for column directions)
         let vp: JsViewport = serde_wasm_bindgen::from_value(viewport_js)?;
         let cols: Vec<JsColumnLayout> = serde_wasm_bindgen::from_value(columns_js)?;
 
@@ -218,7 +206,29 @@ impl TableEngine {
 
         let columns: Vec<ColumnLayout> = cols.into_iter().map(|c| convert_column(&c)).collect();
 
-        // 4. Compute layout into buffer
+        // 3. Compute effective row height (may differ from nominal for column directions)
+        let effective_row_height = self.layout.compute_effective_row_height(
+            &columns,
+            &container,
+            viewport.width,
+            viewport.row_height,
+            viewport.line_height,
+        ) as f64;
+
+        // 4. Compute virtual slice using effective row height
+        let total_count = self.columnar.row_count;
+        let filtered_count = self.columnar.view_indices().len();
+        let scroll_state = react_wasm_table_core::virtual_scroll::ScrollState {
+            scroll_top,
+            viewport_height: self.columnar.viewport_height(),
+            row_height: effective_row_height,
+            total_rows: filtered_count,
+            overscan: self.columnar.overscan(),
+        };
+        let virtual_slice =
+            react_wasm_table_core::virtual_scroll::compute_virtual_slice(&scroll_state);
+
+        // 5. Compute layout into buffer
         let col_count = columns.len();
         let row_count = virtual_slice
             .end_index
@@ -238,7 +248,7 @@ impl TableEngine {
             &mut self.layout_buf,
         );
 
-        // 5. Return metadata
+        // 6. Return metadata
         Ok(vec![
             self.layout_cell_count as f64,
             virtual_slice.start_index as f64,
@@ -248,6 +258,7 @@ impl TableEngine {
             self.columnar.generation as f64,
             total_count as f64,
             virtual_slice.visible_count as f64,
+            effective_row_height,
         ])
     }
 

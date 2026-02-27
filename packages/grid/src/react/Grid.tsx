@@ -409,9 +409,7 @@ export function Grid({
         <canvas
           ref={canvasRef}
           data-grid-canvas
-          width={width}
-          height={height}
-          style={{ display: "block", touchAction: "none" }}
+          style={{ display: "block", touchAction: "none", width, height }}
         />
         <div
           ref={editorRef}

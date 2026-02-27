@@ -596,7 +596,8 @@ impl LayoutEngine {
         }
     }
 
-    /// Compute positions for each column using Taffy layout, returning full cross-axis info.
+    /// Compute positions for each column using Taffy layout, returning full cross-axis info
+    /// and the effective row height (which may differ from `row_height` for column directions).
     fn compute_column_positions(
         &mut self,
         columns: &[ColumnLayout],
@@ -604,13 +605,18 @@ impl LayoutEngine {
         viewport_width: f32,
         row_height: f32,
         line_height: f32,
-    ) -> Vec<ColumnPosition> {
+    ) -> (Vec<ColumnPosition>, f32) {
         log::debug!(
             "[layout] compute_column_positions: cols={}, viewport_width={}, row_height={}",
             columns.len(),
             viewport_width,
             row_height
         );
+        let is_column_dir = matches!(
+            container.flex_direction,
+            FlexDirectionValue::Column | FlexDirectionValue::ColumnReverse
+        );
+
         let root_style = Self::build_container_style(container, viewport_width, row_height);
         let root = self
             .tree
@@ -635,10 +641,24 @@ impl LayoutEngine {
                 root,
                 Size {
                     width: AvailableSpace::Definite(viewport_width),
-                    height: AvailableSpace::Definite(row_height),
+                    height: if is_column_dir {
+                        AvailableSpace::MaxContent
+                    } else {
+                        AvailableSpace::Definite(row_height)
+                    },
                 },
             )
             .expect("failed to compute layout");
+
+        let effective_height = if is_column_dir {
+            self.tree
+                .layout(root)
+                .expect("failed to get root layout")
+                .size
+                .height
+        } else {
+            row_height
+        };
 
         let positions: Vec<ColumnPosition> = children
             .iter()
@@ -684,9 +704,16 @@ impl LayoutEngine {
             );
         }
 
+        log::debug!(
+            "[layout] effective_height={:.1} (row_height={:.1}, column_dir={})",
+            effective_height,
+            row_height,
+            is_column_dir
+        );
+
         self.tree.clear();
 
-        positions
+        (positions, effective_height)
     }
 
     /// Build a Taffy Style for the container (root) node.
@@ -733,7 +760,12 @@ impl LayoutEngine {
             },
             size: Size {
                 width: Dimension::length(viewport_width),
-                height: Dimension::length(row_height),
+                height: match container.flex_direction {
+                    FlexDirectionValue::Column | FlexDirectionValue::ColumnReverse => {
+                        Dimension::auto()
+                    }
+                    _ => Dimension::length(row_height),
+                },
             },
             gap: Size {
                 width: length_to_taffy(col_gap),
@@ -804,7 +836,7 @@ impl LayoutEngine {
         );
 
         // Compute column positions (shared by header and all rows)
-        let positions = self.compute_column_positions(
+        let (positions, effective_header_height) = self.compute_column_positions(
             columns,
             container,
             viewport.width,
@@ -833,22 +865,24 @@ impl LayoutEngine {
         }
 
         // Re-compute positions for row height if different from header height
-        let row_positions = if (viewport.row_height - viewport.header_height).abs() > f32::EPSILON {
-            self.compute_column_positions(
-                columns,
-                container,
-                viewport.width,
-                viewport.row_height,
-                viewport.line_height,
-            )
-        } else {
-            positions
-        };
+        let (row_positions, effective_row_height) =
+            if (viewport.row_height - viewport.header_height).abs() > f32::EPSILON {
+                self.compute_column_positions(
+                    columns,
+                    container,
+                    viewport.width,
+                    viewport.row_height,
+                    viewport.line_height,
+                )
+            } else {
+                (positions, effective_header_height)
+            };
 
         // Write data cells
         let mut cell_idx = col_count;
         for row_idx in visible_range {
-            let row_base_y = (row_idx as f32).mul_add(viewport.row_height, viewport.header_height)
+            let row_base_y = (row_idx as f32)
+                .mul_add(effective_row_height, effective_header_height)
                 - viewport.scroll_top;
             for (col_idx, pos) in row_positions.iter().enumerate() {
                 layout_buffer::write_cell(
@@ -873,6 +907,25 @@ impl LayoutEngine {
         log::debug!("[layout] compute_into_buffer: done, cells_written={total_cells}");
 
         total_cells
+    }
+
+    /// Compute the effective row height for the given columns/container.
+    /// In column/column-reverse direction the effective height may be larger
+    /// than the nominal `row_height` because Taffy stacks children vertically.
+    pub fn compute_effective_row_height(
+        &mut self,
+        columns: &[ColumnLayout],
+        container: &ContainerLayout,
+        viewport_width: f32,
+        row_height: f32,
+        line_height: f32,
+    ) -> f32 {
+        if columns.is_empty() {
+            return row_height;
+        }
+        let (_, effective) =
+            self.compute_column_positions(columns, container, viewport_width, row_height, line_height);
+        effective
     }
 }
 
@@ -904,7 +957,7 @@ impl LayoutEngine {
         viewport: &Viewport,
         container: &ContainerLayout,
     ) -> Vec<CellLayout> {
-        let positions = self.compute_column_positions(
+        let (positions, _effective_height) = self.compute_column_positions(
             columns,
             container,
             viewport.width,
@@ -941,7 +994,7 @@ impl LayoutEngine {
             return Vec::new();
         }
 
-        let positions = self.compute_column_positions(
+        let (positions, effective_row_height) = self.compute_column_positions(
             columns,
             container,
             viewport.width,
@@ -949,11 +1002,28 @@ impl LayoutEngine {
             viewport.line_height,
         );
 
+        // Also compute effective header height for row base y offset
+        let effective_header_height = if (viewport.row_height - viewport.header_height).abs()
+            > f32::EPSILON
+        {
+            let (_, h) = self.compute_column_positions(
+                columns,
+                container,
+                viewport.width,
+                viewport.header_height,
+                viewport.line_height,
+            );
+            h
+        } else {
+            effective_row_height
+        };
+
         let mut result =
             Vec::with_capacity((visible_range.end - visible_range.start) * columns.len());
 
         for row_idx in visible_range {
-            let row_base_y = (row_idx as f32).mul_add(viewport.row_height, viewport.header_height)
+            let row_base_y = (row_idx as f32)
+                .mul_add(effective_row_height, effective_header_height)
                 - viewport.scroll_top;
             for (col_idx, pos) in positions.iter().enumerate() {
                 result.push(CellLayout {
@@ -3112,5 +3182,114 @@ mod tests {
         let viewport = make_viewport();
         let header = engine.compute_header_layout(&columns, &viewport, &default_container());
         assert_eq!(header.len(), 1);
+    }
+
+    #[test]
+    fn column_direction_stacks_vertically() {
+        init_logger();
+        let mut engine = LayoutEngine::new();
+        let columns = vec![
+            col(100.0, Align::Left),
+            col(200.0, Align::Center),
+            col(150.0, Align::Right),
+        ];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_direction: FlexDirectionValue::Column,
+            ..ContainerLayout::default()
+        };
+
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 3);
+
+        // In column direction, columns should stack vertically (different y, x = 0)
+        assert!((header[0].x).abs() < 0.1, "col0 x should be ~0");
+        assert!((header[1].x).abs() < 0.1, "col1 x should be ~0");
+        assert!((header[2].x).abs() < 0.1, "col2 x should be ~0");
+
+        // Each column should be below the previous
+        assert!(header[1].y > header[0].y, "col1 should be below col0");
+        assert!(header[2].y > header[1].y, "col2 should be below col1");
+    }
+
+    #[test]
+    fn column_direction_effective_height_exceeds_row_height() {
+        init_logger();
+        let mut engine = LayoutEngine::new();
+        let columns = vec![
+            col(100.0, Align::Left),
+            col(200.0, Align::Center),
+            col(150.0, Align::Right),
+        ];
+        let viewport = make_viewport(); // row_height = 36
+        let container = ContainerLayout {
+            flex_direction: FlexDirectionValue::Column,
+            ..ContainerLayout::default()
+        };
+
+        let effective = engine.compute_effective_row_height(
+            &columns,
+            &container,
+            viewport.width,
+            viewport.row_height,
+            viewport.line_height,
+        );
+
+        // 3 columns stacked vertically, each with line_height (20),
+        // so effective height should be > row_height (36)
+        assert!(
+            effective > viewport.row_height,
+            "effective height {effective} should exceed row_height {}",
+            viewport.row_height
+        );
+    }
+
+    #[test]
+    fn column_reverse_direction_reverses_order() {
+        init_logger();
+        let mut engine = LayoutEngine::new();
+        let columns = vec![
+            col(100.0, Align::Left),
+            col(200.0, Align::Center),
+        ];
+        let viewport = make_viewport();
+        let container = ContainerLayout {
+            flex_direction: FlexDirectionValue::ColumnReverse,
+            ..ContainerLayout::default()
+        };
+
+        let header = engine.compute_header_layout(&columns, &viewport, &container);
+        assert_eq!(header.len(), 2);
+
+        // In column-reverse, first defined column should be below the second
+        assert!(
+            header[0].y > header[1].y,
+            "col0 y ({}) should be > col1 y ({}) in column-reverse",
+            header[0].y,
+            header[1].y
+        );
+    }
+
+    #[test]
+    fn row_direction_unchanged_with_effective_height() {
+        // Verify that row direction returns effective_height == row_height
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(100.0, Align::Left), col(200.0, Align::Center)];
+        let viewport = make_viewport();
+        let container = default_container(); // Row direction
+
+        let effective = engine.compute_effective_row_height(
+            &columns,
+            &container,
+            viewport.width,
+            viewport.row_height,
+            viewport.line_height,
+        );
+
+        assert!(
+            (effective - viewport.row_height).abs() < 0.1,
+            "row direction effective height {effective} should equal row_height {}",
+            viewport.row_height
+        );
     }
 }
