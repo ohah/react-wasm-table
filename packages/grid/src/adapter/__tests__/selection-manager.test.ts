@@ -1,5 +1,8 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock, beforeEach, afterEach } from "bun:test";
 import { SelectionManager, buildTSV } from "../selection-manager";
+
+// Save/restore navigator to avoid polluting global state for other test files
+let savedNavigator: Navigator;
 
 describe("buildTSV", () => {
   const getText = (row: number, col: number) => `r${row}c${col}`;
@@ -184,11 +187,110 @@ describe("SelectionManager", () => {
     });
   });
 
+  describe("attachClipboard / detachClipboard", () => {
+    it("creates a hidden textarea in the container", () => {
+      const sm = new SelectionManager();
+      const container = document.createElement("div");
+      sm.attachClipboard(container);
+      const ta = container.querySelector("textarea");
+      expect(ta).not.toBeNull();
+      expect(ta!.style.position).toBe("absolute");
+      expect(ta!.style.opacity).toBe("0");
+      expect(ta!.tabIndex).toBe(-1);
+      expect(ta!.getAttribute("aria-hidden")).toBe("true");
+    });
+
+    it("detachClipboard removes the textarea", () => {
+      const sm = new SelectionManager();
+      const container = document.createElement("div");
+      sm.attachClipboard(container);
+      expect(container.querySelector("textarea")).not.toBeNull();
+      sm.detachClipboard();
+      expect(container.querySelector("textarea")).toBeNull();
+    });
+
+    it("detachClipboard is safe to call without prior attach", () => {
+      const sm = new SelectionManager();
+      expect(() => sm.detachClipboard()).not.toThrow();
+    });
+  });
+
+  describe("writeToClipboard", () => {
+    beforeEach(() => {
+      savedNavigator = globalThis.navigator;
+    });
+    afterEach(() => {
+      Object.defineProperty(globalThis, "navigator", {
+        value: savedNavigator,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    it("builds TSV from selection and writes to clipboard", () => {
+      const writeTextMock = mock(() => Promise.resolve());
+      Object.defineProperty(globalThis, "navigator", {
+        value: { ...savedNavigator, clipboard: { writeText: writeTextMock } },
+        writable: true,
+        configurable: true,
+      });
+
+      const sm = new SelectionManager();
+      const container = document.createElement("div");
+      sm.attachClipboard(container);
+      sm.start(0, 0);
+      sm.extend(1, 1);
+      const getText = (r: number, c: number) => `${r},${c}`;
+      sm.writeToClipboard(getText);
+      expect(writeTextMock).toHaveBeenCalledWith("0,0\t0,1\n1,0\t1,1");
+    });
+
+    it("is a no-op when no selection", () => {
+      const writeTextMock = mock(() => Promise.resolve());
+      Object.defineProperty(globalThis, "navigator", {
+        value: { ...savedNavigator, clipboard: { writeText: writeTextMock } },
+        writable: true,
+        configurable: true,
+      });
+
+      const sm = new SelectionManager();
+      const container = document.createElement("div");
+      sm.attachClipboard(container);
+      sm.writeToClipboard(() => "x");
+      expect(writeTextMock).not.toHaveBeenCalled();
+    });
+
+    it("is a no-op when textarea not attached", () => {
+      const writeTextMock = mock(() => Promise.resolve());
+      Object.defineProperty(globalThis, "navigator", {
+        value: { ...savedNavigator, clipboard: { writeText: writeTextMock } },
+        writable: true,
+        configurable: true,
+      });
+
+      const sm = new SelectionManager();
+      sm.start(0, 0);
+      sm.writeToClipboard(() => "x");
+      expect(writeTextMock).not.toHaveBeenCalled();
+    });
+  });
+
   describe("writeToClipboardText", () => {
+    beforeEach(() => {
+      savedNavigator = globalThis.navigator;
+    });
+    afterEach(() => {
+      Object.defineProperty(globalThis, "navigator", {
+        value: savedNavigator,
+        writable: true,
+        configurable: true,
+      });
+    });
+
     it("writes text via navigator.clipboard.writeText", () => {
       const writeTextMock = mock(() => Promise.resolve());
       Object.defineProperty(globalThis, "navigator", {
-        value: { clipboard: { writeText: writeTextMock } },
+        value: { ...savedNavigator, clipboard: { writeText: writeTextMock } },
         writable: true,
         configurable: true,
       });
@@ -196,13 +298,25 @@ describe("SelectionManager", () => {
       const sm = new SelectionManager();
       sm.writeToClipboardText("hello\tworld");
       expect(writeTextMock).toHaveBeenCalledWith("hello\tworld");
+    });
 
-      // Cleanup
+    it("falls back to execCommand when clipboard API unavailable", () => {
       Object.defineProperty(globalThis, "navigator", {
-        value: {},
+        value: { ...savedNavigator, clipboard: undefined },
         writable: true,
         configurable: true,
       });
+      const origExecCommand = document.execCommand;
+      const execCommandMock = mock(() => true);
+      document.execCommand = execCommandMock as any;
+
+      const sm = new SelectionManager();
+      const container = document.createElement("div");
+      sm.attachClipboard(container);
+      sm.writeToClipboardText("test");
+      expect(execCommandMock).toHaveBeenCalledWith("copy");
+
+      document.execCommand = origExecCommand;
     });
   });
 

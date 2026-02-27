@@ -1,17 +1,13 @@
 import { describe, expect, it, mock } from "bun:test";
-import { EditorManager } from "../../adapter/editor-manager";
+import { renderHook, act } from "@testing-library/react";
+import { useEditing } from "../hooks/use-editing";
 import { ColumnRegistry } from "../../adapter/column-registry";
+import { SelectionManager } from "../../adapter/selection-manager";
 
-/**
- * Test editing logic extracted into useEditing.
- * Tests handleCellDoubleClick guard conditions and layout buffer lookup.
- */
-
-// Stride = 12 floats per cell (as per MEMORY.md pointer API)
-const STRIDE = 12;
+const STRIDE = 16;
 
 function makeLayoutBuf(
-  cells: { row: number; col: number; x: number; y: number; w: number; h: number; align: number }[],
+  cells: { row: number; col: number; x: number; y: number; w: number; h: number }[],
 ) {
   const buf = new Float32Array(cells.length * STRIDE);
   for (let i = 0; i < cells.length; i++) {
@@ -22,67 +18,124 @@ function makeLayoutBuf(
     buf[i * STRIDE + 3] = c.y;
     buf[i * STRIDE + 4] = c.w;
     buf[i * STRIDE + 5] = c.h;
-    buf[i * STRIDE + 6] = c.align;
   }
   return buf;
 }
 
-describe("useEditing logic", () => {
-  it("does not open editor for non-editor columns", () => {
-    const reg = new ColumnRegistry();
-    reg.setAll([{ id: "name", width: 100 }] as any);
+describe("useEditing (renderHook)", () => {
+  function setup(
+    cols: { id: string; width: number; editor?: string }[],
+    data: Record<string, unknown>[],
+    layoutBuf?: Float32Array,
+    headerCount = 1,
+  ) {
+    const registry = new ColumnRegistry();
+    registry.setAll(cols as any);
 
-    const col = reg.getAll()[0]!;
-    // No editor defined → should not open
-    expect(col.editor).toBeUndefined();
+    const sm = new SelectionManager();
+    const editorDiv = document.createElement("div");
+
+    return renderHook(() =>
+      useEditing({
+        editorRef: { current: editorDiv },
+        columnRegistry: registry,
+        data,
+        selectionManagerRef: { current: sm },
+        getLayoutBuf: () => layoutBuf ?? null,
+        getHeaderCount: () => headerCount,
+        getTotalCellCount: () => (layoutBuf ? layoutBuf.length / STRIDE : 0),
+      }),
+    );
+  }
+
+  it("returns editorManagerRef and handleCellDoubleClick", () => {
+    const { result } = setup([{ id: "name", width: 100, editor: "text" }], [{ name: "Alice" }]);
+    expect(result.current.editorManagerRef.current).toBeDefined();
+    expect(typeof result.current.handleCellDoubleClick).toBe("function");
   });
 
-  it("opens editor when column has editor type and layout found", () => {
-    const em = new EditorManager();
-    const openSpy = mock(() => {});
-    em.open = openSpy as any;
-
-    const reg = new ColumnRegistry();
-    reg.setAll([{ id: "name", width: 100, editor: "text" }] as any);
-
-    const data = [{ name: "Alice" }];
-    const coord = { row: 0, col: 0 };
-    const col = reg.getAll()[coord.col]!;
-
-    // Column has editor
-    expect(col.editor).toBe("text");
-
-    // Simulate layout buffer with 1 header + 1 data cell
+  it("opens editor on double-click when column has editor", () => {
     const buf = makeLayoutBuf([
-      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40, align: 0 }, // header
-      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36, align: 0 }, // data
+      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header
+      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data
     ]);
-    const headerCount = 1;
-    const totalCellCount = 2;
+    const { result } = setup(
+      [{ id: "name", width: 100, editor: "text" }],
+      [{ name: "Alice" }],
+      buf,
+    );
 
-    // Search for matching cell in buffer (mimics handleCellDoubleClick logic)
-    let layout: any;
-    for (let i = headerCount; i < totalCellCount; i++) {
-      if (buf[i * STRIDE + 0] === coord.row && buf[i * STRIDE + 1] === coord.col) {
-        layout = {
-          row: coord.row,
-          col: coord.col,
-          x: buf[i * STRIDE + 2],
-          y: buf[i * STRIDE + 3],
-          width: buf[i * STRIDE + 4],
-          height: buf[i * STRIDE + 5],
-        };
-        break;
-      }
-    }
-
-    expect(layout).toBeDefined();
-    em.open(coord, layout, col.editor!, data[coord.row]![col.id]);
-    expect(openSpy).toHaveBeenCalledTimes(1);
+    act(() => result.current.handleCellDoubleClick({ row: 0, col: 0 }));
+    expect(result.current.editorManagerRef.current.isEditing).toBe(true);
   });
 
-  it("module exports useEditing function", async () => {
-    const mod = await import("../hooks/use-editing");
-    expect(typeof mod.useEditing).toBe("function");
+  it("does not open editor for columns without editor prop", () => {
+    const buf = makeLayoutBuf([
+      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 },
+    ]);
+    const { result } = setup(
+      [{ id: "name", width: 100 }], // no editor
+      [{ name: "Alice" }],
+      buf,
+    );
+
+    act(() => result.current.handleCellDoubleClick({ row: 0, col: 0 }));
+    expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+  });
+
+  it("does not open editor when layout buffer is null", () => {
+    const { result } = setup(
+      [{ id: "name", width: 100, editor: "text" }],
+      [{ name: "Alice" }],
+      undefined, // no buffer
+    );
+
+    act(() => result.current.handleCellDoubleClick({ row: 0, col: 0 }));
+    expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+  });
+
+  it("does not open editor when row data is missing", () => {
+    const buf = makeLayoutBuf([
+      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+      { row: 5, col: 0, x: 0, y: 40, w: 100, h: 36 }, // row 5 doesn't exist in data
+    ]);
+    const { result } = setup(
+      [{ id: "name", width: 100, editor: "text" }],
+      [{ name: "Alice" }], // only row 0
+      buf,
+    );
+
+    act(() => result.current.handleCellDoubleClick({ row: 5, col: 0 }));
+    expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+  });
+
+  it("clears selection when editor opens", () => {
+    const buf = makeLayoutBuf([
+      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 },
+    ]);
+    const registry = new ColumnRegistry();
+    registry.setAll([{ id: "name", width: 100, editor: "text" }] as any);
+    const sm = new SelectionManager();
+    sm.start(0, 0);
+    sm.finish();
+    expect(sm.hasSelection).toBe(true);
+
+    const editorDiv = document.createElement("div");
+    const { result } = renderHook(() =>
+      useEditing({
+        editorRef: { current: editorDiv },
+        columnRegistry: registry,
+        data: [{ name: "Alice" }],
+        selectionManagerRef: { current: sm },
+        getLayoutBuf: () => buf,
+        getHeaderCount: () => 1,
+        getTotalCellCount: () => 2,
+      }),
+    );
+
+    act(() => result.current.handleCellDoubleClick({ row: 0, col: 0 }));
+    expect(sm.hasSelection).toBe(false);
   });
 });

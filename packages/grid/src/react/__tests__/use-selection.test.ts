@@ -1,170 +1,246 @@
-import { describe, expect, it, mock } from "bun:test";
-import type { NormalizedRange } from "../../types";
-import { SelectionManager } from "../../adapter/selection-manager";
+import { describe, expect, it, mock, beforeEach, afterEach } from "bun:test";
+import { renderHook, act } from "@testing-library/react";
+import { useSelection } from "../hooks/use-selection";
+import { ColumnRegistry } from "../../adapter/column-registry";
+import { MemoryBridge } from "../../adapter/memory-bridge";
+import { StringTable } from "../../adapter/string-table";
 
-/**
- * Test selection logic extracted into useSelection.
- * Tests the SelectionManager state machine and handler logic directly.
- */
+function makeRegistry(cols: { id: string; selectable?: boolean }[]) {
+  const reg = new ColumnRegistry();
+  reg.setAll(cols.map((c) => ({ ...c, width: 100 })) as any);
+  return reg;
+}
 
-describe("useSelection logic", () => {
-  describe("selection start/extend/finish cycle", () => {
-    it("start → extend → finish produces correct range", () => {
-      const sm = new SelectionManager();
-      sm.start(1, 0);
-      expect(sm.isDragging).toBe(true);
-      sm.extend(3, 2);
-      sm.finish();
-      expect(sm.isDragging).toBe(false);
-      const norm = sm.getNormalized();
-      expect(norm).toEqual({ minRow: 1, maxRow: 3, minCol: 0, maxCol: 2 });
+function makeCanvasRef() {
+  const canvas = document.createElement("canvas");
+  const parent = document.createElement("div");
+  parent.appendChild(canvas);
+  return { current: canvas } as React.RefObject<HTMLCanvasElement>;
+}
+
+function defaultParams(overrides?: Partial<Parameters<typeof useSelection>[0]>) {
+  const st = new StringTable();
+  return {
+    canvasRef: makeCanvasRef(),
+    enableSelection: true,
+    columnRegistry: makeRegistry([{ id: "name" }, { id: "age" }]),
+    invalidate: mock(() => {}),
+    getMemoryBridge: () => null,
+    getStringTable: () => st,
+    ...overrides,
+  };
+}
+
+describe("useSelection (renderHook)", () => {
+  describe("mousedown/move/up cycle", () => {
+    it("starts and finishes selection", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useSelection(params));
+
+      act(() => result.current.handleCellMouseDown({ row: 1, col: 0 }, false));
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(true);
+      expect(result.current.selectionManagerRef.current.isDragging).toBe(true);
+
+      act(() => result.current.handleCellMouseMove({ row: 3, col: 1 }));
+      act(() => result.current.handleCellMouseUp());
+
+      expect(result.current.selectionManagerRef.current.isDragging).toBe(false);
+      expect(result.current.selectionManagerRef.current.getNormalized()).toEqual({
+        minRow: 1,
+        maxRow: 3,
+        minCol: 0,
+        maxCol: 1,
+      });
     });
-  });
 
-  describe("Escape clears selection", () => {
-    it("clear removes selection", () => {
-      const sm = new SelectionManager();
-      sm.start(0, 0);
-      sm.finish();
-      expect(sm.hasSelection).toBe(true);
-      sm.clear();
-      expect(sm.hasSelection).toBe(false);
-      expect(sm.getNormalized()).toBeNull();
+    it("does not start selection when enableSelection is false", () => {
+      const params = defaultParams({ enableSelection: false });
+      const { result } = renderHook(() => useSelection(params));
+
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 0 }, false));
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(false);
+    });
+
+    it("respects selectable=false on columns", () => {
+      const params = defaultParams({
+        columnRegistry: makeRegistry([
+          { id: "name", selectable: true },
+          { id: "actions", selectable: false },
+        ]),
+      });
+      const { result } = renderHook(() => useSelection(params));
+
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 1 }, false));
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(false);
+
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 0 }, false));
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(true);
     });
   });
 
   describe("shift-click extends selection", () => {
-    it("extendTo updates the end of the range", () => {
-      const sm = new SelectionManager();
-      sm.start(0, 0);
-      sm.finish();
-      sm.extendTo(5, 3);
-      const norm = sm.getNormalized();
-      expect(norm).toEqual({ minRow: 0, maxRow: 5, minCol: 0, maxCol: 3 });
+    it("extends from anchor to new end", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useSelection(params));
+
+      act(() => result.current.handleCellMouseDown({ row: 1, col: 0 }, false));
+      act(() => result.current.handleCellMouseUp());
+
+      act(() => result.current.handleCellMouseDown({ row: 5, col: 2 }, true));
+      expect(result.current.selectionManagerRef.current.getNormalized()).toEqual({
+        minRow: 1,
+        maxRow: 5,
+        minCol: 0,
+        maxCol: 2,
+      });
     });
   });
 
-  describe("controlled sync", () => {
-    it("setRange overrides current selection", () => {
-      const sm = new SelectionManager();
-      sm.start(0, 0);
-      sm.finish();
-      sm.setRange({ startRow: 2, startCol: 1, endRow: 4, endCol: 3 });
-      expect(sm.getNormalized()).toEqual({ minRow: 2, maxRow: 4, minCol: 1, maxCol: 3 });
+  describe("Escape clears selection", () => {
+    it("clears on Escape keydown", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useSelection(params));
+
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 0 }, false));
+      act(() => result.current.handleCellMouseUp());
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(true);
+
+      act(() => result.current.handleKeyDown(new KeyboardEvent("keydown", { key: "Escape" })));
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(false);
     });
   });
 
-  describe("non-selectable column guard", () => {
-    it("handler respects selectable=false", () => {
-      // Simulates the handleCellMouseDown guard
-      const cols = [
-        { id: "a", selectable: true },
-        { id: "b", selectable: false },
-      ];
-      const sm = new SelectionManager();
+  describe("Ctrl+C copies selection", () => {
+    let savedNav: Navigator;
+    beforeEach(() => {
+      savedNav = globalThis.navigator;
+    });
+    afterEach(() => {
+      Object.defineProperty(globalThis, "navigator", {
+        value: savedNav,
+        writable: true,
+        configurable: true,
+      });
+    });
 
-      // Clicking col 1 (selectable=false) should be guarded
-      const coord = { row: 0, col: 1 };
-      if (cols[coord.col]?.selectable === false) {
-        // skip
-      } else {
-        sm.start(coord.row, coord.col);
-      }
-      expect(sm.hasSelection).toBe(false);
+    it("writes TSV to clipboard", () => {
+      const writeTextMock = mock(() => Promise.resolve());
+      Object.defineProperty(globalThis, "navigator", {
+        value: { ...savedNav, clipboard: { writeText: writeTextMock } },
+        writable: true,
+        configurable: true,
+      });
 
-      // Clicking col 0 (selectable=true) should proceed
-      const coord2 = { row: 0, col: 0 };
-      if (cols[coord2.col]?.selectable === false) {
-        // skip
-      } else {
-        sm.start(coord2.row, coord2.col);
-      }
-      expect(sm.hasSelection).toBe(true);
+      const st = new StringTable();
+      st.populate(
+        [
+          { name: "Alice", age: "30" },
+          { name: "Bob", age: "25" },
+        ] as Record<string, unknown>[],
+        ["name", "age"],
+      );
+      const params = defaultParams({ getStringTable: () => st });
+      const { result } = renderHook(() => useSelection(params));
+
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 0 }, false));
+      act(() => result.current.handleCellMouseMove({ row: 1, col: 1 }));
+      act(() => result.current.handleCellMouseUp());
+
+      act(() =>
+        result.current.handleKeyDown(new KeyboardEvent("keydown", { key: "c", ctrlKey: true })),
+      );
+
+      expect(writeTextMock).toHaveBeenCalled();
+      const written = writeTextMock.mock.calls[0]![0] as string;
+      expect(written).toContain("Alice");
+      expect(written).toContain("Bob");
+    });
+
+    it("uses onCopy override when provided", () => {
+      const writeTextMock = mock(() => Promise.resolve());
+      Object.defineProperty(globalThis, "navigator", {
+        value: { ...savedNav, clipboard: { writeText: writeTextMock } },
+        writable: true,
+        configurable: true,
+      });
+
+      const st = new StringTable();
+      st.populate([{ name: "Alice" }] as Record<string, unknown>[], ["name"]);
+      const onCopy = mock((_tsv: string) => "custom-text");
+      const params = defaultParams({ getStringTable: () => st, onCopy });
+      const { result } = renderHook(() => useSelection(params));
+
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 0 }, false));
+      act(() => result.current.handleCellMouseUp());
+
+      act(() =>
+        result.current.handleKeyDown(new KeyboardEvent("keydown", { key: "c", metaKey: true })),
+      );
+
+      expect(onCopy).toHaveBeenCalled();
+      expect(writeTextMock).toHaveBeenCalledWith("custom-text");
     });
   });
 
   describe("onBeforeSelectionChange guard", () => {
     it("returning false prevents selection start", () => {
-      const guard = mock((_next: NormalizedRange | null) => false as const);
-      const sm = new SelectionManager();
-      const coord = { row: 2, col: 1 };
-      const proposed = {
-        minRow: coord.row,
-        maxRow: coord.row,
-        minCol: coord.col,
-        maxCol: coord.col,
-      };
-      if (guard(proposed) === false) {
-        // skip
-      } else {
-        sm.start(coord.row, coord.col);
-      }
-      expect(sm.hasSelection).toBe(false);
-      expect(guard).toHaveBeenCalledWith({ minRow: 2, maxRow: 2, minCol: 1, maxCol: 1 });
+      const guard = mock(() => false as const);
+      const params = defaultParams({ onBeforeSelectionChange: guard });
+      const { result } = renderHook(() => useSelection(params));
+
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 0 }, false));
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(false);
+      expect(guard).toHaveBeenCalled();
     });
 
-    it("returning undefined allows selection normally", () => {
-      const guard = mock((_next: NormalizedRange | null) => undefined);
-      const sm = new SelectionManager();
-      const coord = { row: 0, col: 0 };
-      const proposed = {
-        minRow: coord.row,
-        maxRow: coord.row,
-        minCol: coord.col,
-        maxCol: coord.col,
-      };
-      if (guard(proposed) === false) {
-        // skip
-      } else {
-        sm.start(coord.row, coord.col);
-      }
-      expect(sm.hasSelection).toBe(true);
-    });
+    it("returning false prevents Escape clear", () => {
+      const guard = mock((next: unknown) => (next === null ? (false as const) : undefined));
+      const params = defaultParams({ onBeforeSelectionChange: guard });
+      const { result } = renderHook(() => useSelection(params));
 
-    it("returning false on Escape prevents clear", () => {
-      const guard = mock((_next: NormalizedRange | null) => false as const);
-      const sm = new SelectionManager();
-      sm.start(0, 0);
-      sm.finish();
-      expect(sm.hasSelection).toBe(true);
-      // Simulate Escape guard
-      if (guard(null) === false) {
-        // skip clear
-      } else {
-        sm.clear();
-      }
-      expect(sm.hasSelection).toBe(true);
-      expect(guard).toHaveBeenCalledWith(null);
-    });
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 0 }, false));
+      act(() => result.current.handleCellMouseUp());
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(true);
 
-    it("shift-click passes correct proposed range", () => {
-      const guard = mock((_next: NormalizedRange | null) => undefined);
-      const sm = new SelectionManager();
-      sm.start(1, 0);
-      sm.finish();
-      // Simulate shift-click at (3, 2)
-      const shiftKey = true;
-      const coord = { row: 3, col: 2 };
-      if (shiftKey && sm.hasSelection) {
-        const r = sm.getRange()!;
-        const proposed = {
-          minRow: Math.min(r.startRow, coord.row),
-          maxRow: Math.max(r.startRow, coord.row),
-          minCol: Math.min(r.startCol, coord.col),
-          maxCol: Math.max(r.startCol, coord.col),
-        };
-        if (guard(proposed) === false) {
-          // skip
-        } else {
-          sm.extendTo(coord.row, coord.col);
-        }
-      }
-      expect(guard).toHaveBeenCalledWith({ minRow: 1, maxRow: 3, minCol: 0, maxCol: 2 });
+      act(() => result.current.handleKeyDown(new KeyboardEvent("keydown", { key: "Escape" })));
+      // Guard returned false for null → selection preserved
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(true);
     });
   });
 
-  it("module exports useSelection function", async () => {
-    const mod = await import("../hooks/use-selection");
-    expect(typeof mod.useSelection).toBe("function");
+  describe("controlled mode (selectionProp)", () => {
+    it("syncs external selectionProp to SelectionManager", () => {
+      const params = defaultParams({
+        selectionProp: { minRow: 2, maxRow: 4, minCol: 0, maxCol: 1 },
+      });
+      const { result } = renderHook(() => useSelection(params));
+
+      const norm = result.current.selectionManagerRef.current.getNormalized();
+      expect(norm).toEqual({ minRow: 2, maxRow: 4, minCol: 0, maxCol: 1 });
+    });
+
+    it("clears selection when selectionProp becomes null", () => {
+      let selectionProp: any = { minRow: 0, maxRow: 0, minCol: 0, maxCol: 0 };
+      const params = defaultParams({ selectionProp });
+      const { result, rerender } = renderHook(() => useSelection({ ...params, selectionProp }));
+
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(true);
+
+      selectionProp = null;
+      rerender();
+      expect(result.current.selectionManagerRef.current.hasSelection).toBe(false);
+    });
+  });
+
+  describe("onSelectionChange callback", () => {
+    it("fires when selection changes", () => {
+      const onSelectionChange = mock(() => {});
+      const params = defaultParams({ onSelectionChange });
+      const { result } = renderHook(() => useSelection(params));
+
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 0 }, false));
+      // onSelectionChange fires via onDirty → invalidate → onSelectionChange
+      expect(onSelectionChange).toHaveBeenCalled();
+    });
   });
 });

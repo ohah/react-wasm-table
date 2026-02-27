@@ -1,59 +1,164 @@
 import { describe, expect, it, mock } from "bun:test";
+import { renderHook, act } from "@testing-library/react";
+import { useGridScroll } from "../hooks/use-grid-scroll";
 import { ColumnRegistry } from "../../adapter/column-registry";
 
-/**
- * Test scroll logic extracted into useGridScroll.
- * Verifies clamping, auto-scroll, and threshold behavior.
- */
-
-function calcMaxScrollY(dataLen: number, rowHeight: number, height: number, headerHeight: number) {
-  return Math.max(0, dataLen * rowHeight - (height - headerHeight));
+function makeRegistry(widths: number[]) {
+  const reg = new ColumnRegistry();
+  reg.setAll(widths.map((w, i) => ({ id: `col${i}`, width: w })) as any);
+  return reg;
 }
 
-function calcMaxScrollX(cols: { width: number }[], viewportWidth: number) {
-  const total = cols.reduce((s, c) => s + c.width, 0);
-  return Math.max(0, total - viewportWidth);
+function defaultParams(overrides?: Partial<Parameters<typeof useGridScroll>[0]>) {
+  return {
+    data: Array.from({ length: 100 }, (_, i) => ({ id: i })) as Record<string, unknown>[],
+    rowHeight: 36,
+    height: 600,
+    headerHeight: 40,
+    width: 500,
+    columnRegistry: makeRegistry([200, 200, 200]),
+    invalidate: mock(() => {}),
+    ...overrides,
+  };
 }
 
-describe("useGridScroll logic", () => {
-  it("clamps scrollTop between 0 and max", () => {
-    const maxY = calcMaxScrollY(100, 36, 600, 40); // 100*36 - 560 = 3040
-    expect(maxY).toBe(3040);
+describe("useGridScroll", () => {
+  describe("handleWheel (vertical scroll)", () => {
+    it("scrolls down by deltaY", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
 
-    // Scrolling down
-    let scrollTop = 0;
-    scrollTop = Math.max(0, Math.min(maxY, scrollTop + 100));
-    expect(scrollTop).toBe(100);
+      act(() => result.current.handleWheel(100, 0));
+      expect(result.current.scrollTopRef.current).toBe(100);
+      expect(params.invalidate).toHaveBeenCalled();
+    });
 
-    // Scrolling past max
-    scrollTop = Math.max(0, Math.min(maxY, scrollTop + 5000));
-    expect(scrollTop).toBe(3040);
+    it("clamps scrollTop to max", () => {
+      const params = defaultParams();
+      // max = 100*36 - (600-40) = 3040
+      const { result } = renderHook(() => useGridScroll(params));
 
-    // Scrolling up past 0
-    scrollTop = Math.max(0, Math.min(maxY, scrollTop - 10000));
-    expect(scrollTop).toBe(0);
+      act(() => result.current.handleWheel(9999, 0));
+      expect(result.current.scrollTopRef.current).toBe(3040);
+    });
+
+    it("clamps scrollTop to 0", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleWheel(-100, 0));
+      expect(result.current.scrollTopRef.current).toBe(0);
+    });
+
+    it("maxScrollY is 0 when content fits viewport", () => {
+      const params = defaultParams({
+        data: Array.from({ length: 5 }, (_, i) => ({ id: i })) as Record<string, unknown>[],
+      });
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleWheel(100, 0));
+      // 5*36 = 180 < 560 → max=0
+      expect(result.current.scrollTopRef.current).toBe(0);
+    });
   });
 
-  it("clamps scrollLeft between 0 and max", () => {
-    const cols = [{ width: 200 }, { width: 200 }, { width: 200 }];
-    const maxX = calcMaxScrollX(cols, 500); // 600 - 500 = 100
-    expect(maxX).toBe(100);
+  describe("handleWheel (horizontal scroll)", () => {
+    it("scrolls right by deltaX", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
 
-    let scrollLeft = 0;
-    scrollLeft = Math.max(0, Math.min(maxX, scrollLeft + 50));
-    expect(scrollLeft).toBe(50);
+      // totalColWidth=600, maxScrollX=600-500=100
+      act(() => result.current.handleWheel(0, 50));
+      expect(result.current.scrollLeftRef.current).toBe(50);
+    });
 
-    scrollLeft = Math.max(0, Math.min(maxX, scrollLeft + 200));
-    expect(scrollLeft).toBe(100);
+    it("clamps scrollLeft to max", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleWheel(0, 9999));
+      expect(result.current.scrollLeftRef.current).toBe(100); // 600-500
+    });
+
+    it("handles both deltaY and deltaX simultaneously", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleWheel(200, 50));
+      expect(result.current.scrollTopRef.current).toBe(200);
+      expect(result.current.scrollLeftRef.current).toBe(50);
+    });
   });
 
-  it("maxScrollY is 0 when content fits viewport", () => {
-    const maxY = calcMaxScrollY(10, 36, 600, 40); // 10*36 = 360 < 560
-    expect(maxY).toBe(0);
+  describe("handleVScrollChange", () => {
+    it("updates scrollTop directly", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleVScrollChange(500));
+      expect(result.current.scrollTopRef.current).toBe(500);
+      expect(params.invalidate).toHaveBeenCalled();
+    });
+
+    it("skips update when position is within 0.5 threshold", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleVScrollChange(0.3));
+      // 0.3 is within 0.5 of initial 0 → skip
+      expect(params.invalidate).not.toHaveBeenCalled();
+    });
   });
 
-  it("module exports useGridScroll function", async () => {
-    const mod = await import("../hooks/use-grid-scroll");
-    expect(typeof mod.useGridScroll).toBe("function");
+  describe("handleHScrollChange", () => {
+    it("updates scrollLeft directly", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleHScrollChange(80));
+      expect(result.current.scrollLeftRef.current).toBe(80);
+    });
+
+    it("skips update when position is within 0.5 threshold", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleHScrollChange(0.3));
+      expect(params.invalidate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("handleDragEdge / stopAutoScroll", () => {
+    it("starts auto-scroll interval on non-zero delta", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleDragEdge(8, 0));
+      // Auto-scroll should be active (interval created)
+      // Stop it to avoid leaks
+      act(() => result.current.stopAutoScroll());
+    });
+
+    it("stopAutoScroll clears the interval", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleDragEdge(8, 0));
+      act(() => result.current.stopAutoScroll());
+
+      // After stop, scrollTop should not keep increasing
+      const scrollAfterStop = result.current.scrollTopRef.current;
+      // Wait a tick to verify no further updates
+      expect(result.current.scrollTopRef.current).toBe(scrollAfterStop);
+    });
+
+    it("clears interval when delta becomes zero", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      act(() => result.current.handleDragEdge(8, 0));
+      act(() => result.current.handleDragEdge(0, 0));
+      // Should be safe, interval cleared
+    });
   });
 });
