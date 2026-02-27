@@ -602,8 +602,11 @@ fn hash_opt_grid_line<H: Hasher>(h: &mut H, v: &Option<GridLineValue>) {
 fn hash_track_size<H: Hasher>(h: &mut H, v: &TrackSizeValue) {
     std::mem::discriminant(v).hash(h);
     match v {
-        TrackSizeValue::Length(f) | TrackSizeValue::Percent(f) | TrackSizeValue::Fr(f)
-        | TrackSizeValue::FitContentPx(f) | TrackSizeValue::FitContentPercent(f) => hash_f32(h, *f),
+        TrackSizeValue::Length(f)
+        | TrackSizeValue::Percent(f)
+        | TrackSizeValue::Fr(f)
+        | TrackSizeValue::FitContentPx(f)
+        | TrackSizeValue::FitContentPercent(f) => hash_f32(h, *f),
         TrackSizeValue::MinMax(a, b) => {
             hash_track_size(h, a);
             hash_track_size(h, b);
@@ -660,9 +663,13 @@ fn hash_container<H: Hasher>(h: &mut H, c: &ContainerLayout) {
     std::mem::discriminant(&c.flex_wrap).hash(h);
     hash_length(h, &c.gap);
     c.row_gap.is_some().hash(h);
-    if let Some(ref rg) = c.row_gap { hash_length(h, rg); }
+    if let Some(ref rg) = c.row_gap {
+        hash_length(h, rg);
+    }
     c.column_gap.is_some().hash(h);
-    if let Some(ref cg) = c.column_gap { hash_length(h, cg); }
+    if let Some(ref cg) = c.column_gap {
+        hash_length(h, cg);
+    }
     hash_opt_align(h, &c.align_items);
     hash_opt_align(h, &c.align_content);
     hash_opt_align(h, &c.justify_content);
@@ -673,13 +680,21 @@ fn hash_container<H: Hasher>(h: &mut H, c: &ContainerLayout) {
     hash_length_auto_rect(h, &c.margin);
     hash_length_rect(h, &c.border);
     c.grid_template_rows.len().hash(h);
-    for item in &c.grid_template_rows { hash_track_list_item(h, item); }
+    for item in &c.grid_template_rows {
+        hash_track_list_item(h, item);
+    }
     c.grid_template_columns.len().hash(h);
-    for item in &c.grid_template_columns { hash_track_list_item(h, item); }
+    for item in &c.grid_template_columns {
+        hash_track_list_item(h, item);
+    }
     c.grid_auto_rows.len().hash(h);
-    for ts in &c.grid_auto_rows { hash_track_size(h, ts); }
+    for ts in &c.grid_auto_rows {
+        hash_track_size(h, ts);
+    }
     c.grid_auto_columns.len().hash(h);
-    for ts in &c.grid_auto_columns { hash_track_size(h, ts); }
+    for ts in &c.grid_auto_columns {
+        hash_track_size(h, ts);
+    }
     std::mem::discriminant(&c.grid_auto_flow).hash(h);
     hash_opt_align(h, &c.justify_items);
 }
@@ -3552,13 +3567,11 @@ mod tests {
         let columns = vec![col(200.0, Align::Left), col(100.0, Align::Right)];
         let container = default_container();
 
-        let (pos1, h1) =
-            engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
+        let (pos1, h1) = engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
         assert!(engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0));
 
         // Second call with identical inputs should return same result (from cache)
-        let (pos2, h2) =
-            engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
+        let (pos2, h2) = engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
         assert_eq!(pos1.len(), pos2.len());
         for (a, b) in pos1.iter().zip(pos2.iter()) {
             assert!((a.x - b.x).abs() < f32::EPSILON);
@@ -3653,6 +3666,9 @@ mod tests {
         // One of the previous two should be evicted
         let both_present = engine.cache_contains(&columns, &container, 600.0, 40.0, 20.0)
             && engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0);
-        assert!(!both_present, "one of the two original entries should have been evicted");
+        assert!(
+            !both_present,
+            "one of the two original entries should have been evicted"
+        );
     }
 }

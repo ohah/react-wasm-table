@@ -18,7 +18,12 @@ import {
   createGridCanvasEvent,
   createGridTouchEvent,
 } from "../../event-helpers";
-import { composeMiddleware, type EventMiddleware, type EventChannel, type GridEvent } from "../../event-middleware";
+import {
+  composeMiddleware,
+  type EventMiddleware,
+  type EventChannel,
+  type GridEvent,
+} from "../../event-middleware";
 
 export interface UseEventAttachmentParams {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;

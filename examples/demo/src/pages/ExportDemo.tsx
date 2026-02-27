@@ -85,7 +85,11 @@ export function ExportDemo() {
 
   const doDownload = useCallback(() => {
     if (!output) return;
-    const mimeTypes = { csv: "text/csv", tsv: "text/tab-separated-values", json: "application/json" };
+    const mimeTypes = {
+      csv: "text/csv",
+      tsv: "text/tab-separated-values",
+      json: "application/json",
+    };
     const blob = new Blob([output], { type: mimeTypes[format] });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -151,7 +155,8 @@ export function ExportDemo() {
           {/* Column selection */}
           <div>
             <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>
-              Columns {selectedColumns.length > 0 ? `(${selectedColumns.length} selected)` : "(all)"}
+              Columns{" "}
+              {selectedColumns.length > 0 ? `(${selectedColumns.length} selected)` : "(all)"}
             </div>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               {allColumnIds.map((id) => (

@@ -390,18 +390,21 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | Column Ordering State (2-1)   | State    | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ❌ |
 | Expanding State (2-2)         | State    | getExpandedRowModel ✅, getGroupedRowModel ❌            |
 | Column Visibility State (2-3) | State    | resolveColumns에서 hidden 컬럼 제외                      |
+| Data Access API (4-1)         | Utility  | exportToCSV/TSV/JSON + ExportOptions. 20 테스트          |
+| Event System 미들웨어 (1-3)   | Core     | composeMiddleware + GridProps.eventMiddleware. 8 테스트  |
+| Layout Cache (5-3)            | Perf     | 2-slot LRU Rust 캐시 + invalidateLayout() API. 6 테스트  |
 
 ---
 
 ## 구현 순서 (남은 항목)
 
-### Tier 1 — 기존 기반 확장 (독립적, 빠르게 완성 가능)
+### Tier 1 — 기존 기반 확장 ✅ (완료)
 
-| 순서 | 항목                  | 참조 | 상태 | 이유                                                                                         |
-| ---- | --------------------- | ---- | ---- | -------------------------------------------------------------------------------------------- |
-| 1    | Data Access API       | 4-1  | 🔧   | `getRowModel()`, `getRow()` 이미 존재. `exportToCSV()` 등 얇은 헬퍼만 추가. 의존성 없음      |
-| 2    | Event System 미들웨어 | 1-3  | 🔧   | 기본 콜백(onClick, onScroll 등) 동작 중. 미들웨어 체인 패턴 래핑 작업. 의존성 없음           |
-| 3    | Layout Cache          | 5-3  | ❌   | MemoryBridge에 generation 기반 무효화 존재. 부분 계산 최적화 + `invalidateLayout()` API 노출 |
+| 순서 | 항목                  | 참조 | 상태 | 이유                                                                                       |
+| ---- | --------------------- | ---- | ---- | ------------------------------------------------------------------------------------------ |
+| 1    | Data Access API       | 4-1  | ✅   | `exportToCSV()`, `exportToTSV()`, `exportToJSON()` 헬퍼 + `ExportOptions` 제공. 20 테스트  |
+| 2    | Event System 미들웨어 | 1-3  | ✅   | `composeMiddleware()` + `EventMiddleware` 타입. `GridProps.eventMiddleware` prop. 8 테스트 |
+| 3    | Layout Cache          | 5-3  | ✅   | 2-slot LRU 캐시 (Rust), 해시 기반 무효화, `invalidateLayout()` WASM 바인딩. 6 Rust 테스트  |
 
 ### Tier 2 — 렌더링 파이프라인 (순서 의존성 있음, 순차 진행 필수)
 
@@ -412,12 +415,12 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | 6    | Virtual Canvas Region    | 3-3      | ❌   | Layer System 위에 left/scrollable/right 3개 region 분리. Pinning의 실제 구현체            |
 | 7    | Pinning 렌더링           | 1-2 잔여 | ❌   | Virtual Canvas Region이 있으면 `columnPinning` state를 region에 매핑하는 것만 남음        |
 
-### Tier 3 — 유틸리티 (Tier 1 이후 언제든 가능)
+### Tier 3 — 유틸리티 (Tier 2와 독립, 언제든 가능)
 
-| 순서 | 항목                | 참조     | 상태 | 이유                                                                                       |
-| ---- | ------------------- | -------- | ---- | ------------------------------------------------------------------------------------------ |
-| 8    | Clipboard Utilities | 4-2      | ❌   | Data Access API(1번) 완성 후 진행. `buildTSV()` 존재하므로 포맷 확장 + onCopy/onPaste 연결 |
-| 9    | getGroupedRowModel  | 2-2 잔여 | ❌   | Row Model 인프라 위에 추가. 독립적이지만 그룹핑 로직 자체가 복잡 (aggregate 함수 등)       |
+| 순서 | 항목                | 참조     | 상태 | 이유                                                                                   |
+| ---- | ------------------- | -------- | ---- | -------------------------------------------------------------------------------------- |
+| 8    | Clipboard Utilities | 4-2      | ❌   | Data Access API(✅) 위에 진행. `buildTSV()` 존재하므로 포맷 확장 + onCopy/onPaste 연결 |
+| 9    | getGroupedRowModel  | 2-2 잔여 | ❌   | Row Model 인프라 위에 추가. 독립적이지만 그룹핑 로직 자체가 복잡 (aggregate 함수 등)   |
 
 ### Tier 4 — 고급 성능 (아키텍처 변경, 기존 기능 안정 후 마지막)
 
@@ -429,9 +432,9 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 ### 의존성 그래프
 
 ```
-1. Data Access API ──────────→ 8. Clipboard Utilities
-2. Event System 미들웨어 (독립)
-3. Layout Cache (독립)
+1. Data Access API ✅ ───────→ 8. Clipboard Utilities
+2. Event System 미들웨어 ✅
+3. Layout Cache ✅
 4. Custom Cell Renderer ──→ 5. Layer System ──→ 6. Virtual Canvas Region ──→ 7. Pinning 렌더링
 9. getGroupedRowModel (독립, 복잡도 높음)
 10. Worker Bridge ──→ 11. Streaming Data (시너지)
