@@ -1,9 +1,10 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import type {
   WasmTableEngine,
   Theme,
   CellLayout,
   SelectionStyle,
+  AfterDrawContext,
   CssDisplay,
   CssFlexDirection,
   CssFlexWrap,
@@ -95,7 +96,6 @@ export interface UseRenderLoopParams {
   eventManagerRef: React.RefObject<EventManager>;
   scrollTopRef: React.RefObject<number>;
   scrollLeftRef: React.RefObject<number>;
-  dirtyRef: React.MutableRefObject<boolean>;
   vScrollbarRef: React.RefObject<HTMLDivElement | null>;
   hScrollbarRef: React.RefObject<HTMLDivElement | null>;
   containerProps: ContainerLayoutProps;
@@ -105,6 +105,7 @@ export interface UseRenderLoopParams {
   headerHeight: number;
   onLayoutComputed: (buf: Float32Array, headerCount: number, totalCellCount: number) => void;
   onVisStartComputed: (visStart: number) => void;
+  onAfterDraw?: (ctx: AfterDrawContext) => void;
 }
 
 export function useRenderLoop({
@@ -122,7 +123,6 @@ export function useRenderLoop({
   eventManagerRef,
   scrollTopRef,
   scrollLeftRef,
-  dirtyRef,
   vScrollbarRef,
   hScrollbarRef,
   containerProps,
@@ -132,10 +132,21 @@ export function useRenderLoop({
   headerHeight,
   onLayoutComputed,
   onVisStartComputed,
+  onAfterDraw,
 }: UseRenderLoopParams) {
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const instructionBuilderRef = useRef(new InstructionBuilder());
   const rafRef = useRef<number>(0);
+
+  // Internal dirty flag + invalidate (owned by this hook)
+  const dirtyRef = useRef(true);
+  const invalidate = useCallback(() => {
+    dirtyRef.current = true;
+  }, []);
+
+  // Ref-wrap onAfterDraw to avoid effect restarts
+  const onAfterDrawRef = useRef(onAfterDraw);
+  onAfterDrawRef.current = onAfterDraw;
 
   // Attach canvas renderer
   useEffect(() => {
@@ -431,6 +442,19 @@ export function useRenderLoop({
           ctx.restore();
         }
 
+        // onAfterDraw callback (viewport space — after ctx.restore)
+        if (onAfterDrawRef.current && ctx) {
+          onAfterDrawRef.current({
+            ctx,
+            width,
+            height,
+            scrollTop: scrollTopRef.current,
+            scrollLeft,
+            headerHeight,
+            rowHeight,
+          });
+        }
+
         // Sync native scrollbar positions (canvas wheel → scrollbar DOM)
         syncScrollBarPosition(vScrollbarRef.current, scrollTopRef.current, "vertical");
         syncScrollBarPosition(hScrollbarRef.current, scrollLeftRef.current, "horizontal");
@@ -452,7 +476,6 @@ export function useRenderLoop({
     eventManagerRef,
     scrollTopRef,
     scrollLeftRef,
-    dirtyRef,
     vScrollbarRef,
     hScrollbarRef,
     /* layout */
@@ -472,4 +495,6 @@ export function useRenderLoop({
     onLayoutComputed,
     onVisStartComputed,
   ]);
+
+  return { invalidate };
 }

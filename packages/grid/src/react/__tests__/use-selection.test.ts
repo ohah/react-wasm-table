@@ -2,7 +2,7 @@ import { describe, expect, it, mock, beforeEach, afterEach } from "bun:test";
 import { renderHook, act } from "@testing-library/react";
 import { useSelection } from "../hooks/use-selection";
 import { ColumnRegistry } from "../../adapter/column-registry";
-import { MemoryBridge } from "../../adapter/memory-bridge";
+import { SelectionManager } from "../../adapter/selection-manager";
 import { StringTable } from "../../adapter/string-table";
 
 function makeRegistry(cols: { id: string; selectable?: boolean }[]) {
@@ -229,6 +229,23 @@ describe("useSelection (renderHook)", () => {
       selectionProp = null;
       rerender();
       expect(result.current.selectionManagerRef.current.hasSelection).toBe(false);
+    });
+  });
+
+  describe("selectionManager DI (Step 0-5)", () => {
+    it("uses injected SelectionManager when provided", () => {
+      const external = new SelectionManager();
+      const params = defaultParams({ selectionManager: external });
+      const { result } = renderHook(() => useSelection(params));
+
+      expect(result.current.selectionManagerRef.current).toBe(external);
+    });
+
+    it("creates internal SelectionManager when not provided", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useSelection(params));
+
+      expect(result.current.selectionManagerRef.current).toBeInstanceOf(SelectionManager);
     });
   });
 

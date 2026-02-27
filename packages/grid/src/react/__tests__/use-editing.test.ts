@@ -2,6 +2,7 @@ import { describe, expect, it, mock } from "bun:test";
 import { renderHook, act } from "@testing-library/react";
 import { useEditing } from "../hooks/use-editing";
 import { ColumnRegistry } from "../../adapter/column-registry";
+import { EditorManager } from "../../adapter/editor-manager";
 import { SelectionManager } from "../../adapter/selection-manager";
 
 const STRIDE = 16;
@@ -108,6 +109,35 @@ describe("useEditing (renderHook)", () => {
 
     act(() => result.current.handleCellDoubleClick({ row: 5, col: 0 }));
     expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+  });
+
+  describe("editorManager DI (Step 0-5)", () => {
+    it("uses injected EditorManager when provided", () => {
+      const external = new EditorManager();
+      const { result } = setup([{ id: "name", width: 100, editor: "text" }], [{ name: "Alice" }]);
+
+      // Default: creates internal
+      expect(result.current.editorManagerRef.current).toBeInstanceOf(EditorManager);
+
+      // With DI
+      const registry = new ColumnRegistry();
+      registry.setAll([{ id: "name", width: 100, editor: "text" }] as any);
+      const sm = new SelectionManager();
+      const editorDiv = document.createElement("div");
+      const { result: diResult } = renderHook(() =>
+        useEditing({
+          editorRef: { current: editorDiv },
+          columnRegistry: registry,
+          data: [{ name: "Alice" }],
+          selectionManagerRef: { current: sm },
+          getLayoutBuf: () => null,
+          getHeaderCount: () => 0,
+          getTotalCellCount: () => 0,
+          editorManager: external,
+        }),
+      );
+      expect(diResult.current.editorManagerRef.current).toBe(external);
+    });
   });
 
   it("clears selection when editor opens", () => {

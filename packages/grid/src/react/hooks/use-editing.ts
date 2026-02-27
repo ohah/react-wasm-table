@@ -21,6 +21,7 @@ export interface UseEditingParams {
   getLayoutBuf: () => Float32Array | null;
   getHeaderCount: () => number;
   getTotalCellCount: () => number;
+  editorManager?: EditorManager;
 }
 
 export function useEditing({
@@ -31,8 +32,9 @@ export function useEditing({
   getLayoutBuf,
   getHeaderCount,
   getTotalCellCount,
+  editorManager,
 }: UseEditingParams) {
-  const editorManagerRef = useRef(new EditorManager());
+  const editorManagerRef = useRef(editorManager ?? new EditorManager());
 
   // Set editor container
   useEffect(() => {

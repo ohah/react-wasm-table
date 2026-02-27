@@ -18,6 +18,8 @@ const sections = [
       { to: "/hooks/sorting", label: "useSorting" },
       { to: "/hooks/selection", label: "useSelection" },
       { to: "/hooks/composition", label: "Composition" },
+      { to: "/hooks/after-draw", label: "onAfterDraw" },
+      { to: "/hooks/adapter-di", label: "Adapter DI" },
     ],
   },
   {

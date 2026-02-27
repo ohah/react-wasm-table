@@ -17,6 +17,7 @@ export interface UseSelectionParams {
   invalidate: () => void;
   getMemoryBridge: () => MemoryBridge | null;
   getStringTable: () => StringTable;
+  selectionManager?: SelectionManager;
 }
 
 export function useSelection({
@@ -31,8 +32,9 @@ export function useSelection({
   invalidate,
   getMemoryBridge,
   getStringTable,
+  selectionManager,
 }: UseSelectionParams) {
-  const selectionManagerRef = useRef(new SelectionManager());
+  const selectionManagerRef = useRef(selectionManager ?? new SelectionManager());
   const selectionEnabledRef = useRef(enableSelection);
   selectionEnabledRef.current = enableSelection;
 
