@@ -10,11 +10,11 @@ export interface UseSelectionParams {
   enableSelection: boolean;
   selectionProp?: NormalizedRange | null;
   onSelectionChange?: (selection: NormalizedRange | null) => void;
+  onBeforeSelectionChange?: (next: NormalizedRange | null) => boolean | void;
   onCopy?: (tsv: string, range: NormalizedRange) => string | void;
   onPaste?: (text: string, target: CellCoord) => void;
   columnRegistry: ColumnRegistry;
   invalidate: () => void;
-  getVisStart: () => number;
   getMemoryBridge: () => MemoryBridge | null;
   getStringTable: () => StringTable;
 }
@@ -24,11 +24,11 @@ export function useSelection({
   enableSelection,
   selectionProp,
   onSelectionChange,
+  onBeforeSelectionChange,
   onCopy,
   onPaste,
   columnRegistry,
   invalidate,
-  getVisStart,
   getMemoryBridge,
   getStringTable,
 }: UseSelectionParams) {
@@ -73,13 +73,26 @@ export function useSelection({
       const cols = columnRegistry.getAll();
       if (cols[coord.col]?.selectable === false) return;
       const sm = selectionManagerRef.current;
+      let proposed: NormalizedRange;
+      if (shiftKey && sm.hasSelection) {
+        const r = sm.getRange()!;
+        proposed = {
+          minRow: Math.min(r.startRow, coord.row),
+          maxRow: Math.max(r.startRow, coord.row),
+          minCol: Math.min(r.startCol, coord.col),
+          maxCol: Math.max(r.startCol, coord.col),
+        };
+      } else {
+        proposed = { minRow: coord.row, maxRow: coord.row, minCol: coord.col, maxCol: coord.col };
+      }
+      if (onBeforeSelectionChange?.(proposed) === false) return;
       if (shiftKey && sm.hasSelection) {
         sm.extendTo(coord.row, coord.col);
       } else {
         sm.start(coord.row, coord.col);
       }
     },
-    [columnRegistry],
+    [columnRegistry, onBeforeSelectionChange],
   );
 
   const handleCellMouseMove = useCallback((coord: CellCoord) => {
@@ -102,9 +115,8 @@ export function useSelection({
         if (!norm) return;
         const viewIndices = getMemoryBridge()?.getViewIndices();
         const strTable = getStringTable();
-        const visStart = getVisStart();
         const getText = (viewRow: number, col: number) => {
-          const actualRow = viewIndices?.[viewRow - visStart] ?? viewRow;
+          const actualRow = viewIndices?.[viewRow] ?? viewRow;
           return strTable.get(col, actualRow);
         };
         const tsv = buildTSV(norm, getText);
@@ -115,9 +127,12 @@ export function useSelection({
         // Paste stub: read clipboard and delegate to onPaste callback
         // Full implementation is future work
       }
-      if (e.key === "Escape") sm.clear();
+      if (e.key === "Escape") {
+        if (onBeforeSelectionChange?.(null) === false) return;
+        sm.clear();
+      }
     },
-    [onCopy, onPaste, getMemoryBridge, getStringTable, getVisStart],
+    [onCopy, onPaste, onBeforeSelectionChange, getMemoryBridge, getStringTable],
   );
 
   return {

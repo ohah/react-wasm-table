@@ -63,54 +63,51 @@ Grid.tsx의 로직을 **독립 hook**으로 추출. Grid는 조합기(thin shell
 
 **테스트**: 기존 343개 → 378개 (hook별 8개 테스트 파일 추가). E2E 회귀 0건.
 
-### Step 0-1b. Hook 데모 페이지 추가 (TODO)
+### Step 0-1b. Hook 데모 페이지 추가 ✅ 완료
 
 Step 0-1에서 추출한 hook들을 데모앱에서 활용하는 예제 페이지 작성.
 각 hook의 독립 사용 가능성과 조합 패턴을 시각적으로 보여준다.
 
-**추가할 페이지 목록**:
+**구현된 페이지 목록**:
 
-1. **`HooksOverview`** — 전체 hook 구성도와 데이터 흐름을 보여주는 인덱스 페이지
-   - Grid.tsx thin shell 구조 다이어그램
-   - 각 hook 페이지로의 링크
+1. **`HooksOverview`** (`/hooks`) — 전체 hook 구성도와 데이터 흐름을 보여주는 인덱스 페이지
+   - Grid.tsx thin shell 구조 다이어그램 (ASCII)
+   - 각 hook 데모 페이지로의 카드 링크
+   - 5가지 설계 원칙 표시
 
-2. **`UseWasmEngineDemo`** — `useWasmEngine` 단독 사용 예제
-   - engine 초기화 상태 표시 (loading → ready)
-   - `engineRef`를 통한 외부 접근 (debug log 토글)
-   - 여러 Grid가 engine을 공유하는 시나리오 (미래 Step 0-2 프리뷰)
-
-3. **`UseSortingDemo`** — `useSorting` controlled/uncontrolled 비교
+2. **`UseSortingDemo`** (`/hooks/sorting`) — `useSorting` controlled/uncontrolled 비교
    - Uncontrolled: Grid 내부 상태로 동작
-   - Controlled: 외부 `useState`로 정렬 상태 관리, 정렬 히스토리 UI
-   - multi-column sort 제한 (최대 2컬럼) 같은 커스텀 로직 데모
+   - Controlled: 외부 `useState`로 정렬 상태 관리 + 정렬 히스토리 UI
+   - `onBeforeSortChange` 가드: max N컬럼 정렬 제한 (드롭다운 선택)
 
-4. **`UseSelectionDemo`** — `useSelection` 고급 사용 예제
-   - Controlled selection: 외부에서 selection range 주입
-   - onCopy 커스텀: TSV 대신 JSON으로 복사
-   - selectable: false 컬럼 혼합 시나리오
+3. **`UseSelectionDemo`** (`/hooks/selection`) — `useSelection` 고급 사용 예제
+   - Controlled selection: 외부에서 selection range 주입 (버튼으로 프로그래매틱 조작)
+   - `onBeforeSelectionChange` 가드: 특정 행까지만 선택 허용
+   - `onCopy` 커스텀: TSV 대신 JSON으로 복사 (드롭다운 선택)
+   - `enableSelection`: per-column selectable 토글
 
-5. **`UseGridScrollDemo`** — `useGridScroll` 스크롤 커스텀 예제
-   - 프로그래매틱 스크롤 (버튼 클릭으로 특정 행으로 이동)
-   - 스크롤 위치 실시간 표시 (scrollTop, scrollLeft)
-   - auto-scroll 동작 시각화
+4. **`HookCompositionDemo`** (`/hooks/composition`) — hook 조합 패턴 예제
+   - Grid + 외부 hook 상태 연동 (정렬+선택 상태를 외부 패널에 실시간 표시)
+   - 선택 범위의 salary 통계 (avg/min/max/total) 계산
+   - 이벤트 로그 패널 (cellClick, headerClick, sortChange, selectionChange)
 
-6. **`HookCompositionDemo`** — hook 조합 패턴 예제
-   - Grid 없이 hook만으로 커스텀 테이블 빌드 (headless 패턴 프리뷰)
-   - 또는 Grid + 외부 hook 상태 연동 (정렬+선택 상태를 외부 패널에 표시)
+5. **`EventCallbacks`** (`/event-callbacks`) — Step 0-3 이벤트 콜백 데모
+   - 6개 콜백 각각 블로킹 토글 체크박스
+   - 실시간 이벤트 로그 (PASS/BLOCKED 상태 표시)
+   - 코드 스니펫 실시간 업데이트
 
-**대상 파일**:
+**변경 파일**:
 
 - `examples/demo/src/pages/HooksOverview.tsx` — 신규
 - `examples/demo/src/pages/UseSortingDemo.tsx` — 신규
 - `examples/demo/src/pages/UseSelectionDemo.tsx` — 신규
-- `examples/demo/src/pages/UseGridScrollDemo.tsx` — 신규
 - `examples/demo/src/pages/HookCompositionDemo.tsx` — 신규
-- `examples/demo/src/App.tsx` — 사이드바에 Hooks 섹션 추가
-- `examples/demo/src/routes.ts` — 라우트 등록
+- `examples/demo/src/pages/EventCallbacks.tsx` — 신규
+- `examples/demo/src/App.tsx` — 5개 라우트 추가
+- `examples/demo/src/components/Sidebar.tsx` — Hooks 섹션 + Event Callbacks 링크 추가
 
-**우선순위**: Phase 0의 나머지 Step(0-2 ~ 0-5) 진행 전에 완료하면
-hook API의 사용성 피드백을 데모 페이지 제작 과정에서 얻을 수 있다.
-단, 반드시 선행은 아님 — 병렬 진행 가능.
+**참고**: UseWasmEngineDemo, UseGridScrollDemo는 현재 hook이 내부 전용(비공개)이라
+Grid props를 통해서만 접근 가능. Phase 0-5(Adapter DI) 완료 후 외부 접근이 열리면 추가 예정.
 
 ### Step 0-2. WasmContext 제거 (TanStack 스타일) ✅ 완료
 
@@ -139,16 +136,16 @@ WASM 초기화는 Grid 내부의 구현 세부사항으로 유지하고, 외부�
 - 공개 API에서 `WasmContext`, `useWasm` export 제거
 - `useWasmEngine`은 Grid 내부 hook으로만 유지 (비공개)
 
-### Step 0-3. 이벤트 콜백 개방
+### Step 0-3. 이벤트 콜백 개방 ✅ 완료
 
 Grid의 하드코딩된 이벤트 핸들러에 사용자 콜백 레이어 추가.
 
 ```tsx
 <Grid
   // 셀/헤더 이벤트 — hit-test 결과 포함
-  onCellClick={(coord, event) => { ... }}
-  onCellDoubleClick={(coord, event) => { ... }}
-  onHeaderClick={(colIndex, event) => { ... }}
+  onCellClick={(coord) => { ... }}
+  onCellDoubleClick={(coord) => { ... }}
+  onHeaderClick={(colIndex) => { ... }}
   onKeyDown={(event) => { ... }}
 
   // 기본 동작 제어
@@ -164,10 +161,21 @@ Grid의 하드코딩된 이벤트 핸들러에 사용자 콜백 레이어 추가
 - 사용자 콜백이 있으면 먼저 실행, `false` 반환 시 기본 동작 스킵
 - breaking change 없음
 
-**대상 파일**:
+**구현 결과:**
 
-- `packages/grid/src/react/Grid.tsx` — 이벤트 핸들러에 콜백 레이어 추가
-- `packages/grid/src/types.ts` — 이벤트 콜백 타입 추가
+- 6개 콜백 prop 추가: `onCellClick`, `onCellDoubleClick`, `onHeaderClick`, `onKeyDown`, `onBeforeSortChange`, `onBeforeSelectionChange`
+- `use-event-attachment.ts` — ref 패턴으로 4개 이벤트 콜백 주입 (재attach 방지)
+- `use-sorting.ts` — `onBeforeSortChange` 가드 (next 계산 후, 상태 변경 전)
+- `use-selection.ts` — `onBeforeSelectionChange` 가드 (mouseDown + Escape)
+- 13개 신규 테스트 추가, 391개 전체 테스트 pass, E2E 회귀 0건
+
+**변경 파일**:
+
+- `packages/grid/src/types.ts` — GridProps에 6개 콜백 타입 추가
+- `packages/grid/src/react/Grid.tsx` — prop 배선
+- `packages/grid/src/react/hooks/use-sorting.ts` — onBeforeSortChange 가드
+- `packages/grid/src/react/hooks/use-selection.ts` — onBeforeSelectionChange 가드
+- `packages/grid/src/react/hooks/use-event-attachment.ts` — 4개 이벤트 콜백 ref 패턴
 
 ### Step 0-4. 렌더 루프 추출
 
@@ -225,11 +233,13 @@ const mySelectionManager = new SelectionManager();
 ### 리팩토링 순서 & 안전장치
 
 ```
-Step 0-1 (Hook 추출)     ← 가장 큰 변경, 먼저 진행
+Step 0-1 (Hook 추출)      ✅ 완료
   ↓
-Step 0-2 (WASM Provider)  ← 0-1의 useWasmEngine 기반
+Step 0-1b (Hook 데모)     ✅ 완료
   ↓
-Step 0-3 (이벤트 개방)     ← 0-1의 useEventHandlers 기반
+Step 0-2 (WASM Provider)  ✅ 완료
+  ↓
+Step 0-3 (이벤트 개방)     ✅ 완료
   ↓
 Step 0-4 (렌더 루프 추출)  ← 0-1의 useRenderLoop 기반
   ↓

@@ -400,8 +400,7 @@ export function useRenderLoop({
           dataCount,
           (cellIdx: number) => {
             const col = columns[readCellCol(layoutBuf, cellIdx)];
-            const rowViewIdx = readCellRow(layoutBuf, cellIdx) - visStart;
-            const actualRow = viewIndices[rowViewIdx] ?? 0;
+            const actualRow = viewIndices[readCellRow(layoutBuf, cellIdx)] ?? 0;
             // Use InstructionBuilder for custom renderers, direct JS read for plain text
             if (col?.children) {
               const value = data[actualRow]?.[col.id];

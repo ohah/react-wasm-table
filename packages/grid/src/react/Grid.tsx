@@ -35,6 +35,13 @@ export function Grid({
   // TanStack-compatible sorting
   sorting: sortingProp,
   onSortingChange: onSortingChangeProp,
+  // Event callbacks (Step 0-3)
+  onCellClick: onCellClickProp,
+  onCellDoubleClick: onCellDoubleClickProp,
+  onHeaderClick: onHeaderClickProp,
+  onKeyDown: onKeyDownProp,
+  onBeforeSortChange,
+  onBeforeSelectionChange,
   // Selection (controlled/uncontrolled)
   enableSelection: enableSelectionProp = true,
   selection: selectionProp,
@@ -133,6 +140,7 @@ export function Grid({
     columnRegistry,
     sortingProp,
     onSortingChange: onSortingChangeProp,
+    onBeforeSortChange,
     initialSorting: initialState?.sorting,
     invalidate,
   });
@@ -145,7 +153,6 @@ export function Grid({
     headerHeight,
     invalidate,
   });
-  const getVisStart = useCallback(() => visStartRef.current, []);
   const getMemoryBridge = useCallback(() => memoryBridgeRef.current, []);
   const getStringTable = useCallback(() => stringTableRef.current, []);
 
@@ -160,11 +167,11 @@ export function Grid({
     enableSelection: enableSelectionProp,
     selectionProp,
     onSelectionChange: onSelectionChangeProp,
+    onBeforeSelectionChange,
     onCopy: onCopyProp,
     onPaste: onPasteProp,
     columnRegistry,
     invalidate,
-    getVisStart,
     getMemoryBridge,
     getStringTable,
   });
@@ -200,6 +207,10 @@ export function Grid({
       handleKeyDown,
       stopAutoScroll,
     },
+    onCellClick: onCellClickProp,
+    onCellDoubleClick: onCellDoubleClickProp,
+    onHeaderClick: onHeaderClickProp,
+    onKeyDown: onKeyDownProp,
     rowHeight,
     headerHeight,
     height,
@@ -371,6 +382,7 @@ export function Grid({
             contentSize={totalContentHeight}
             viewportSize={height}
             onScrollChange={handleVScrollChange}
+            style={showHorizontalScrollbar ? { height: `calc(100% - 17px)` } : undefined}
           />
         )}
         {showHorizontalScrollbar && (
@@ -380,6 +392,7 @@ export function Grid({
             contentSize={totalContentWidth}
             viewportSize={width}
             onScrollChange={handleHScrollChange}
+            style={showVerticalScrollbar ? { width: `calc(100% - 17px)` } : undefined}
           />
         )}
         {!columnsProp && children}

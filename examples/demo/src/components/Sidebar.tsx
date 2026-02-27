@@ -8,6 +8,16 @@ const sections = [
       { to: "/stress-test", label: "Stress Test (1M rows)" },
       { to: "/tanstack-api", label: "TanStack API" },
       { to: "/selection", label: "Selection" },
+      { to: "/event-callbacks", label: "Event Callbacks" },
+    ],
+  },
+  {
+    title: "Hooks",
+    links: [
+      { to: "/hooks", label: "Overview" },
+      { to: "/hooks/sorting", label: "useSorting" },
+      { to: "/hooks/selection", label: "useSelection" },
+      { to: "/hooks/composition", label: "Composition" },
     ],
   },
   {
