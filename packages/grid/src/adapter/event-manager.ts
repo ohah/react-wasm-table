@@ -196,6 +196,7 @@ export class EventManager {
       "mousemove",
       (e: MouseEvent) => {
         if (!(e.buttons & 1)) return; // left button not held
+        if (!this.mouseDownPos) return; // drag didn't start on this canvas
 
         const rect = canvas.getBoundingClientRect();
         const viewportX = e.clientX - rect.left;
@@ -243,6 +244,7 @@ export class EventManager {
     window.addEventListener(
       "mouseup",
       () => {
+        if (!this.mouseDownPos && !this.mouseDragActive) return; // not our drag
         this.mouseDownPos = null;
         this.mouseDragActive = false;
         handlers.onCellMouseUp?.();

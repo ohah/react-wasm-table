@@ -121,8 +121,12 @@ describe("EventManager", () => {
       em.setLayouts([], rowLayouts);
       em.attach(canvas, { onCellMouseMove: onMouseMove });
 
+      // mousedown first to register drag origin
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
       window.dispatchEvent(
-        new MouseEvent("mousemove", { clientX: 50, clientY: 10, buttons: 1, bubbles: true }),
+        new MouseEvent("mousemove", { clientX: 56, clientY: 10, buttons: 1, bubbles: true }),
       );
       expect(onMouseMove).toHaveBeenCalledTimes(1);
     });
@@ -139,6 +143,19 @@ describe("EventManager", () => {
       expect(onMouseMove).not.toHaveBeenCalled();
     });
 
+    it("does not fire when drag started on another canvas", () => {
+      const onMouseMove = mock(() => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCellMouseMove: onMouseMove });
+
+      // No mousedown on this canvas — simulate drag from elsewhere
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 50, clientY: 10, buttons: 1, bubbles: true }),
+      );
+      expect(onMouseMove).not.toHaveBeenCalled();
+    });
+
     it("fires onCellMouseMove with nearest cell when mouse outside data area", () => {
       const onMouseMove = mock(() => {});
       // Cell at y=40..76, mouse at y=200 (below cells)
@@ -146,6 +163,10 @@ describe("EventManager", () => {
       em.setLayouts([], rowLayouts);
       em.attach(canvas, { onCellMouseMove: onMouseMove });
 
+      // mousedown first to register drag origin
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 50, bubbles: true }),
+      );
       window.dispatchEvent(
         new MouseEvent("mousemove", { clientX: 50, clientY: 200, buttons: 1, bubbles: true }),
       );
@@ -238,12 +259,25 @@ describe("EventManager", () => {
   });
 
   describe("mouseup handler", () => {
-    it("fires onCellMouseUp on window mouseup", () => {
+    it("fires onCellMouseUp on window mouseup after mousedown", () => {
       const onMouseUp = mock(() => {});
       em.attach(canvas, { onCellMouseUp: onMouseUp });
 
+      // mousedown first to register this canvas as drag origin
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
       window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
       expect(onMouseUp).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not fire onCellMouseUp when drag started elsewhere", () => {
+      const onMouseUp = mock(() => {});
+      em.attach(canvas, { onCellMouseUp: onMouseUp });
+
+      // No mousedown on this canvas
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      expect(onMouseUp).not.toHaveBeenCalled();
     });
   });
 
@@ -270,9 +304,12 @@ describe("EventManager", () => {
       em.setLayouts([], rowLayouts);
       em.attach(canvas, {});
 
-      // Trigger mousemove on window to store viewport position
+      // mousedown + mousemove to store viewport position
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
       window.dispatchEvent(
-        new MouseEvent("mousemove", { clientX: 50, clientY: 10, buttons: 1, bubbles: true }),
+        new MouseEvent("mousemove", { clientX: 56, clientY: 10, buttons: 1, bubbles: true }),
       );
 
       // Now update layouts (simulating auto-scroll re-layout) and re-hit-test
@@ -288,14 +325,17 @@ describe("EventManager", () => {
       em.setScrollOffset(0);
       em.attach(canvas, {});
 
-      // Mouse at viewport x=50, cell at content x=500. nearest-cell clamps so it hits.
-      window.dispatchEvent(
-        new MouseEvent("mousemove", { clientX: 50, clientY: 10, buttons: 1, bubbles: true }),
+      // mousedown + mousemove to store viewport position
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
       );
-      // Without scrollLeft, viewport x=50 clamps to the single cell
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 56, clientY: 10, buttons: 1, bubbles: true }),
+      );
+      // Without scrollLeft, viewport x=56 clamps to the single cell via nearest
       expect(em.hitTestAtLastPos()).toEqual({ row: 0, col: 0 });
 
-      // With scrollLeft=480, content x=50+480=530 which is exact hit
+      // With scrollLeft=480, content x=56+480=536 which is exact hit
       em.setScrollOffset(480);
       const hit = em.hitTestAtLastPos();
       expect(hit).toEqual({ row: 0, col: 0 });
@@ -307,7 +347,10 @@ describe("EventManager", () => {
       em.setLayouts([], rowLayouts);
       em.attach(canvas, {});
 
-      // Mouse at y=200 (below cell area)
+      // mousedown + mousemove (y=200 is below cell area)
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 50, bubbles: true }),
+      );
       window.dispatchEvent(
         new MouseEvent("mousemove", { clientX: 50, clientY: 200, buttons: 1, bubbles: true }),
       );

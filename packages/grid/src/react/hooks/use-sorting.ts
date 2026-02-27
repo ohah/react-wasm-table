@@ -8,6 +8,7 @@ export interface UseSortingParams {
   columnRegistry: ColumnRegistry;
   sortingProp?: SortingState;
   onSortingChange?: (sorting: SortingState) => void;
+  onBeforeSortChange?: (next: SortingState) => boolean | void;
   initialSorting?: SortingState;
   invalidate: () => void;
 }
@@ -17,6 +18,7 @@ export function useSorting({
   columnRegistry,
   sortingProp,
   onSortingChange,
+  onBeforeSortChange,
   initialSorting,
   invalidate,
 }: UseSortingParams) {
@@ -39,6 +41,7 @@ export function useSorting({
       } else {
         next = [];
       }
+      if (onBeforeSortChange?.(next) === false) return;
       if (onSortingChange) {
         onSortingChange(next);
       } else {
@@ -57,7 +60,7 @@ export function useSorting({
       }
       invalidate();
     },
-    [engine, columnRegistry, sorting, onSortingChange, invalidate],
+    [engine, columnRegistry, sorting, onSortingChange, onBeforeSortChange, invalidate],
   );
 
   return { sorting, handleHeaderClick };

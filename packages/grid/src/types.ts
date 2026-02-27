@@ -365,6 +365,20 @@ export interface GridProps extends BoxModelProps {
   /** Paste handler stub. Called on Ctrl/Cmd+V with clipboard text and target cell. */
   onPaste?: (text: string, target: CellCoord) => void;
 
+  // Event callbacks (Step 0-3)
+  /** Called on cell click. Return `false` to skip editor cancel. */
+  onCellClick?: (coord: CellCoord) => void | false;
+  /** Called on cell double-click. Return `false` to skip editing. */
+  onCellDoubleClick?: (coord: CellCoord) => void | false;
+  /** Called on header click. Return `false` to skip sorting. */
+  onHeaderClick?: (colIndex: number) => void | false;
+  /** Called on key down. Return `false` to skip default handling. */
+  onKeyDown?: (event: KeyboardEvent) => void | false;
+  /** Called before sorting changes. Return `false` to cancel sort. */
+  onBeforeSortChange?: (next: import("./tanstack-types").SortingState) => boolean | void;
+  /** Called before selection changes. Return `false` to cancel selection. */
+  onBeforeSelectionChange?: (next: NormalizedRange | null) => boolean | void;
+
   /** Enable cell selection. @default true */
   enableSelection?: boolean;
   /** Initial state for uncontrolled mode. */

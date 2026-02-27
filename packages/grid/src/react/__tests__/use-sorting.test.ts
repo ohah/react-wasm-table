@@ -26,6 +26,7 @@ function simulateHeaderClick(
   sorting: { id: string; desc: boolean }[],
   colIndex: number,
   onSortingChange?: (s: any) => void,
+  onBeforeSortChange?: (next: any) => boolean | void,
 ) {
   if (!engine) return { next: sorting, called: false };
   const columns = registry.getAll();
@@ -41,6 +42,8 @@ function simulateHeaderClick(
   } else {
     next = [];
   }
+
+  if (onBeforeSortChange?.(next) === false) return { next: sorting, called: false, guarded: true };
 
   if (onSortingChange) {
     onSortingChange(next);
@@ -121,5 +124,37 @@ describe("useSorting logic", () => {
     result = simulateHeaderClick(engine, registry, sorting, 1);
     sorting = result.next;
     expect(sorting).toEqual([{ id: "age", desc: false }]);
+  });
+
+  describe("onBeforeSortChange guard", () => {
+    it("returning false prevents sort and engine call", () => {
+      const guard = mock(() => false as const);
+      const result = simulateHeaderClick(engine, registry, [], 0, undefined, guard);
+      expect(result.guarded).toBe(true);
+      expect(result.called).toBe(false);
+      expect(engine.setColumnarSort).not.toHaveBeenCalled();
+      expect(guard).toHaveBeenCalledWith([{ id: "name", desc: false }]);
+    });
+
+    it("returning undefined allows sort normally", () => {
+      const guard = mock(() => undefined);
+      const result = simulateHeaderClick(engine, registry, [], 0, undefined, guard);
+      expect(result.called).toBe(true);
+      expect(result.next).toEqual([{ id: "name", desc: false }]);
+      expect(engine.setColumnarSort).toHaveBeenCalled();
+    });
+
+    it("receives correct next value", () => {
+      const guard = mock(() => {});
+      simulateHeaderClick(engine, registry, [{ id: "name", desc: false }], 0, undefined, guard);
+      expect(guard).toHaveBeenCalledWith([{ id: "name", desc: true }]);
+    });
+
+    it("not called for non-sortable columns", () => {
+      const guard = mock(() => false as const);
+      registry = makeRegistry([{ id: "name", sortable: false }]);
+      simulateHeaderClick(engine, registry, [], 0, undefined, guard);
+      expect(guard).not.toHaveBeenCalled();
+    });
   });
 });

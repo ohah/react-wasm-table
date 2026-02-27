@@ -17,6 +17,11 @@ import { GridTemplate } from "./pages/GridTemplate";
 import { Scrollbar } from "./pages/Scrollbar";
 import { Selection } from "./pages/Selection";
 import { StressTest } from "./pages/StressTest";
+import { EventCallbacks } from "./pages/EventCallbacks";
+import { HooksOverview } from "./pages/HooksOverview";
+import { UseSortingDemo } from "./pages/UseSortingDemo";
+import { UseSelectionDemo } from "./pages/UseSelectionDemo";
+import { HookCompositionDemo } from "./pages/HookCompositionDemo";
 import { FpsCounter } from "./components/FpsCounter";
 
 setWasmUrl("/react_wasm_table_wasm_bg.wasm");
@@ -44,6 +49,11 @@ export function App() {
           <Route path="/scrollbar" element={<Scrollbar />} />
           <Route path="/selection" element={<Selection />} />
           <Route path="/stress-test" element={<StressTest />} />
+          <Route path="/event-callbacks" element={<EventCallbacks />} />
+          <Route path="/hooks" element={<HooksOverview />} />
+          <Route path="/hooks/sorting" element={<UseSortingDemo />} />
+          <Route path="/hooks/selection" element={<UseSelectionDemo />} />
+          <Route path="/hooks/composition" element={<HookCompositionDemo />} />
         </Routes>
       </main>
     </div>

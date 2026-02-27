@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { CellCoord } from "../../types";
 import type { EventManager } from "../../adapter/event-manager";
 import type { EditorManager } from "../../adapter/editor-manager";
@@ -18,6 +18,10 @@ export interface UseEventAttachmentParams {
     handleKeyDown: (e: KeyboardEvent) => void;
     stopAutoScroll: () => void;
   };
+  onCellClick?: (coord: CellCoord) => void | false;
+  onCellDoubleClick?: (coord: CellCoord) => void | false;
+  onHeaderClick?: (colIndex: number) => void | false;
+  onKeyDown?: (event: KeyboardEvent) => void | false;
   rowHeight: number;
   headerHeight: number;
   height: number;
@@ -28,10 +32,24 @@ export function useEventAttachment({
   eventManagerRef,
   editorManagerRef,
   handlers,
+  onCellClick,
+  onCellDoubleClick,
+  onHeaderClick,
+  onKeyDown,
   rowHeight,
   headerHeight,
   height,
 }: UseEventAttachmentParams) {
+  // Ref pattern: stable identity across renders, no re-attach on callback change
+  const onCellClickRef = useRef(onCellClick);
+  const onCellDoubleClickRef = useRef(onCellDoubleClick);
+  const onHeaderClickRef = useRef(onHeaderClick);
+  const onKeyDownRef = useRef(onKeyDown);
+  onCellClickRef.current = onCellClick;
+  onCellDoubleClickRef.current = onCellDoubleClick;
+  onHeaderClickRef.current = onHeaderClick;
+  onKeyDownRef.current = onKeyDown;
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const em = eventManagerRef.current;
@@ -40,13 +58,20 @@ export function useEventAttachment({
     em.attach(
       canvas,
       {
-        onHeaderClick: handlers.handleHeaderClick,
-        onCellClick: () => {
+        onHeaderClick: (colIndex) => {
+          if (onHeaderClickRef.current?.(colIndex) === false) return;
+          handlers.handleHeaderClick(colIndex);
+        },
+        onCellClick: (coord) => {
+          if (onCellClickRef.current?.(coord) === false) return;
           if (editorManagerRef.current.isEditing) {
             editorManagerRef.current.cancel();
           }
         },
-        onCellDoubleClick: handlers.handleCellDoubleClick,
+        onCellDoubleClick: (coord) => {
+          if (onCellDoubleClickRef.current?.(coord) === false) return;
+          handlers.handleCellDoubleClick(coord);
+        },
         onCellMouseDown: (coord, shiftKey) => {
           if (editorManagerRef.current.isEditing) editorManagerRef.current.cancel();
           handlers.handleCellMouseDown(coord, shiftKey);
@@ -57,7 +82,10 @@ export function useEventAttachment({
           handlers.handleCellMouseUp();
           handlers.stopAutoScroll();
         },
-        onKeyDown: handlers.handleKeyDown,
+        onKeyDown: (e) => {
+          if (onKeyDownRef.current?.(e) === false) return;
+          handlers.handleKeyDown(e);
+        },
         onScroll: handlers.handleWheel,
       },
       { lineHeight: rowHeight, pageHeight: height - headerHeight },
