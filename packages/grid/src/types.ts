@@ -550,6 +550,9 @@ export interface GridProps extends BoxModelProps {
   /** Custom cell renderers merged with built-ins. Same type → override. */
   cellRenderers?: import("./renderer/cell-renderer").CellRenderer<any>[];
 
+  /** Custom layer stack. Replaces default draw pipeline when provided. */
+  layers?: import("./renderer/layer").GridLayer[];
+
   /** Called before sorting changes. Return `false` to cancel sort. */
   onBeforeSortChange?: (next: import("./tanstack-types").SortingState) => boolean | void;
   /** Called before selection changes. Return `false` to cancel selection. */
