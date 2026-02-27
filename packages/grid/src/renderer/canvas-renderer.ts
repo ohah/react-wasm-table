@@ -1,5 +1,6 @@
 import type { NormalizedRange, RenderInstruction, SelectionStyle, Theme } from "../types";
-import { drawTextCellFromBuffer, drawBadgeFromBuffer } from "./draw-primitives";
+import type { CellRendererRegistry } from "./cell-renderer";
+import { drawTextCellFromBuffer } from "./draw-primitives";
 import {
   computeHeaderLinesFromBuffer,
   computeDataLinesFromBuffer,
@@ -105,6 +106,7 @@ export class CanvasRenderer {
     getInstruction: (cellIdx: number) => RenderInstruction | undefined,
     theme: Theme,
     rowHeight: number,
+    rendererRegistry?: CellRendererRegistry,
   ): void {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || count === 0) return;
@@ -133,44 +135,14 @@ export class CanvasRenderer {
       ctx.fillRect(0, bounds.y, canvasW, bounds.h);
     }
 
-    // Draw cell contents
+    // Draw cell contents via registry dispatch
     for (let i = start; i < start + count; i++) {
       const instruction = getInstruction(i);
       if (!instruction) continue;
 
-      switch (instruction.type) {
-        case "text":
-          drawTextCellFromBuffer(ctx, buf, i, instruction.value, {
-            color: instruction.style?.color ?? theme.cellColor,
-            fontWeight: instruction.style?.fontWeight ?? "normal",
-            fontSize: instruction.style?.fontSize ?? theme.fontSize,
-          });
-          break;
-        case "badge":
-          drawBadgeFromBuffer(ctx, buf, i, instruction.value, instruction.style);
-          break;
-        case "stub":
-          drawTextCellFromBuffer(ctx, buf, i, `[${instruction.component}]`, {
-            color: "#999",
-            fontWeight: "normal",
-            fontSize: theme.fontSize,
-          });
-          break;
-        case "flex":
-          // Render first child as fallback; full flex layout is future work
-          if (instruction.children.length > 0) {
-            const first = instruction.children[0]!;
-            if (first.type === "text") {
-              drawTextCellFromBuffer(ctx, buf, i, first.value, {
-                color: first.style?.color ?? theme.cellColor,
-                fontWeight: first.style?.fontWeight ?? "normal",
-                fontSize: first.style?.fontSize ?? theme.fontSize,
-              });
-            } else if (first.type === "badge") {
-              drawBadgeFromBuffer(ctx, buf, i, first.value, first.style);
-            }
-          }
-          break;
+      const renderer = rendererRegistry?.get(instruction.type);
+      if (renderer) {
+        renderer.draw(instruction, { ctx, buf, cellIdx: i, theme });
       }
     }
   }
