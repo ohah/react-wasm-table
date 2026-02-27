@@ -62,9 +62,13 @@ export function useSelection({
   }, [canvasRef, onSelectionChange, invalidate]);
 
   // Sync controlled selection prop → SelectionManager
+  // Skip during drag: the manager owns the range while dragging, and
+  // feeding NormalizedRange (min/max) back via setRange would destroy the
+  // original anchor (start != min when dragging upward/leftward).
   useEffect(() => {
     if (selectionProp === undefined) return; // uncontrolled
     const sm = selectionManagerRef.current;
+    if (sm.isDragging) return; // don't overwrite anchor mid-drag
     if (selectionProp === null) {
       sm.clear();
     } else {
