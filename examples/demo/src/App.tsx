@@ -28,6 +28,9 @@ import { AdapterDIDemo } from "./pages/AdapterDIDemo";
 import { ColumnFeatures } from "./pages/ColumnFeatures";
 import { ExpandingDemo } from "./pages/ExpandingDemo";
 import { TouchEventsDemo } from "./pages/TouchEventsDemo";
+import { ExportDemo } from "./pages/ExportDemo";
+import { MiddlewareDemo } from "./pages/MiddlewareDemo";
+import { LayoutCacheDemo } from "./pages/LayoutCacheDemo";
 import { FpsCounter } from "./components/FpsCounter";
 
 setWasmUrl("/react_wasm_table_wasm_bg.wasm");
@@ -66,6 +69,9 @@ export function App() {
           <Route path="/column-features" element={<ColumnFeatures />} />
           <Route path="/expanding" element={<ExpandingDemo />} />
           <Route path="/touch-events" element={<TouchEventsDemo />} />
+          <Route path="/export" element={<ExportDemo />} />
+          <Route path="/event-middleware" element={<MiddlewareDemo />} />
+          <Route path="/layout-cache" element={<LayoutCacheDemo />} />
         </Routes>
       </main>
     </div>

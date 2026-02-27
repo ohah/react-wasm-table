@@ -269,6 +269,14 @@ impl TableEngine {
         vec![indices.as_ptr() as usize, indices.len()]
     }
 
+    // ── Layout cache ──────────────────────────────────────────────
+
+    /// Invalidate cached layout results. Forces recomputation on next frame.
+    #[wasm_bindgen(js_name = invalidateLayout)]
+    pub fn invalidate_layout(&mut self) {
+        self.layout.invalidate_cache();
+    }
+
     // ── Debug logging ──────────────────────────────────────────────
 
     /// Initialize console_log backend and enable Debug-level logging.

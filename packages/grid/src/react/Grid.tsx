@@ -64,6 +64,7 @@ export function Grid({
   onTouchStart: onTouchStartProp,
   onTouchMove: onTouchMoveProp,
   onTouchEnd: onTouchEndProp,
+  eventMiddleware: eventMiddlewareProp,
   onBeforeSortChange,
   onBeforeSelectionChange,
   // Selection (controlled/uncontrolled)
@@ -300,6 +301,7 @@ export function Grid({
     onTouchStart: onTouchStartProp,
     onTouchMove: onTouchMoveProp,
     onTouchEnd: onTouchEndProp,
+    eventMiddleware: eventMiddlewareProp,
     rowHeight,
     headerHeight,
     height,

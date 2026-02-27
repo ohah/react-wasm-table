@@ -1,3 +1,5 @@
+use std::hash::{Hash, Hasher};
+
 use taffy::prelude::*;
 use taffy::{GridAutoFlow, GridTemplateRepetition, MinMax, Overflow, Point, TaffyTree};
 
@@ -515,9 +517,201 @@ const fn grid_auto_flow_to_taffy(v: GridAutoFlowValue) -> GridAutoFlow {
     }
 }
 
+/// Cached result from `compute_column_positions`.
+#[derive(Clone)]
+struct ColumnLayoutCache {
+    key: u64,
+    positions: Vec<ColumnPosition>,
+    effective_height: f32,
+}
+
+/// Hash an f32 by its bit pattern.
+fn hash_f32<H: Hasher>(h: &mut H, v: f32) {
+    v.to_bits().hash(h);
+}
+
+fn hash_opt_f32<H: Hasher>(h: &mut H, v: Option<f32>) {
+    v.is_some().hash(h);
+    if let Some(f) = v {
+        hash_f32(h, f);
+    }
+}
+
+fn hash_dimension<H: Hasher>(h: &mut H, v: &DimensionValue) {
+    std::mem::discriminant(v).hash(h);
+    match v {
+        DimensionValue::Length(f) | DimensionValue::Percent(f) => hash_f32(h, *f),
+        DimensionValue::Auto => {}
+    }
+}
+
+fn hash_length<H: Hasher>(h: &mut H, v: &LengthValue) {
+    std::mem::discriminant(v).hash(h);
+    match v {
+        LengthValue::Length(f) | LengthValue::Percent(f) => hash_f32(h, *f),
+        LengthValue::Zero => {}
+    }
+}
+
+fn hash_length_auto<H: Hasher>(h: &mut H, v: &LengthAutoValue) {
+    std::mem::discriminant(v).hash(h);
+    match v {
+        LengthAutoValue::Length(f) | LengthAutoValue::Percent(f) => hash_f32(h, *f),
+        LengthAutoValue::Auto => {}
+    }
+}
+
+fn hash_length_rect<H: Hasher>(h: &mut H, r: &RectValue<LengthValue>) {
+    hash_length(h, &r.top);
+    hash_length(h, &r.right);
+    hash_length(h, &r.bottom);
+    hash_length(h, &r.left);
+}
+
+fn hash_length_auto_rect<H: Hasher>(h: &mut H, r: &RectValue<LengthAutoValue>) {
+    hash_length_auto(h, &r.top);
+    hash_length_auto(h, &r.right);
+    hash_length_auto(h, &r.bottom);
+    hash_length_auto(h, &r.left);
+}
+
+fn hash_opt_align<H: Hasher>(h: &mut H, v: &Option<AlignValue>) {
+    v.is_some().hash(h);
+    if let Some(a) = v {
+        std::mem::discriminant(a).hash(h);
+    }
+}
+
+fn hash_grid_placement<H: Hasher>(h: &mut H, v: &GridPlacementValue) {
+    std::mem::discriminant(v).hash(h);
+    match v {
+        GridPlacementValue::Line(n) => n.hash(h),
+        GridPlacementValue::Span(n) => n.hash(h),
+        GridPlacementValue::Auto => {}
+    }
+}
+
+fn hash_opt_grid_line<H: Hasher>(h: &mut H, v: &Option<GridLineValue>) {
+    v.is_some().hash(h);
+    if let Some(gl) = v {
+        hash_grid_placement(h, &gl.start);
+        hash_grid_placement(h, &gl.end);
+    }
+}
+
+fn hash_track_size<H: Hasher>(h: &mut H, v: &TrackSizeValue) {
+    std::mem::discriminant(v).hash(h);
+    match v {
+        TrackSizeValue::Length(f) | TrackSizeValue::Percent(f) | TrackSizeValue::Fr(f)
+        | TrackSizeValue::FitContentPx(f) | TrackSizeValue::FitContentPercent(f) => hash_f32(h, *f),
+        TrackSizeValue::MinMax(a, b) => {
+            hash_track_size(h, a);
+            hash_track_size(h, b);
+        }
+        TrackSizeValue::Auto | TrackSizeValue::MinContent | TrackSizeValue::MaxContent => {}
+    }
+}
+
+fn hash_track_list_item<H: Hasher>(h: &mut H, item: &TrackListItem) {
+    std::mem::discriminant(item).hash(h);
+    match item {
+        TrackListItem::Single(ts) => hash_track_size(h, ts),
+        TrackListItem::Repeat(rep, sizes) => {
+            std::mem::discriminant(rep).hash(h);
+            match rep {
+                RepeatValue::Count(n) => n.hash(h),
+                RepeatValue::AutoFill | RepeatValue::AutoFit => {}
+            }
+            sizes.len().hash(h);
+            for s in sizes {
+                hash_track_size(h, s);
+            }
+        }
+    }
+}
+
+fn hash_column<H: Hasher>(h: &mut H, col: &ColumnLayout) {
+    hash_f32(h, col.width);
+    hash_f32(h, col.flex_grow);
+    hash_f32(h, col.flex_shrink);
+    hash_opt_f32(h, col.min_width);
+    hash_opt_f32(h, col.max_width);
+    std::mem::discriminant(&col.align).hash(h);
+    hash_dimension(h, &col.flex_basis);
+    hash_dimension(h, &col.height);
+    hash_dimension(h, &col.min_height);
+    hash_dimension(h, &col.max_height);
+    hash_opt_align(h, &col.align_self);
+    hash_length_rect(h, &col.padding);
+    hash_length_auto_rect(h, &col.margin);
+    hash_length_rect(h, &col.border);
+    std::mem::discriminant(&col.box_sizing).hash(h);
+    hash_opt_f32(h, col.aspect_ratio);
+    std::mem::discriminant(&col.position).hash(h);
+    hash_length_auto_rect(h, &col.inset);
+    hash_opt_grid_line(h, &col.grid_row);
+    hash_opt_grid_line(h, &col.grid_column);
+    hash_opt_align(h, &col.justify_self);
+}
+
+fn hash_container<H: Hasher>(h: &mut H, c: &ContainerLayout) {
+    std::mem::discriminant(&c.display).hash(h);
+    std::mem::discriminant(&c.flex_direction).hash(h);
+    std::mem::discriminant(&c.flex_wrap).hash(h);
+    hash_length(h, &c.gap);
+    c.row_gap.is_some().hash(h);
+    if let Some(ref rg) = c.row_gap { hash_length(h, rg); }
+    c.column_gap.is_some().hash(h);
+    if let Some(ref cg) = c.column_gap { hash_length(h, cg); }
+    hash_opt_align(h, &c.align_items);
+    hash_opt_align(h, &c.align_content);
+    hash_opt_align(h, &c.justify_content);
+    std::mem::discriminant(&c.overflow_x).hash(h);
+    std::mem::discriminant(&c.overflow_y).hash(h);
+    hash_f32(h, c.scrollbar_width);
+    hash_length_rect(h, &c.padding);
+    hash_length_auto_rect(h, &c.margin);
+    hash_length_rect(h, &c.border);
+    c.grid_template_rows.len().hash(h);
+    for item in &c.grid_template_rows { hash_track_list_item(h, item); }
+    c.grid_template_columns.len().hash(h);
+    for item in &c.grid_template_columns { hash_track_list_item(h, item); }
+    c.grid_auto_rows.len().hash(h);
+    for ts in &c.grid_auto_rows { hash_track_size(h, ts); }
+    c.grid_auto_columns.len().hash(h);
+    for ts in &c.grid_auto_columns { hash_track_size(h, ts); }
+    std::mem::discriminant(&c.grid_auto_flow).hash(h);
+    hash_opt_align(h, &c.justify_items);
+}
+
+/// Compute a hash key for all inputs to `compute_column_positions`.
+fn hash_layout_inputs(
+    columns: &[ColumnLayout],
+    container: &ContainerLayout,
+    viewport_width: f32,
+    row_height: f32,
+    line_height: f32,
+) -> u64 {
+    let mut hasher = std::hash::DefaultHasher::new();
+    columns.len().hash(&mut hasher);
+    for col in columns {
+        hash_column(&mut hasher, col);
+    }
+    hash_container(&mut hasher, container);
+    hash_f32(&mut hasher, viewport_width);
+    hash_f32(&mut hasher, row_height);
+    hash_f32(&mut hasher, line_height);
+    hasher.finish()
+}
+
 /// Layout engine powered by Taffy (supports Flexbox and CSS Grid).
 pub struct LayoutEngine {
     pub(crate) tree: TaffyTree<()>,
+    /// Two-slot LRU cache for column layout results.
+    /// Slot 0 and 1 hold independent cached results (typically header-height and row-height).
+    cache_slots: [Option<ColumnLayoutCache>; 2],
+    /// Tracks which slot was used least recently (0 or 1).
+    cache_lru: usize,
 }
 
 impl LayoutEngine {
@@ -525,7 +719,16 @@ impl LayoutEngine {
     pub fn new() -> Self {
         Self {
             tree: TaffyTree::new(),
+            cache_slots: [None, None],
+            cache_lru: 0,
         }
+    }
+
+    /// Invalidate all cached layout results. Call when column definitions or
+    /// container properties change.
+    pub fn invalidate_cache(&mut self) {
+        self.cache_slots = [None, None];
+        self.cache_lru = 0;
     }
 
     /// Build a Taffy style for a column child node.
@@ -598,6 +801,7 @@ impl LayoutEngine {
 
     /// Compute positions for each column using Taffy layout, returning full cross-axis info
     /// and the effective row height (which may differ from `row_height` for column directions).
+    /// Results are cached; repeated calls with the same inputs return cloned cached data.
     fn compute_column_positions(
         &mut self,
         columns: &[ColumnLayout],
@@ -606,6 +810,23 @@ impl LayoutEngine {
         row_height: f32,
         line_height: f32,
     ) -> (Vec<ColumnPosition>, f32) {
+        let key = hash_layout_inputs(columns, container, viewport_width, row_height, line_height);
+
+        // Check both cache slots for a hit
+        for slot in &self.cache_slots {
+            if let Some(cached) = slot {
+                if cached.key == key {
+                    log::debug!(
+                        "[layout] cache HIT: cols={}, viewport_width={}, row_height={}",
+                        columns.len(),
+                        viewport_width,
+                        row_height
+                    );
+                    return (cached.positions.clone(), cached.effective_height);
+                }
+            }
+        }
+
         log::debug!(
             "[layout] compute_column_positions: cols={}, viewport_width={}, row_height={}",
             columns.len(),
@@ -712,6 +933,16 @@ impl LayoutEngine {
         );
 
         self.tree.clear();
+
+        // Store result in the LRU cache slot
+        let store_slot = self.cache_lru;
+        self.cache_slots[store_slot] = Some(ColumnLayoutCache {
+            key,
+            positions: positions.clone(),
+            effective_height,
+        });
+        // Flip LRU to the other slot
+        self.cache_lru = 1 - store_slot;
 
         (positions, effective_height)
     }
@@ -923,8 +1154,13 @@ impl LayoutEngine {
         if columns.is_empty() {
             return row_height;
         }
-        let (_, effective) =
-            self.compute_column_positions(columns, container, viewport_width, row_height, line_height);
+        let (_, effective) = self.compute_column_positions(
+            columns,
+            container,
+            viewport_width,
+            row_height,
+            line_height,
+        );
         effective
     }
 }
@@ -932,6 +1168,24 @@ impl LayoutEngine {
 impl Default for LayoutEngine {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+impl LayoutEngine {
+    /// Check if the cache contains a result for the given inputs.
+    fn cache_contains(
+        &self,
+        columns: &[ColumnLayout],
+        container: &ContainerLayout,
+        viewport_width: f32,
+        row_height: f32,
+        line_height: f32,
+    ) -> bool {
+        let key = hash_layout_inputs(columns, container, viewport_width, row_height, line_height);
+        self.cache_slots
+            .iter()
+            .any(|s| s.as_ref().is_some_and(|c| c.key == key))
     }
 }
 
@@ -1003,20 +1257,19 @@ impl LayoutEngine {
         );
 
         // Also compute effective header height for row base y offset
-        let effective_header_height = if (viewport.row_height - viewport.header_height).abs()
-            > f32::EPSILON
-        {
-            let (_, h) = self.compute_column_positions(
-                columns,
-                container,
-                viewport.width,
-                viewport.header_height,
-                viewport.line_height,
-            );
-            h
-        } else {
-            effective_row_height
-        };
+        let effective_header_height =
+            if (viewport.row_height - viewport.header_height).abs() > f32::EPSILON {
+                let (_, h) = self.compute_column_positions(
+                    columns,
+                    container,
+                    viewport.width,
+                    viewport.header_height,
+                    viewport.line_height,
+                );
+                h
+            } else {
+                effective_row_height
+            };
 
         let mut result =
             Vec::with_capacity((visible_range.end - visible_range.start) * columns.len());
@@ -3248,10 +3501,7 @@ mod tests {
     fn column_reverse_direction_reverses_order() {
         init_logger();
         let mut engine = LayoutEngine::new();
-        let columns = vec![
-            col(100.0, Align::Left),
-            col(200.0, Align::Center),
-        ];
+        let columns = vec![col(100.0, Align::Left), col(200.0, Align::Center)];
         let viewport = make_viewport();
         let container = ContainerLayout {
             flex_direction: FlexDirectionValue::ColumnReverse,
@@ -3291,5 +3541,118 @@ mod tests {
             "row direction effective height {effective} should equal row_height {}",
             viewport.row_height
         );
+    }
+
+    // ── Layout Cache tests ───────────────────────────────────────────
+
+    #[test]
+    fn cache_hit() {
+        init_logger();
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(200.0, Align::Left), col(100.0, Align::Right)];
+        let container = default_container();
+
+        let (pos1, h1) =
+            engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
+        assert!(engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0));
+
+        // Second call with identical inputs should return same result (from cache)
+        let (pos2, h2) =
+            engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
+        assert_eq!(pos1.len(), pos2.len());
+        for (a, b) in pos1.iter().zip(pos2.iter()) {
+            assert!((a.x - b.x).abs() < f32::EPSILON);
+            assert!((a.width - b.width).abs() < f32::EPSILON);
+        }
+        assert!((h1 - h2).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn cache_miss_viewport_width() {
+        init_logger();
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(200.0, Align::Left), col(0.0, Align::Left)];
+        let container = default_container();
+
+        engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
+        // Different viewport width → cache miss → different result
+        engine.compute_column_positions(&columns, &container, 800.0, 36.0, 20.0);
+
+        // The second column has width=0 (auto), so it should differ between viewport widths
+        // when flex is in play. At minimum the cache should not return stale data.
+        assert!(engine.cache_contains(&columns, &container, 800.0, 36.0, 20.0));
+    }
+
+    #[test]
+    fn cache_miss_column_change() {
+        init_logger();
+        let mut engine = LayoutEngine::new();
+        let container = default_container();
+        let cols_a = vec![col(200.0, Align::Left)];
+        let cols_b = vec![col(200.0, Align::Left), col(100.0, Align::Right)];
+
+        engine.compute_column_positions(&cols_a, &container, 600.0, 36.0, 20.0);
+        assert!(engine.cache_contains(&cols_a, &container, 600.0, 36.0, 20.0));
+
+        engine.compute_column_positions(&cols_b, &container, 600.0, 36.0, 20.0);
+        assert!(engine.cache_contains(&cols_b, &container, 600.0, 36.0, 20.0));
+    }
+
+    #[test]
+    fn cache_miss_container_change() {
+        init_logger();
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(200.0, Align::Left), col(100.0, Align::Right)];
+        let container_a = default_container();
+        let mut container_b = default_container();
+        container_b.flex_direction = FlexDirectionValue::Column;
+
+        engine.compute_column_positions(&columns, &container_a, 600.0, 36.0, 20.0);
+        engine.compute_column_positions(&columns, &container_b, 600.0, 36.0, 20.0);
+
+        // Column direction produces different effective height
+        assert!(engine.cache_contains(&columns, &container_b, 600.0, 36.0, 20.0));
+    }
+
+    #[test]
+    fn invalidate_forces_recompute() {
+        init_logger();
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(200.0, Align::Left)];
+        let container = default_container();
+
+        engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
+        assert!(engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0));
+
+        engine.invalidate_cache();
+        assert!(!engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0));
+
+        // Recompute fills cache again
+        engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
+        assert!(engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0));
+    }
+
+    #[test]
+    fn two_slot_cache() {
+        init_logger();
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(200.0, Align::Left), col(100.0, Align::Right)];
+        let container = default_container();
+
+        // Compute with header_height=40 and row_height=36 (two different row heights)
+        engine.compute_column_positions(&columns, &container, 600.0, 40.0, 20.0);
+        engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
+
+        // Both should still be in cache (2 slots)
+        assert!(engine.cache_contains(&columns, &container, 600.0, 40.0, 20.0));
+        assert!(engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0));
+
+        // A third unique call evicts the LRU slot
+        engine.compute_column_positions(&columns, &container, 600.0, 50.0, 20.0);
+        assert!(engine.cache_contains(&columns, &container, 600.0, 50.0, 20.0));
+        // One of the previous two should be evicted
+        let both_present = engine.cache_contains(&columns, &container, 600.0, 40.0, 20.0)
+            && engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0);
+        assert!(!both_present, "one of the two original entries should have been evicted");
     }
 }

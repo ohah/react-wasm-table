@@ -332,6 +332,7 @@ export function useRenderLoop({
         );
         const cellCount = meta[0] ?? 0;
         const visStart = meta[1] ?? 0;
+        const _generation = meta[5] ?? 0; // reserved for future: skip row model rebuild if unchanged
         const effectiveRowHeight = meta[8] ?? rowHeight;
         const headerCount = colCount;
         const dataCount = cellCount - headerCount;

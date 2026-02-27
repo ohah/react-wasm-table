@@ -34,10 +34,7 @@ function makeMockHandlers() {
 
 /** Create a mock native MouseEvent and EventCoords for handler calls. */
 function mockMouseArgs(): [MouseEvent, EventCoords] {
-  return [
-    new MouseEvent("click"),
-    { contentX: 50, contentY: 10, viewportX: 50, viewportY: 10 },
-  ];
+  return [new MouseEvent("click"), { contentX: 50, contentY: 10, viewportX: 50, viewportY: 10 }];
 }
 
 describe("useEventAttachment (renderHook)", () => {
