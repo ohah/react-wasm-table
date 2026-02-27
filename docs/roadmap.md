@@ -57,7 +57,7 @@ const table = useGridTable({
 - GridInstance: `getRowModel()`, `getCoreRowModel()`, `getRow()`, filter 메서드
 - 175 Rust 테스트, 571 JS 테스트 통과
 
-### 1-2. Column Feature API
+### 1-2. Column Feature API — State ✅ / Rendering ✅ (Pinning 제외)
 
 컬럼별 기능(정렬, 선택, 크기 조절 등)을 Feature 단위로 분리.
 
@@ -76,6 +76,29 @@ const columns = [
 - 각 Feature는 독립 모듈 (sorting, resizing, selection, ...)
 - Feature 간 의존성 없음 — 필요한 것만 import
 - Feature마다 `getCanX()`, `getIsX()`, `toggleX()` 패턴 통일
+
+**구현 상태:**
+
+| 기능 | State API | 렌더링 연결 | 비고 |
+|------|-----------|-------------|------|
+| Visibility | ✅ | ✅ | `resolveColumns`에서 hidden 컬럼 제외 |
+| Sizing | ✅ | ✅ | `resolveColumns`에서 width override |
+| Ordering | ✅ | ✅ | `resolveColumns`에서 `columnOrder` 기준 정렬 |
+| Drag Resize | ✅ | ✅ | EventManager resize handle hit-test + `useColumnResize` 훅 |
+| Pinning | ✅ | ❌ | state만 존재, multi-region 렌더링 필요 (→ Phase 3-3) |
+
+**구현 내역 (Ordering + Drag Resize):**
+
+- `ColumnOrderState`, `ColumnOrderUpdater` 타입 추가 (`tanstack-types.ts`)
+- `resolveColumns`에서 `columnOrder` 옵션으로 컬럼 순서 재배치 (order에 없는 컬럼은 뒤로)
+- `EventManager`에 resize handle hit-test (`findResizeHandle`, 5px zone) + resize drag 시퀀스
+- `useColumnResize` 훅: controlled/uncontrolled 모드, min/max width clamp, 커서 변경
+- `useEventAttachment`에 resize 핸들러 연결
+- 테스트: resolve-columns ordering 4개, event-manager resize 5개, use-column-resize 7개
+
+**미구현 항목:**
+
+- **Pinning 렌더링**: `columnPinning` state를 읽어 left/right frozen region에 고정 렌더링. Phase 3-3 Virtual Canvas Region 선행 필요.
 
 ### 1-3. Event System 개방
 
@@ -100,7 +123,7 @@ const columns = [
 
 ## Phase 2 — 상태 관리 Primitive
 
-### 2-1. Column Ordering State
+### 2-1. Column Ordering State ✅ (구현 완료)
 
 Column Pinning, Reorder를 "기능"으로 만들지 않고 **상태**로 노출.
 
@@ -123,6 +146,13 @@ const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({
 - Reorder = "컬럼 순서" 상태일 뿐
 - 렌더링은 Grid가 상태를 읽어서 multi-region으로 처리
 - 드래그 UI는 사용자가 구현 (또는 선택적 유틸리티 제공)
+
+**구현 내역:**
+
+- `ColumnOrderState` (`string[]`), `ColumnOrderUpdater` 타입
+- `GridProps.columnOrder`, `GridProps.onColumnOrderChange` prop
+- `resolveColumns()`에서 flatten 후 `columnOrder` 기준 재정렬
+- visibility와 ordering 조합 동작 (hidden → 제거 → 순서 정렬)
 
 ### 2-2. Expanding State (Row Grouping / Tree 기반)
 
@@ -148,7 +178,7 @@ const table = useGridTable({
 - expanded state — 어떤 행이 펼쳐져 있는지
 - 시각적 표현(들여쓰기, 아이콘)은 `cell` render prop에서 사용자가 결정
 
-### 2-3. Column Visibility State
+### 2-3. Column Visibility State ✅ (구현 완료)
 
 ```ts
 const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
@@ -344,18 +374,18 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ## 우선순위 요약
 
-| 순위 | 항목                          | 카테고리 | 이유                          |
-| ---- | ----------------------------- | -------- | ----------------------------- |
-| 1    | Row Model Abstraction         | Core     | 이후 모든 기능의 토대         |
-| 2    | Column Feature API            | Core     | 기능별 독립 모듈화 기반       |
-| 3    | Event System 개방             | Core     | 사용자 인터랙션 확장의 전제   |
-| 4    | Column Ordering/Pinning State | State    | 가장 요청 많을 기본 상태      |
-| 5    | Custom Cell Renderer          | Render   | Canvas 차별화의 핵심          |
-| 6    | Data Access API               | Data     | Export/Clipboard 등의 기반    |
-| 7    | Layer System                  | Render   | Pinning 구현 + 확장성         |
-| 8    | Expanding State               | State    | Grouping/Tree의 headless 접근 |
-| 9    | Worker Bridge                 | Perf     | WASM 성능 극대화              |
-| 10   | Streaming Data                | Perf     | 대용량 데이터 시나리오        |
+| 순위 | 항목                          | 카테고리 | 상태 | 이유                          |
+| ---- | ----------------------------- | -------- | ---- | ----------------------------- |
+| 1    | Row Model Abstraction         | Core     | ✅   | 이후 모든 기능의 토대         |
+| 2    | Column Feature API            | Core     | ✅*  | 기능별 독립 모듈화 기반 (*Pinning 렌더링 제외) |
+| 3    | Event System 개방             | Core     | 🔧   | 사용자 인터랙션 확장의 전제 (기본 콜백 존재, 미들웨어 체인 미구현) |
+| 4    | Column Ordering/Pinning State | State    | ✅*  | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ❌ |
+| 5    | Custom Cell Renderer          | Render   | ❌   | Canvas 차별화의 핵심          |
+| 6    | Data Access API               | Data     | 🔧   | getRowModel 등 기반 존재, export 유틸 미구현 |
+| 7    | Layer System                  | Render   | ❌   | Pinning 구현 + 확장성 (onAfterDraw 진입점만 존재) |
+| 8    | Expanding State               | State    | ❌   | Grouping/Tree의 headless 접근 |
+| 9    | Worker Bridge                 | Perf     | ❌   | WASM 성능 극대화              |
+| 10   | Streaming Data                | Perf     | ❌   | 대용량 데이터 시나리오        |
 
 ---
 
