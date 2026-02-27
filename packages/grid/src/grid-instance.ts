@@ -13,12 +13,14 @@ import type {
   ColumnPinningState,
   ColumnPinningUpdater,
   ColumnPinningPosition,
+  ExpandedState,
+  ExpandedUpdater,
   CellContext,
   HeaderContext,
 } from "./tanstack-types";
 import { getLeafColumns } from "./resolve-columns";
 import type { Row, RowModel, RowModelFactory } from "./row-model";
-import { buildRowModel } from "./row-model";
+import { buildRowModel, buildExpandedRowModel } from "./row-model";
 
 // ── Default state values ────────────────────────────────────────────
 
@@ -131,6 +133,7 @@ export interface GridState {
   columnSizing?: ColumnSizingState;
   columnSizingInfo?: ColumnSizingInfoState;
   columnPinning?: ColumnPinningState;
+  expanded?: ExpandedState;
 }
 
 // ── GridInstance ─────────────────────────────────────────────────────
@@ -195,6 +198,18 @@ export interface GridInstance<TData = unknown> {
   getCoreRowModel: () => RowModel<TData>;
   /** Get a single row by view index. */
   getRow: (index: number) => Row<TData>;
+
+  // Expanding
+  /** Set the expanded state. */
+  setExpanded: (updater: ExpandedUpdater) => void;
+  /** Reset expanded state to initial (empty). */
+  resetExpanded: () => void;
+  /** Whether all expandable rows are expanded. */
+  getIsAllRowsExpanded: () => boolean;
+  /** Toggle all expandable rows expanded/collapsed. */
+  toggleAllRowsExpanded: (expanded?: boolean) => void;
+  /** Get the expanded row model (tree flattened by expanded state). */
+  getExpandedRowModel: () => RowModel<TData>;
 }
 
 // ── Callbacks ───────────────────────────────────────────────────────
@@ -206,6 +221,7 @@ interface BuildColumnCallbacks {
   onColumnSizingChange: (updater: ColumnSizingUpdater) => void;
   onColumnSizingInfoChange: (updater: ColumnSizingInfoUpdater) => void;
   onColumnPinningChange: (updater: ColumnPinningUpdater) => void;
+  onExpandedChange: (updater: ExpandedUpdater) => void;
 }
 
 // ── Builder ─────────────────────────────────────────────────────────
@@ -221,6 +237,8 @@ export interface BuildOptions<TData> {
   onColumnSizingChange?: (updater: ColumnSizingUpdater) => void;
   onColumnSizingInfoChange?: (updater: ColumnSizingInfoUpdater) => void;
   onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
+  onExpandedChange?: (updater: ExpandedUpdater) => void;
+  getSubRows?: (row: TData) => TData[] | undefined;
   viewIndices?: Uint32Array | number[] | null;
 }
 
@@ -398,6 +416,8 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     onColumnSizingChange = () => {},
     onColumnSizingInfoChange = () => {},
     onColumnPinningChange = () => {},
+    onExpandedChange = () => {},
+    getSubRows,
     viewIndices,
   } = options;
 
@@ -408,6 +428,7 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     onColumnSizingChange,
     onColumnSizingInfoChange,
     onColumnPinningChange,
+    onExpandedChange,
   };
 
   const allColumns = buildGridColumns(defs, state, callbacks);
@@ -439,6 +460,9 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
   // Row model caches
   let cachedRowModel: RowModel<TData> | null = null;
   let cachedCoreRowModel: RowModel<TData> | null = null;
+  let cachedExpandedRowModel: RowModel<TData> | null = null;
+
+  const expanded = state.expanded ?? {};
 
   return {
     getState: () => state,
@@ -503,6 +527,53 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     getRow: (index: number) => {
       const model = buildRowModel(data, viewIndices ?? null, defs);
       return model.getRow(index);
+    },
+
+    // Expanding
+    setExpanded: onExpandedChange,
+    resetExpanded: () => onExpandedChange({}),
+    getIsAllRowsExpanded: () => {
+      if (expanded === true) return true;
+      if (!getSubRows) return false;
+      // Check if all expandable rows are expanded
+      function checkAll(items: TData[]): boolean {
+        for (const item of items) {
+          const sub = getSubRows!(item);
+          if (sub && sub.length > 0) {
+            const idx = data.indexOf(item);
+            if (idx < 0 || !(expanded as Record<string, boolean>)[String(idx)]) return false;
+            if (!checkAll(sub)) return false;
+          }
+        }
+        return true;
+      }
+      return checkAll(data);
+    },
+    toggleAllRowsExpanded: (value?: boolean) => {
+      if (!getSubRows) return;
+      const shouldExpand = value ?? !( expanded === true);
+      if (shouldExpand) {
+        onExpandedChange(true);
+      } else {
+        onExpandedChange({});
+      }
+    },
+    getExpandedRowModel: () => {
+      if (!cachedExpandedRowModel) {
+        if (!getSubRows) {
+          // No tree structure — return core row model
+          cachedExpandedRowModel = buildRowModel(data, null, defs);
+        } else {
+          cachedExpandedRowModel = buildExpandedRowModel(
+            data,
+            defs,
+            getSubRows,
+            expanded,
+            onExpandedChange,
+          );
+        }
+      }
+      return cachedExpandedRowModel;
     },
   };
 }
