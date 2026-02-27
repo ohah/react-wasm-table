@@ -66,6 +66,8 @@ export type {
   ColumnPinningState,
   ColumnPinningUpdater,
   ColumnPinningPosition,
+  ExpandedState,
+  ExpandedUpdater,
 } from "./tanstack-types";
 
 // Header grouping (multi-level headers)
@@ -91,6 +93,8 @@ export {
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  getExpandedRowModel,
+  buildExpandedRowModel,
 } from "./row-model";
 export type { Row, RowModel, RowModelFactory } from "./row-model";
 
