@@ -19,4 +19,5 @@ Instructions:
    - `chore:` for build/tooling changes
    - `test:` for test additions/changes
 5. The commit message should be in English, 1-2 sentences focusing on "why" not "what"
-6. Create the commit
+6. **Never include any \"Made with Cursor\" / \"Made-with: Cursor\" or similar tool attribution text in the commit message.**
+7. Create the commit
