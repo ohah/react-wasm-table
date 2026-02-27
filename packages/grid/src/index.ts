@@ -118,6 +118,7 @@ export {
   createGridKeyboardEvent,
   createGridScrollEvent,
   createGridCanvasEvent,
+  createGridTouchEvent,
 } from "./event-helpers";
 export type { ContentCoords } from "./event-helpers";
 export { EditorManager } from "./adapter/editor-manager";
@@ -167,6 +168,9 @@ export type {
   GridScrollEvent,
   GridCanvasEvent,
   GridCanvasEventType,
+  GridTouchEvent,
+  GridTouchEventType,
+  GridTouchPoint,
   HitTestResult,
   // CSS value types
   CssDimension,
