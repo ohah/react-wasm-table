@@ -14,6 +14,7 @@ import { useSelection } from "./hooks/use-selection";
 import { useEditing } from "./hooks/use-editing";
 import { useGridScroll } from "./hooks/use-grid-scroll";
 import { useEventAttachment } from "./hooks/use-event-attachment";
+import { useColumnResize } from "./hooks/use-column-resize";
 import { useRenderLoop } from "./hooks/use-render-loop";
 
 const DEFAULT_ROW_HEIGHT = 36;
@@ -41,6 +42,15 @@ export function Grid({
   onColumnFiltersChange: onColumnFiltersChangeProp,
   globalFilter: globalFilterProp,
   onGlobalFilterChange: onGlobalFilterChangeProp,
+  // Column features
+  columnOrder: columnOrderProp,
+  onColumnOrderChange: _onColumnOrderChangeProp,
+  columnVisibility: columnVisibilityProp,
+  onColumnVisibilityChange: _onColumnVisibilityChangeProp,
+  columnSizing: columnSizingProp,
+  onColumnSizingChange: onColumnSizingChangeProp,
+  columnPinning: _columnPinningProp,
+  onColumnPinningChange: _onColumnPinningChangeProp,
   // Event callbacks (Step 0-3)
   onCellClick: onCellClickProp,
   onCellDoubleClick: onCellDoubleClickProp,
@@ -122,10 +132,14 @@ export function Grid({
   // so it's excluded from deps to avoid unnecessary re-resolution on data change.
   useEffect(() => {
     if (!columnsProp) return;
-    const resolved = resolveColumns(columnsProp, data);
+    const resolved = resolveColumns(columnsProp, data, {
+      columnOrder: columnOrderProp,
+      columnVisibility: columnVisibilityProp,
+      columnSizing: columnSizingProp,
+    });
     columnRegistry.setAll(resolved);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columnsProp, columnRegistry]);
+  }, [columnsProp, columnRegistry, columnOrderProp, columnVisibilityProp, columnSizingProp]);
 
   // Shared mutable refs
   const layoutBufRef = useRef<Float32Array | null>(null);
@@ -238,6 +252,19 @@ export function Grid({
     });
   }, [columnRegistry, invalidate]);
 
+  const {
+    handleResizeStart,
+    handleResizeMove,
+    handleResizeEnd,
+    handleResizeHover,
+  } = useColumnResize({
+    canvasRef,
+    columnRegistry,
+    columnSizingProp,
+    onColumnSizingChangeProp,
+    invalidate,
+  });
+
   useEventAttachment({
     canvasRef,
     eventManagerRef,
@@ -252,6 +279,10 @@ export function Grid({
       handleWheel,
       handleKeyDown,
       stopAutoScroll,
+      handleResizeStart,
+      handleResizeMove,
+      handleResizeEnd,
+      handleResizeHover,
     },
     onCellClick: onCellClickProp,
     onCellDoubleClick: onCellDoubleClickProp,

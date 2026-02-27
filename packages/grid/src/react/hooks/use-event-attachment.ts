@@ -17,6 +17,10 @@ export interface UseEventAttachmentParams {
     handleWheel: (deltaY: number, deltaX: number) => void;
     handleKeyDown: (e: KeyboardEvent) => void;
     stopAutoScroll: () => void;
+    handleResizeStart?: (colIndex: number, startX: number, startWidth: number) => void;
+    handleResizeMove?: (deltaX: number) => void;
+    handleResizeEnd?: () => void;
+    handleResizeHover?: (colIndex: number | null) => void;
   };
   onCellClick?: (coord: CellCoord) => void | false;
   onCellDoubleClick?: (coord: CellCoord) => void | false;
@@ -87,6 +91,10 @@ export function useEventAttachment({
           handlers.handleKeyDown(e);
         },
         onScroll: handlers.handleWheel,
+        onResizeStart: handlers.handleResizeStart,
+        onResizeMove: handlers.handleResizeMove,
+        onResizeEnd: handlers.handleResizeEnd,
+        onResizeHover: handlers.handleResizeHover,
       },
       { lineHeight: rowHeight, pageHeight: height - headerHeight },
     );
@@ -107,6 +115,10 @@ export function useEventAttachment({
     handlers.handleWheel,
     handlers.handleKeyDown,
     handlers.stopAutoScroll,
+    handlers.handleResizeStart,
+    handlers.handleResizeMove,
+    handlers.handleResizeEnd,
+    handlers.handleResizeHover,
     rowHeight,
     headerHeight,
     height,

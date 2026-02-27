@@ -9,6 +9,7 @@ const DOUBLE_TAP_INTERVAL = 300; // ms between taps for double-tap
 const DOUBLE_TAP_DISTANCE = 20; // max px between taps for double-tap
 const LONG_PRESS_DURATION = 500; // ms hold → selection drag mode
 const MOUSE_DRAG_THRESHOLD = 5; // px movement before mousemove triggers drag-extend
+const RESIZE_HANDLE_ZONE = 5; // px from header right edge for resize handle
 
 /** Callback signatures for grid events. */
 export interface GridEventHandlers {
@@ -22,6 +23,11 @@ export interface GridEventHandlers {
   onDragEdge?: (deltaY: number, deltaX: number) => void;
   onCellMouseUp?: () => void;
   onKeyDown?: (e: KeyboardEvent) => void;
+  // Resize handle events
+  onResizeStart?: (colIndex: number, startX: number, startWidth: number) => void;
+  onResizeMove?: (deltaX: number) => void;
+  onResizeEnd?: () => void;
+  onResizeHover?: (colIndex: number | null) => void;
 }
 
 /** Options for deltaMode normalization. */
@@ -101,6 +107,9 @@ export class EventManager {
   private mouseDownPos: { x: number; y: number } | null = null;
   private mouseDragActive = false;
 
+  // Resize state
+  private resizeState: { colIndex: number; startX: number; startWidth: number } | null = null;
+
   /** Update the layouts used for hit-testing. */
   setLayouts(headerLayouts: CellLayout[], rowLayouts: CellLayout[]): void {
     this.headerLayouts = headerLayouts;
@@ -110,6 +119,24 @@ export class EventManager {
   /** Set horizontal scroll offset for hit-test correction. */
   setScrollOffset(scrollLeft: number): void {
     this.scrollLeft = scrollLeft;
+  }
+
+  /**
+   * Check if x is within resize handle zone of any header's right edge.
+   * Returns col index or -1.
+   */
+  findResizeHandle(x: number, y: number): number {
+    for (const h of this.headerLayouts) {
+      const rightEdge = h.x + h.width;
+      if (
+        y >= h.y &&
+        y < h.y + h.height &&
+        Math.abs(x - rightEdge) <= RESIZE_HANDLE_ZONE
+      ) {
+        return h.col;
+      }
+    }
+    return -1;
   }
 
   /**
@@ -179,6 +206,19 @@ export class EventManager {
       "mousedown",
       (e: MouseEvent) => {
         const { x, y } = toContentCoords(e.clientX, e.clientY);
+
+        // Check resize handle first (header right edge)
+        const resizeCol = this.findResizeHandle(x, y);
+        if (resizeCol !== -1) {
+          const header = this.headerLayouts.find((h) => h.col === resizeCol);
+          if (header) {
+            this.resizeState = { colIndex: resizeCol, startX: e.clientX, startWidth: header.width };
+            handlers.onResizeStart?.(resizeCol, e.clientX, header.width);
+            e.preventDefault();
+            return;
+          }
+        }
+
         this.mouseDownPos = { x: e.clientX, y: e.clientY };
         this.mouseDragActive = false;
         this.lastViewportPos = null;
@@ -196,6 +236,14 @@ export class EventManager {
       "mousemove",
       (e: MouseEvent) => {
         if (!(e.buttons & 1)) return; // left button not held
+
+        // Resize drag in progress
+        if (this.resizeState) {
+          const deltaX = e.clientX - this.resizeState.startX;
+          handlers.onResizeMove?.(deltaX);
+          return;
+        }
+
         if (!this.mouseDownPos) return; // drag didn't start on this canvas
 
         const rect = canvas.getBoundingClientRect();
@@ -244,10 +292,29 @@ export class EventManager {
     window.addEventListener(
       "mouseup",
       () => {
+        // Resize end
+        if (this.resizeState) {
+          handlers.onResizeEnd?.();
+          this.resizeState = null;
+          return;
+        }
+
         if (!this.mouseDownPos && !this.mouseDragActive) return; // not our drag
         this.mouseDownPos = null;
         this.mouseDragActive = false;
         handlers.onCellMouseUp?.();
+      },
+      { signal },
+    );
+
+    // mousemove on canvas for resize handle hover cursor
+    canvas.addEventListener(
+      "mousemove",
+      (e: MouseEvent) => {
+        if (e.buttons & 1) return; // skip during drag — handled by window mousemove
+        const { x, y } = toContentCoords(e.clientX, e.clientY);
+        const resizeCol = this.findResizeHandle(x, y);
+        handlers.onResizeHover?.(resizeCol !== -1 ? resizeCol : null);
       },
       { signal },
     );
