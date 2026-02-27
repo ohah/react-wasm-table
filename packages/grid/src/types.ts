@@ -208,6 +208,33 @@ export interface GridCanvasEvent extends GridMouseEvent {
   hitTest: HitTestResult;
 }
 
+/** Touch event types exposed to users. */
+export type GridTouchEventType = "touchstart" | "touchmove" | "touchend";
+
+/** Touch point with content-space and viewport coordinates. */
+export interface GridTouchPoint {
+  /** Content-space X (accounts for scrollLeft). */
+  contentX: number;
+  /** Content-space Y. */
+  contentY: number;
+  /** Viewport X (from canvas left edge). */
+  viewportX: number;
+  /** Viewport Y (from canvas top edge). */
+  viewportY: number;
+}
+
+/** Touch event enriched with content-space coordinates and hit-test. */
+export interface GridTouchEvent extends GridEventBase {
+  nativeEvent: TouchEvent;
+  type: GridTouchEventType;
+  /** Primary touch point in content/viewport coords. */
+  touch: GridTouchPoint;
+  /** Hit-test result at the touch point. */
+  hitTest: HitTestResult;
+  /** Number of active touches. */
+  touchCount: number;
+}
+
 // ── Cell coordinates & layout ──────────────────────────────────────────
 
 /** Identifies a cell by row and column index. */
@@ -508,6 +535,14 @@ export interface GridProps extends BoxModelProps {
   onScroll?: (event: GridScrollEvent) => void;
   /** Low-level canvas event — fires for all mouse events before semantic handlers. */
   onCanvasEvent?: (event: GridCanvasEvent) => void;
+
+  // Touch events (native TouchEvent access)
+  /** Called on touchstart. Call event.preventDefault() to cancel internal handling. */
+  onTouchStart?: (event: GridTouchEvent) => void;
+  /** Called on touchmove. Call event.preventDefault() to cancel internal handling. */
+  onTouchMove?: (event: GridTouchEvent) => void;
+  /** Called on touchend. Call event.preventDefault() to cancel internal handling. */
+  onTouchEnd?: (event: GridTouchEvent) => void;
 
   /** Called before sorting changes. Return `false` to cancel sort. */
   onBeforeSortChange?: (next: import("./tanstack-types").SortingState) => boolean | void;
