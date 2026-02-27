@@ -9,6 +9,7 @@ const sections = [
       { to: "/tanstack-api", label: "TanStack API" },
       { to: "/selection", label: "Selection" },
       { to: "/event-callbacks", label: "Event Callbacks" },
+      { to: "/column-features", label: "Column Features" },
     ],
   },
   {
