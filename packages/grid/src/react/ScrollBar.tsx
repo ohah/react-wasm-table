@@ -74,6 +74,22 @@ export const ScrollBar = forwardRef<HTMLDivElement, ScrollBarProps>(function Scr
   );
 });
 
+/** Update a scrollbar's inner content size from outside React (e.g. after filtering). */
+export function syncScrollBarContentSize(
+  el: HTMLDivElement | null,
+  contentSize: number,
+  orientation: "vertical" | "horizontal",
+): void {
+  if (!el) return;
+  const inner = el.firstElementChild as HTMLElement | null;
+  if (!inner) return;
+  if (orientation === "vertical") {
+    inner.style.height = `${contentSize}px`;
+  } else {
+    inner.style.width = `${contentSize}px`;
+  }
+}
+
 /** Sync a scrollbar div's scroll position from external state (prevents feedback loops via threshold). */
 export function syncScrollBarPosition(
   el: HTMLDivElement | null,

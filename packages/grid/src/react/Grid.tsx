@@ -105,6 +105,13 @@ export function Grid({
   const vScrollbarRef = useRef<HTMLDivElement>(null);
   const hScrollbarRef = useRef<HTMLDivElement>(null);
 
+  // Filtered row count (updated from render loop when viewIndices changes)
+  const viewRowCountRef = useRef(data.length);
+  // Reset when data changes
+  useEffect(() => {
+    viewRowCountRef.current = data.length;
+  }, [data.length]);
+
   const columnRegistry = useMemo(() => new ColumnRegistry(), []);
   const { engine, memoryBridgeRef } = useWasmEngine({ engineRef });
 
@@ -151,6 +158,7 @@ export function Grid({
     handleHScrollChange,
   } = useGridScroll({
     data,
+    viewRowCountRef,
     rowHeight,
     height,
     headerHeight,
@@ -355,6 +363,7 @@ export function Grid({
     vScrollbarRef,
     hScrollbarRef,
     containerProps,
+    viewRowCountRef,
     width,
     height,
     rowHeight,

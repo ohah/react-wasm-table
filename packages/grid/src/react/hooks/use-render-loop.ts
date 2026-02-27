@@ -36,7 +36,7 @@ import {
   readCellHeight,
   readCellAlign,
 } from "../../adapter/layout-reader";
-import { syncScrollBarPosition } from "../ScrollBar";
+import { syncScrollBarPosition, syncScrollBarContentSize } from "../ScrollBar";
 import {
   resolveDimension,
   resolveLength,
@@ -103,6 +103,7 @@ export interface UseRenderLoopParams {
   height: number;
   rowHeight: number;
   headerHeight: number;
+  viewRowCountRef: React.RefObject<number>;
   onLayoutComputed: (buf: Float32Array, headerCount: number, totalCellCount: number) => void;
   onVisStartComputed: (visStart: number) => void;
   onAfterDraw?: (ctx: AfterDrawContext) => void;
@@ -126,6 +127,7 @@ export function useRenderLoop({
   vScrollbarRef,
   hScrollbarRef,
   containerProps,
+  viewRowCountRef,
   width,
   height,
   rowHeight,
@@ -336,6 +338,19 @@ export function useRenderLoop({
         // Zero-copy reads from WASM memory
         const layoutBuf = bridge.getLayoutBuffer();
         const viewIndices = bridge.getViewIndices();
+
+        // Update filtered row count → scroll height + clamping
+        const filteredCount = viewIndices.length;
+        if (viewRowCountRef.current !== filteredCount) {
+          (viewRowCountRef as React.MutableRefObject<number>).current = filteredCount;
+          const newContentHeight = filteredCount * rowHeight + headerHeight;
+          syncScrollBarContentSize(vScrollbarRef.current, newContentHeight, "vertical");
+          // Clamp scrollTop if it exceeds the new max
+          const maxScrollY = Math.max(0, newContentHeight - height);
+          if (scrollTopRef.current > maxScrollY) {
+            (scrollTopRef as React.MutableRefObject<number>).current = maxScrollY;
+          }
+        }
 
         // Store refs for hit-testing and editor positioning
         onLayoutComputed(layoutBuf, headerCount, cellCount);

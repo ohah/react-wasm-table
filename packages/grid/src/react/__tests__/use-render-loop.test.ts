@@ -142,6 +142,7 @@ function defaultParams(overrides?: Partial<Parameters<typeof useRenderLoop>[0]>)
     vScrollbarRef: { current: null } as any,
     hScrollbarRef: { current: null } as any,
     containerProps: {},
+    viewRowCountRef: { current: 1 },
     width: 800,
     height: 600,
     rowHeight: 36,

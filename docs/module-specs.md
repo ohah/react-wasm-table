@@ -51,6 +51,8 @@ pub struct ColumnarStore {
     view_dirty: bool,
     sort_configs: Vec<SortConfig>,
     filter_conditions: Vec<FilterCondition>,
+    column_filters: Vec<ColumnFilter>,
+    global_filter: Option<GlobalFilter>,
     row_height: f64,
     viewport_height: f64,
     overscan: usize,
@@ -61,6 +63,12 @@ pub enum ColumnData {
     Strings { ids: Vec<u32>, intern: StringInternTable },
     Bool(Vec<f64>),                  // 0.0/1.0/NaN
 }
+
+// Filter types (crates/core/src/types.rs)
+pub enum FilterOp { Eq, Neq, Gt, Gte, Lt, Lte, Contains, StartsWith, EndsWith }
+pub enum FilterValue { Float64(f64), String(String), Bool(bool) }
+pub struct ColumnFilter { pub column_index: usize, pub op: FilterOp, pub value: FilterValue }
+pub struct GlobalFilter { pub query: String }
 
 impl ColumnarStore {
     // Direct column setters (serde bypass — used by JS TypedArray ingestion)
@@ -73,18 +81,25 @@ impl ColumnarStore {
     // View management
     pub fn set_sort(&mut self, configs: Vec<SortConfig>);
     pub fn set_filters(&mut self, conditions: Vec<FilterCondition>);
+    pub fn set_column_filters(&mut self, filters: Vec<ColumnFilter>);  // columnar filter API
+    pub fn set_global_filter(&mut self, filter: Option<GlobalFilter>); // global search
     pub fn set_scroll_config(&mut self, row_height: f64, viewport_height: f64, overscan: usize);
-    pub fn rebuild_view(&mut self);  // filter → sort on u32 indices, skips if not dirty
+    pub fn rebuild_view(&mut self);  // column_filter → global_filter → sort on u32 indices
     pub fn view_indices(&self) -> &[u32];
 }
 
 // Free functions operating on ColumnarStore
 pub fn sort_indices_columnar(indices: &mut [u32], store: &ColumnarStore, configs: &[SortConfig]);
-pub fn filter_indices_columnar(indices: &[u32], store: &ColumnarStore, conditions: &[FilterCondition]) -> Vec<u32>;
+pub fn filter_indices_columnar(indices: &[u32], store: &ColumnarStore, filters: &[ColumnFilter]) -> Vec<u32>;
+pub fn global_filter_indices(indices: &[u32], store: &ColumnarStore, filter: &GlobalFilter) -> Vec<u32>;
 ```
 
+**rebuild_view pipeline:** `column_filters` (AND) → `global_filter` (OR across string cols) → `sort`
+
 **Test scope:** data ingestion (serde and direct setters), type detection, sort/filter on columnar data,
-view rebuild idempotency, string interning, null (NaN) handling, generation tracking.
+view rebuild idempotency, string interning, null (NaN) handling, generation tracking,
+column filter ops (eq/neq/gt/gte/lt/lte/contains/startsWith/endsWith), global filter (case-insensitive),
+filter+sort pipeline, NaN exclusion from filters.
 
 #### data_store
 
@@ -214,6 +229,8 @@ impl TableEngine {
     // Hot path
     pub fn update_viewport_columnar(&mut self, scroll_top, viewport, columns) -> Vec<f64>;
     pub fn set_columnar_sort(&mut self, configs: JsValue);
+    pub fn set_columnar_filters(&mut self, filters: JsValue);  // column filters
+    pub fn set_global_filter(&mut self, query: Option<String>); // global search
     pub fn set_columnar_scroll_config(&mut self, row_height, viewport_height, overscan);
 
     // Zero-copy buffer access
@@ -458,6 +475,31 @@ function useGrid(): { columnRegistry: ColumnRegistry };
 function useColumnRegistry(): ColumnRegistry;
 function useWasm(): { engine: WasmTableEngine | null; isReady: boolean };
 ```
+
+### useFiltering hook
+
+```typescript
+function useFiltering(opts: {
+  engine: WasmTableEngine | null;
+  columnRegistry: ColumnRegistry;
+  invalidate: () => void;
+  columnFiltersProp?: ColumnFiltersState;
+  onColumnFiltersChange?: (filters: ColumnFiltersState) => void;
+  globalFilterProp?: string;
+  onGlobalFilterChange?: (value: string) => void;
+  initialColumnFilters?: ColumnFiltersState;
+  initialGlobalFilter?: string;
+}): {
+  columnFilters: ColumnFiltersState;
+  globalFilter: string;
+  setColumnFilters: (filters: ColumnFiltersState) => void;
+  setGlobalFilter: (value: string) => void;
+};
+```
+
+**Responsibility:** Controlled/uncontrolled filter state management. Converts column
+string IDs to numeric indices via ColumnRegistry, then calls engine WASM methods.
+Follows the same pattern as `useSorting`.
 
 ### Contexts
 

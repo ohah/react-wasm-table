@@ -388,6 +388,16 @@ The react module tests mock the adapter and renderer to test React behavior only
 
 ---
 
+## Test Count Summary
+
+| Layer                           | Runner               | Tests |
+| ------------------------------- | -------------------- | ----- |
+| core (Rust)                     | `cargo test`         | ~175  |
+| adapter + react + renderer (JS) | `bun test packages/` | ~571  |
+| E2E                             | Playwright           | 19    |
+
+---
+
 ## Performance Tests (planned)
 
 Benchmark critical hot paths to prevent regressions.

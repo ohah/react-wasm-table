@@ -265,6 +265,104 @@ on the scroll hot path.
 />
 ```
 
+## Filtering
+
+Column filters and global filter are managed via controlled or uncontrolled state,
+following the same pattern as sorting.
+
+### Column Filters (controlled)
+
+```tsx
+import { Grid, type ColumnFiltersState } from "@ohah/react-wasm-table";
+
+const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+<Grid
+  data={data}
+  columns={columns}
+  width={800}
+  height={600}
+  columnFilters={columnFilters}
+  onColumnFiltersChange={setColumnFilters}
+/>;
+```
+
+### Column Filters (uncontrolled)
+
+Without `columnFilters` / `onColumnFiltersChange` props, the Grid manages filter
+state internally via `initialState`.
+
+```tsx
+<Grid
+  data={data}
+  columns={columns}
+  width={800}
+  height={600}
+  initialState={{ columnFilters: [{ id: "name", value: "Alice" }] }}
+/>
+```
+
+### Global Filter
+
+```tsx
+const [globalFilter, setGlobalFilter] = useState("");
+
+<Grid
+  data={data}
+  columns={columns}
+  width={800}
+  height={600}
+  globalFilter={globalFilter}
+  onGlobalFilterChange={setGlobalFilter}
+/>;
+```
+
+### Filter Operators
+
+Each column filter supports an optional `op` field:
+
+| Operator     | Description                        |
+| ------------ | ---------------------------------- |
+| `eq`         | Equals (default)                   |
+| `neq`        | Not equals                         |
+| `gt`         | Greater than                       |
+| `gte`        | Greater than or equal              |
+| `lt`         | Less than                          |
+| `lte`        | Less than or equal                 |
+| `contains`   | String contains (case-insensitive) |
+| `startsWith` | String starts with                 |
+| `endsWith`   | String ends with                   |
+
+```tsx
+setColumnFilters([
+  { id: "salary", value: 80000, op: "gte" },
+  { id: "name", value: "Alice", op: "contains" },
+]);
+```
+
+Multiple column filters are combined with AND logic.
+Global filter searches all string columns with OR logic (case-insensitive contains).
+
+### Row Model API
+
+The `useGridTable` hook exposes TanStack-compatible Row Model methods for
+programmatic data access:
+
+```tsx
+const table = useGridTable({
+  data,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
+  state: { sorting, columnFilters, globalFilter },
+});
+
+table.getRowModel().rows; // current view (filtered + sorted)
+table.getCoreRowModel().rows; // original order, all rows
+table.getRow(0).getValue("price"); // single row access
+```
+
 ## WASM Initialization
 
 The Grid component handles WASM loading internally:
