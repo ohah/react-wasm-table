@@ -13,6 +13,7 @@ const sections = [
       { to: "/touch-events", label: "Touch Events" },
       { to: "/export", label: "Data Export" },
       { to: "/layout-cache", label: "Layout Cache" },
+      { to: "/custom-renderer", label: "Custom Renderer" },
       { to: "/column-features", label: "Column Features" },
       { to: "/expanding", label: "Expanding (Tree)" },
     ],
