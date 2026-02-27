@@ -14,6 +14,8 @@ import type {
   ColumnSizingInfoUpdater,
   ColumnPinningState,
   ColumnPinningUpdater,
+  ExpandedState,
+  ExpandedUpdater,
 } from "../tanstack-types";
 import type { GridState } from "../grid-instance";
 
@@ -947,6 +949,116 @@ describe("GridInstance", () => {
         columnPinning: { left: ["firstName"], right: [] },
       });
       expect(instance.getState().columnPinning).toEqual({ left: ["firstName"], right: [] });
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════
+  // Expanding
+  // ══════════════════════════════════════════════════════════════════
+
+  describe("expanding", () => {
+    type TreePerson = Person & { children?: TreePerson[] };
+    const treeHelper = createColumnHelper<TreePerson>();
+    const treeData: TreePerson[] = [
+      {
+        firstName: "Alice", lastName: "Smith", age: 30, status: "active",
+        children: [
+          { firstName: "Bob", lastName: "Jones", age: 25, status: "inactive" },
+          { firstName: "Charlie", lastName: "Brown", age: 35, status: "active" },
+        ],
+      },
+      { firstName: "Dave", lastName: "Wilson", age: 28, status: "pending" },
+    ];
+    const treeColumns = [
+      treeHelper.accessor("firstName", { header: "First", size: 150 }),
+      treeHelper.accessor("age", { header: "Age", size: 80 }),
+    ];
+    const getSubRows = (row: TreePerson) => row.children;
+
+    function createExpandInstance(expanded: ExpandedState = {}) {
+      let currentExpanded = expanded;
+      const onExpandedChange = (updater: ExpandedUpdater) => {
+        currentExpanded = typeof updater === "function" ? updater(currentExpanded) : updater;
+      };
+      const instance = buildGridInstance({
+        data: treeData,
+        columns: treeColumns,
+        state: { sorting: [], columnFilters: [], globalFilter: "", expanded: currentExpanded },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        onExpandedChange,
+        getSubRows,
+      });
+      return { instance, getExpanded: () => currentExpanded };
+    }
+
+    it("getExpandedRowModel returns RowModel", () => {
+      const { instance } = createExpandInstance();
+      const model = instance.getExpandedRowModel();
+      expect(model).toBeDefined();
+      expect(model.rowCount).toBe(2); // collapsed → only root
+    });
+
+    it("getExpandedRowModel with expanded root shows children", () => {
+      const { instance } = createExpandInstance({ "0": true });
+      const model = instance.getExpandedRowModel();
+      expect(model.rowCount).toBe(4);
+      expect(model.rows.map((r) => r.original.firstName)).toEqual([
+        "Alice", "Bob", "Charlie", "Dave",
+      ]);
+    });
+
+    it("setExpanded calls onExpandedChange", () => {
+      const { instance, getExpanded } = createExpandInstance();
+      instance.setExpanded({ "0": true });
+      expect(getExpanded()).toEqual({ "0": true });
+    });
+
+    it("resetExpanded clears to empty", () => {
+      const { instance, getExpanded } = createExpandInstance({ "0": true });
+      instance.resetExpanded();
+      expect(getExpanded()).toEqual({});
+    });
+
+    it("toggleAllRowsExpanded sets expanded=true", () => {
+      const { instance, getExpanded } = createExpandInstance();
+      instance.toggleAllRowsExpanded();
+      expect(getExpanded()).toBe(true);
+    });
+
+    it("toggleAllRowsExpanded(false) sets expanded={}", () => {
+      const { instance, getExpanded } = createExpandInstance(true);
+      instance.toggleAllRowsExpanded(false);
+      expect(getExpanded()).toEqual({});
+    });
+
+    it("getIsAllRowsExpanded returns true when expanded=true", () => {
+      const { instance } = createExpandInstance(true);
+      expect(instance.getIsAllRowsExpanded()).toBe(true);
+    });
+
+    it("getIsAllRowsExpanded returns false when not all expandable rows are expanded", () => {
+      // Only Alice is expandable in treeData, so { "0": true } means all expanded.
+      // An empty record means Alice is collapsed.
+      const { instance } = createExpandInstance({});
+      expect(instance.getIsAllRowsExpanded()).toBe(false);
+    });
+
+    it("getExpandedRowModel without getSubRows returns core model", () => {
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns: [
+          helper.accessor("firstName", { header: "First" }),
+          helper.accessor("age", { header: "Age" }),
+        ],
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      const model = instance.getExpandedRowModel();
+      expect(model.rowCount).toBe(4);
     });
   });
 });
