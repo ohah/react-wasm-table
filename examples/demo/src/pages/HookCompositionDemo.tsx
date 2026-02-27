@@ -6,7 +6,8 @@ import {
   Badge,
   type SortingState,
   type NormalizedRange,
-  type CellCoord,
+  type GridCellEvent,
+  type GridHeaderEvent,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
 
@@ -106,15 +107,15 @@ export function HookCompositionDemo() {
 
   // Callbacks
   const onCellClick = useCallback(
-    (coord: CellCoord) => {
-      logEvent("cellClick", `(${coord.row}, ${coord.col})`);
+    (event: GridCellEvent) => {
+      logEvent("cellClick", `(${event.cell.row}, ${event.cell.col})`);
     },
     [logEvent],
   );
 
   const onHeaderClick = useCallback(
-    (colIndex: number) => {
-      logEvent("headerClick", `col ${colIndex}`);
+    (event: GridHeaderEvent) => {
+      logEvent("headerClick", `col ${event.colIndex}`);
     },
     [logEvent],
   );

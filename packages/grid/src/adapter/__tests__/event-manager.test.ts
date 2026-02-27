@@ -1,6 +1,7 @@
 import { describe, expect, it, mock, beforeEach, afterEach } from "bun:test";
 import { EventManager } from "../event-manager";
-import type { CellCoord, CellLayout } from "../../types";
+import type { EventCoords } from "../event-manager";
+import type { CellCoord, CellLayout, HitTestResult } from "../../types";
 
 function makeLayout(
   row: number,
@@ -542,6 +543,193 @@ describe("EventManager", () => {
 
       expect(onScroll).not.toHaveBeenCalled();
       expect(onCellClick).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("native event passthrough", () => {
+    it("passes native MouseEvent and EventCoords to onCellClick", () => {
+      const onClick = mock((_coord: CellCoord, _native: MouseEvent, _coords: EventCoords) => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCellClick: onClick });
+
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 50, clientY: 10, bubbles: true }));
+      expect(onClick).toHaveBeenCalledTimes(1);
+      const [coord, native, coords] = onClick.mock.calls[0] as unknown as [CellCoord, MouseEvent, EventCoords];
+      expect(coord).toEqual({ row: 0, col: 0 });
+      expect(native).toBeInstanceOf(MouseEvent);
+      expect(coords.viewportX).toBe(50);
+      expect(coords.viewportY).toBe(10);
+      expect(coords.contentX).toBe(50); // scrollLeft=0
+      expect(coords.contentY).toBe(10);
+    });
+
+    it("passes native MouseEvent and EventCoords to onHeaderClick", () => {
+      const onHeaderClick = mock((_col: number, _native: MouseEvent, _coords: EventCoords) => {});
+      const headerLayouts = [makeLayout(0, 2, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderClick });
+
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 50, clientY: 10, bubbles: true }));
+      expect(onHeaderClick).toHaveBeenCalledTimes(1);
+      const [colIndex, native, coords] = onHeaderClick.mock.calls[0] as unknown as [number, MouseEvent, EventCoords];
+      expect(colIndex).toBe(2);
+      expect(native).toBeInstanceOf(MouseEvent);
+      expect(coords.viewportX).toBe(50);
+    });
+
+    it("passes native MouseEvent and EventCoords to onCellMouseDown", () => {
+      const onMouseDown = mock((_coord: CellCoord, _shift: boolean, _native: MouseEvent, _coords: EventCoords) => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCellMouseDown: onMouseDown });
+
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 100, clientY: 20, shiftKey: true, bubbles: true }),
+      );
+      expect(onMouseDown).toHaveBeenCalledTimes(1);
+      const [coord, shift, native, coords] = onMouseDown.mock.calls[0] as unknown as [CellCoord, boolean, MouseEvent, EventCoords];
+      expect(coord).toEqual({ row: 0, col: 0 });
+      expect(shift).toBe(true);
+      expect(native).toBeInstanceOf(MouseEvent);
+      expect(coords.contentX).toBe(100);
+    });
+
+    it("passes native MouseEvent and EventCoords to onCellMouseMove", () => {
+      const onMouseMove = mock((_coord: CellCoord, _native: MouseEvent, _coords: EventCoords) => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCellMouseMove: onMouseMove });
+
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 56, clientY: 10, buttons: 1, bubbles: true }),
+      );
+      expect(onMouseMove).toHaveBeenCalledTimes(1);
+      const [coord, native, coords] = onMouseMove.mock.calls[0] as unknown as [CellCoord, MouseEvent, EventCoords];
+      expect(coord).toEqual({ row: 0, col: 0 });
+      expect(native).toBeInstanceOf(MouseEvent);
+      expect(coords.viewportX).toBe(56);
+    });
+
+    it("passes native WheelEvent to onScroll", () => {
+      const onScroll = mock((_dy: number, _dx: number, _native: WheelEvent | null) => {});
+      em.attach(canvas, { onScroll });
+
+      canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: 100, deltaX: 0, bubbles: true }));
+      expect(onScroll).toHaveBeenCalledTimes(1);
+      const [dy, _dx, native] = onScroll.mock.calls[0] as unknown as [number, number, WheelEvent | null];
+      expect(dy).toBe(100);
+      expect(native).toBeInstanceOf(WheelEvent);
+    });
+
+    it("passes EventCoords with scrollLeft correction", () => {
+      const onClick = mock((_coord: CellCoord, _native: MouseEvent, _coords: EventCoords) => {});
+      const rowLayouts = [makeLayout(0, 0, 300, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.setScrollOffset(250);
+      em.attach(canvas, { onCellClick: onClick });
+
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 100, clientY: 10, bubbles: true }));
+      expect(onClick).toHaveBeenCalledTimes(1);
+      const [, , coords] = onClick.mock.calls[0] as unknown as [CellCoord, MouseEvent, EventCoords];
+      expect(coords.viewportX).toBe(100);
+      expect(coords.contentX).toBe(350); // viewportX + scrollLeft
+    });
+  });
+
+  describe("onCanvasEvent", () => {
+    it("fires onCanvasEvent before onCellClick with correct hitTest", () => {
+      const order: string[] = [];
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, {
+        onCanvasEvent: (type, _native, hitTest, _coords) => {
+          order.push(`canvas:${type}`);
+          expect(hitTest.type).toBe("cell");
+          expect(hitTest.cell).toEqual({ row: 0, col: 0 });
+        },
+        onCellClick: () => {
+          order.push("cellClick");
+        },
+      });
+
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 50, clientY: 10, bubbles: true }));
+      expect(order).toEqual(["canvas:click", "cellClick"]);
+    });
+
+    it("fires onCanvasEvent with header hitTest for header clicks", () => {
+      const headerLayouts = [makeLayout(0, 1, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      const onCanvasEvent = mock(
+        (_type: string, _native: MouseEvent, _hitTest: HitTestResult, _coords: EventCoords) => {},
+      );
+      em.attach(canvas, { onCanvasEvent });
+
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 50, clientY: 10, bubbles: true }));
+      expect(onCanvasEvent).toHaveBeenCalledTimes(1);
+      const [type, , hitTest] = onCanvasEvent.mock.calls[0] as unknown as [string, MouseEvent, HitTestResult, EventCoords];
+      expect(type).toBe("click");
+      expect(hitTest.type).toBe("header");
+      expect(hitTest.colIndex).toBe(1);
+    });
+
+    it("fires onCanvasEvent with empty hitTest when missing all", () => {
+      em.setLayouts([], []);
+      const onCanvasEvent = mock(
+        (_type: string, _native: MouseEvent, _hitTest: HitTestResult, _coords: EventCoords) => {},
+      );
+      em.attach(canvas, { onCanvasEvent });
+
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 50, clientY: 10, bubbles: true }));
+      expect(onCanvasEvent).toHaveBeenCalledTimes(1);
+      const [, , hitTest] = onCanvasEvent.mock.calls[0] as unknown as [string, MouseEvent, HitTestResult, EventCoords];
+      expect(hitTest.type).toBe("empty");
+    });
+
+    it("blocks semantic handler when onCanvasEvent returns false", () => {
+      const onCellClick = mock(() => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, {
+        onCanvasEvent: () => false,
+        onCellClick,
+      });
+
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 50, clientY: 10, bubbles: true }));
+      expect(onCellClick).not.toHaveBeenCalled();
+    });
+
+    it("fires for mousedown events", () => {
+      const onCanvasEvent = mock(
+        (_type: string, _native: MouseEvent, _hitTest: HitTestResult, _coords: EventCoords) => {},
+      );
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCanvasEvent });
+
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 10, bubbles: true }),
+      );
+      expect(onCanvasEvent).toHaveBeenCalledTimes(1);
+      const [type] = onCanvasEvent.mock.calls[0] as unknown as [string];
+      expect(type).toBe("mousedown");
+    });
+
+    it("fires for dblclick events", () => {
+      const onCanvasEvent = mock(
+        (_type: string, _native: MouseEvent, _hitTest: HitTestResult, _coords: EventCoords) => {},
+      );
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCanvasEvent });
+
+      canvas.dispatchEvent(new MouseEvent("dblclick", { clientX: 50, clientY: 10, bubbles: true }));
+      expect(onCanvasEvent).toHaveBeenCalledTimes(1);
+      const [type] = onCanvasEvent.mock.calls[0] as unknown as [string];
+      expect(type).toBe("dblclick");
     });
   });
 });

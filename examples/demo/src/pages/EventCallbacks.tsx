@@ -4,7 +4,9 @@ import {
   createColumnHelper,
   type SortingState,
   type NormalizedRange,
-  type CellCoord,
+  type GridCellEvent,
+  type GridHeaderEvent,
+  type GridKeyboardEvent,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 
@@ -76,33 +78,33 @@ export function EventCallbacks() {
   );
 
   const onCellClick = useCallback(
-    (coord: CellCoord) => {
-      addLog("onCellClick", `row=${coord.row}, col=${coord.col}`, blockCellClick);
-      if (blockCellClick) return false as const;
+    (event: GridCellEvent) => {
+      addLog("onCellClick", `row=${event.cell.row}, col=${event.cell.col}`, blockCellClick);
+      if (blockCellClick) event.preventDefault();
     },
     [blockCellClick, addLog],
   );
 
   const onCellDoubleClick = useCallback(
-    (coord: CellCoord) => {
-      addLog("onCellDoubleClick", `row=${coord.row}, col=${coord.col}`, blockDblClick);
-      if (blockDblClick) return false as const;
+    (event: GridCellEvent) => {
+      addLog("onCellDoubleClick", `row=${event.cell.row}, col=${event.cell.col}`, blockDblClick);
+      if (blockDblClick) event.preventDefault();
     },
     [blockDblClick, addLog],
   );
 
   const onHeaderClick = useCallback(
-    (colIndex: number) => {
-      addLog("onHeaderClick", `colIndex=${colIndex}`, blockHeaderClick);
-      if (blockHeaderClick) return false as const;
+    (event: GridHeaderEvent) => {
+      addLog("onHeaderClick", `colIndex=${event.colIndex}`, blockHeaderClick);
+      if (blockHeaderClick) event.preventDefault();
     },
     [blockHeaderClick, addLog],
   );
 
   const onKeyDown = useCallback(
-    (event: KeyboardEvent) => {
+    (event: GridKeyboardEvent) => {
       addLog("onKeyDown", `key=${event.key}`, blockKeyDown);
-      if (blockKeyDown) return false as const;
+      if (blockKeyDown) event.preventDefault();
     },
     [blockKeyDown, addLog],
   );
@@ -129,9 +131,10 @@ export function EventCallbacks() {
 
   return (
     <>
-      <h1>Event Callbacks (Step 0-3)</h1>
+      <h1>Event Callbacks</h1>
       <p>
-        All 6 event callbacks fire before default behavior. Return <code>false</code> to cancel.
+        All event callbacks receive enriched events. Call <code>event.preventDefault()</code> to
+        cancel default behavior.
       </p>
 
       <div style={{ display: "flex", gap: 24, marginBottom: 16, flexWrap: "wrap" }}>
@@ -165,8 +168,8 @@ export function EventCallbacks() {
         }}
       >
         {`<Grid\n`}
-        {`  onCellClick={(coord) => { ${blockCellClick ? "return false;" : "/* observe */"} }}\n`}
-        {`  onHeaderClick={(colIndex) => { ${blockHeaderClick ? "return false;" : "/* observe */"} }}\n`}
+        {`  onCellClick={(e) => { ${blockCellClick ? "e.preventDefault();" : "/* observe */"} }}\n`}
+        {`  onHeaderClick={(e) => { ${blockHeaderClick ? "e.preventDefault();" : "/* observe */"} }}\n`}
         {`  onBeforeSortChange={(next) => { ${blockSort ? "return false;" : "/* observe */"} }}\n`}
         {`  onBeforeSelectionChange={(next) => { ${blockSelection ? "return false;" : "/* observe */"} }}\n`}
         {`/>`}
