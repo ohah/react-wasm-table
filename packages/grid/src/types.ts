@@ -380,6 +380,14 @@ export interface GridProps extends BoxModelProps {
   sorting?: import("./tanstack-types").SortingState;
   /** Callback when sorting changes (controlled mode). */
   onSortingChange?: (sorting: import("./tanstack-types").SortingState) => void;
+  /** Controlled column filters state. */
+  columnFilters?: import("./tanstack-types").ColumnFiltersState;
+  /** Callback when column filters change (controlled mode). */
+  onColumnFiltersChange?: (filters: import("./tanstack-types").ColumnFiltersState) => void;
+  /** Controlled global filter string. */
+  globalFilter?: string;
+  /** Callback when global filter changes (controlled mode). */
+  onGlobalFilterChange?: (value: string) => void;
 
   // Selection state management (controlled/uncontrolled)
   /** Controlled selection state. undefined = uncontrolled, null = no selection. */
@@ -412,6 +420,8 @@ export interface GridProps extends BoxModelProps {
   /** Initial state for uncontrolled mode. */
   initialState?: {
     sorting?: import("./tanstack-types").SortingState;
+    columnFilters?: import("./tanstack-types").ColumnFiltersState;
+    globalFilter?: string;
     selection?: NormalizedRange | null;
   };
   /** CSS display. @default "flex" */
@@ -488,6 +498,8 @@ export interface WasmTableEngine {
     container?: unknown,
   ): Float64Array;
   setColumnarSort(configs: unknown): void;
+  setColumnarFilters(filters: unknown): void;
+  setGlobalFilter(query: string | null): void;
   setColumnarScrollConfig(rowHeight: number, viewportHeight: number, overscan: number): void;
   getColumnarViewIndicesInfo(): Uint32Array;
 

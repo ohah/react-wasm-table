@@ -21,6 +21,31 @@ export interface ColumnSort {
 
 export type SortingUpdater = SortingState | ((prev: SortingState) => SortingState);
 
+// ── Filter state ────────────────────────────────────────────────────
+
+export type FilterOp =
+  | "eq"
+  | "neq"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "contains"
+  | "startsWith"
+  | "endsWith";
+
+export interface ColumnFilter {
+  id: string;
+  value: unknown;
+  op?: FilterOp;
+}
+
+export interface ColumnFiltersState extends Array<ColumnFilter> {}
+
+export type ColumnFiltersUpdater =
+  | ColumnFiltersState
+  | ((prev: ColumnFiltersState) => ColumnFiltersState);
+
 // ── CellContext / HeaderContext ──────────────────────────────────────
 
 /** Context passed to the `cell` render function. Mirrors TanStack CellContext. */

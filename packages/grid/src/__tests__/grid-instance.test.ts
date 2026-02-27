@@ -1,7 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import { createColumnHelper } from "../column-helper";
 import { buildGridInstance } from "../grid-instance";
-import type { SortingState, SortingUpdater } from "../tanstack-types";
+import type {
+  SortingState,
+  SortingUpdater,
+  ColumnFiltersState,
+  ColumnFiltersUpdater,
+} from "../tanstack-types";
 
 type Person = {
   firstName: string;
@@ -11,6 +16,13 @@ type Person = {
 };
 
 const helper = createColumnHelper<Person>();
+
+const sampleData: Person[] = [
+  { firstName: "Alice", lastName: "Smith", age: 30, status: "active" },
+  { firstName: "Bob", lastName: "Jones", age: 25, status: "inactive" },
+  { firstName: "Charlie", lastName: "Brown", age: 35, status: "active" },
+  { firstName: "Dave", lastName: "Wilson", age: 28, status: "pending" },
+];
 
 function createInstance(sorting: SortingState = []) {
   let currentSorting = sorting;
@@ -35,9 +47,12 @@ function createInstance(sorting: SortingState = []) {
 
   return {
     instance: buildGridInstance({
+      data: sampleData,
       columns,
-      state: { sorting: currentSorting },
+      state: { sorting: currentSorting, columnFilters: [], globalFilter: "" },
       onSortingChange,
+      onColumnFiltersChange: () => {},
+      onGlobalFilterChange: () => {},
     }),
     getSorting: () => currentSorting,
   };
@@ -86,9 +101,12 @@ describe("GridInstance", () => {
       ];
 
       const instance = buildGridInstance({
+        data: sampleData,
         columns,
-        state: { sorting: [] },
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
         onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
       });
 
       expect(instance.getAllColumns()).toHaveLength(2); // group + age
@@ -182,9 +200,12 @@ describe("GridInstance", () => {
         helper.accessor("firstName", { header: "First" }), // no size
       ];
       const instance = buildGridInstance({
+        data: sampleData,
         columns,
-        state: { sorting: [] },
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
         onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
       });
       expect(instance.getColumn("firstName")!.getSize()).toBe(150);
     });
@@ -227,9 +248,12 @@ describe("GridInstance", () => {
         helper.accessor("age", { header: "Age", size: 80 }),
       ];
       const instance = buildGridInstance({
+        data: sampleData,
         columns,
-        state: { sorting: [] },
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
         onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
       });
 
       const allCols = instance.getAllColumns();
@@ -257,9 +281,12 @@ describe("GridInstance", () => {
         }),
       ];
       const instance = buildGridInstance({
+        data: sampleData,
         columns,
-        state: { sorting: [] },
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
         onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
       });
 
       // Group column itself is not sortable
@@ -278,6 +305,145 @@ describe("GridInstance", () => {
       const { instance, getSorting } = createInstance([{ id: "age", desc: true }]);
       instance.resetSorting();
       expect(getSorting()).toEqual([]);
+    });
+  });
+
+  describe("filter methods", () => {
+    it("setColumnFilters calls onColumnFiltersChange", () => {
+      let captured: ColumnFiltersUpdater | undefined;
+      const columns = [
+        helper.accessor("firstName", { header: "First" }),
+        helper.accessor("age", { header: "Age" }),
+      ];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: (u) => {
+          captured = u;
+        },
+        onGlobalFilterChange: () => {},
+      });
+      instance.setColumnFilters([{ id: "firstName", value: "Alice" }]);
+      expect(captured).toEqual([{ id: "firstName", value: "Alice" }]);
+    });
+
+    it("setGlobalFilter calls onGlobalFilterChange", () => {
+      let captured: string | undefined;
+      const columns = [helper.accessor("firstName", { header: "First" })];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: (v) => {
+          captured = v;
+        },
+      });
+      instance.setGlobalFilter("test");
+      expect(captured).toBe("test");
+    });
+
+    it("resetColumnFilters calls onColumnFiltersChange with empty array", () => {
+      let captured: ColumnFiltersUpdater | undefined;
+      const columns = [helper.accessor("firstName", { header: "First" })];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [{ id: "firstName", value: "A" }], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: (u) => {
+          captured = u;
+        },
+        onGlobalFilterChange: () => {},
+      });
+      instance.resetColumnFilters();
+      expect(captured).toEqual([]);
+    });
+  });
+
+  describe("row model", () => {
+    it("getCoreRowModel returns all data in original order", () => {
+      const { instance } = createInstance();
+      const model = instance.getCoreRowModel();
+      expect(model.rowCount).toBe(4);
+      expect(model.rows[0]!.original.firstName).toBe("Alice");
+      expect(model.rows[3]!.original.firstName).toBe("Dave");
+    });
+
+    it("getRowModel with no viewIndices returns all data", () => {
+      const { instance } = createInstance();
+      const model = instance.getRowModel();
+      expect(model.rowCount).toBe(4);
+    });
+
+    it("getRowModel with viewIndices returns filtered view", () => {
+      const columns = [
+        helper.accessor("firstName", { header: "First" }),
+        helper.accessor("age", { header: "Age" }),
+      ];
+      const indices = new Uint32Array([2, 0]); // Charlie, Alice
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        viewIndices: indices,
+      });
+      const model = instance.getRowModel();
+      expect(model.rowCount).toBe(2);
+      expect(model.rows[0]!.original.firstName).toBe("Charlie");
+      expect(model.rows[1]!.original.firstName).toBe("Alice");
+    });
+
+    it("getRow returns row at view index", () => {
+      const { instance } = createInstance();
+      const row = instance.getRow(1);
+      expect(row.original.firstName).toBe("Bob");
+      expect(row.getValue("age")).toBe(25);
+    });
+
+    it("getRow throws for out-of-bounds", () => {
+      const { instance } = createInstance();
+      expect(() => instance.getRow(99)).toThrow(RangeError);
+    });
+
+    it("getCoreRowModel is cached", () => {
+      const { instance } = createInstance();
+      const first = instance.getCoreRowModel();
+      const second = instance.getCoreRowModel();
+      expect(first).toBe(second);
+    });
+
+    it("getRowModel is cached", () => {
+      const { instance } = createInstance();
+      const first = instance.getRowModel();
+      const second = instance.getRowModel();
+      expect(first).toBe(second);
+    });
+  });
+
+  describe("getState includes filter fields", () => {
+    it("includes columnFilters and globalFilter", () => {
+      const columns = [helper.accessor("firstName", { header: "First" })];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: {
+          sorting: [],
+          columnFilters: [{ id: "firstName", value: "Alice" }],
+          globalFilter: "test",
+        },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      expect(instance.getState().columnFilters).toEqual([{ id: "firstName", value: "Alice" }]);
+      expect(instance.getState().globalFilter).toBe("test");
     });
   });
 });

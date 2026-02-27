@@ -2,10 +2,14 @@ import type {
   GridColumnDef,
   SortingState,
   SortingUpdater,
+  ColumnFiltersState,
+  ColumnFiltersUpdater,
   CellContext,
   HeaderContext,
 } from "./tanstack-types";
 import { getLeafColumns } from "./resolve-columns";
+import type { Row, RowModel, RowModelFactory } from "./row-model";
+import { buildRowModel } from "./row-model";
 
 // ── GridColumn ──────────────────────────────────────────────────────
 
@@ -60,6 +64,8 @@ export interface GridHeaderGroup<TData = unknown> {
 /** The grid's internal state. */
 export interface GridState {
   sorting: SortingState;
+  columnFilters: ColumnFiltersState;
+  globalFilter: string;
 }
 
 // ── GridInstance ─────────────────────────────────────────────────────
@@ -79,14 +85,32 @@ export interface GridInstance<TData = unknown> {
   setSorting: (updater: SortingUpdater) => void;
   /** Reset sorting to initial state. */
   resetSorting: () => void;
+
+  /** Set column filters. */
+  setColumnFilters: (updater: ColumnFiltersUpdater) => void;
+  /** Set global filter string. */
+  setGlobalFilter: (value: string) => void;
+  /** Reset column filters to empty. */
+  resetColumnFilters: () => void;
+
+  /** Get the current view row model (after filter + sort, using viewIndices). */
+  getRowModel: () => RowModel<TData>;
+  /** Get the core row model (original data order). */
+  getCoreRowModel: () => RowModel<TData>;
+  /** Get a single row by view index. */
+  getRow: (index: number) => Row<TData>;
 }
 
 // ── Builder ─────────────────────────────────────────────────────────
 
 interface BuildOptions<TData> {
+  data: TData[];
   columns: GridColumnDef<TData, any>[];
   state: GridState;
   onSortingChange: (updater: SortingUpdater) => void;
+  onColumnFiltersChange: (updater: ColumnFiltersUpdater) => void;
+  onGlobalFilterChange: (value: string) => void;
+  viewIndices?: Uint32Array | number[] | null;
 }
 
 /** Build GridColumn instances from column definitions. */
@@ -148,7 +172,15 @@ function buildGridColumns<TData>(
 
 /** Build a GridInstance from options. */
 export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInstance<TData> {
-  const { columns: defs, state, onSortingChange } = options;
+  const {
+    data,
+    columns: defs,
+    state,
+    onSortingChange,
+    onColumnFiltersChange,
+    onGlobalFilterChange,
+    viewIndices,
+  } = options;
 
   const allColumns = buildGridColumns(defs, state, onSortingChange);
 
@@ -173,6 +205,10 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
   }
   indexColumns(allColumns);
 
+  // Row model caches
+  let cachedRowModel: RowModel<TData> | null = null;
+  let cachedCoreRowModel: RowModel<TData> | null = null;
+
   return {
     getState: () => state,
     getAllColumns: () => allColumns,
@@ -180,6 +216,25 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     getColumn: (id) => columnMap.get(id),
     setSorting: onSortingChange,
     resetSorting: () => onSortingChange([]),
+    setColumnFilters: onColumnFiltersChange,
+    setGlobalFilter: onGlobalFilterChange,
+    resetColumnFilters: () => onColumnFiltersChange([]),
+    getRowModel: () => {
+      if (!cachedRowModel) {
+        cachedRowModel = buildRowModel(data, viewIndices ?? null, defs);
+      }
+      return cachedRowModel;
+    },
+    getCoreRowModel: () => {
+      if (!cachedCoreRowModel) {
+        cachedCoreRowModel = buildRowModel(data, null, defs);
+      }
+      return cachedCoreRowModel;
+    },
+    getRow: (index: number) => {
+      const model = buildRowModel(data, viewIndices ?? null, defs);
+      return model.getRow(index);
+    },
   };
 }
 

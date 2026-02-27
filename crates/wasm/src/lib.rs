@@ -10,7 +10,9 @@ use react_wasm_table_core::layout::{
     RepeatValue, TrackListItem, TrackSizeValue, Viewport,
 };
 use react_wasm_table_core::layout_buffer;
-use react_wasm_table_core::types::{SortConfig, SortDirection};
+use react_wasm_table_core::types::{
+    ColumnFilter, FilterOp, FilterValue, GlobalFilter, SortConfig, SortDirection,
+};
 use wasm_bindgen::prelude::*;
 
 /// The main WASM-exposed table engine.
@@ -113,6 +115,39 @@ impl TableEngine {
             .collect();
         self.columnar.set_sort(configs);
         Ok(())
+    }
+
+    /// Set column filters on the columnar store.
+    #[wasm_bindgen(js_name = setColumnarFilters)]
+    pub fn set_columnar_filters(&mut self, filters: JsValue) -> Result<(), JsError> {
+        let filters: Vec<JsColumnFilter> = serde_wasm_bindgen::from_value(filters)?;
+        let filters: Vec<ColumnFilter> = filters
+            .into_iter()
+            .map(|f| ColumnFilter {
+                column_index: f.column_index,
+                op: match f.op.as_str() {
+                    "neq" => FilterOp::Neq,
+                    "gt" => FilterOp::Gt,
+                    "gte" => FilterOp::Gte,
+                    "lt" => FilterOp::Lt,
+                    "lte" => FilterOp::Lte,
+                    "contains" => FilterOp::Contains,
+                    "startsWith" => FilterOp::StartsWith,
+                    "endsWith" => FilterOp::EndsWith,
+                    _ => FilterOp::Eq,
+                },
+                value: convert_filter_value(&f.value),
+            })
+            .collect();
+        self.columnar.set_column_filters(filters);
+        Ok(())
+    }
+
+    /// Set global filter on the columnar store.
+    #[wasm_bindgen(js_name = setGlobalFilter)]
+    pub fn set_global_filter(&mut self, query: Option<String>) {
+        self.columnar
+            .set_global_filter(query.map(|q| GlobalFilter { query: q }));
     }
 
     /// Set scroll configuration on the columnar store.
@@ -251,6 +286,30 @@ struct JsSortConfig {
     #[serde(rename = "columnIndex")]
     column_index: usize,
     direction: String,
+}
+
+#[derive(serde::Deserialize)]
+struct JsColumnFilter {
+    #[serde(rename = "columnIndex")]
+    column_index: usize,
+    op: String,
+    value: JsFilterValue,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(untagged)]
+enum JsFilterValue {
+    Bool(bool),
+    Float64(f64),
+    String(String),
+}
+
+fn convert_filter_value(v: &JsFilterValue) -> FilterValue {
+    match v {
+        JsFilterValue::Bool(b) => FilterValue::Bool(*b),
+        JsFilterValue::Float64(f) => FilterValue::Float64(*f),
+        JsFilterValue::String(s) => FilterValue::String(s.clone()),
+    }
 }
 
 #[derive(serde::Deserialize)]

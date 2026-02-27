@@ -51,6 +51,10 @@ export type {
   SortingState,
   ColumnSort,
   SortingUpdater,
+  FilterOp,
+  ColumnFilter,
+  ColumnFiltersState,
+  ColumnFiltersUpdater,
 } from "./tanstack-types";
 
 // Header grouping (multi-level headers)
@@ -67,6 +71,16 @@ export type {
   GridHeaderGroup,
   GridState,
 } from "./grid-instance";
+
+// Row model
+export {
+  buildRow,
+  buildRowModel,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+} from "./row-model";
+export type { Row, RowModel, RowModelFactory } from "./row-model";
 
 // Hooks
 export { useGrid, useColumnRegistry } from "./react/hooks";

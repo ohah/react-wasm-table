@@ -7,6 +7,7 @@ import { EventManager } from "../adapter/event-manager";
 import { GridContext } from "./context";
 import { ScrollBar } from "./ScrollBar";
 import { useSorting } from "./hooks/use-sorting";
+import { useFiltering } from "./hooks/use-filtering";
 import { useWasmEngine } from "./hooks/use-wasm-engine";
 import { useDataIngestion } from "./hooks/use-data-ingestion";
 import { useSelection } from "./hooks/use-selection";
@@ -35,6 +36,11 @@ export function Grid({
   // TanStack-compatible sorting
   sorting: sortingProp,
   onSortingChange: onSortingChangeProp,
+  // TanStack-compatible filtering
+  columnFilters: columnFiltersProp,
+  onColumnFiltersChange: onColumnFiltersChangeProp,
+  globalFilter: globalFilterProp,
+  onGlobalFilterChange: onGlobalFilterChangeProp,
   // Event callbacks (Step 0-3)
   onCellClick: onCellClickProp,
   onCellDoubleClick: onCellDoubleClickProp,
@@ -161,6 +167,17 @@ export function Grid({
     onSortingChange: onSortingChangeProp,
     onBeforeSortChange,
     initialSorting: initialState?.sorting,
+    invalidate,
+  });
+  useFiltering({
+    engine,
+    columnRegistry,
+    columnFiltersProp,
+    globalFilterProp,
+    onColumnFiltersChange: onColumnFiltersChangeProp,
+    onGlobalFilterChange: onGlobalFilterChangeProp,
+    initialColumnFilters: initialState?.columnFilters,
+    initialGlobalFilter: initialState?.globalFilter,
     invalidate,
   });
   const { stringTableRef } = useDataIngestion({

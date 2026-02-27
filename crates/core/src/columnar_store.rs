@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::types::{SortConfig, SortDirection};
+use crate::types::{ColumnFilter, FilterOp, FilterValue, GlobalFilter, SortConfig, SortDirection};
 
 /// Column data type tag.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -86,6 +86,8 @@ pub struct ColumnarStore {
     view_indices: Vec<u32>,
     view_dirty: bool,
     sort_configs: Vec<SortConfig>,
+    column_filters: Vec<ColumnFilter>,
+    global_filter: Option<GlobalFilter>,
     row_height: f64,
     viewport_height: f64,
     overscan: usize,
@@ -100,6 +102,8 @@ impl ColumnarStore {
             view_indices: Vec::new(),
             view_dirty: true,
             sort_configs: Vec::new(),
+            column_filters: Vec::new(),
+            global_filter: None,
             row_height: 36.0,
             viewport_height: 600.0,
             overscan: 5,
@@ -161,6 +165,18 @@ impl ColumnarStore {
         self.view_dirty = true;
     }
 
+    /// Set column filters. Marks view dirty.
+    pub fn set_column_filters(&mut self, filters: Vec<ColumnFilter>) {
+        self.column_filters = filters;
+        self.view_dirty = true;
+    }
+
+    /// Set global filter. Marks view dirty.
+    pub fn set_global_filter(&mut self, filter: Option<GlobalFilter>) {
+        self.global_filter = filter;
+        self.view_dirty = true;
+    }
+
     /// Set scroll configuration.
     pub const fn set_scroll_config(
         &mut self,
@@ -173,7 +189,7 @@ impl ColumnarStore {
         self.overscan = overscan;
     }
 
-    /// Rebuild the view index array: sort in-place on u32 indices.
+    /// Rebuild the view index array: filter → sort pipeline.
     /// Skips if not dirty.
     pub fn rebuild_view(&mut self) {
         if !self.view_dirty {
@@ -183,6 +199,22 @@ impl ColumnarStore {
 
         let mut indices: Vec<u32> = (0..self.row_count as u32).collect();
 
+        // 1. Apply column filters (AND logic)
+        if !self.column_filters.is_empty() {
+            let filters = std::mem::take(&mut self.column_filters);
+            filter_indices_columnar(&mut indices, self, &filters);
+            self.column_filters = filters;
+        }
+
+        // 2. Apply global filter (OR across string columns)
+        if let Some(gf) = self.global_filter.take() {
+            if !gf.query.is_empty() {
+                global_filter_indices(&mut indices, self, &gf);
+            }
+            self.global_filter = Some(gf);
+        }
+
+        // 3. Sort
         if !self.sort_configs.is_empty() {
             let configs = std::mem::take(&mut self.sort_configs);
             sort_indices_columnar(&mut indices, self, &configs);
@@ -254,6 +286,105 @@ pub fn sort_indices_columnar(indices: &mut [u32], store: &ColumnarStore, configs
             }
         }
         std::cmp::Ordering::Equal
+    });
+}
+
+/// Filter indices by column filters (AND logic: row must pass all filters).
+pub fn filter_indices_columnar(
+    indices: &mut Vec<u32>,
+    store: &ColumnarStore,
+    filters: &[ColumnFilter],
+) {
+    if filters.is_empty() {
+        return;
+    }
+    indices.retain(|&idx| {
+        let row = idx as usize;
+        filters.iter().all(|f| match_column_filter(store, f, row))
+    });
+}
+
+/// Check if a single row passes a column filter.
+fn match_column_filter(store: &ColumnarStore, filter: &ColumnFilter, row: usize) -> bool {
+    match store.data.get(filter.column_index) {
+        Some(ColumnData::Float64(v) | ColumnData::Bool(v)) => {
+            let val = v[row];
+            if val.is_nan() {
+                return false; // NaN never passes
+            }
+            match &filter.value {
+                FilterValue::Float64(target) => match filter.op {
+                    FilterOp::Eq => (val - target).abs() < f64::EPSILON,
+                    FilterOp::Neq => (val - target).abs() >= f64::EPSILON,
+                    FilterOp::Gt => val > *target,
+                    FilterOp::Gte => val >= *target - f64::EPSILON,
+                    FilterOp::Lt => val < *target,
+                    FilterOp::Lte => val <= *target + f64::EPSILON,
+                    FilterOp::Contains | FilterOp::StartsWith | FilterOp::EndsWith => false,
+                },
+                FilterValue::Bool(target) => {
+                    let val_bool = val != 0.0;
+                    match filter.op {
+                        FilterOp::Eq => val_bool == *target,
+                        FilterOp::Neq => val_bool != *target,
+                        _ => false,
+                    }
+                }
+                FilterValue::String(_) => false,
+            }
+        }
+        Some(ColumnData::Strings { ids, intern }) => {
+            let resolved = intern.resolve(ids[row]);
+            match &filter.value {
+                FilterValue::String(target) => match filter.op {
+                    FilterOp::Eq => resolved == target.as_str(),
+                    FilterOp::Neq => resolved != target.as_str(),
+                    FilterOp::Gt => resolved > target.as_str(),
+                    FilterOp::Gte => resolved >= target.as_str(),
+                    FilterOp::Lt => resolved < target.as_str(),
+                    FilterOp::Lte => resolved <= target.as_str(),
+                    FilterOp::Contains => resolved.to_lowercase().contains(&target.to_lowercase()),
+                    FilterOp::StartsWith => {
+                        resolved.to_lowercase().starts_with(&target.to_lowercase())
+                    }
+                    FilterOp::EndsWith => resolved.to_lowercase().ends_with(&target.to_lowercase()),
+                },
+                _ => false,
+            }
+        }
+        None => false,
+    }
+}
+
+/// Filter indices by global filter (OR across all string columns, case-insensitive contains).
+pub fn global_filter_indices(indices: &mut Vec<u32>, store: &ColumnarStore, filter: &GlobalFilter) {
+    let query = filter.query.to_lowercase();
+    if query.is_empty() {
+        return;
+    }
+
+    // Collect string column indices
+    let string_cols: Vec<usize> = store
+        .data
+        .iter()
+        .enumerate()
+        .filter_map(|(i, d)| matches!(d, ColumnData::Strings { .. }).then_some(i))
+        .collect();
+
+    if string_cols.is_empty() {
+        return;
+    }
+
+    indices.retain(|&idx| {
+        let row = idx as usize;
+        string_cols.iter().any(|&col_idx| {
+            if let Some(ColumnData::Strings { ids, intern }) = store.data.get(col_idx) {
+                let resolved = intern.resolve(ids[row]);
+                resolved.to_lowercase().contains(&query)
+            } else {
+                false
+            }
+        })
     });
 }
 
@@ -641,5 +772,476 @@ mod tests {
             }],
         );
         assert_eq!(indices, vec![0, 1, 2]);
+    }
+
+    // ── Column filter tests ─────────────────────────────────────────
+
+    fn make_store_for_filter() -> ColumnarStore {
+        let mut store = ColumnarStore::new();
+        store.init(3, 4);
+        let unique = vec![
+            "".to_string(),
+            "Alice".to_string(),
+            "Bob".to_string(),
+            "Charlie".to_string(),
+            "Dave".to_string(),
+        ];
+        store.set_column_strings(0, &unique, &[1, 2, 3, 4]); // names
+        store.set_column_float64(1, &[30.0, 25.0, 35.0, 28.0]); // ages
+        store.set_column_bool(2, &[1.0, 0.0, 1.0, f64::NAN]); // active
+        store.finalize();
+        store
+    }
+
+    #[test]
+    fn filter_float64_eq() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 1,
+                op: FilterOp::Eq,
+                value: FilterValue::Float64(30.0),
+            }],
+        );
+        assert_eq!(indices, vec![0]); // Alice=30
+    }
+
+    #[test]
+    fn filter_float64_gt() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 1,
+                op: FilterOp::Gt,
+                value: FilterValue::Float64(28.0),
+            }],
+        );
+        assert_eq!(indices, vec![0, 2]); // Alice=30, Charlie=35
+    }
+
+    #[test]
+    fn filter_float64_lte() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 1,
+                op: FilterOp::Lte,
+                value: FilterValue::Float64(28.0),
+            }],
+        );
+        assert_eq!(indices, vec![1, 3]); // Bob=25, Dave=28
+    }
+
+    #[test]
+    fn filter_float64_neq() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 1,
+                op: FilterOp::Neq,
+                value: FilterValue::Float64(30.0),
+            }],
+        );
+        assert_eq!(indices, vec![1, 2, 3]); // all except Alice
+    }
+
+    #[test]
+    fn filter_float64_gte_lt() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 1,
+                op: FilterOp::Gte,
+                value: FilterValue::Float64(28.0),
+            }],
+        );
+        assert_eq!(indices, vec![0, 2, 3]); // Alice=30, Charlie=35, Dave=28
+
+        let mut indices2: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices2,
+            &store,
+            &[ColumnFilter {
+                column_index: 1,
+                op: FilterOp::Lt,
+                value: FilterValue::Float64(28.0),
+            }],
+        );
+        assert_eq!(indices2, vec![1]); // Bob=25
+    }
+
+    #[test]
+    fn filter_string_eq() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 0,
+                op: FilterOp::Eq,
+                value: FilterValue::String("Bob".to_string()),
+            }],
+        );
+        assert_eq!(indices, vec![1]);
+    }
+
+    #[test]
+    fn filter_string_contains() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 0,
+                op: FilterOp::Contains,
+                value: FilterValue::String("li".to_string()), // Alice, Charlie
+            }],
+        );
+        assert_eq!(indices, vec![0, 2]);
+    }
+
+    #[test]
+    fn filter_string_starts_with() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 0,
+                op: FilterOp::StartsWith,
+                value: FilterValue::String("ch".to_string()),
+            }],
+        );
+        assert_eq!(indices, vec![2]); // Charlie
+    }
+
+    #[test]
+    fn filter_string_ends_with() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 0,
+                op: FilterOp::EndsWith,
+                value: FilterValue::String("ve".to_string()),
+            }],
+        );
+        assert_eq!(indices, vec![3]); // Dave
+    }
+
+    #[test]
+    fn filter_bool_eq() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 2,
+                op: FilterOp::Eq,
+                value: FilterValue::Bool(true),
+            }],
+        );
+        assert_eq!(indices, vec![0, 2]); // Alice, Charlie (NaN excluded)
+    }
+
+    #[test]
+    fn filter_bool_neq() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 2,
+                op: FilterOp::Neq,
+                value: FilterValue::Bool(true),
+            }],
+        );
+        assert_eq!(indices, vec![1]); // Bob=false (NaN excluded)
+    }
+
+    #[test]
+    fn filter_nan_always_excluded() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 3);
+        store.set_column_float64(0, &[f64::NAN, 5.0, f64::NAN]);
+        store.finalize();
+
+        let mut indices: Vec<u32> = (0..3).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 0,
+                op: FilterOp::Gte,
+                value: FilterValue::Float64(0.0),
+            }],
+        );
+        assert_eq!(indices, vec![1]); // only row 1 (5.0)
+    }
+
+    #[test]
+    fn filter_multiple_columns_and_logic() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        // name contains "li" AND age > 28
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[
+                ColumnFilter {
+                    column_index: 0,
+                    op: FilterOp::Contains,
+                    value: FilterValue::String("li".to_string()),
+                },
+                ColumnFilter {
+                    column_index: 1,
+                    op: FilterOp::Gt,
+                    value: FilterValue::Float64(28.0),
+                },
+            ],
+        );
+        assert_eq!(indices, vec![0, 2]); // Alice(30) and Charlie(35) both contain "li" and > 28
+    }
+
+    #[test]
+    fn filter_empty_filters_no_change() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(&mut indices, &store, &[]);
+        assert_eq!(indices, vec![0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn filter_invalid_column_excludes_all() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 99,
+                op: FilterOp::Eq,
+                value: FilterValue::Float64(30.0),
+            }],
+        );
+        assert_eq!(indices, Vec::<u32>::new());
+    }
+
+    #[test]
+    fn filter_string_ops_on_float_col_returns_false() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 1, // float64 column
+                op: FilterOp::Contains,
+                value: FilterValue::Float64(30.0),
+            }],
+        );
+        assert_eq!(indices, Vec::<u32>::new());
+    }
+
+    // ── Global filter tests ─────────────────────────────────────────
+
+    #[test]
+    fn global_filter_matches_string_columns() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        global_filter_indices(
+            &mut indices,
+            &store,
+            &GlobalFilter {
+                query: "bob".to_string(),
+            },
+        );
+        assert_eq!(indices, vec![1]); // Bob
+    }
+
+    #[test]
+    fn global_filter_case_insensitive() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        global_filter_indices(
+            &mut indices,
+            &store,
+            &GlobalFilter {
+                query: "ALICE".to_string(),
+            },
+        );
+        assert_eq!(indices, vec![0]);
+    }
+
+    #[test]
+    fn global_filter_empty_query_no_change() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        global_filter_indices(
+            &mut indices,
+            &store,
+            &GlobalFilter {
+                query: String::new(),
+            },
+        );
+        assert_eq!(indices, vec![0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn global_filter_no_string_columns_no_change() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 3);
+        store.set_column_float64(0, &[1.0, 2.0, 3.0]);
+        store.finalize();
+
+        let mut indices: Vec<u32> = (0..3).collect();
+        global_filter_indices(
+            &mut indices,
+            &store,
+            &GlobalFilter {
+                query: "test".to_string(),
+            },
+        );
+        assert_eq!(indices, vec![0, 1, 2]);
+    }
+
+    // ── rebuild_view filter+sort pipeline ───────────────────────────
+
+    #[test]
+    fn rebuild_view_filter_then_sort() {
+        let mut store = make_store_for_filter();
+        // Filter: age >= 28 → Alice(30), Charlie(35), Dave(28)
+        store.set_column_filters(vec![ColumnFilter {
+            column_index: 1,
+            op: FilterOp::Gte,
+            value: FilterValue::Float64(28.0),
+        }]);
+        // Sort: age ascending → Dave(28), Alice(30), Charlie(35)
+        store.set_sort(vec![SortConfig {
+            column_index: 1,
+            direction: SortDirection::Ascending,
+        }]);
+        store.rebuild_view();
+        assert_eq!(store.view_indices(), &[3, 0, 2]); // Dave=3, Alice=0, Charlie=2
+    }
+
+    #[test]
+    fn rebuild_view_global_filter_then_sort() {
+        let mut store = make_store_for_filter();
+        // Global filter: "a" → Alice, Charlie, Dave (all contain 'a')
+        store.set_global_filter(Some(GlobalFilter {
+            query: "a".to_string(),
+        }));
+        store.set_sort(vec![SortConfig {
+            column_index: 1,
+            direction: SortDirection::Descending,
+        }]);
+        store.rebuild_view();
+        // Desc by age: Charlie(35)=2, Alice(30)=0, Dave(28)=3
+        assert_eq!(store.view_indices(), &[2, 0, 3]);
+    }
+
+    #[test]
+    fn set_column_filters_marks_dirty() {
+        let mut store = make_store_for_filter();
+        store.rebuild_view(); // clears dirty
+
+        store.set_column_filters(vec![ColumnFilter {
+            column_index: 1,
+            op: FilterOp::Gt,
+            value: FilterValue::Float64(30.0),
+        }]);
+        store.rebuild_view();
+        assert_eq!(store.view_indices(), &[2]); // only Charlie=35
+    }
+
+    #[test]
+    fn set_global_filter_marks_dirty() {
+        let mut store = make_store_for_filter();
+        store.rebuild_view();
+
+        store.set_global_filter(Some(GlobalFilter {
+            query: "dave".to_string(),
+        }));
+        store.rebuild_view();
+        assert_eq!(store.view_indices(), &[3]);
+    }
+
+    #[test]
+    fn filter_string_neq() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 0,
+                op: FilterOp::Neq,
+                value: FilterValue::String("Alice".to_string()),
+            }],
+        );
+        assert_eq!(indices, vec![1, 2, 3]); // Bob, Charlie, Dave
+    }
+
+    #[test]
+    fn filter_string_gt_lt() {
+        let store = make_store_for_filter();
+        let mut indices: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices,
+            &store,
+            &[ColumnFilter {
+                column_index: 0,
+                op: FilterOp::Gt,
+                value: FilterValue::String("Bob".to_string()),
+            }],
+        );
+        assert_eq!(indices, vec![2, 3]); // Charlie, Dave
+
+        let mut indices2: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices2,
+            &store,
+            &[ColumnFilter {
+                column_index: 0,
+                op: FilterOp::Gte,
+                value: FilterValue::String("Charlie".to_string()),
+            }],
+        );
+        assert_eq!(indices2, vec![2, 3]); // Charlie, Dave
+
+        let mut indices3: Vec<u32> = (0..4).collect();
+        filter_indices_columnar(
+            &mut indices3,
+            &store,
+            &[ColumnFilter {
+                column_index: 0,
+                op: FilterOp::Lt,
+                value: FilterValue::String("Bob".to_string()),
+            }],
+        );
+        assert_eq!(indices3, vec![0]); // Alice
     }
 }
