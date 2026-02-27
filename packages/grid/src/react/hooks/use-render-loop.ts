@@ -28,6 +28,9 @@ import type { EventManager } from "../../adapter/event-manager";
 import { CanvasRenderer } from "../../renderer/canvas-renderer";
 import type { CellRenderer } from "../../renderer/cell-renderer";
 import { createCellRendererRegistry } from "../../renderer/cell-renderer";
+import type { GridLayer } from "../../renderer/layer";
+import type { InternalLayerContext } from "../../renderer/layer";
+import { DEFAULT_LAYERS } from "../../renderer/layer";
 import { InstructionBuilder } from "../../adapter/instruction-builder";
 import {
   readCellRow,
@@ -110,6 +113,7 @@ export interface UseRenderLoopParams {
   onVisStartComputed: (visStart: number) => void;
   onAfterDraw?: (ctx: AfterDrawContext) => void;
   cellRenderers?: CellRenderer[];
+  layers?: GridLayer[];
 }
 
 export function useRenderLoop({
@@ -139,11 +143,13 @@ export function useRenderLoop({
   onVisStartComputed,
   onAfterDraw,
   cellRenderers,
+  layers,
 }: UseRenderLoopParams) {
   const cellRendererRegistry = useMemo(
     () => createCellRendererRegistry(cellRenderers),
     [cellRenderers],
   );
+  const effectiveLayers = useMemo(() => layers ?? DEFAULT_LAYERS, [layers]);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const instructionBuilderRef = useRef(new InstructionBuilder());
   const rafRef = useRef<number>(0);
@@ -422,61 +428,69 @@ export function useRenderLoop({
           return h;
         });
 
-        // Draw — apply horizontal scroll via canvas translate
+        // Draw — layer pipeline with space-based auto transform
         renderer.clear();
         const ctx = renderer.context;
         const scrollLeft = scrollLeftRef.current;
-        if (ctx && scrollLeft !== 0) {
-          ctx.save();
-          ctx.translate(-scrollLeft, 0);
-        }
-        renderer.drawHeaderFromBuffer(
-          layoutBuf,
-          0,
-          headerCount,
-          headersWithSort,
-          theme,
-          headerHeight,
-        );
-        renderer.drawRowsFromBuffer(
-          layoutBuf,
-          headerCount,
-          dataCount,
-          (cellIdx: number) => {
+
+        if (ctx) {
+          const getInstruction = (cellIdx: number) => {
             const col = columns[readCellCol(layoutBuf, cellIdx)];
             const actualRow = viewIndices[readCellRow(layoutBuf, cellIdx)] ?? 0;
-            // Use InstructionBuilder for custom renderers, direct JS read for plain text
             if (col?.children) {
               const value = data[actualRow]?.[col.id];
               return builder.build(col, value);
             }
             const text = strTable.get(readCellCol(layoutBuf, cellIdx), actualRow);
             return { type: "text" as const, value: text };
-          },
-          theme,
-          effectiveRowHeight,
-          cellRendererRegistry,
-        );
-        renderer.drawGridLinesFromBuffer(
-          layoutBuf,
-          headerCount,
-          cellCount,
-          theme,
-          headerHeight,
-          effectiveRowHeight,
-        );
-        // Draw selection highlight (topmost layer, inside scroll transform)
-        if (enableSelection) {
-          const sel = selectionManagerRef.current.getNormalized();
-          if (sel) {
-            renderer.drawSelection(layoutBuf, headerCount, cellCount, sel, theme, selectionStyle);
+          };
+
+          const layerCtx: InternalLayerContext = {
+            ctx,
+            renderer,
+            layoutBuf,
+            viewIndices,
+            width,
+            height,
+            scrollLeft,
+            scrollTop: scrollTopRef.current,
+            headerHeight,
+            rowHeight: effectiveRowHeight,
+            headerCount,
+            totalCellCount: cellCount,
+            dataCount,
+            visibleRowStart: visStart,
+            dataRowCount: data.length,
+            columns,
+            theme,
+            _headersWithSort: headersWithSort,
+            _getInstruction: getInstruction,
+            _cellRendererRegistry: cellRendererRegistry,
+            _enableSelection: enableSelection,
+            _selection: enableSelection ? selectionManagerRef.current.getNormalized() : null,
+            _selectionStyle: selectionStyle,
+          };
+
+          let inContentSpace = false;
+          for (const layer of effectiveLayers) {
+            if (layer.space === "content" && !inContentSpace && scrollLeft !== 0) {
+              ctx.save();
+              ctx.translate(-scrollLeft, 0);
+              inContentSpace = true;
+            } else if (layer.space === "viewport" && inContentSpace) {
+              ctx.restore();
+              inContentSpace = false;
+            }
+            try {
+              layer.draw(layerCtx);
+            } catch (e) {
+              console.error(`Layer "${layer.name}" error:`, e);
+            }
           }
-        }
-        if (ctx && scrollLeft !== 0) {
-          ctx.restore();
+          if (inContentSpace) ctx.restore();
         }
 
-        // onAfterDraw callback (viewport space — after ctx.restore)
+        // onAfterDraw callback (viewport space — after all layers)
         if (onAfterDrawRef.current && ctx) {
           try {
             onAfterDrawRef.current({
@@ -529,6 +543,7 @@ export function useRenderLoop({
     headerHeight,
     theme,
     cellRendererRegistry,
+    effectiveLayers,
     /* data & callbacks */
     data,
     containerProps,

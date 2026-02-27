@@ -9,3 +9,12 @@ export {
   flexCellRenderer,
 } from "./cell-renderer";
 export type { CellRenderer, CellRenderContext } from "./cell-renderer";
+export {
+  headerLayer,
+  dataLayer,
+  gridLinesLayer,
+  selectionLayer,
+  DEFAULT_LAYERS,
+  createAfterDrawLayer,
+} from "./layer";
+export type { GridLayer, LayerContext, LayerSpace } from "./layer";

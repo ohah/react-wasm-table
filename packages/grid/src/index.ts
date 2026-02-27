@@ -166,6 +166,17 @@ export {
 } from "./renderer/cell-renderer";
 export type { CellRenderer, CellRenderContext } from "./renderer/cell-renderer";
 
+// Layer system
+export {
+  headerLayer,
+  dataLayer,
+  gridLinesLayer,
+  selectionLayer,
+  DEFAULT_LAYERS,
+  createAfterDrawLayer,
+} from "./renderer/layer";
+export type { GridLayer, LayerContext, LayerSpace } from "./renderer/layer";
+
 // Debug
 export { createLogger } from "./debug/logger";
 export type { Logger } from "./debug/logger";

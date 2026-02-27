@@ -209,44 +209,53 @@ const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>
 
 Canvas 렌더링이라는 강점을 극대화하는 primitive.
 
-### 3-1. Custom Cell Renderer API
+### 3-1. Custom Cell Renderer API ✅ (구현 완료)
 
 현재 RenderInstruction(Text, Badge, Flex, Stub)을 확장 가능하게.
 
 ```ts
 // 사용자가 커스텀 렌더러 등록
-const sparklineRenderer: CellRenderer<SparklineInstruction> = {
-  type: "sparkline",
-  draw(ctx, layout, instruction) {
-    // Canvas 2D API로 직접 그리기
-    const { values, color } = instruction;
-    // ... sparkline 그리기 로직
-  },
-  measure(ctx, instruction) {
-    return { width: 80, height: 20 };
+const progressRenderer: CellRenderer<ProgressInstruction> = {
+  type: "progress",
+  draw(instruction, { ctx, buf, cellIdx, theme }) {
+    // Canvas 2D API로 직접 그리기 + layout reader로 위치 읽기
+    const x = readCellX(buf, cellIdx);
+    // ... progress bar 그리기 로직
   },
 };
 
-<Grid cellRenderers={[sparklineRenderer]}>
+<Grid cellRenderers={[progressRenderer]} ... />
 ```
 
-- 기본 렌더러(Text, Badge, Flex)는 built-in
+- 기본 렌더러(Text, Badge, Flex, Stub)는 built-in, `CellRendererRegistry`로 관리
 - 사용자가 커스텀 렌더러를 등록하면 `cell` render prop에서 해당 타입의 instruction을 반환 가능
+- 동일 type 등록 시 built-in override 가능
 - Sparkline, ProgressBar, Heatmap 등은 **예제/레시피**로 제공 (내장 X)
 
-### 3-2. Layer System
+**구현 내역:**
+
+- `CellRenderer<T>` 인터페이스 + `InstructionLike` 타입 (커스텀 instruction 타입 허용)
+- `CellRendererRegistry` 클래스 (`Map<string, CellRenderer>` 기반)
+- `createCellRendererRegistry(userRenderers?)` 팩토리 (built-in 4개 + 사용자 merge)
+- `canvas-renderer.ts` switch문 → registry dispatch 리팩토링
+- `resolveInstruction()` 커스텀 타입 passthrough 수정
+- `GridProps.cellRenderers` prop + `useRenderLoop` useMemo registry 생성
+- Layout reader helpers (`readCellX` 등) public export (커스텀 렌더러 작성용)
+- 23 cell-renderer 테스트 + 2 canvas-renderer 테스트 추가 (총 807 통과)
+- 데모: ProgressBar 커스텀 렌더러 + badge override 토글
+
+### 3-2. Layer System ✅ (구현 완료)
 
 Canvas에 레이어를 쌓을 수 있는 구조.
 
 ```ts
 <Grid
   layers={[
-    gridLayer(),          // 기본 셀 그리기 (built-in)
-    selectionLayer(),     // 선택 하이라이트
-    frozenColumnsLayer(), // 고정 컬럼 오버레이
-    customLayer((ctx, viewport) => {
-      // 사용자 커스텀 드로잉 (워터마크, 오버레이, etc.)
-    }),
+    headerLayer(),        // 헤더 행 그리기 (built-in)
+    dataLayer(),          // 데이터 행 그리기 (built-in)
+    gridLinesLayer(),     // 그리드 라인 (built-in)
+    selectionLayer(),     // 선택 하이라이트 (built-in)
+    // 사용자 커스텀 레이어 삽입 가능
   ]}
 />
 ```
@@ -254,6 +263,19 @@ Canvas에 레이어를 쌓을 수 있는 구조.
 - 현재 CanvasRenderer의 draw 순서를 레이어 개념으로 추상화
 - 사용자가 렌더 파이프라인에 끼어들 수 있음
 - Column Pinning의 "고정 영역 렌더링"도 레이어 하나일 뿐
+
+**구현 내역:**
+
+- `GridLayer`, `LayerContext`, `LayerSpace` public 타입
+- `InternalLayerContext` — built-in 레이어 전용 내부 확장 (public 노출 없음)
+- 4개 built-in 레이어 팩토리: `headerLayer()`, `dataLayer()`, `gridLinesLayer()`, `selectionLayer()`
+- `DEFAULT_LAYERS` — 기존 하드코딩 draw 순서와 동일한 기본 스택
+- `createAfterDrawLayer(callback)` — `onAfterDraw` 콜백을 viewport-space 레이어로 래핑
+- Space 기반 자동 transform: content-space 레이어는 scroll translate 자동 적용, viewport-space 레이어는 screen coords
+- `GridProps.layers` prop — 커스텀 레이어 스택 지정 시 기본 파이프라인 대체
+- `onAfterDraw` 콜백은 레이어와 별도로 유지 (기존 호환)
+- 15 layer 테스트, 전체 822 JS 테스트 통과
+- 데모: Watermark(viewport) + Row Highlight(content) + 레이어 토글 체크박스
 
 ### 3-3. Virtual Canvas Region
 
@@ -383,16 +405,18 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ## 완료 항목
 
-| 항목                          | 카테고리 | 비고                                                     |
-| ----------------------------- | -------- | -------------------------------------------------------- |
-| Row Model Abstraction (1-1)   | Core     | 이후 모든 기능의 토대                                    |
-| Column Feature API (1-2)      | Core     | 기능별 독립 모듈화 기반 (Pinning 렌더링 제외)            |
-| Column Ordering State (2-1)   | State    | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ❌ |
-| Expanding State (2-2)         | State    | getExpandedRowModel ✅, getGroupedRowModel ❌            |
-| Column Visibility State (2-3) | State    | resolveColumns에서 hidden 컬럼 제외                      |
-| Data Access API (4-1)         | Utility  | exportToCSV/TSV/JSON + ExportOptions. 20 테스트          |
-| Event System 미들웨어 (1-3)   | Core     | composeMiddleware + GridProps.eventMiddleware. 8 테스트  |
-| Layout Cache (5-3)            | Perf     | 2-slot LRU Rust 캐시 + invalidateLayout() API. 6 테스트  |
+| 항목                          | 카테고리 | 비고                                                                         |
+| ----------------------------- | -------- | ---------------------------------------------------------------------------- |
+| Row Model Abstraction (1-1)   | Core     | 이후 모든 기능의 토대                                                        |
+| Column Feature API (1-2)      | Core     | 기능별 독립 모듈화 기반 (Pinning 렌더링 제외)                                |
+| Column Ordering State (2-1)   | State    | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ❌                     |
+| Expanding State (2-2)         | State    | getExpandedRowModel ✅, getGroupedRowModel ❌                                |
+| Column Visibility State (2-3) | State    | resolveColumns에서 hidden 컬럼 제외                                          |
+| Data Access API (4-1)         | Utility  | exportToCSV/TSV/JSON + ExportOptions. 20 테스트                              |
+| Event System 미들웨어 (1-3)   | Core     | composeMiddleware + GridProps.eventMiddleware. 8 테스트                      |
+| Layout Cache (5-3)            | Perf     | 2-slot LRU Rust 캐시 + invalidateLayout() API. 6 테스트                      |
+| Custom Cell Renderer (3-1)    | Render   | CellRendererRegistry + built-in 4개 + GridProps.cellRenderers. 25 테스트     |
+| Layer System (3-2)            | Render   | GridLayer pipeline + space-based transform + 4 built-in factories. 15 테스트 |
 
 ---
 
@@ -408,12 +432,12 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ### Tier 2 — 렌더링 파이프라인 (순서 의존성 있음, 순차 진행 필수)
 
-| 순서 | 항목                     | 참조     | 상태 | 이유                                                                                      |
-| ---- | ------------------------ | -------- | ---- | ----------------------------------------------------------------------------------------- |
-| 4    | Custom Cell Renderer API | 3-1      | ❌   | 렌더러 switch문을 registry 패턴으로 리팩토링. Layer System보다 먼저 해야 렌더러 구조 안정 |
-| 5    | Layer System             | 3-2      | ❌   | Custom Cell Renderer 안정 후 draw 순서를 레이어로 추상화. Virtual Canvas Region의 전제    |
-| 6    | Virtual Canvas Region    | 3-3      | ❌   | Layer System 위에 left/scrollable/right 3개 region 분리. Pinning의 실제 구현체            |
-| 7    | Pinning 렌더링           | 1-2 잔여 | ❌   | Virtual Canvas Region이 있으면 `columnPinning` state를 region에 매핑하는 것만 남음        |
+| 순서 | 항목                     | 참조     | 상태 | 이유                                                                               |
+| ---- | ------------------------ | -------- | ---- | ---------------------------------------------------------------------------------- |
+| 4    | Custom Cell Renderer API | 3-1      | ✅   | `CellRendererRegistry` + built-in 4개 + `GridProps.cellRenderers`. 25 테스트       |
+| 5    | Layer System             | 3-2      | ✅   | `GridLayer` pipeline + space-based transform + 4 built-in factories. 15 테스트     |
+| 6    | Virtual Canvas Region    | 3-3      | ❌   | Layer System 위에 left/scrollable/right 3개 region 분리. Pinning의 실제 구현체     |
+| 7    | Pinning 렌더링           | 1-2 잔여 | ❌   | Virtual Canvas Region이 있으면 `columnPinning` state를 region에 매핑하는 것만 남음 |
 
 ### Tier 3 — 유틸리티 (Tier 2와 독립, 언제든 가능)
 
@@ -435,7 +459,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 1. Data Access API ✅ ───────→ 8. Clipboard Utilities
 2. Event System 미들웨어 ✅
 3. Layout Cache ✅
-4. Custom Cell Renderer ──→ 5. Layer System ──→ 6. Virtual Canvas Region ──→ 7. Pinning 렌더링
+4. Custom Cell Renderer ✅ ──→ 5. Layer System ✅ ──→ 6. Virtual Canvas Region ──→ 7. Pinning 렌더링
 9. getGroupedRowModel (독립, 복잡도 높음)
 10. Worker Bridge ──→ 11. Streaming Data (시너지)
 ```

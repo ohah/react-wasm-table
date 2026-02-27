@@ -32,6 +32,7 @@ import { ExportDemo } from "./pages/ExportDemo";
 import { MiddlewareDemo } from "./pages/MiddlewareDemo";
 import { LayoutCacheDemo } from "./pages/LayoutCacheDemo";
 import { CustomRendererDemo } from "./pages/CustomRendererDemo";
+import { LayerDemo } from "./pages/LayerDemo";
 import { FpsCounter } from "./components/FpsCounter";
 
 setWasmUrl("/react_wasm_table_wasm_bg.wasm");
@@ -74,6 +75,7 @@ export function App() {
           <Route path="/event-middleware" element={<MiddlewareDemo />} />
           <Route path="/layout-cache" element={<LayoutCacheDemo />} />
           <Route path="/custom-renderer" element={<CustomRendererDemo />} />
+          <Route path="/layers" element={<LayerDemo />} />
         </Routes>
       </main>
     </div>
