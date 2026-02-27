@@ -232,6 +232,61 @@ describe("useSelection (renderHook)", () => {
     });
   });
 
+  describe("controlled mode upward drag preserves anchor", () => {
+    it("does not corrupt startRow when selectionProp feeds back during upward drag", () => {
+      // Simulate controlled mode: parent stores NormalizedRange, feeds it back
+      let selectionProp: any = null;
+      const onSelectionChange = mock((sel: any) => {
+        selectionProp = sel;
+      });
+      const params = defaultParams({ selectionProp, onSelectionChange });
+      const { result, rerender } = renderHook(() =>
+        useSelection({ ...params, selectionProp, onSelectionChange }),
+      );
+
+      // 1. mousedown at row 5
+      act(() => result.current.handleCellMouseDown({ row: 5, col: 0 }, false));
+
+      // 2. drag upward to row 2
+      act(() => result.current.handleCellMouseMove({ row: 2, col: 0 }));
+      // onSelectionChange fired with {minRow:2, maxRow:5}
+      expect(selectionProp).toEqual({ minRow: 2, maxRow: 5, minCol: 0, maxCol: 0 });
+
+      // 3. Simulate React re-render with controlled prop feedback
+      rerender();
+
+      // 4. Continue dragging upward to row 1
+      act(() => result.current.handleCellMouseMove({ row: 1, col: 0 }));
+
+      // Bug: without fix, anchor (startRow) was overwritten to 2 via setRange,
+      // so getNormalized() would return {minRow:1, maxRow:2} instead of {minRow:1, maxRow:5}
+      const norm = result.current.selectionManagerRef.current.getNormalized();
+      expect(norm).toEqual({ minRow: 1, maxRow: 5, minCol: 0, maxCol: 0 });
+    });
+
+    it("does not corrupt startCol when selectionProp feeds back during leftward drag", () => {
+      let selectionProp: any = null;
+      const onSelectionChange = mock((sel: any) => {
+        selectionProp = sel;
+      });
+      const params = defaultParams({ selectionProp, onSelectionChange });
+      const { result, rerender } = renderHook(() =>
+        useSelection({ ...params, selectionProp, onSelectionChange }),
+      );
+
+      // mousedown at col 1, drag leftward to col 0
+      act(() => result.current.handleCellMouseDown({ row: 0, col: 1 }, false));
+      act(() => result.current.handleCellMouseMove({ row: 0, col: 0 }));
+      rerender();
+
+      // Verify anchor is preserved even after controlled feedback
+      const sm = result.current.selectionManagerRef.current;
+      const range = sm.getRange()!;
+      expect(range.startCol).toBe(1); // anchor preserved
+      expect(range.endCol).toBe(0);
+    });
+  });
+
   describe("selectionManager DI (Step 0-5)", () => {
     it("uses injected SelectionManager when provided", () => {
       const external = new SelectionManager();
