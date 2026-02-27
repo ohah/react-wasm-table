@@ -18,6 +18,7 @@ import {
   createGridCanvasEvent,
   createGridTouchEvent,
 } from "../../event-helpers";
+import { composeMiddleware, type EventMiddleware, type EventChannel, type GridEvent } from "../../event-middleware";
 
 export interface UseEventAttachmentParams {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -50,6 +51,7 @@ export interface UseEventAttachmentParams {
   onTouchStart?: (event: GridTouchEvent) => void;
   onTouchMove?: (event: GridTouchEvent) => void;
   onTouchEnd?: (event: GridTouchEvent) => void;
+  eventMiddleware?: EventMiddleware[];
   rowHeight: number;
   headerHeight: number;
   height: number;
@@ -72,6 +74,7 @@ export function useEventAttachment({
   onTouchStart,
   onTouchMove,
   onTouchEnd,
+  eventMiddleware,
   rowHeight,
   headerHeight,
   height,
@@ -89,6 +92,7 @@ export function useEventAttachment({
   const onTouchStartRef = useRef(onTouchStart);
   const onTouchMoveRef = useRef(onTouchMove);
   const onTouchEndRef = useRef(onTouchEnd);
+  const middlewareRef = useRef(eventMiddleware);
   onCellClickRef.current = onCellClick;
   onCellDoubleClickRef.current = onCellDoubleClick;
   onHeaderClickRef.current = onHeaderClick;
@@ -101,47 +105,69 @@ export function useEventAttachment({
   onTouchStartRef.current = onTouchStart;
   onTouchMoveRef.current = onTouchMove;
   onTouchEndRef.current = onTouchEnd;
+  middlewareRef.current = eventMiddleware;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const em = eventManagerRef.current;
     if (!canvas || !em) return;
 
+    /** Dispatch an event through the middleware chain, then run the final handler. */
+    function dispatch(channel: EventChannel, event: GridEvent, final_: () => void) {
+      const mws = middlewareRef.current;
+      if (!mws || mws.length === 0) {
+        final_();
+        return;
+      }
+      const run = composeMiddleware(mws, () => final_());
+      run(channel, event);
+    }
+
     em.attach(
       canvas,
       {
         onHeaderClick: (colIndex, native, coords) => {
           const event = createGridHeaderEvent(native, colIndex, coords);
-          onHeaderClickRef.current?.(event);
-          if (event.defaultPrevented) return;
-          handlers.handleHeaderClick(colIndex);
+          dispatch("headerClick", event, () => {
+            onHeaderClickRef.current?.(event);
+            if (event.defaultPrevented) return;
+            handlers.handleHeaderClick(colIndex);
+          });
         },
         onCellClick: (coord, native, coords) => {
           const event = createGridCellEvent(native, coord, coords);
-          onCellClickRef.current?.(event);
-          if (event.defaultPrevented) return;
-          if (editorManagerRef.current.isEditing) {
-            editorManagerRef.current.cancel();
-          }
+          dispatch("cellClick", event, () => {
+            onCellClickRef.current?.(event);
+            if (event.defaultPrevented) return;
+            if (editorManagerRef.current.isEditing) {
+              editorManagerRef.current.cancel();
+            }
+          });
         },
         onCellDoubleClick: (coord, native, coords) => {
           const event = createGridCellEvent(native, coord, coords);
-          onCellDoubleClickRef.current?.(event);
-          if (event.defaultPrevented) return;
-          handlers.handleCellDoubleClick(coord);
+          dispatch("cellDoubleClick", event, () => {
+            onCellDoubleClickRef.current?.(event);
+            if (event.defaultPrevented) return;
+            handlers.handleCellDoubleClick(coord);
+          });
         },
         onCellMouseDown: (coord, shiftKey, native, coords) => {
           const event = createGridCellEvent(native, coord, coords);
-          onCellMouseDownRef.current?.(event);
-          if (event.defaultPrevented) return;
-          if (editorManagerRef.current.isEditing) editorManagerRef.current.cancel();
-          handlers.handleCellMouseDown(coord, shiftKey);
+          dispatch("cellMouseDown", event, () => {
+            onCellMouseDownRef.current?.(event);
+            if (event.defaultPrevented) return;
+            if (editorManagerRef.current.isEditing) editorManagerRef.current.cancel();
+            handlers.handleCellMouseDown(coord, shiftKey);
+          });
         },
         onCellMouseMove: (coord, native, coords) => {
           const event = createGridCellEvent(native, coord, coords);
-          onCellMouseMoveRef.current?.(event);
-          if (event.defaultPrevented) return;
-          handlers.handleCellMouseMove(coord);
+          dispatch("cellMouseMove", event, () => {
+            onCellMouseMoveRef.current?.(event);
+            if (event.defaultPrevented) return;
+            handlers.handleCellMouseMove(coord);
+          });
         },
         onDragEdge: handlers.handleDragEdge,
         onCellMouseUp: () => {
@@ -151,46 +177,87 @@ export function useEventAttachment({
         },
         onKeyDown: (e) => {
           const event = createGridKeyboardEvent(e);
-          onKeyDownRef.current?.(event);
-          if (event.defaultPrevented) return;
-          handlers.handleKeyDown(e);
+          dispatch("keyDown", event, () => {
+            onKeyDownRef.current?.(event);
+            if (event.defaultPrevented) return;
+            handlers.handleKeyDown(e);
+          });
         },
         onScroll: (deltaY, deltaX, native) => {
           const event = createGridScrollEvent(deltaY, deltaX, native);
-          onScrollRef.current?.(event);
-          if (event.defaultPrevented) return;
-          handlers.handleWheel(deltaY, deltaX);
+          dispatch("scroll", event, () => {
+            onScrollRef.current?.(event);
+            if (event.defaultPrevented) return;
+            handlers.handleWheel(deltaY, deltaX);
+          });
         },
         onResizeStart: handlers.handleResizeStart,
         onResizeMove: handlers.handleResizeMove,
         onResizeEnd: handlers.handleResizeEnd,
         onResizeHover: handlers.handleResizeHover,
         onCanvasEvent: (type, native, hitTest, coords) => {
-          if (!onCanvasEventRef.current) return;
           const event = createGridCanvasEvent(type, native, hitTest, coords);
-          onCanvasEventRef.current(event);
-          if (event.defaultPrevented) return false;
+          dispatch("canvasEvent", event, () => {
+            onCanvasEventRef.current?.(event);
+            if (event.defaultPrevented) return false;
+          });
         },
         onTouchStart: (native, coords, hitTest) => {
-          if (!onTouchStartRef.current) return;
-          const touchPoint = { contentX: coords.contentX, contentY: coords.contentY, viewportX: coords.viewportX, viewportY: coords.viewportY };
-          const event = createGridTouchEvent("touchstart", native, touchPoint, hitTest, native.touches.length);
-          onTouchStartRef.current(event);
-          if (event.defaultPrevented) return false;
+          const touchPoint = {
+            contentX: coords.contentX,
+            contentY: coords.contentY,
+            viewportX: coords.viewportX,
+            viewportY: coords.viewportY,
+          };
+          const event = createGridTouchEvent(
+            "touchstart",
+            native,
+            touchPoint,
+            hitTest,
+            native.touches.length,
+          );
+          dispatch("touchStart", event, () => {
+            onTouchStartRef.current?.(event);
+            if (event.defaultPrevented) return false;
+          });
         },
         onTouchMove: (native, coords, hitTest) => {
-          if (!onTouchMoveRef.current) return;
-          const touchPoint = { contentX: coords.contentX, contentY: coords.contentY, viewportX: coords.viewportX, viewportY: coords.viewportY };
-          const event = createGridTouchEvent("touchmove", native, touchPoint, hitTest, native.touches.length);
-          onTouchMoveRef.current(event);
-          if (event.defaultPrevented) return false;
+          const touchPoint = {
+            contentX: coords.contentX,
+            contentY: coords.contentY,
+            viewportX: coords.viewportX,
+            viewportY: coords.viewportY,
+          };
+          const event = createGridTouchEvent(
+            "touchmove",
+            native,
+            touchPoint,
+            hitTest,
+            native.touches.length,
+          );
+          dispatch("touchMove", event, () => {
+            onTouchMoveRef.current?.(event);
+            if (event.defaultPrevented) return false;
+          });
         },
         onTouchEnd: (native, coords, hitTest) => {
-          if (!onTouchEndRef.current) return;
-          const touchPoint = { contentX: coords.contentX, contentY: coords.contentY, viewportX: coords.viewportX, viewportY: coords.viewportY };
-          const event = createGridTouchEvent("touchend", native, touchPoint, hitTest, native.touches.length);
-          onTouchEndRef.current(event);
-          if (event.defaultPrevented) return false;
+          const touchPoint = {
+            contentX: coords.contentX,
+            contentY: coords.contentY,
+            viewportX: coords.viewportX,
+            viewportY: coords.viewportY,
+          };
+          const event = createGridTouchEvent(
+            "touchend",
+            native,
+            touchPoint,
+            hitTest,
+            native.touches.length,
+          );
+          dispatch("touchEnd", event, () => {
+            onTouchEndRef.current?.(event);
+            if (event.defaultPrevented) return false;
+          });
         },
       },
       { lineHeight: rowHeight, pageHeight: height - headerHeight },

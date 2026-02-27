@@ -195,7 +195,13 @@ describe("event-helpers", () => {
     it("creates touchend event with zero touchCount", () => {
       const native = makeTouchEvent("touchend", 0);
       const touchPoint = { contentX: 50, contentY: 50, viewportX: 50, viewportY: 50 };
-      const event = createGridTouchEvent("touchend", native, touchPoint, { type: "cell", cell: { row: 0, col: 0 } }, 0);
+      const event = createGridTouchEvent(
+        "touchend",
+        native,
+        touchPoint,
+        { type: "cell", cell: { row: 0, col: 0 } },
+        0,
+      );
 
       expect(event.type).toBe("touchend");
       expect(event.touchCount).toBe(0);

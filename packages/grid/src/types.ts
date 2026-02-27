@@ -544,6 +544,9 @@ export interface GridProps extends BoxModelProps {
   /** Called on touchend. Call event.preventDefault() to cancel internal handling. */
   onTouchEnd?: (event: GridTouchEvent) => void;
 
+  /** Event middleware chain — intercept/transform events before default handling. */
+  eventMiddleware?: import("./event-middleware").EventMiddleware[];
+
   /** Called before sorting changes. Return `false` to cancel sort. */
   onBeforeSortChange?: (next: import("./tanstack-types").SortingState) => boolean | void;
   /** Called before selection changes. Return `false` to cancel selection. */
@@ -640,6 +643,9 @@ export interface WasmTableEngine {
   setGlobalFilter(query: string | null): void;
   setColumnarScrollConfig(rowHeight: number, viewportHeight: number, overscan: number): void;
   getColumnarViewIndicesInfo(): Uint32Array;
+
+  // Layout cache
+  invalidateLayout(): void;
 
   // Debug logging (only available when WASM built with debug-log feature)
   enableDebugLog?(): void;

@@ -124,6 +124,14 @@ export type { ContentCoords } from "./event-helpers";
 export { EditorManager } from "./adapter/editor-manager";
 export { SelectionManager, buildTSV } from "./adapter/selection-manager";
 
+// Data export utilities
+export { exportToCSV, exportToTSV, exportToJSON } from "./export";
+export type { ExportOptions } from "./export";
+
+// Event middleware
+export { composeMiddleware } from "./event-middleware";
+export type { EventChannel, GridEvent, NextFn, EventMiddleware } from "./event-middleware";
+
 // Renderer
 export { CanvasRenderer } from "./renderer/canvas-renderer";
 export {

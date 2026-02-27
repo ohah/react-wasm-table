@@ -25,7 +25,12 @@ export interface GridEventHandlers {
   onCellDoubleClick?: (coord: CellCoord, native: MouseEvent, coords: EventCoords) => void;
   onHeaderClick?: (colIndex: number, native: MouseEvent, coords: EventCoords) => void;
   onScroll?: (deltaY: number, deltaX: number, native: WheelEvent | null) => void;
-  onCellMouseDown?: (coord: CellCoord, shiftKey: boolean, native: MouseEvent, coords: EventCoords) => void;
+  onCellMouseDown?: (
+    coord: CellCoord,
+    shiftKey: boolean,
+    native: MouseEvent,
+    coords: EventCoords,
+  ) => void;
   onCellMouseMove?: (coord: CellCoord, native: MouseEvent, coords: EventCoords) => void;
   /** Fires during drag when mouse is near viewport edges. deltaY/deltaX indicate scroll direction. */
   onDragEdge?: (deltaY: number, deltaX: number) => void;
@@ -44,9 +49,21 @@ export interface GridEventHandlers {
     coords: EventCoords,
   ) => boolean | void;
   // Touch events (native TouchEvent passthrough)
-  onTouchStart?: (native: TouchEvent, coords: EventCoords, hitTest: import("../types").HitTestResult) => boolean | void;
-  onTouchMove?: (native: TouchEvent, coords: EventCoords, hitTest: import("../types").HitTestResult) => boolean | void;
-  onTouchEnd?: (native: TouchEvent, coords: EventCoords, hitTest: import("../types").HitTestResult) => boolean | void;
+  onTouchStart?: (
+    native: TouchEvent,
+    coords: EventCoords,
+    hitTest: import("../types").HitTestResult,
+  ) => boolean | void;
+  onTouchMove?: (
+    native: TouchEvent,
+    coords: EventCoords,
+    hitTest: import("../types").HitTestResult,
+  ) => boolean | void;
+  onTouchEnd?: (
+    native: TouchEvent,
+    coords: EventCoords,
+    hitTest: import("../types").HitTestResult,
+  ) => boolean | void;
 }
 
 /** Options for deltaMode normalization. */
@@ -471,7 +488,11 @@ export class EventManager {
               const lpc = touchToCoords(this.touchState.lastX, this.touchState.lastY);
               const hit = findCell(lpc.contentX, lpc.contentY, this.rowLayouts);
               if (hit) {
-                const native = syntheticMouse(this.touchState.lastX, this.touchState.lastY, "mousedown");
+                const native = syntheticMouse(
+                  this.touchState.lastX,
+                  this.touchState.lastY,
+                  "mousedown",
+                );
                 handlers.onCellMouseDown?.(hit, false, native, lpc);
               }
             }
