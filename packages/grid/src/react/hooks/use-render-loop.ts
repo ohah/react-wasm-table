@@ -139,6 +139,7 @@ export function useRenderLoop({
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const instructionBuilderRef = useRef(new InstructionBuilder());
   const rafRef = useRef<number>(0);
+  const prevEffectiveRowHeightRef = useRef(0);
 
   // Internal dirty flag + invalidate (owned by this hook)
   const dirtyRef = useRef(true);
@@ -150,14 +151,16 @@ export function useRenderLoop({
   const onAfterDrawRef = useRef(onAfterDraw);
   onAfterDrawRef.current = onAfterDraw;
 
-  // Attach canvas renderer
+  // Attach canvas renderer — re-run when size changes because
+  // React setting canvas.width/height resets the 2D context (loses DPR scale).
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const renderer = new CanvasRenderer();
     renderer.attach(canvas);
     rendererRef.current = renderer;
-  }, [canvasRef]);
+    dirtyRef.current = true;
+  }, [canvasRef, width, height]);
 
   // Render loop — unified hot path (single WASM call per frame)
   useEffect(() => {
@@ -329,6 +332,7 @@ export function useRenderLoop({
         );
         const cellCount = meta[0] ?? 0;
         const visStart = meta[1] ?? 0;
+        const effectiveRowHeight = meta[8] ?? rowHeight;
         const headerCount = colCount;
         const dataCount = cellCount - headerCount;
 
@@ -339,16 +343,21 @@ export function useRenderLoop({
         const layoutBuf = bridge.getLayoutBuffer();
         const viewIndices = bridge.getViewIndices();
 
-        // Update filtered row count → scroll height + clamping
+        // Update filtered row count / effective row height → scroll height + clamping
         const filteredCount = viewIndices.length;
-        if (viewRowCountRef.current !== filteredCount) {
+        const rowHeightChanged = prevEffectiveRowHeightRef.current !== effectiveRowHeight;
+        if (viewRowCountRef.current !== filteredCount || rowHeightChanged) {
           (viewRowCountRef as React.MutableRefObject<number>).current = filteredCount;
-          const newContentHeight = filteredCount * rowHeight + headerHeight;
+          prevEffectiveRowHeightRef.current = effectiveRowHeight;
+          const newContentHeight = filteredCount * effectiveRowHeight + headerHeight;
           syncScrollBarContentSize(vScrollbarRef.current, newContentHeight, "vertical");
-          // Clamp scrollTop if it exceeds the new max
+          // Clamp scrollTop if it exceeds the new max.
+          // If clamped, the layout buffer was computed with stale scrollTop —
+          // mark dirty to recompute on the next frame.
           const maxScrollY = Math.max(0, newContentHeight - height);
           if (scrollTopRef.current > maxScrollY) {
             (scrollTopRef as React.MutableRefObject<number>).current = maxScrollY;
+            dirtyRef.current = true;
           }
         }
 
@@ -436,7 +445,7 @@ export function useRenderLoop({
             return { type: "text" as const, value: text };
           },
           theme,
-          rowHeight,
+          effectiveRowHeight,
         );
         renderer.drawGridLinesFromBuffer(
           layoutBuf,
@@ -444,7 +453,7 @@ export function useRenderLoop({
           cellCount,
           theme,
           headerHeight,
-          rowHeight,
+          effectiveRowHeight,
         );
         // Draw selection highlight (topmost layer, inside scroll transform)
         if (enableSelection) {
@@ -467,7 +476,7 @@ export function useRenderLoop({
               scrollTop: scrollTopRef.current,
               scrollLeft,
               headerHeight,
-              rowHeight,
+              rowHeight: effectiveRowHeight,
               columns,
               visibleRowStart: visStart,
               visibleRowCount: dataCount,
