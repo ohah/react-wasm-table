@@ -26,6 +26,7 @@ import { HookCompositionDemo } from "./pages/HookCompositionDemo";
 import { OnAfterDrawDemo } from "./pages/OnAfterDrawDemo";
 import { AdapterDIDemo } from "./pages/AdapterDIDemo";
 import { ColumnFeatures } from "./pages/ColumnFeatures";
+import { ExpandingDemo } from "./pages/ExpandingDemo";
 import { FpsCounter } from "./components/FpsCounter";
 
 setWasmUrl("/react_wasm_table_wasm_bg.wasm");
@@ -62,6 +63,7 @@ export function App() {
           <Route path="/hooks/after-draw" element={<OnAfterDrawDemo />} />
           <Route path="/hooks/adapter-di" element={<AdapterDIDemo />} />
           <Route path="/column-features" element={<ColumnFeatures />} />
+          <Route path="/expanding" element={<ExpandingDemo />} />
         </Routes>
       </main>
     </div>
