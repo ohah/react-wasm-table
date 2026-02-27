@@ -7,6 +7,8 @@ import {
   type GridCellEvent,
   type GridHeaderEvent,
   type GridKeyboardEvent,
+  type GridScrollEvent,
+  type GridCanvasEvent,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 
@@ -20,7 +22,7 @@ interface LogEntry {
   blocked: boolean;
 }
 
-const MAX_LOG = 50;
+const MAX_LOG = 80;
 
 export function EventCallbacks() {
   const data = useMemo(() => generateSmallData(), []);
@@ -36,6 +38,12 @@ export function EventCallbacks() {
   const [blockKeyDown, setBlockKeyDown] = useState(false);
   const [blockSort, setBlockSort] = useState(false);
   const [blockSelection, setBlockSelection] = useState(false);
+  const [blockMouseDown, setBlockMouseDown] = useState(false);
+  const [blockScroll, setBlockScroll] = useState(false);
+
+  // Throttle mousemove/scroll logs
+  const lastMoveLog = useRef(0);
+  const lastScrollLog = useRef(0);
 
   const addLog = useCallback((type: string, detail: string, blocked: boolean) => {
     setLog((prev) => {
@@ -109,6 +117,69 @@ export function EventCallbacks() {
     [blockKeyDown, addLog],
   );
 
+  const onCellMouseDown = useCallback(
+    (event: GridCellEvent) => {
+      addLog(
+        "onCellMouseDown",
+        `row=${event.cell.row}, col=${event.cell.col} shift=${event.shiftKey}`,
+        blockMouseDown,
+      );
+      if (blockMouseDown) event.preventDefault();
+    },
+    [blockMouseDown, addLog],
+  );
+
+  const onCellMouseMove = useCallback(
+    (event: GridCellEvent) => {
+      const now = Date.now();
+      if (now - lastMoveLog.current < 100) return;
+      lastMoveLog.current = now;
+      addLog(
+        "onCellMouseMove",
+        `row=${event.cell.row}, col=${event.cell.col} viewport=(${event.viewportX.toFixed(0)},${event.viewportY.toFixed(0)})`,
+        false,
+      );
+    },
+    [addLog],
+  );
+
+  const onCellMouseUp = useCallback(() => {
+    addLog("onCellMouseUp", "", false);
+  }, [addLog]);
+
+  const onScroll = useCallback(
+    (event: GridScrollEvent) => {
+      const now = Date.now();
+      if (now - lastScrollLog.current < 200) return;
+      lastScrollLog.current = now;
+      addLog(
+        "onScroll",
+        `deltaY=${event.deltaY.toFixed(0)}, deltaX=${event.deltaX.toFixed(0)} native=${event.nativeEvent ? "WheelEvent" : "null(touch)"}`,
+        blockScroll,
+      );
+      if (blockScroll) event.preventDefault();
+    },
+    [blockScroll, addLog],
+  );
+
+  const onCanvasEvent = useCallback(
+    (event: GridCanvasEvent) => {
+      // Only log click/dblclick/mousedown to avoid flood
+      if (event.type === "mousemove" || event.type === "mouseup") return;
+      const ht = event.hitTest;
+      const htDesc =
+        ht.type === "cell"
+          ? `cell(${ht.cell!.row},${ht.cell!.col})`
+          : ht.type === "header"
+            ? `header(${ht.colIndex})`
+            : ht.type === "resize-handle"
+              ? `resize(${ht.colIndex})`
+              : "empty";
+      addLog("onCanvasEvent", `${event.type} ${htDesc}`, false);
+    },
+    [addLog],
+  );
+
   const onBeforeSortChange = useCallback(
     (next: SortingState) => {
       const desc = next.length > 0 ? `${next[0]!.id} ${next[0]!.desc ? "desc" : "asc"}` : "clear";
@@ -133,8 +204,9 @@ export function EventCallbacks() {
     <>
       <h1>Event Callbacks</h1>
       <p>
-        All event callbacks receive enriched events. Call <code>event.preventDefault()</code> to
-        cancel default behavior.
+        All event callbacks receive enriched events with native DOM event, content/viewport
+        coordinates, and modifier keys. Call <code>event.preventDefault()</code> to cancel default
+        behavior.
       </p>
 
       <div style={{ display: "flex", gap: 24, marginBottom: 16, flexWrap: "wrap" }}>
@@ -150,6 +222,12 @@ export function EventCallbacks() {
           onChange={setBlockHeaderClick}
         />
         <Toggle label="Block onKeyDown" checked={blockKeyDown} onChange={setBlockKeyDown} />
+        <Toggle
+          label="Block onCellMouseDown"
+          checked={blockMouseDown}
+          onChange={setBlockMouseDown}
+        />
+        <Toggle label="Block onScroll" checked={blockScroll} onChange={setBlockScroll} />
         <Toggle label="Block onBeforeSortChange" checked={blockSort} onChange={setBlockSort} />
         <Toggle
           label="Block onBeforeSelectionChange"
@@ -169,7 +247,14 @@ export function EventCallbacks() {
       >
         {`<Grid\n`}
         {`  onCellClick={(e) => { ${blockCellClick ? "e.preventDefault();" : "/* observe */"} }}\n`}
+        {`  onCellDoubleClick={(e) => { ${blockDblClick ? "e.preventDefault();" : "/* observe */"} }}\n`}
         {`  onHeaderClick={(e) => { ${blockHeaderClick ? "e.preventDefault();" : "/* observe */"} }}\n`}
+        {`  onKeyDown={(e) => { ${blockKeyDown ? "e.preventDefault();" : "/* observe */"} }}\n`}
+        {`  onCellMouseDown={(e) => { ${blockMouseDown ? "e.preventDefault();" : "/* observe */"} }}\n`}
+        {`  onCellMouseMove={(e) => { /* viewport coords */ }}\n`}
+        {`  onCellMouseUp={() => { /* drag end */ }}\n`}
+        {`  onScroll={(e) => { ${blockScroll ? "e.preventDefault();" : "/* deltaY, deltaX */"} }}\n`}
+        {`  onCanvasEvent={(e) => { /* low-level: e.type, e.hitTest */ }}\n`}
         {`  onBeforeSortChange={(next) => { ${blockSort ? "return false;" : "/* observe */"} }}\n`}
         {`  onBeforeSelectionChange={(next) => { ${blockSelection ? "return false;" : "/* observe */"} }}\n`}
         {`/>`}
@@ -190,6 +275,11 @@ export function EventCallbacks() {
             onCellDoubleClick={onCellDoubleClick}
             onHeaderClick={onHeaderClick}
             onKeyDown={onKeyDown}
+            onCellMouseDown={onCellMouseDown}
+            onCellMouseMove={onCellMouseMove}
+            onCellMouseUp={onCellMouseUp}
+            onScroll={onScroll}
+            onCanvasEvent={onCanvasEvent}
             onBeforeSortChange={onBeforeSortChange}
             onBeforeSelectionChange={onBeforeSelectionChange}
           />
@@ -238,7 +328,13 @@ export function EventCallbacks() {
               <span style={{ color: entry.blocked ? "#f44" : "#4ec9b0" }}>
                 {entry.blocked ? "BLOCKED" : "PASS"}
               </span>{" "}
-              <span style={{ color: "#dcdcaa" }}>{entry.type}</span>{" "}
+              <span
+                style={{
+                  color: entry.type === "onCanvasEvent" ? "#c586c0" : "#dcdcaa",
+                }}
+              >
+                {entry.type}
+              </span>{" "}
               <span style={{ color: "#9cdcfe" }}>{entry.detail}</span>
             </div>
           ))}
