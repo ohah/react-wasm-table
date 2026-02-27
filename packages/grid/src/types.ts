@@ -177,13 +177,28 @@ export interface CellLayout {
 
 /** Context passed to onAfterDraw callback (Phase 3 Layer System entry point). */
 export interface AfterDrawContext {
+  /** Canvas 2D rendering context. */
   ctx: CanvasRenderingContext2D;
+  /** Grid width in pixels. */
   width: number;
+  /** Grid height in pixels. */
   height: number;
+  /** Current vertical scroll offset. */
   scrollTop: number;
+  /** Current horizontal scroll offset. */
   scrollLeft: number;
+  /** Header row height in pixels. */
   headerHeight: number;
+  /** Data row height in pixels. */
   rowHeight: number;
+  /** Current column definitions (for position-aware overlays). */
+  columns: ColumnProps[];
+  /** First visible data row index (after virtual scroll). */
+  visibleRowStart: number;
+  /** Number of visible data rows in current viewport. */
+  visibleRowCount: number;
+  /** Total number of data rows. */
+  dataRowCount: number;
 }
 
 // ── Selection style ─────────────────────────────────────────────────────

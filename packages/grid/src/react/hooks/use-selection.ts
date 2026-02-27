@@ -34,7 +34,15 @@ export function useSelection({
   getStringTable,
   selectionManager,
 }: UseSelectionParams) {
-  const selectionManagerRef = useRef(selectionManager ?? new SelectionManager());
+  // Adapter DI: prefer external prop, lazy-create fallback only when needed
+  const fallbackSmRef = useRef<SelectionManager | null>(null);
+  const selectionManagerRef = useRef<SelectionManager>(null!);
+  if (selectionManager) {
+    selectionManagerRef.current = selectionManager;
+  } else {
+    if (!fallbackSmRef.current) fallbackSmRef.current = new SelectionManager();
+    selectionManagerRef.current = fallbackSmRef.current;
+  }
   const selectionEnabledRef = useRef(enableSelection);
   selectionEnabledRef.current = enableSelection;
 

@@ -444,15 +444,23 @@ export function useRenderLoop({
 
         // onAfterDraw callback (viewport space — after ctx.restore)
         if (onAfterDrawRef.current && ctx) {
-          onAfterDrawRef.current({
-            ctx,
-            width,
-            height,
-            scrollTop: scrollTopRef.current,
-            scrollLeft,
-            headerHeight,
-            rowHeight,
-          });
+          try {
+            onAfterDrawRef.current({
+              ctx,
+              width,
+              height,
+              scrollTop: scrollTopRef.current,
+              scrollLeft,
+              headerHeight,
+              rowHeight,
+              columns,
+              visibleRowStart: visStart,
+              visibleRowCount: dataCount,
+              dataRowCount: data.length,
+            });
+          } catch (e) {
+            console.error("onAfterDraw error:", e);
+          }
         }
 
         // Sync native scrollbar positions (canvas wheel → scrollbar DOM)

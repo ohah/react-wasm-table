@@ -117,7 +117,7 @@ export function OnAfterDrawDemo() {
       >
         {mode === "none"
           ? `<Grid data={data} columns={columns} width={640} height={400} />`
-          : `<Grid\n  data={data}\n  columns={columns}\n  width={640}\n  height={400}\n  onAfterDraw={(ctx) => {\n    // ctx: { ctx, width, height, scrollTop, scrollLeft, headerHeight, rowHeight }\n    ${mode === "watermark" ? 'ctx.ctx.fillText("DRAFT", ctx.width / 2, ctx.height / 2);' : mode === "row-highlight" ? `ctx.ctx.fillRect(0, y, ctx.width, ctx.rowHeight);` : "ctx.ctx.moveTo(cx, 0); ctx.ctx.lineTo(cx, h);"}\n  }}\n/>`}
+          : `<Grid\n  data={data}\n  columns={columns}\n  width={640}\n  height={400}\n  onAfterDraw={({ ctx, width, height, headerHeight, rowHeight, scrollTop }) => {\n    ${mode === "watermark" ? 'ctx.fillText("DRAFT", width / 2, height / 2);' : mode === "row-highlight" ? `const y = headerHeight + row * rowHeight - scrollTop;\n    ctx.fillRect(0, y, width, rowHeight);` : "ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height);"}\n  }}\n/>`}
       </pre>
 
       <div style={{ display: "flex", gap: 16 }}>
@@ -159,6 +159,18 @@ export function OnAfterDrawDemo() {
           </div>
           <div>
             <code>scrollTop / scrollLeft</code>: scroll offsets
+          </div>
+          <div>
+            <code>columns</code>: ColumnProps[]
+          </div>
+          <div>
+            <code>visibleRowStart</code>: first visible row
+          </div>
+          <div>
+            <code>visibleRowCount</code>: visible rows
+          </div>
+          <div>
+            <code>dataRowCount</code>: total rows
           </div>
           <hr style={{ margin: "8px 0", border: "none", borderTop: "1px solid #ddd" }} />
           <div>

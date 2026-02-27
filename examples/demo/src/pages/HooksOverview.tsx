@@ -21,7 +21,7 @@ export function HooksOverview() {
           overflowX: "auto",
         }}
       >
-        {`Grid.tsx (thin shell — ~320 lines)
+        {`Grid.tsx (thin shell — ~420 lines)
 │
 ├─ useWasmEngine        WASM init + MemoryBridge
 │
@@ -67,6 +67,16 @@ export function HooksOverview() {
           to="/event-callbacks"
           title="Event Callbacks (Step 0-3)"
           description="All 6 event callbacks with interactive blocking toggles and event log."
+        />
+        <DemoCard
+          to="/hooks/after-draw"
+          title="onAfterDraw (Step 0-4)"
+          description="Custom canvas overlays after each frame: watermark, row highlight, crosshair."
+        />
+        <DemoCard
+          to="/hooks/adapter-di"
+          title="Adapter DI (Step 0-5)"
+          description="Inject external EventManager/SelectionManager/EditorManager for testing or multi-grid sharing."
         />
       </div>
 

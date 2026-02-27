@@ -217,6 +217,36 @@ describe("useRenderLoop", () => {
       expect(ctx.headerHeight).toBe(40);
       expect(ctx.rowHeight).toBe(36);
       expect(ctx.ctx).toBeDefined();
+      // New fields (P2 #4)
+      expect(ctx.columns).toBeDefined();
+      expect(Array.isArray(ctx.columns)).toBe(true);
+      expect(ctx.columns.length).toBe(1);
+      expect(ctx.visibleRowStart).toBe(0);
+      expect(typeof ctx.visibleRowCount).toBe("number");
+      expect(ctx.dataRowCount).toBe(1);
+    });
+
+    it("catches errors in onAfterDraw without breaking render loop", () => {
+      const errorSpy = mock(() => {});
+      const origError = console.error;
+      console.error = errorSpy;
+
+      const onAfterDraw = mock(() => {
+        throw new Error("user callback error");
+      });
+      const params = defaultParams({ onAfterDraw });
+      const { result } = renderHook(() => useRenderLoop(params));
+      // First frame: should not throw
+      expect(() => flushRAF()).not.toThrow();
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+
+      // Render loop should still work after error
+      params.engine.updateViewportColumnar.mockClear();
+      act(() => result.current.invalidate());
+      flushRAF();
+      expect(params.engine.updateViewportColumnar).toHaveBeenCalled();
+
+      console.error = origError;
     });
 
     it("does not throw when onAfterDraw is not provided", () => {

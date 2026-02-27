@@ -34,7 +34,15 @@ export function useEditing({
   getTotalCellCount,
   editorManager,
 }: UseEditingParams) {
-  const editorManagerRef = useRef(editorManager ?? new EditorManager());
+  // Adapter DI: prefer external prop, lazy-create fallback only when needed
+  const fallbackEmRef = useRef<EditorManager | null>(null);
+  const editorManagerRef = useRef<EditorManager>(null!);
+  if (editorManager) {
+    editorManagerRef.current = editorManager;
+  } else {
+    if (!fallbackEmRef.current) fallbackEmRef.current = new EditorManager();
+    editorManagerRef.current = fallbackEmRef.current;
+  }
 
   // Set editor container
   useEffect(() => {

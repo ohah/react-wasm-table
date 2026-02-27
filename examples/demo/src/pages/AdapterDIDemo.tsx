@@ -95,29 +95,39 @@ export function AdapterDIDemo() {
         }}
       >
         {useDI
-          ? `const [eventManager] = useState(() => new EventManager());
-const [selectionManager] = useState(() => new SelectionManager());
-const [editorManager] = useState(() => new EditorManager());
+          ? `const [selectionManager] = useState(() => new SelectionManager());
 
-<Grid
-  data={data}
-  columns={columns}
-  eventManager={eventManager}
-  selectionManager={selectionManager}
-  editorManager={editorManager}
-/>`
-          : `// Default: Grid creates internal managers
+// Grid A: full DI (all 3 managers)
+<Grid eventManager={eventManager} selectionManager={selectionManager}
+      editorManager={editorManager} ... />
+
+// Grid B: shared SelectionManager only (selecting in one reflects in both)
+<Grid selectionManager={selectionManager} ... />`
+          : `// Default: each Grid creates internal managers
 <Grid data={data} columns={columns} />`}
       </pre>
 
       <div style={{ display: "flex", gap: 16 }}>
-        <Grid
-          data={data}
-          width={560}
-          height={360}
-          columns={columns}
-          {...(useDI ? { eventManager, selectionManager, editorManager } : {})}
-        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>Grid A</div>
+          <Grid
+            data={data}
+            width={460}
+            height={280}
+            columns={columns}
+            {...(useDI ? { eventManager, selectionManager, editorManager } : {})}
+          />
+          <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>
+            Grid B (shared SelectionManager)
+          </div>
+          <Grid
+            data={data}
+            width={460}
+            height={200}
+            columns={columns}
+            {...(useDI ? { selectionManager } : {})}
+          />
+        </div>
 
         <div
           style={{

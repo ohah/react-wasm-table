@@ -247,6 +247,36 @@ describe("useSelection (renderHook)", () => {
 
       expect(result.current.selectionManagerRef.current).toBeInstanceOf(SelectionManager);
     });
+
+    it("switches to new external manager when prop changes", () => {
+      const first = new SelectionManager();
+      const second = new SelectionManager();
+      let sm: SelectionManager | undefined = first;
+      const params = defaultParams({ selectionManager: first });
+      const { result, rerender } = renderHook(() =>
+        useSelection({ ...params, selectionManager: sm }),
+      );
+      expect(result.current.selectionManagerRef.current).toBe(first);
+
+      sm = second;
+      rerender();
+      expect(result.current.selectionManagerRef.current).toBe(second);
+    });
+
+    it("falls back to internal when external prop removed", () => {
+      const external = new SelectionManager();
+      let sm: SelectionManager | undefined = external;
+      const params = defaultParams({ selectionManager: external });
+      const { result, rerender } = renderHook(() =>
+        useSelection({ ...params, selectionManager: sm }),
+      );
+      expect(result.current.selectionManagerRef.current).toBe(external);
+
+      sm = undefined;
+      rerender();
+      expect(result.current.selectionManagerRef.current).not.toBe(external);
+      expect(result.current.selectionManagerRef.current).toBeInstanceOf(SelectionManager);
+    });
   });
 
   describe("onSelectionChange callback", () => {

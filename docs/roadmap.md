@@ -177,43 +177,57 @@ Grid의 하드코딩된 이벤트 핸들러에 사용자 콜백 레이어 추가
 - `packages/grid/src/react/hooks/use-selection.ts` — onBeforeSelectionChange 가드
 - `packages/grid/src/react/hooks/use-event-attachment.ts` — 4개 이벤트 콜백 ref 패턴
 
-### Step 0-4. 렌더 루프 추출
+### Step 0-4. 렌더 루프 추출 ✅ 완료
 
-Grid 내부의 80줄 렌더 루프를 hook으로 추출.
+Grid 내부의 80줄 렌더 루프를 hook으로 추출하고, `onAfterDraw` 콜백으로 사용자 커스텀 드로잉 레이어 진입점 제공.
 
 ```ts
 // 렌더 루프 hook
-const { invalidate } = useRenderLoop(canvasRef, {
+const { invalidate } = useRenderLoop({
   engine,
-  memoryBridge,
+  memoryBridgeRef,
+  canvasRef,
   columnRegistry,
-  stringTable,
+  stringTableRef,
   theme,
-  // 사용자가 추가 드로잉 레이어 끼울 수 있는 콜백
-  onAfterDraw?: (ctx, viewport) => void,
+  onAfterDraw?: (ctx: AfterDrawContext) => void,
+  // ... 기타 layout/scroll/selection refs
 });
 ```
 
-- 렌더 루프 로직이 독립 hook이 되면 Phase 3(Layer System) 진입점이 됨
-- Grid는 이 hook을 호출할 뿐
+**구현 결과:**
 
-**대상 파일**:
+- `useRenderLoop` hook (501줄) — RAF + dirty flag + 단일 WASM 호출 + Canvas draw + onAfterDraw
+- `onAfterDraw` 콜백: 매 프레임 draw 후 viewport 좌표계에서 호출 (Phase 3 Layer System 진입점)
+- `AfterDrawContext` 타입: `{ ctx, width, height, scrollTop, scrollLeft, headerHeight, rowHeight }`
+- ref 래핑 (`onAfterDrawRef`) — 콜백 변경 시 effect 재시작 방지
+- Grid.tsx는 `useRenderLoop` 호출만 담당 (렌더 루프 로직 0줄)
+- 8개 신규 테스트: invalidate 안정성, dirtyRef 소유권, onAfterDraw × 3, edge cases
+- 데모 페이지: `OnAfterDrawDemo.tsx` (watermark / row-highlight / crosshair / none 모드)
 
-- `packages/grid/src/react/hooks/use-render-loop.ts` — 새 파일
-- `packages/grid/src/react/Grid.tsx` — 렌더 루프 제거, hook 호출로 대체
+**변경 파일**:
 
-### Step 0-5. Adapter DI (선택적 주입)
+- `packages/grid/src/react/hooks/use-render-loop.ts` — onAfterDraw 지원 추가
+- `packages/grid/src/react/Grid.tsx` — `onAfterDraw` prop 배선
+- `packages/grid/src/types.ts` — `AfterDrawContext` 타입 + `onAfterDraw` prop
+- `packages/grid/src/index.ts` — `AfterDrawContext` export
+- `packages/grid/src/react/__tests__/use-render-loop.test.ts` — 8개 테스트
+- `examples/demo/src/pages/OnAfterDrawDemo.tsx` — 데모 페이지
+
+### Step 0-5. Adapter DI (선택적 주입) ✅ 완료
 
 어댑터를 외부에서 주입할 수 있는 prop 추가. 안 넘기면 내부 생성 (하위 호환).
 
 ```tsx
 // 파워 유저: 직접 어댑터 관리
-const myEventManager = new EventManager();
-const mySelectionManager = new SelectionManager();
+const [eventManager] = useState(() => new EventManager());
+const [selectionManager] = useState(() => new SelectionManager());
+const [editorManager] = useState(() => new EditorManager());
 
 <Grid
-  eventManager={myEventManager}
-  selectionManager={mySelectionManager}
+  eventManager={eventManager}
+  selectionManager={selectionManager}
+  editorManager={editorManager}
   ...
 />
 
@@ -221,14 +235,32 @@ const mySelectionManager = new SelectionManager();
 <Grid data={data} columns={columns} ... />
 ```
 
-- 각 어댑터 prop은 optional — 없으면 Grid가 내부 생성
+**구현 결과:**
+
+- 3개 어댑터 DI prop 추가: `eventManager`, `selectionManager`, `editorManager`
+- Grid.tsx: `useRef(prop ?? new X())` 패턴 — 외부 인스턴스 우선, 없으면 내부 생성
+- `useSelection`: `selectionManager?` 파라미터 추가 (주입 시 내부 생성 스킵)
+- `useEditing`: `editorManager?` 파라미터 추가 (주입 시 내부 생성 스킵)
+- `useEventAttachment`: Grid에서 생성한 `eventManagerRef` 수신 (DI 체인 완성)
+- 3개 DI 테스트 추가 (SelectionManager × 2, EditorManager × 1)
+- 데모 페이지: `AdapterDIDemo.tsx` (외부 매니저 상태 폴링, 프로그래매틱 제어)
+- 모든 매니저 `index.ts`에서 export 완료 (EventManager, SelectionManager, EditorManager)
+
+**용도:**
+
 - 테스트 시 mock 주입 가능
 - 여러 Grid 간 어댑터 공유 가능
+- 외부에서 매니저 상태 직접 읽기/제어
 
-**대상 파일**:
+**변경 파일**:
 
-- `packages/grid/src/react/Grid.tsx` — 어댑터 prop 추가, `prop ?? new X()` 패턴
-- `packages/grid/src/types.ts` — GridProps에 어댑터 prop 타입 추가
+- `packages/grid/src/react/Grid.tsx` — 3개 어댑터 prop 수신 + ref 생성
+- `packages/grid/src/types.ts` — GridProps에 3개 어댑터 prop 타입 추가
+- `packages/grid/src/react/hooks/use-selection.ts` — `selectionManager?` 파라미터
+- `packages/grid/src/react/hooks/use-editing.ts` — `editorManager?` 파라미터
+- `packages/grid/src/react/__tests__/use-selection.test.ts` — DI 테스트 2개
+- `packages/grid/src/react/__tests__/use-editing.test.ts` — DI 테스트 1개
+- `examples/demo/src/pages/AdapterDIDemo.tsx` — 데모 페이지
 
 ### 리팩토링 순서 & 안전장치
 
@@ -241,9 +273,9 @@ Step 0-2 (WASM Provider)  ✅ 완료
   ↓
 Step 0-3 (이벤트 개방)     ✅ 완료
   ↓
-Step 0-4 (렌더 루프 추출)  ← 0-1의 useRenderLoop 기반
+Step 0-4 (렌더 루프 추출)  ✅ 완료 — onAfterDraw + AfterDrawContext
   ↓
-Step 0-5 (Adapter DI)     ← 모든 hook이 DI 지원하도록 마무리
+Step 0-5 (Adapter DI)     ✅ 완료 — EventManager/SelectionManager/EditorManager 주입
 ```
 
 **각 Step마다**:
@@ -252,6 +284,15 @@ Step 0-5 (Adapter DI)     ← 모든 hook이 DI 지원하도록 마무리
 2. 새 hook 단위 테스트 추가
 3. 기존 Grid API(props) 하위 호환 유지 — breaking change 없음
 4. 데모 앱이 동일하게 동작하는지 확인
+
+### Phase 0 완료 결과
+
+```
+Grid.tsx: 965줄 → 412줄 (57% 감소)
+테스트: 343개 → 511개 (168개 추가, hook별 테스트 파일 8개)
+E2E 회귀: 0건
+데모 페이지: 7개 추가 (Overview, Sorting, Selection, Composition, EventCallbacks, OnAfterDraw, AdapterDI)
+```
 
 ### Phase 0 완료 후 Grid.tsx 목표 모습
 

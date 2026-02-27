@@ -138,6 +138,33 @@ describe("useEditing (renderHook)", () => {
       );
       expect(diResult.current.editorManagerRef.current).toBe(external);
     });
+
+    it("switches to new external manager when prop changes", () => {
+      const first = new EditorManager();
+      const second = new EditorManager();
+      let em: EditorManager | undefined = first;
+      const registry = new ColumnRegistry();
+      registry.setAll([{ id: "name", width: 100, editor: "text" }] as any);
+      const sm = new SelectionManager();
+      const editorDiv = document.createElement("div");
+      const baseParams = {
+        editorRef: { current: editorDiv },
+        columnRegistry: registry,
+        data: [{ name: "Alice" }] as Record<string, unknown>[],
+        selectionManagerRef: { current: sm },
+        getLayoutBuf: () => null as Float32Array | null,
+        getHeaderCount: () => 0,
+        getTotalCellCount: () => 0,
+      };
+      const { result, rerender } = renderHook(() =>
+        useEditing({ ...baseParams, editorManager: em }),
+      );
+      expect(result.current.editorManagerRef.current).toBe(first);
+
+      em = second;
+      rerender();
+      expect(result.current.editorManagerRef.current).toBe(second);
+    });
   });
 
   it("clears selection when editor opens", () => {

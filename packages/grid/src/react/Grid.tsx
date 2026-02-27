@@ -105,11 +105,14 @@ export function Grid({
   const theme: Theme = useMemo(() => ({ ...DEFAULT_THEME, ...themeOverrides }), [themeOverrides]);
 
   // Sync columns prop → ColumnRegistry (TanStack GridColumnDef[])
+  // Note: data is passed for type inference but not used in resolveColumns body,
+  // so it's excluded from deps to avoid unnecessary re-resolution on data change.
   useEffect(() => {
     if (!columnsProp) return;
     const resolved = resolveColumns(columnsProp, data);
     columnRegistry.setAll(resolved);
-  }, [columnsProp, columnRegistry, data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnsProp, columnRegistry]);
 
   // Shared mutable refs
   const layoutBufRef = useRef<Float32Array | null>(null);
@@ -117,11 +120,21 @@ export function Grid({
   const totalCellCountRef = useRef(0);
   const visStartRef = useRef(0);
 
-  // invalidateRef bridge: stable callback delegates to useRenderLoop's invalidate (wired below)
+  // invalidateRef bridge: stable callback delegates to useRenderLoop's invalidate (wired below).
+  // Other hooks calling invalidate() before useRenderLoop mounts will no-op safely.
+  // Once useRenderLoop mounts (line below), the bridge is wired and all calls flow through.
   const invalidateRef = useRef<() => void>(() => {});
   const invalidate = useCallback(() => invalidateRef.current(), []);
 
-  const eventManagerRef = useRef(eventManagerProp ?? new EventManager());
+  // Adapter DI: prefer external prop, lazy-create fallback only when needed
+  const fallbackEventManagerRef = useRef<EventManager | null>(null);
+  const eventManagerRef = useRef<EventManager>(null!);
+  if (eventManagerProp) {
+    eventManagerRef.current = eventManagerProp;
+  } else {
+    if (!fallbackEventManagerRef.current) fallbackEventManagerRef.current = new EventManager();
+    eventManagerRef.current = fallbackEventManagerRef.current;
+  }
   const {
     scrollTopRef,
     scrollLeftRef,
