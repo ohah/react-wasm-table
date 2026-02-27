@@ -46,6 +46,56 @@ export type ColumnFiltersUpdater =
   | ColumnFiltersState
   | ((prev: ColumnFiltersState) => ColumnFiltersState);
 
+// ── Column Order state ──────────────────────────────────────────────
+
+export type ColumnOrderState = string[];
+export type ColumnOrderUpdater = ColumnOrderState | ((prev: ColumnOrderState) => ColumnOrderState);
+
+// ── Column Visibility state ─────────────────────────────────────────
+
+/** Map of column ID → visible. Missing key = visible (true). */
+export type ColumnVisibilityState = Record<string, boolean>;
+
+export type ColumnVisibilityUpdater =
+  | ColumnVisibilityState
+  | ((prev: ColumnVisibilityState) => ColumnVisibilityState);
+
+// ── Column Sizing state ────────────────────────────────────────────
+
+/** Map of column ID → overridden width in px. */
+export type ColumnSizingState = Record<string, number>;
+
+export type ColumnSizingUpdater =
+  | ColumnSizingState
+  | ((prev: ColumnSizingState) => ColumnSizingState);
+
+/** Transient drag-resize info (modelled after TanStack). */
+export interface ColumnSizingInfoState {
+  startOffset: number | null;
+  startSize: number | null;
+  deltaOffset: number;
+  deltaPercentage: number;
+  isResizingColumn: string | false;
+  columnSizingStart: [string, number][];
+}
+
+export type ColumnSizingInfoUpdater =
+  | ColumnSizingInfoState
+  | ((prev: ColumnSizingInfoState) => ColumnSizingInfoState);
+
+// ── Column Pinning state ───────────────────────────────────────────
+
+export interface ColumnPinningState {
+  left: string[];
+  right: string[];
+}
+
+export type ColumnPinningUpdater =
+  | ColumnPinningState
+  | ((prev: ColumnPinningState) => ColumnPinningState);
+
+export type ColumnPinningPosition = "left" | "right" | false;
+
 // ── CellContext / HeaderContext ──────────────────────────────────────
 
 /** Context passed to the `cell` render function. Mirrors TanStack CellContext. */
@@ -103,6 +153,24 @@ export interface ColumnDefBase<TData, TValue = unknown> {
   enableSelection?: boolean;
   /** Custom sort function (future support). */
   sortingFn?: string;
+
+  // Filtering
+  /** Enable per-column filtering. @default true for accessor columns */
+  enableColumnFilter?: boolean;
+  /** Custom filter function name (future support). */
+  filterFn?: string;
+
+  // Visibility
+  /** Enable hiding for this column. @default true */
+  enableHiding?: boolean;
+
+  // Resizing
+  /** Enable resizing for this column. @default true */
+  enableResizing?: boolean;
+
+  // Pinning
+  /** Enable pinning for this column. @default true */
+  enablePinning?: boolean;
 
   // Our extensions (Taffy flexbox)
   /** Content alignment. */

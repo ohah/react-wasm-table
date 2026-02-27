@@ -326,6 +326,118 @@ describe("resolveColumns", () => {
   });
 });
 
+describe("resolveColumns — columnVisibility", () => {
+  const defs = [
+    helper.accessor("firstName", { header: "First", size: 100 }),
+    helper.accessor("lastName", { header: "Last", size: 100 }),
+    helper.accessor("age", { header: "Age", size: 80 }),
+  ];
+
+  it("hides columns with visibility set to false", () => {
+    const result = resolveColumns(defs, [], {
+      columnVisibility: { lastName: false },
+    });
+    expect(result).toHaveLength(2);
+    expect(result.map((c) => c.id)).toEqual(["firstName", "age"]);
+  });
+
+  it("keeps columns with visibility set to true", () => {
+    const result = resolveColumns(defs, [], {
+      columnVisibility: { firstName: true, lastName: true, age: true },
+    });
+    expect(result).toHaveLength(3);
+  });
+
+  it("treats missing visibility keys as visible", () => {
+    const result = resolveColumns(defs, [], {
+      columnVisibility: {},
+    });
+    expect(result).toHaveLength(3);
+  });
+});
+
+describe("resolveColumns — columnSizing", () => {
+  const defs = [
+    helper.accessor("firstName", { header: "First", size: 100 }),
+    helper.accessor("lastName", { header: "Last", size: 100 }),
+    helper.accessor("age", { header: "Age", size: 80 }),
+  ];
+
+  it("overrides width with columnSizing value", () => {
+    const result = resolveColumns(defs, [], {
+      columnSizing: { firstName: 200 },
+    });
+    expect(result[0]!.width).toBe(200);
+    expect(result[1]!.width).toBe(100);
+  });
+
+  it("leaves width unchanged for columns not in columnSizing", () => {
+    const result = resolveColumns(defs, [], {
+      columnSizing: { age: 120 },
+    });
+    expect(result[0]!.width).toBe(100);
+    expect(result[2]!.width).toBe(120);
+  });
+
+  it("applies sizing to column without original size", () => {
+    const noSizeDefs = [helper.accessor("firstName", { header: "First" })];
+    const result = resolveColumns(noSizeDefs, [], {
+      columnSizing: { firstName: 250 },
+    });
+    expect(result[0]!.width).toBe(250);
+  });
+});
+
+describe("resolveColumns — columnOrder", () => {
+  const defs = [
+    helper.accessor("firstName", { header: "First", size: 100 }),
+    helper.accessor("lastName", { header: "Last", size: 100 }),
+    helper.accessor("age", { header: "Age", size: 80 }),
+  ];
+
+  it("reorders columns according to columnOrder", () => {
+    const result = resolveColumns(defs, [], {
+      columnOrder: ["age", "firstName", "lastName"],
+    });
+    expect(result.map((c) => c.id)).toEqual(["age", "firstName", "lastName"]);
+  });
+
+  it("pushes columns not in columnOrder to the end", () => {
+    const result = resolveColumns(defs, [], {
+      columnOrder: ["lastName"],
+    });
+    expect(result[0]!.id).toBe("lastName");
+    // firstName and age are not in order, they go after lastName
+    expect(result.map((c) => c.id)).toEqual(["lastName", "firstName", "age"]);
+  });
+
+  it("preserves original order when columnOrder is not provided", () => {
+    const result = resolveColumns(defs, []);
+    expect(result.map((c) => c.id)).toEqual(["firstName", "lastName", "age"]);
+  });
+
+  it("works with visibility + ordering combined", () => {
+    const result = resolveColumns(defs, [], {
+      columnOrder: ["age", "firstName", "lastName"],
+      columnVisibility: { firstName: false },
+    });
+    expect(result.map((c) => c.id)).toEqual(["age", "lastName"]);
+  });
+});
+
+describe("resolveColumns — options backward compatibility", () => {
+  it("works identically without options parameter", () => {
+    const defs = [
+      helper.accessor("firstName", { header: "First", size: 100 }),
+      helper.accessor("age", { header: "Age", size: 80 }),
+    ];
+    const result = resolveColumns(defs, []);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.width).toBe(100);
+    expect(result[1]!.width).toBe(80);
+  });
+});
+
 describe("getLeafColumns", () => {
   it("returns flat columns as-is", () => {
     const defs = [

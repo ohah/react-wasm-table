@@ -11,6 +11,9 @@
  * 2. SortingUpdater function evaluation (function → direct value)
  * 3. onSortingChange callback routing
  * 4. Controlled vs uncontrolled filter state (columnFilters, globalFilter)
+ * 5. Controlled vs uncontrolled columnVisibility state
+ * 6. Controlled vs uncontrolled columnSizing / columnSizingInfo state
+ * 7. Controlled vs uncontrolled columnPinning state
  *
  * We test these behaviors here using the same patterns.
  */
@@ -22,6 +25,14 @@ import type {
   SortingUpdater,
   ColumnFiltersState,
   ColumnFiltersUpdater,
+  ColumnVisibilityState,
+  ColumnVisibilityUpdater,
+  ColumnSizingState,
+  ColumnSizingUpdater,
+  ColumnSizingInfoState,
+  ColumnSizingInfoUpdater,
+  ColumnPinningState,
+  ColumnPinningUpdater,
   GridColumnDef,
 } from "../tanstack-types";
 import type { GridState } from "../grid-instance";
@@ -41,30 +52,56 @@ const columns: GridColumnDef<Person, any>[] = [
   helper.accessor("status", { header: "Status", size: 120, enableSorting: true }),
 ];
 
+const DEFAULT_COLUMN_SIZING_INFO: ColumnSizingInfoState = {
+  startOffset: null,
+  startSize: null,
+  deltaOffset: 0,
+  deltaPercentage: 0,
+  isResizingColumn: false,
+  columnSizingStart: [],
+};
+
 /**
- * Simulate the hook's controlled/uncontrolled state resolution logic:
- * - If controlledState.sorting is provided, use it
- * - Otherwise, use internalSorting (default from initialState)
- * - Same for columnFilters and globalFilter
+ * Simulate the hook's controlled/uncontrolled state resolution logic.
  */
 function simulateHookState(opts: {
   controlledSorting?: SortingState;
   controlledColumnFilters?: ColumnFiltersState;
   controlledGlobalFilter?: string;
+  controlledColumnVisibility?: ColumnVisibilityState;
+  controlledColumnSizing?: ColumnSizingState;
+  controlledColumnSizingInfo?: ColumnSizingInfoState;
+  controlledColumnPinning?: ColumnPinningState;
   initialSorting?: SortingState;
   initialColumnFilters?: ColumnFiltersState;
   initialGlobalFilter?: string;
+  initialColumnVisibility?: ColumnVisibilityState;
+  initialColumnSizing?: ColumnSizingState;
+  initialColumnSizingInfo?: ColumnSizingInfoState;
+  initialColumnPinning?: ColumnPinningState;
   onSortingChange?: (updater: SortingUpdater) => void;
   onColumnFiltersChange?: (updater: ColumnFiltersUpdater) => void;
   onGlobalFilterChange?: (value: string) => void;
+  onColumnVisibilityChange?: (updater: ColumnVisibilityUpdater) => void;
+  onColumnSizingChange?: (updater: ColumnSizingUpdater) => void;
+  onColumnSizingInfoChange?: (updater: ColumnSizingInfoUpdater) => void;
+  onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
 }) {
   let internalSorting: SortingState = opts.initialSorting ?? [];
   let internalColumnFilters: ColumnFiltersState = opts.initialColumnFilters ?? [];
   let internalGlobalFilter: string = opts.initialGlobalFilter ?? "";
+  let internalVisibility: ColumnVisibilityState = opts.initialColumnVisibility ?? {};
+  let internalSizing: ColumnSizingState = opts.initialColumnSizing ?? {};
+  let internalSizingInfo: ColumnSizingInfoState = opts.initialColumnSizingInfo ?? DEFAULT_COLUMN_SIZING_INFO;
+  let internalPinning: ColumnPinningState = opts.initialColumnPinning ?? { left: [], right: [] };
 
   const sorting = opts.controlledSorting ?? internalSorting;
   const columnFilters = opts.controlledColumnFilters ?? internalColumnFilters;
   const globalFilter = opts.controlledGlobalFilter ?? internalGlobalFilter;
+  const columnVisibility = opts.controlledColumnVisibility ?? internalVisibility;
+  const columnSizing = opts.controlledColumnSizing ?? internalSizing;
+  const columnSizingInfo = opts.controlledColumnSizingInfo ?? internalSizingInfo;
+  const columnPinning = opts.controlledColumnPinning ?? internalPinning;
 
   const onSortingChange = (updater: SortingUpdater) => {
     const next = typeof updater === "function" ? updater(sorting) : updater;
@@ -92,7 +129,51 @@ function simulateHookState(opts: {
     }
   };
 
-  const state: GridState = { sorting, columnFilters, globalFilter };
+  const onColumnVisibilityChange = (updater: ColumnVisibilityUpdater) => {
+    const next = typeof updater === "function" ? updater(columnVisibility) : updater;
+    if (opts.onColumnVisibilityChange) {
+      opts.onColumnVisibilityChange(next);
+    } else {
+      internalVisibility = next;
+    }
+  };
+
+  const onColumnSizingChange = (updater: ColumnSizingUpdater) => {
+    const next = typeof updater === "function" ? updater(columnSizing) : updater;
+    if (opts.onColumnSizingChange) {
+      opts.onColumnSizingChange(next);
+    } else {
+      internalSizing = next;
+    }
+  };
+
+  const onColumnSizingInfoChange = (updater: ColumnSizingInfoUpdater) => {
+    const next = typeof updater === "function" ? updater(columnSizingInfo) : updater;
+    if (opts.onColumnSizingInfoChange) {
+      opts.onColumnSizingInfoChange(next);
+    } else {
+      internalSizingInfo = next;
+    }
+  };
+
+  const onColumnPinningChange = (updater: ColumnPinningUpdater) => {
+    const next = typeof updater === "function" ? updater(columnPinning) : updater;
+    if (opts.onColumnPinningChange) {
+      opts.onColumnPinningChange(next);
+    } else {
+      internalPinning = next;
+    }
+  };
+
+  const state: GridState = {
+    sorting,
+    columnFilters,
+    globalFilter,
+    columnVisibility,
+    columnSizing,
+    columnSizingInfo,
+    columnPinning,
+  };
 
   return {
     instance: buildGridInstance({
@@ -102,10 +183,18 @@ function simulateHookState(opts: {
       onSortingChange,
       onColumnFiltersChange,
       onGlobalFilterChange,
+      onColumnVisibilityChange,
+      onColumnSizingChange,
+      onColumnSizingInfoChange,
+      onColumnPinningChange,
     }),
     getSorting: () => opts.controlledSorting ?? internalSorting,
     getColumnFilters: () => opts.controlledColumnFilters ?? internalColumnFilters,
     getGlobalFilter: () => opts.controlledGlobalFilter ?? internalGlobalFilter,
+    getVisibility: () => opts.controlledColumnVisibility ?? internalVisibility,
+    getSizing: () => opts.controlledColumnSizing ?? internalSizing,
+    getSizingInfo: () => opts.controlledColumnSizingInfo ?? internalSizingInfo,
+    getPinning: () => opts.controlledColumnPinning ?? internalPinning,
   };
 }
 
@@ -358,6 +447,272 @@ describe("useGridTable state logic", () => {
         { id: "name", value: "A" },
         { id: "age", value: 30 },
       ]);
+    });
+  });
+
+  // ── Visibility state tests ─────────────────────────────────────────
+
+  describe("visibility state — uncontrolled", () => {
+    it("defaults to empty columnVisibility (all visible)", () => {
+      const { instance } = simulateHookState({});
+      expect(instance.getState().columnVisibility).toEqual({});
+    });
+
+    it("uses initialState.columnVisibility", () => {
+      const { instance } = simulateHookState({
+        initialColumnVisibility: { name: false },
+      });
+      expect(instance.getState().columnVisibility).toEqual({ name: false });
+    });
+
+    it("toggleVisibility updates internal state", () => {
+      const { instance, getVisibility } = simulateHookState({});
+      instance.getColumn("name")!.toggleVisibility();
+      expect(getVisibility()).toEqual({ name: false });
+    });
+
+    it("setColumnVisibility updates internal state", () => {
+      const { instance, getVisibility } = simulateHookState({});
+      instance.setColumnVisibility({ name: false, age: false });
+      expect(getVisibility()).toEqual({ name: false, age: false });
+    });
+
+    it("resetColumnVisibility clears to empty", () => {
+      const { instance, getVisibility } = simulateHookState({
+        initialColumnVisibility: { name: false },
+      });
+      instance.resetColumnVisibility();
+      expect(getVisibility()).toEqual({});
+    });
+  });
+
+  describe("visibility state — controlled", () => {
+    it("uses controlledColumnVisibility over initial", () => {
+      const { instance } = simulateHookState({
+        controlledColumnVisibility: { name: false },
+        initialColumnVisibility: { age: false },
+      });
+      expect(instance.getState().columnVisibility).toEqual({ name: false });
+    });
+
+    it("calls onColumnVisibilityChange on toggleVisibility", () => {
+      let captured: ColumnVisibilityState | undefined;
+      const { instance } = simulateHookState({
+        controlledColumnVisibility: {},
+        onColumnVisibilityChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.getColumn("name")!.toggleVisibility();
+      expect(captured).toEqual({ name: false });
+    });
+
+    it("calls onColumnVisibilityChange on setColumnVisibility", () => {
+      let captured: ColumnVisibilityUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledColumnVisibility: {},
+        onColumnVisibilityChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.setColumnVisibility({ name: false });
+      expect(captured).toEqual({ name: false });
+    });
+
+    it("calls onColumnVisibilityChange on resetColumnVisibility", () => {
+      let captured: ColumnVisibilityUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledColumnVisibility: { name: false },
+        onColumnVisibilityChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.resetColumnVisibility();
+      expect(captured).toEqual({});
+    });
+  });
+
+  // ── Sizing state tests ────────────────────────────────────────────
+
+  describe("sizing state — uncontrolled", () => {
+    it("defaults to empty columnSizing", () => {
+      const { instance } = simulateHookState({});
+      expect(instance.getState().columnSizing).toEqual({});
+    });
+
+    it("uses initialState.columnSizing", () => {
+      const { instance } = simulateHookState({
+        initialColumnSizing: { name: 200 },
+      });
+      expect(instance.getState().columnSizing).toEqual({ name: 200 });
+    });
+
+    it("setColumnSizing updates internal state", () => {
+      const { instance, getSizing } = simulateHookState({});
+      instance.setColumnSizing({ name: 250 });
+      expect(getSizing()).toEqual({ name: 250 });
+    });
+
+    it("resetColumnSizing clears to empty", () => {
+      const { instance, getSizing } = simulateHookState({
+        initialColumnSizing: { name: 200 },
+      });
+      instance.resetColumnSizing();
+      expect(getSizing()).toEqual({});
+    });
+
+    it("resetSize removes specific column from sizing", () => {
+      const { instance, getSizing } = simulateHookState({
+        initialColumnSizing: { name: 200, age: 100 },
+      });
+      instance.getColumn("name")!.resetSize();
+      expect(getSizing()).toEqual({ age: 100 });
+    });
+  });
+
+  describe("sizing state — controlled", () => {
+    it("uses controlledColumnSizing over initial", () => {
+      const { instance } = simulateHookState({
+        controlledColumnSizing: { name: 300 },
+        initialColumnSizing: { name: 200 },
+      });
+      expect(instance.getState().columnSizing).toEqual({ name: 300 });
+    });
+
+    it("calls onColumnSizingChange on setColumnSizing", () => {
+      let captured: ColumnSizingUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledColumnSizing: {},
+        onColumnSizingChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.setColumnSizing({ name: 250 });
+      expect(captured).toEqual({ name: 250 });
+    });
+
+    it("calls onColumnSizingChange on resetColumnSizing", () => {
+      let captured: ColumnSizingUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledColumnSizing: { name: 200 },
+        onColumnSizingChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.resetColumnSizing();
+      expect(captured).toEqual({});
+    });
+  });
+
+  describe("sizing info state — controlled", () => {
+    it("calls onColumnSizingInfoChange on setColumnSizingInfo", () => {
+      let captured: ColumnSizingInfoUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledColumnSizingInfo: DEFAULT_COLUMN_SIZING_INFO,
+        onColumnSizingInfoChange: (u) => {
+          captured = u;
+        },
+      });
+      const info: ColumnSizingInfoState = {
+        startOffset: 100,
+        startSize: 150,
+        deltaOffset: 10,
+        deltaPercentage: 0,
+        isResizingColumn: "name",
+        columnSizingStart: [["name", 150]],
+      };
+      instance.setColumnSizingInfo(info);
+      expect(captured).toEqual(info);
+    });
+  });
+
+  // ── Pinning state tests ───────────────────────────────────────────
+
+  describe("pinning state — uncontrolled", () => {
+    it("defaults to empty columnPinning", () => {
+      const { instance } = simulateHookState({});
+      expect(instance.getState().columnPinning).toEqual({ left: [], right: [] });
+    });
+
+    it("uses initialState.columnPinning", () => {
+      const { instance } = simulateHookState({
+        initialColumnPinning: { left: ["name"], right: [] },
+      });
+      expect(instance.getState().columnPinning).toEqual({ left: ["name"], right: [] });
+    });
+
+    it("pin updates internal state", () => {
+      const { instance, getPinning } = simulateHookState({});
+      instance.getColumn("name")!.pin("left");
+      expect(getPinning()).toEqual({ left: ["name"], right: [] });
+    });
+
+    it("unpin updates internal state", () => {
+      const { instance, getPinning } = simulateHookState({
+        initialColumnPinning: { left: ["name"], right: [] },
+      });
+      instance.getColumn("name")!.unpin();
+      expect(getPinning()).toEqual({ left: [], right: [] });
+    });
+
+    it("setColumnPinning updates internal state", () => {
+      const { instance, getPinning } = simulateHookState({});
+      instance.setColumnPinning({ left: ["name"], right: ["status"] });
+      expect(getPinning()).toEqual({ left: ["name"], right: ["status"] });
+    });
+
+    it("resetColumnPinning clears to empty", () => {
+      const { instance, getPinning } = simulateHookState({
+        initialColumnPinning: { left: ["name"], right: [] },
+      });
+      instance.resetColumnPinning();
+      expect(getPinning()).toEqual({ left: [], right: [] });
+    });
+  });
+
+  describe("pinning state — controlled", () => {
+    it("uses controlledColumnPinning over initial", () => {
+      const { instance } = simulateHookState({
+        controlledColumnPinning: { left: ["status"], right: [] },
+        initialColumnPinning: { left: ["name"], right: [] },
+      });
+      expect(instance.getState().columnPinning).toEqual({ left: ["status"], right: [] });
+    });
+
+    it("calls onColumnPinningChange on pin", () => {
+      let captured: ColumnPinningState | undefined;
+      const { instance } = simulateHookState({
+        controlledColumnPinning: { left: [], right: [] },
+        onColumnPinningChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.getColumn("name")!.pin("left");
+      expect(captured).toEqual({ left: ["name"], right: [] });
+    });
+
+    it("calls onColumnPinningChange on setColumnPinning", () => {
+      let captured: ColumnPinningUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledColumnPinning: { left: [], right: [] },
+        onColumnPinningChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.setColumnPinning({ left: ["name"], right: ["status"] });
+      expect(captured).toEqual({ left: ["name"], right: ["status"] });
+    });
+
+    it("calls onColumnPinningChange on resetColumnPinning", () => {
+      let captured: ColumnPinningUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledColumnPinning: { left: ["name"], right: [] },
+        onColumnPinningChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.resetColumnPinning();
+      expect(captured).toEqual({ left: [], right: [] });
     });
   });
 

@@ -55,6 +55,17 @@ export type {
   ColumnFilter,
   ColumnFiltersState,
   ColumnFiltersUpdater,
+  ColumnOrderState,
+  ColumnOrderUpdater,
+  ColumnVisibilityState,
+  ColumnVisibilityUpdater,
+  ColumnSizingState,
+  ColumnSizingUpdater,
+  ColumnSizingInfoState,
+  ColumnSizingInfoUpdater,
+  ColumnPinningState,
+  ColumnPinningUpdater,
+  ColumnPinningPosition,
 } from "./tanstack-types";
 
 // Header grouping (multi-level headers)
@@ -70,6 +81,7 @@ export type {
   GridHeader,
   GridHeaderGroup,
   GridState,
+  BuildOptions,
 } from "./grid-instance";
 
 // Row model

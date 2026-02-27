@@ -5,10 +5,27 @@ import type {
   SortingUpdater,
   ColumnFiltersState,
   ColumnFiltersUpdater,
+  ColumnVisibilityState,
+  ColumnVisibilityUpdater,
+  ColumnSizingState,
+  ColumnSizingUpdater,
+  ColumnSizingInfoState,
+  ColumnSizingInfoUpdater,
+  ColumnPinningState,
+  ColumnPinningUpdater,
 } from "./tanstack-types";
 import type { GridInstance, GridState } from "./grid-instance";
 import { buildGridInstance } from "./grid-instance";
 import type { RowModelFactory } from "./row-model";
+
+const DEFAULT_COLUMN_SIZING_INFO: ColumnSizingInfoState = {
+  startOffset: null,
+  startSize: null,
+  deltaOffset: 0,
+  deltaPercentage: 0,
+  isResizingColumn: false,
+  columnSizingStart: [],
+};
 
 /** Options for useGridTable. */
 export interface UseGridTableOptions<TData> {
@@ -18,7 +35,7 @@ export interface UseGridTableOptions<TData> {
   columns: GridColumnDef<TData>[];
 
   // Controlled state
-  /** Controlled state (sorting, columnFilters, globalFilter). */
+  /** Controlled state (sorting, columnFilters, globalFilter, columnVisibility, columnSizing, columnSizingInfo, columnPinning). */
   state?: Partial<GridState>;
   /** Callback when sorting changes (controlled mode). */
   onSortingChange?: (updater: SortingUpdater) => void;
@@ -26,6 +43,14 @@ export interface UseGridTableOptions<TData> {
   onColumnFiltersChange?: (updater: ColumnFiltersUpdater) => void;
   /** Callback when global filter changes (controlled mode). */
   onGlobalFilterChange?: (value: string) => void;
+  /** Callback when column visibility changes (controlled mode). */
+  onColumnVisibilityChange?: (updater: ColumnVisibilityUpdater) => void;
+  /** Callback when column sizing changes (controlled mode). */
+  onColumnSizingChange?: (updater: ColumnSizingUpdater) => void;
+  /** Callback when column sizing info changes (controlled mode). */
+  onColumnSizingInfoChange?: (updater: ColumnSizingInfoUpdater) => void;
+  /** Callback when column pinning changes (controlled mode). */
+  onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
   /** Initial state (for uncontrolled mode). */
   initialState?: Partial<GridState>;
 
@@ -37,7 +62,7 @@ export interface UseGridTableOptions<TData> {
 
 /**
  * TanStack-compatible hook for creating a grid instance.
- * Manages sorting + filter state (controlled or uncontrolled) and builds a GridInstance.
+ * Manages sorting + filter + visibility + sizing + pinning state (controlled or uncontrolled) and builds a GridInstance.
  */
 export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridInstance<TData> {
   const {
@@ -47,6 +72,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     onSortingChange: controlledOnSortingChange,
     onColumnFiltersChange: controlledOnColumnFiltersChange,
     onGlobalFilterChange: controlledOnGlobalFilterChange,
+    onColumnVisibilityChange: controlledOnColumnVisibilityChange,
+    onColumnSizingChange: controlledOnColumnSizingChange,
+    onColumnSizingInfoChange: controlledOnColumnSizingInfoChange,
+    onColumnPinningChange: controlledOnColumnPinningChange,
     initialState,
   } = options;
 
@@ -57,6 +86,18 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   );
   const [internalGlobalFilter, setInternalGlobalFilter] = useState<string>(
     initialState?.globalFilter ?? "",
+  );
+  const [internalColumnVisibility, setInternalColumnVisibility] = useState<ColumnVisibilityState>(
+    initialState?.columnVisibility ?? {},
+  );
+  const [internalColumnSizing, setInternalColumnSizing] = useState<ColumnSizingState>(
+    initialState?.columnSizing ?? {},
+  );
+  const [internalColumnSizingInfo, setInternalColumnSizingInfo] = useState<ColumnSizingInfoState>(
+    initialState?.columnSizingInfo ?? DEFAULT_COLUMN_SIZING_INFO,
+  );
+  const [internalColumnPinning, setInternalColumnPinning] = useState<ColumnPinningState>(
+    initialState?.columnPinning ?? { left: [], right: [] },
   );
 
   // Resolve controlled vs uncontrolled — sorting
@@ -100,9 +141,73 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     [controlledOnGlobalFilterChange],
   );
 
+  // Resolve controlled vs uncontrolled — column visibility
+  const columnVisibility = controlledState?.columnVisibility ?? internalColumnVisibility;
+  const onColumnVisibilityChange = useCallback(
+    (updater: ColumnVisibilityUpdater) => {
+      const next = typeof updater === "function" ? updater(columnVisibility) : updater;
+      if (controlledOnColumnVisibilityChange) {
+        controlledOnColumnVisibilityChange(next);
+      } else {
+        setInternalColumnVisibility(next);
+      }
+    },
+    [columnVisibility, controlledOnColumnVisibilityChange],
+  );
+
+  // Resolve controlled vs uncontrolled — column sizing
+  const columnSizing = controlledState?.columnSizing ?? internalColumnSizing;
+  const onColumnSizingChange = useCallback(
+    (updater: ColumnSizingUpdater) => {
+      const next = typeof updater === "function" ? updater(columnSizing) : updater;
+      if (controlledOnColumnSizingChange) {
+        controlledOnColumnSizingChange(next);
+      } else {
+        setInternalColumnSizing(next);
+      }
+    },
+    [columnSizing, controlledOnColumnSizingChange],
+  );
+
+  // Resolve controlled vs uncontrolled — column sizing info
+  const columnSizingInfo = controlledState?.columnSizingInfo ?? internalColumnSizingInfo;
+  const onColumnSizingInfoChange = useCallback(
+    (updater: ColumnSizingInfoUpdater) => {
+      const next = typeof updater === "function" ? updater(columnSizingInfo) : updater;
+      if (controlledOnColumnSizingInfoChange) {
+        controlledOnColumnSizingInfoChange(next);
+      } else {
+        setInternalColumnSizingInfo(next);
+      }
+    },
+    [columnSizingInfo, controlledOnColumnSizingInfoChange],
+  );
+
+  // Resolve controlled vs uncontrolled — column pinning
+  const columnPinning = controlledState?.columnPinning ?? internalColumnPinning;
+  const onColumnPinningChange = useCallback(
+    (updater: ColumnPinningUpdater) => {
+      const next = typeof updater === "function" ? updater(columnPinning) : updater;
+      if (controlledOnColumnPinningChange) {
+        controlledOnColumnPinningChange(next);
+      } else {
+        setInternalColumnPinning(next);
+      }
+    },
+    [columnPinning, controlledOnColumnPinningChange],
+  );
+
   const state: GridState = useMemo(
-    () => ({ sorting, columnFilters, globalFilter }),
-    [sorting, columnFilters, globalFilter],
+    () => ({
+      sorting,
+      columnFilters,
+      globalFilter,
+      columnVisibility,
+      columnSizing,
+      columnSizingInfo,
+      columnPinning,
+    }),
+    [sorting, columnFilters, globalFilter, columnVisibility, columnSizing, columnSizingInfo, columnPinning],
   );
 
   const instance = useMemo(
@@ -114,8 +219,12 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
         onSortingChange,
         onColumnFiltersChange,
         onGlobalFilterChange,
+        onColumnVisibilityChange,
+        onColumnSizingChange,
+        onColumnSizingInfoChange,
+        onColumnPinningChange,
       }),
-    [data, columns, state, onSortingChange, onColumnFiltersChange, onGlobalFilterChange],
+    [data, columns, state, onSortingChange, onColumnFiltersChange, onGlobalFilterChange, onColumnVisibilityChange, onColumnSizingChange, onColumnSizingInfoChange, onColumnPinningChange],
   );
 
   return instance;

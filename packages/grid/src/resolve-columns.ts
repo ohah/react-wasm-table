@@ -1,5 +1,5 @@
 import type { ColumnProps, RenderInstruction } from "./types";
-import type { GridColumnDef, CellContext } from "./tanstack-types";
+import type { GridColumnDef, CellContext, ColumnOrderState, ColumnVisibilityState, ColumnSizingState } from "./tanstack-types";
 import { resolveInstruction } from "./resolve-instruction";
 
 /**
@@ -9,8 +9,15 @@ import { resolveInstruction } from "./resolve-instruction";
 export function resolveColumns<TData>(
   defs: GridColumnDef<TData, any>[],
   data: TData[],
+  options?: {
+    columnOrder?: ColumnOrderState;
+    columnVisibility?: ColumnVisibilityState;
+    columnSizing?: ColumnSizingState;
+  },
 ): ColumnProps[] {
   const result: ColumnProps[] = [];
+  const visibility = options?.columnVisibility;
+  const sizing = options?.columnSizing;
 
   function flatten(def: GridColumnDef<TData, any>): void {
     // Group column: recurse into children
@@ -23,10 +30,15 @@ export function resolveColumns<TData>(
 
     // Leaf column: convert to ColumnProps
     const id = getId(def);
+
+    // Visibility: skip hidden columns
+    if (visibility && visibility[id] === false) return;
+
+    const sizeOverride = sizing?.[id];
     const props: ColumnProps = {
       id,
       // Sizing: TanStack size/minSize/maxSize → width/minWidth/maxWidth
-      ...(def.size !== undefined && { width: def.size }),
+      ...((sizeOverride !== undefined || def.size !== undefined) && { width: sizeOverride ?? def.size }),
       ...(def.minSize !== undefined && { minWidth: def.minSize }),
       ...(def.maxSize !== undefined && { maxWidth: def.maxSize }),
       // Header
@@ -113,6 +125,16 @@ export function resolveColumns<TData>(
 
   for (const def of defs) {
     flatten(def);
+  }
+
+  // Reorder by columnOrder if provided
+  if (options?.columnOrder) {
+    const order = options.columnOrder;
+    result.sort((a, b) => {
+      const ai = order.indexOf(a.id);
+      const bi = order.indexOf(b.id);
+      return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
+    });
   }
 
   return result;

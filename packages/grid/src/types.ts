@@ -388,6 +388,22 @@ export interface GridProps extends BoxModelProps {
   globalFilter?: string;
   /** Callback when global filter changes (controlled mode). */
   onGlobalFilterChange?: (value: string) => void;
+  /** Controlled column order state (array of column IDs). */
+  columnOrder?: import("./tanstack-types").ColumnOrderState;
+  /** Callback when column order changes (controlled mode). */
+  onColumnOrderChange?: (updater: import("./tanstack-types").ColumnOrderUpdater) => void;
+  /** Controlled column visibility state. */
+  columnVisibility?: import("./tanstack-types").ColumnVisibilityState;
+  /** Callback when column visibility changes (controlled mode). */
+  onColumnVisibilityChange?: (updater: import("./tanstack-types").ColumnVisibilityUpdater) => void;
+  /** Controlled column sizing state (overridden widths). */
+  columnSizing?: import("./tanstack-types").ColumnSizingState;
+  /** Callback when column sizing changes (controlled mode). */
+  onColumnSizingChange?: (updater: import("./tanstack-types").ColumnSizingUpdater) => void;
+  /** Controlled column pinning state. */
+  columnPinning?: import("./tanstack-types").ColumnPinningState;
+  /** Callback when column pinning changes (controlled mode). */
+  onColumnPinningChange?: (updater: import("./tanstack-types").ColumnPinningUpdater) => void;
 
   // Selection state management (controlled/uncontrolled)
   /** Controlled selection state. undefined = uncontrolled, null = no selection. */
@@ -422,6 +438,10 @@ export interface GridProps extends BoxModelProps {
     sorting?: import("./tanstack-types").SortingState;
     columnFilters?: import("./tanstack-types").ColumnFiltersState;
     globalFilter?: string;
+    columnOrder?: import("./tanstack-types").ColumnOrderState;
+    columnVisibility?: import("./tanstack-types").ColumnVisibilityState;
+    columnSizing?: import("./tanstack-types").ColumnSizingState;
+    columnPinning?: import("./tanstack-types").ColumnPinningState;
     selection?: NormalizedRange | null;
   };
   /** CSS display. @default "flex" */

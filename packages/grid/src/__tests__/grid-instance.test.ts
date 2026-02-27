@@ -6,7 +6,16 @@ import type {
   SortingUpdater,
   ColumnFiltersState,
   ColumnFiltersUpdater,
+  ColumnVisibilityState,
+  ColumnVisibilityUpdater,
+  ColumnSizingState,
+  ColumnSizingUpdater,
+  ColumnSizingInfoState,
+  ColumnSizingInfoUpdater,
+  ColumnPinningState,
+  ColumnPinningUpdater,
 } from "../tanstack-types";
+import type { GridState } from "../grid-instance";
 
 type Person = {
   firstName: string;
@@ -24,10 +33,38 @@ const sampleData: Person[] = [
   { firstName: "Dave", lastName: "Wilson", age: 28, status: "pending" },
 ];
 
-function createInstance(sorting: SortingState = []) {
+function createInstance(sorting: SortingState = [], stateOverrides?: Partial<GridState>) {
   let currentSorting = sorting;
+  let currentColumnFilters: ColumnFiltersState = stateOverrides?.columnFilters ?? [];
+  let currentVisibility: ColumnVisibilityState = stateOverrides?.columnVisibility ?? {};
+  let currentSizing: ColumnSizingState = stateOverrides?.columnSizing ?? {};
+  let currentSizingInfo: ColumnSizingInfoState = stateOverrides?.columnSizingInfo ?? {
+    startOffset: null,
+    startSize: null,
+    deltaOffset: 0,
+    deltaPercentage: 0,
+    isResizingColumn: false,
+    columnSizingStart: [],
+  };
+  let currentPinning: ColumnPinningState = stateOverrides?.columnPinning ?? { left: [], right: [] };
+
   const onSortingChange = (updater: SortingUpdater) => {
     currentSorting = typeof updater === "function" ? updater(currentSorting) : updater;
+  };
+  const onColumnFiltersChange = (updater: ColumnFiltersUpdater) => {
+    currentColumnFilters = typeof updater === "function" ? updater(currentColumnFilters) : updater;
+  };
+  const onColumnVisibilityChange = (updater: ColumnVisibilityUpdater) => {
+    currentVisibility = typeof updater === "function" ? updater(currentVisibility) : updater;
+  };
+  const onColumnSizingChange = (updater: ColumnSizingUpdater) => {
+    currentSizing = typeof updater === "function" ? updater(currentSizing) : updater;
+  };
+  const onColumnSizingInfoChange = (updater: ColumnSizingInfoUpdater) => {
+    currentSizingInfo = typeof updater === "function" ? updater(currentSizingInfo) : updater;
+  };
+  const onColumnPinningChange = (updater: ColumnPinningUpdater) => {
+    currentPinning = typeof updater === "function" ? updater(currentPinning) : updater;
   };
 
   const columns = [
@@ -49,12 +86,29 @@ function createInstance(sorting: SortingState = []) {
     instance: buildGridInstance({
       data: sampleData,
       columns,
-      state: { sorting: currentSorting, columnFilters: [], globalFilter: "" },
+      state: {
+        sorting: currentSorting,
+        columnFilters: currentColumnFilters,
+        globalFilter: stateOverrides?.globalFilter ?? "",
+        columnVisibility: currentVisibility,
+        columnSizing: currentSizing,
+        columnSizingInfo: currentSizingInfo,
+        columnPinning: currentPinning,
+      },
       onSortingChange,
-      onColumnFiltersChange: () => {},
+      onColumnFiltersChange,
       onGlobalFilterChange: () => {},
+      onColumnVisibilityChange,
+      onColumnSizingChange,
+      onColumnSizingInfoChange,
+      onColumnPinningChange,
     }),
     getSorting: () => currentSorting,
+    getColumnFilters: () => currentColumnFilters,
+    getVisibility: () => currentVisibility,
+    getSizing: () => currentSizing,
+    getSizingInfo: () => currentSizingInfo,
+    getPinning: () => currentPinning,
   };
 }
 
@@ -444,6 +498,455 @@ describe("GridInstance", () => {
       });
       expect(instance.getState().columnFilters).toEqual([{ id: "firstName", value: "Alice" }]);
       expect(instance.getState().globalFilter).toBe("test");
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════
+  // Column Filtering (per-column methods)
+  // ══════════════════════════════════════════════════════════════════
+
+  describe("column filtering (per-column)", () => {
+    it("getCanFilter returns true for accessor columns by default", () => {
+      const { instance } = createInstance();
+      expect(instance.getColumn("firstName")!.getCanFilter()).toBe(true);
+      expect(instance.getColumn("age")!.getCanFilter()).toBe(true);
+    });
+
+    it("getCanFilter returns false for display columns by default", () => {
+      const columns = [
+        { id: "actions", header: "Actions" } as any,
+      ];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      expect(instance.getColumn("actions")!.getCanFilter()).toBe(false);
+    });
+
+    it("getCanFilter respects enableColumnFilter: false", () => {
+      const columns = [
+        helper.accessor("firstName", { header: "First", enableColumnFilter: false }),
+      ];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      expect(instance.getColumn("firstName")!.getCanFilter()).toBe(false);
+    });
+
+    it("getIsFiltered returns false when column is not filtered", () => {
+      const { instance } = createInstance();
+      expect(instance.getColumn("firstName")!.getIsFiltered()).toBe(false);
+    });
+
+    it("getIsFiltered returns true when column has active filter", () => {
+      const { instance } = createInstance([], {
+        columnFilters: [{ id: "firstName", value: "Alice" }],
+      });
+      expect(instance.getColumn("firstName")!.getIsFiltered()).toBe(true);
+      expect(instance.getColumn("age")!.getIsFiltered()).toBe(false);
+    });
+
+    it("getFilterValue returns undefined when no filter set", () => {
+      const { instance } = createInstance();
+      expect(instance.getColumn("firstName")!.getFilterValue()).toBeUndefined();
+    });
+
+    it("getFilterValue returns current filter value", () => {
+      const { instance } = createInstance([], {
+        columnFilters: [{ id: "firstName", value: "Alice" }],
+      });
+      expect(instance.getColumn("firstName")!.getFilterValue()).toBe("Alice");
+    });
+
+    it("setFilterValue adds a new filter entry", () => {
+      const { instance, getColumnFilters } = createInstance();
+      instance.getColumn("firstName")!.setFilterValue("Bob");
+      expect(getColumnFilters()).toEqual([{ id: "firstName", value: "Bob" }]);
+    });
+
+    it("setFilterValue updates existing filter entry", () => {
+      const { instance, getColumnFilters } = createInstance([], {
+        columnFilters: [{ id: "firstName", value: "Alice" }],
+      });
+      instance.getColumn("firstName")!.setFilterValue("Bob");
+      expect(getColumnFilters()).toEqual([{ id: "firstName", value: "Bob" }]);
+    });
+
+    it("resetFilterValue removes filter for that column", () => {
+      const { instance, getColumnFilters } = createInstance([], {
+        columnFilters: [
+          { id: "firstName", value: "Alice" },
+          { id: "age", value: 30 },
+        ],
+      });
+      instance.getColumn("firstName")!.resetFilterValue();
+      expect(getColumnFilters()).toEqual([{ id: "age", value: 30 }]);
+    });
+
+    it("resetFilterValue on unfiltered column is no-op", () => {
+      const { instance, getColumnFilters } = createInstance([], {
+        columnFilters: [{ id: "age", value: 30 }],
+      });
+      instance.getColumn("firstName")!.resetFilterValue();
+      expect(getColumnFilters()).toEqual([{ id: "age", value: 30 }]);
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════
+  // Column Visibility
+  // ══════════════════════════════════════════════════════════════════
+
+  describe("column visibility", () => {
+    it("getCanHide returns true by default", () => {
+      const { instance } = createInstance();
+      expect(instance.getColumn("firstName")!.getCanHide()).toBe(true);
+    });
+
+    it("getCanHide returns false when enableHiding: false", () => {
+      const columns = [
+        helper.accessor("firstName", { header: "First", enableHiding: false }),
+      ];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      expect(instance.getColumn("firstName")!.getCanHide()).toBe(false);
+    });
+
+    it("getIsVisible returns true by default", () => {
+      const { instance } = createInstance();
+      expect(instance.getColumn("firstName")!.getIsVisible()).toBe(true);
+    });
+
+    it("getIsVisible returns false when column is hidden", () => {
+      const { instance } = createInstance([], { columnVisibility: { firstName: false } });
+      expect(instance.getColumn("firstName")!.getIsVisible()).toBe(false);
+      expect(instance.getColumn("lastName")!.getIsVisible()).toBe(true);
+    });
+
+    it("toggleVisibility hides a visible column", () => {
+      const { instance, getVisibility } = createInstance();
+      instance.getColumn("firstName")!.toggleVisibility();
+      expect(getVisibility()).toEqual({ firstName: false });
+    });
+
+    it("toggleVisibility shows a hidden column", () => {
+      const { instance, getVisibility } = createInstance([], {
+        columnVisibility: { firstName: false },
+      });
+      instance.getColumn("firstName")!.toggleVisibility();
+      expect(getVisibility()).toEqual({ firstName: true });
+    });
+
+    it("toggleVisibility with explicit isVisible", () => {
+      const { instance, getVisibility } = createInstance();
+      instance.getColumn("firstName")!.toggleVisibility(false);
+      expect(getVisibility()).toEqual({ firstName: false });
+    });
+
+    it("setColumnVisibility sets state directly", () => {
+      const { instance, getVisibility } = createInstance();
+      instance.setColumnVisibility({ firstName: false, lastName: false });
+      expect(getVisibility()).toEqual({ firstName: false, lastName: false });
+    });
+
+    it("resetColumnVisibility resets to empty (all visible)", () => {
+      const { instance, getVisibility } = createInstance([], {
+        columnVisibility: { firstName: false },
+      });
+      instance.resetColumnVisibility();
+      expect(getVisibility()).toEqual({});
+    });
+
+    it("getVisibleLeafColumns excludes hidden columns", () => {
+      const { instance } = createInstance([], {
+        columnVisibility: { firstName: false, status: false },
+      });
+      const visible = instance.getVisibleLeafColumns();
+      expect(visible).toHaveLength(2);
+      expect(visible.map((c) => c.id)).toEqual(["lastName", "age"]);
+    });
+
+    it("getVisibleLeafColumns returns all when none hidden", () => {
+      const { instance } = createInstance();
+      expect(instance.getVisibleLeafColumns()).toHaveLength(4);
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════
+  // Column Resizing
+  // ══════════════════════════════════════════════════════════════════
+
+  describe("column resizing", () => {
+    it("getCanResize returns true by default", () => {
+      const { instance } = createInstance();
+      expect(instance.getColumn("firstName")!.getCanResize()).toBe(true);
+    });
+
+    it("getCanResize returns false when enableResizing: false", () => {
+      const columns = [
+        helper.accessor("firstName", { header: "First", enableResizing: false }),
+      ];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      expect(instance.getColumn("firstName")!.getCanResize()).toBe(false);
+    });
+
+    it("getSize uses columnSizing override", () => {
+      const { instance } = createInstance([], { columnSizing: { firstName: 200 } });
+      expect(instance.getColumn("firstName")!.getSize()).toBe(200);
+      // Others use def.size
+      expect(instance.getColumn("lastName")!.getSize()).toBe(150);
+    });
+
+    it("getSize falls back to def.size when no sizing override", () => {
+      const { instance } = createInstance([], { columnSizing: {} });
+      expect(instance.getColumn("age")!.getSize()).toBe(80);
+    });
+
+    it("getIsResizing returns false when not resizing", () => {
+      const { instance } = createInstance();
+      expect(instance.getColumn("firstName")!.getIsResizing()).toBe(false);
+    });
+
+    it("getIsResizing returns true when column is being resized", () => {
+      const { instance } = createInstance([], {
+        columnSizingInfo: {
+          startOffset: 150,
+          startSize: 150,
+          deltaOffset: 20,
+          deltaPercentage: 0,
+          isResizingColumn: "firstName",
+          columnSizingStart: [["firstName", 150]],
+        },
+      });
+      expect(instance.getColumn("firstName")!.getIsResizing()).toBe(true);
+      expect(instance.getColumn("lastName")!.getIsResizing()).toBe(false);
+    });
+
+    it("resetSize removes column from sizing state", () => {
+      const { instance, getSizing } = createInstance([], {
+        columnSizing: { firstName: 200, lastName: 180 },
+      });
+      instance.getColumn("firstName")!.resetSize();
+      expect(getSizing()).toEqual({ lastName: 180 });
+    });
+
+    it("setColumnSizing sets state directly", () => {
+      const { instance, getSizing } = createInstance();
+      instance.setColumnSizing({ firstName: 250, age: 100 });
+      expect(getSizing()).toEqual({ firstName: 250, age: 100 });
+    });
+
+    it("resetColumnSizing resets to empty", () => {
+      const { instance, getSizing } = createInstance([], {
+        columnSizing: { firstName: 200 },
+      });
+      instance.resetColumnSizing();
+      expect(getSizing()).toEqual({});
+    });
+
+    it("setColumnSizingInfo sets drag state", () => {
+      const { instance, getSizingInfo } = createInstance();
+      const info: ColumnSizingInfoState = {
+        startOffset: 100,
+        startSize: 150,
+        deltaOffset: 10,
+        deltaPercentage: 0,
+        isResizingColumn: "firstName",
+        columnSizingStart: [["firstName", 150]],
+      };
+      instance.setColumnSizingInfo(info);
+      expect(getSizingInfo()).toEqual(info);
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════
+  // Column Pinning
+  // ══════════════════════════════════════════════════════════════════
+
+  describe("column pinning", () => {
+    it("getCanPin returns true by default", () => {
+      const { instance } = createInstance();
+      expect(instance.getColumn("firstName")!.getCanPin()).toBe(true);
+    });
+
+    it("getCanPin returns false when enablePinning: false", () => {
+      const columns = [
+        helper.accessor("firstName", { header: "First", enablePinning: false }),
+      ];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      expect(instance.getColumn("firstName")!.getCanPin()).toBe(false);
+    });
+
+    it("getIsPinned returns false when not pinned", () => {
+      const { instance } = createInstance();
+      expect(instance.getColumn("firstName")!.getIsPinned()).toBe(false);
+    });
+
+    it("getIsPinned returns 'left' when pinned left", () => {
+      const { instance } = createInstance([], {
+        columnPinning: { left: ["firstName"], right: [] },
+      });
+      expect(instance.getColumn("firstName")!.getIsPinned()).toBe("left");
+    });
+
+    it("getIsPinned returns 'right' when pinned right", () => {
+      const { instance } = createInstance([], {
+        columnPinning: { left: [], right: ["status"] },
+      });
+      expect(instance.getColumn("status")!.getIsPinned()).toBe("right");
+    });
+
+    it("pin adds column to left pinned array", () => {
+      const { instance, getPinning } = createInstance();
+      instance.getColumn("firstName")!.pin("left");
+      expect(getPinning()).toEqual({ left: ["firstName"], right: [] });
+    });
+
+    it("pin adds column to right pinned array", () => {
+      const { instance, getPinning } = createInstance();
+      instance.getColumn("status")!.pin("right");
+      expect(getPinning()).toEqual({ left: [], right: ["status"] });
+    });
+
+    it("pin moves column from left to right", () => {
+      const { instance, getPinning } = createInstance([], {
+        columnPinning: { left: ["firstName"], right: [] },
+      });
+      instance.getColumn("firstName")!.pin("right");
+      expect(getPinning()).toEqual({ left: [], right: ["firstName"] });
+    });
+
+    it("pin moves column from right to left", () => {
+      const { instance, getPinning } = createInstance([], {
+        columnPinning: { left: [], right: ["status"] },
+      });
+      instance.getColumn("status")!.pin("left");
+      expect(getPinning()).toEqual({ left: ["status"], right: [] });
+    });
+
+    it("unpin removes column from both arrays", () => {
+      const { instance, getPinning } = createInstance([], {
+        columnPinning: { left: ["firstName"], right: ["status"] },
+      });
+      instance.getColumn("firstName")!.unpin();
+      expect(getPinning()).toEqual({ left: [], right: ["status"] });
+    });
+
+    it("getPinnedIndex returns index in pinned group", () => {
+      const { instance } = createInstance([], {
+        columnPinning: { left: ["firstName", "lastName"], right: ["status"] },
+      });
+      expect(instance.getColumn("firstName")!.getPinnedIndex()).toBe(0);
+      expect(instance.getColumn("lastName")!.getPinnedIndex()).toBe(1);
+      expect(instance.getColumn("status")!.getPinnedIndex()).toBe(0);
+      expect(instance.getColumn("age")!.getPinnedIndex()).toBe(-1);
+    });
+
+    it("setColumnPinning sets state directly", () => {
+      const { instance, getPinning } = createInstance();
+      instance.setColumnPinning({ left: ["firstName"], right: ["status"] });
+      expect(getPinning()).toEqual({ left: ["firstName"], right: ["status"] });
+    });
+
+    it("resetColumnPinning resets to empty", () => {
+      const { instance, getPinning } = createInstance([], {
+        columnPinning: { left: ["firstName"], right: ["status"] },
+      });
+      instance.resetColumnPinning();
+      expect(getPinning()).toEqual({ left: [], right: [] });
+    });
+
+    it("getLeftLeafColumns returns left-pinned visible columns", () => {
+      const { instance } = createInstance([], {
+        columnPinning: { left: ["firstName", "lastName"], right: [] },
+      });
+      const left = instance.getLeftLeafColumns();
+      expect(left.map((c) => c.id)).toEqual(["firstName", "lastName"]);
+    });
+
+    it("getRightLeafColumns returns right-pinned visible columns", () => {
+      const { instance } = createInstance([], {
+        columnPinning: { left: [], right: ["status"] },
+      });
+      const right = instance.getRightLeafColumns();
+      expect(right.map((c) => c.id)).toEqual(["status"]);
+    });
+
+    it("getCenterLeafColumns returns unpinned visible columns", () => {
+      const { instance } = createInstance([], {
+        columnPinning: { left: ["firstName"], right: ["status"] },
+      });
+      const center = instance.getCenterLeafColumns();
+      expect(center.map((c) => c.id)).toEqual(["lastName", "age"]);
+    });
+
+    it("getLeftLeafColumns excludes hidden columns", () => {
+      const { instance } = createInstance([], {
+        columnPinning: { left: ["firstName", "lastName"], right: [] },
+        columnVisibility: { firstName: false },
+      });
+      const left = instance.getLeftLeafColumns();
+      expect(left.map((c) => c.id)).toEqual(["lastName"]);
+    });
+
+    it("getCenterLeafColumns excludes hidden columns", () => {
+      const { instance } = createInstance([], {
+        columnPinning: { left: ["firstName"], right: ["status"] },
+        columnVisibility: { age: false },
+      });
+      const center = instance.getCenterLeafColumns();
+      expect(center.map((c) => c.id)).toEqual(["lastName"]);
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════
+  // getState includes new fields
+  // ══════════════════════════════════════════════════════════════════
+
+  describe("getState includes new feature fields", () => {
+    it("includes columnVisibility", () => {
+      const { instance } = createInstance([], { columnVisibility: { firstName: false } });
+      expect(instance.getState().columnVisibility).toEqual({ firstName: false });
+    });
+
+    it("includes columnSizing", () => {
+      const { instance } = createInstance([], { columnSizing: { firstName: 200 } });
+      expect(instance.getState().columnSizing).toEqual({ firstName: 200 });
+    });
+
+    it("includes columnPinning", () => {
+      const { instance } = createInstance([], {
+        columnPinning: { left: ["firstName"], right: [] },
+      });
+      expect(instance.getState().columnPinning).toEqual({ left: ["firstName"], right: [] });
     });
   });
 });
