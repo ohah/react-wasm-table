@@ -33,6 +33,8 @@ import type {
   ColumnSizingInfoUpdater,
   ColumnPinningState,
   ColumnPinningUpdater,
+  ExpandedState,
+  ExpandedUpdater,
   GridColumnDef,
 } from "../tanstack-types";
 import type { GridState } from "../grid-instance";
@@ -86,6 +88,10 @@ function simulateHookState(opts: {
   onColumnSizingChange?: (updater: ColumnSizingUpdater) => void;
   onColumnSizingInfoChange?: (updater: ColumnSizingInfoUpdater) => void;
   onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
+  controlledExpanded?: ExpandedState;
+  initialExpanded?: ExpandedState;
+  onExpandedChange?: (updater: ExpandedUpdater) => void;
+  getSubRows?: (row: Person) => Person[] | undefined;
 }) {
   let internalSorting: SortingState = opts.initialSorting ?? [];
   let internalColumnFilters: ColumnFiltersState = opts.initialColumnFilters ?? [];
@@ -94,6 +100,7 @@ function simulateHookState(opts: {
   let internalSizing: ColumnSizingState = opts.initialColumnSizing ?? {};
   let internalSizingInfo: ColumnSizingInfoState = opts.initialColumnSizingInfo ?? DEFAULT_COLUMN_SIZING_INFO;
   let internalPinning: ColumnPinningState = opts.initialColumnPinning ?? { left: [], right: [] };
+  let internalExpanded: ExpandedState = opts.initialExpanded ?? {};
 
   const sorting = opts.controlledSorting ?? internalSorting;
   const columnFilters = opts.controlledColumnFilters ?? internalColumnFilters;
@@ -102,6 +109,7 @@ function simulateHookState(opts: {
   const columnSizing = opts.controlledColumnSizing ?? internalSizing;
   const columnSizingInfo = opts.controlledColumnSizingInfo ?? internalSizingInfo;
   const columnPinning = opts.controlledColumnPinning ?? internalPinning;
+  const expanded = opts.controlledExpanded ?? internalExpanded;
 
   const onSortingChange = (updater: SortingUpdater) => {
     const next = typeof updater === "function" ? updater(sorting) : updater;
@@ -165,6 +173,15 @@ function simulateHookState(opts: {
     }
   };
 
+  const onExpandedChange = (updater: ExpandedUpdater) => {
+    const next = typeof updater === "function" ? updater(expanded) : updater;
+    if (opts.onExpandedChange) {
+      opts.onExpandedChange(next);
+    } else {
+      internalExpanded = next;
+    }
+  };
+
   const state: GridState = {
     sorting,
     columnFilters,
@@ -173,6 +190,7 @@ function simulateHookState(opts: {
     columnSizing,
     columnSizingInfo,
     columnPinning,
+    expanded,
   };
 
   return {
@@ -187,6 +205,8 @@ function simulateHookState(opts: {
       onColumnSizingChange,
       onColumnSizingInfoChange,
       onColumnPinningChange,
+      onExpandedChange,
+      getSubRows: opts.getSubRows,
     }),
     getSorting: () => opts.controlledSorting ?? internalSorting,
     getColumnFilters: () => opts.controlledColumnFilters ?? internalColumnFilters,
@@ -195,6 +215,7 @@ function simulateHookState(opts: {
     getSizing: () => opts.controlledColumnSizing ?? internalSizing,
     getSizingInfo: () => opts.controlledColumnSizingInfo ?? internalSizingInfo,
     getPinning: () => opts.controlledColumnPinning ?? internalPinning,
+    getExpanded: () => opts.controlledExpanded ?? internalExpanded,
   };
 }
 
@@ -742,6 +763,90 @@ describe("useGridTable state logic", () => {
     it("getRow throws for out-of-bounds", () => {
       const { instance } = simulateHookState({});
       expect(() => instance.getRow(99)).toThrow(RangeError);
+    });
+  });
+
+  // ── Expanded state tests ────────────────────────────────────────────
+
+  describe("expanded state — uncontrolled", () => {
+    it("defaults to empty expanded state", () => {
+      const { instance } = simulateHookState({});
+      expect(instance.getState().expanded).toEqual({});
+    });
+
+    it("uses initialExpanded", () => {
+      const { instance } = simulateHookState({
+        initialExpanded: { "0": true },
+      });
+      expect(instance.getState().expanded).toEqual({ "0": true });
+    });
+
+    it("setExpanded updates internal state", () => {
+      const { instance, getExpanded } = simulateHookState({});
+      instance.setExpanded({ "0": true });
+      expect(getExpanded()).toEqual({ "0": true });
+    });
+  });
+
+  describe("expanded state — controlled", () => {
+    it("uses controlledExpanded over initial", () => {
+      const { instance } = simulateHookState({
+        controlledExpanded: true,
+        initialExpanded: { "0": true },
+      });
+      expect(instance.getState().expanded).toBe(true);
+    });
+
+    it("calls onExpandedChange on setExpanded", () => {
+      let captured: ExpandedUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledExpanded: {},
+        onExpandedChange: (u) => { captured = u; },
+      });
+      instance.setExpanded({ "0": true });
+      expect(captured).toEqual({ "0": true });
+    });
+
+    it("calls onExpandedChange on resetExpanded", () => {
+      let captured: ExpandedUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledExpanded: { "0": true },
+        onExpandedChange: (u) => { captured = u; },
+      });
+      instance.resetExpanded();
+      expect(captured).toEqual({});
+    });
+  });
+
+  describe("getSubRows option", () => {
+    type TreePerson = Person & { children?: TreePerson[] };
+    const treeData: TreePerson[] = [
+      {
+        name: "Alice", age: 30, status: "active",
+        children: [{ name: "Bob", age: 25, status: "inactive" }],
+      },
+      { name: "Charlie", age: 35, status: "active" },
+    ];
+
+    it("getExpandedRowModel uses getSubRows to build tree", () => {
+      // We need to create instance with tree data directly
+      const treeHelper = createColumnHelper<TreePerson>();
+      const treeCols = [
+        treeHelper.accessor("name", { header: "Name", size: 150 }),
+        treeHelper.accessor("age", { header: "Age", size: 80 }),
+      ];
+      const instance = buildGridInstance({
+        data: treeData,
+        columns: treeCols,
+        state: { sorting: [], columnFilters: [], globalFilter: "", expanded: { "0": true } },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        getSubRows: (row: TreePerson) => row.children,
+      });
+      const model = instance.getExpandedRowModel();
+      expect(model.rowCount).toBe(3); // Alice + Bob (expanded) + Charlie
+      expect(model.rows.map((r) => r.original.name)).toEqual(["Alice", "Bob", "Charlie"]);
     });
   });
 });
