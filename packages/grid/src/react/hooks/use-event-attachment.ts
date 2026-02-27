@@ -6,6 +6,7 @@ import type {
   GridKeyboardEvent,
   GridScrollEvent,
   GridCanvasEvent,
+  GridTouchEvent,
 } from "../../types";
 import type { EventManager, EventCoords } from "../../adapter/event-manager";
 import type { EditorManager } from "../../adapter/editor-manager";
@@ -15,6 +16,7 @@ import {
   createGridKeyboardEvent,
   createGridScrollEvent,
   createGridCanvasEvent,
+  createGridTouchEvent,
 } from "../../event-helpers";
 
 export interface UseEventAttachmentParams {
@@ -45,6 +47,9 @@ export interface UseEventAttachmentParams {
   onCellMouseUp?: () => void;
   onScroll?: (event: GridScrollEvent) => void;
   onCanvasEvent?: (event: GridCanvasEvent) => void;
+  onTouchStart?: (event: GridTouchEvent) => void;
+  onTouchMove?: (event: GridTouchEvent) => void;
+  onTouchEnd?: (event: GridTouchEvent) => void;
   rowHeight: number;
   headerHeight: number;
   height: number;
@@ -64,6 +69,9 @@ export function useEventAttachment({
   onCellMouseUp,
   onScroll,
   onCanvasEvent,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
   rowHeight,
   headerHeight,
   height,
@@ -78,6 +86,9 @@ export function useEventAttachment({
   const onCellMouseUpRef = useRef(onCellMouseUp);
   const onScrollRef = useRef(onScroll);
   const onCanvasEventRef = useRef(onCanvasEvent);
+  const onTouchStartRef = useRef(onTouchStart);
+  const onTouchMoveRef = useRef(onTouchMove);
+  const onTouchEndRef = useRef(onTouchEnd);
   onCellClickRef.current = onCellClick;
   onCellDoubleClickRef.current = onCellDoubleClick;
   onHeaderClickRef.current = onHeaderClick;
@@ -87,6 +98,9 @@ export function useEventAttachment({
   onCellMouseUpRef.current = onCellMouseUp;
   onScrollRef.current = onScroll;
   onCanvasEventRef.current = onCanvasEvent;
+  onTouchStartRef.current = onTouchStart;
+  onTouchMoveRef.current = onTouchMove;
+  onTouchEndRef.current = onTouchEnd;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -155,6 +169,27 @@ export function useEventAttachment({
           if (!onCanvasEventRef.current) return;
           const event = createGridCanvasEvent(type, native, hitTest, coords);
           onCanvasEventRef.current(event);
+          if (event.defaultPrevented) return false;
+        },
+        onTouchStart: (native, coords, hitTest) => {
+          if (!onTouchStartRef.current) return;
+          const touchPoint = { contentX: coords.contentX, contentY: coords.contentY, viewportX: coords.viewportX, viewportY: coords.viewportY };
+          const event = createGridTouchEvent("touchstart", native, touchPoint, hitTest, native.touches.length);
+          onTouchStartRef.current(event);
+          if (event.defaultPrevented) return false;
+        },
+        onTouchMove: (native, coords, hitTest) => {
+          if (!onTouchMoveRef.current) return;
+          const touchPoint = { contentX: coords.contentX, contentY: coords.contentY, viewportX: coords.viewportX, viewportY: coords.viewportY };
+          const event = createGridTouchEvent("touchmove", native, touchPoint, hitTest, native.touches.length);
+          onTouchMoveRef.current(event);
+          if (event.defaultPrevented) return false;
+        },
+        onTouchEnd: (native, coords, hitTest) => {
+          if (!onTouchEndRef.current) return;
+          const touchPoint = { contentX: coords.contentX, contentY: coords.contentY, viewportX: coords.viewportX, viewportY: coords.viewportY };
+          const event = createGridTouchEvent("touchend", native, touchPoint, hitTest, native.touches.length);
+          onTouchEndRef.current(event);
           if (event.defaultPrevented) return false;
         },
       },
