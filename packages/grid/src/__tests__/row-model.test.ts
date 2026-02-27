@@ -242,7 +242,9 @@ describe("Row getIsExpanded / toggleExpanded", () => {
     let captured: ExpandedUpdater | undefined;
     const row = buildRow(data, 0, 0, columns, {
       expanded: {},
-      onExpandedChange: (u) => { captured = u; },
+      onExpandedChange: (u) => {
+        captured = u;
+      },
     });
     row.toggleExpanded();
     expect(captured).toBeDefined();
@@ -255,7 +257,9 @@ describe("Row getIsExpanded / toggleExpanded", () => {
     let captured: ExpandedUpdater | undefined;
     const row = buildRow(data, 0, 0, columns, {
       expanded: { "0": true },
-      onExpandedChange: (u) => { captured = u; },
+      onExpandedChange: (u) => {
+        captured = u;
+      },
     });
     row.toggleExpanded();
     const next = typeof captured === "function" ? captured({ "0": true }) : captured;
@@ -282,16 +286,27 @@ describe("buildExpandedRowModel", () => {
     // Bob's index in allData depends on insertion order.
     // buildExpandedRowModel pushes sub-items not in top-level data.
     // Alice = index 0, Dave = index 1, Bob = index 2, Eve = index 3, Charlie = index 4
-    const model = buildExpandedRowModel(treeData, treeColumns, getSubRows, { "0": true, "2": true });
+    const model = buildExpandedRowModel(treeData, treeColumns, getSubRows, {
+      "0": true,
+      "2": true,
+    });
     expect(model.rows.map((r) => r.original.name)).toEqual([
-      "Alice", "Bob", "Eve", "Charlie", "Dave",
+      "Alice",
+      "Bob",
+      "Eve",
+      "Charlie",
+      "Dave",
     ]);
   });
 
   it("expanded=true expands all rows", () => {
     const model = buildExpandedRowModel(treeData, treeColumns, getSubRows, true);
     expect(model.rows.map((r) => r.original.name)).toEqual([
-      "Alice", "Bob", "Eve", "Charlie", "Dave",
+      "Alice",
+      "Bob",
+      "Eve",
+      "Charlie",
+      "Dave",
     ]);
     expect(model.rowCount).toBe(5);
   });

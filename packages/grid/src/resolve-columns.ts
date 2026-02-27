@@ -1,5 +1,11 @@
 import type { ColumnProps, RenderInstruction } from "./types";
-import type { GridColumnDef, CellContext, ColumnOrderState, ColumnVisibilityState, ColumnSizingState } from "./tanstack-types";
+import type {
+  GridColumnDef,
+  CellContext,
+  ColumnOrderState,
+  ColumnVisibilityState,
+  ColumnSizingState,
+} from "./tanstack-types";
 import { resolveInstruction } from "./resolve-instruction";
 
 /**
@@ -38,7 +44,9 @@ export function resolveColumns<TData>(
     const props: ColumnProps = {
       id,
       // Sizing: TanStack size/minSize/maxSize → width/minWidth/maxWidth
-      ...((sizeOverride !== undefined || def.size !== undefined) && { width: sizeOverride ?? def.size }),
+      ...((sizeOverride !== undefined || def.size !== undefined) && {
+        width: sizeOverride ?? def.size,
+      }),
       ...(def.minSize !== undefined && { minWidth: def.minSize }),
       ...(def.maxSize !== undefined && { maxWidth: def.maxSize }),
       // Header

@@ -236,7 +236,16 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
       columnPinning,
       expanded,
     }),
-    [sorting, columnFilters, globalFilter, columnVisibility, columnSizing, columnSizingInfo, columnPinning, expanded],
+    [
+      sorting,
+      columnFilters,
+      globalFilter,
+      columnVisibility,
+      columnSizing,
+      columnSizingInfo,
+      columnPinning,
+      expanded,
+    ],
   );
 
   const instance = useMemo(
@@ -255,7 +264,20 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
         onExpandedChange,
         getSubRows,
       }),
-    [data, columns, state, onSortingChange, onColumnFiltersChange, onGlobalFilterChange, onColumnVisibilityChange, onColumnSizingChange, onColumnSizingInfoChange, onColumnPinningChange, onExpandedChange, getSubRows],
+    [
+      data,
+      columns,
+      state,
+      onSortingChange,
+      onColumnFiltersChange,
+      onGlobalFilterChange,
+      onColumnVisibilityChange,
+      onColumnSizingChange,
+      onColumnSizingInfoChange,
+      onColumnPinningChange,
+      onExpandedChange,
+      getSubRows,
+    ],
   );
 
   return instance;

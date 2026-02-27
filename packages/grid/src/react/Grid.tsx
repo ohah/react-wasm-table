@@ -252,18 +252,14 @@ export function Grid({
     });
   }, [columnRegistry, invalidate]);
 
-  const {
-    handleResizeStart,
-    handleResizeMove,
-    handleResizeEnd,
-    handleResizeHover,
-  } = useColumnResize({
-    canvasRef,
-    columnRegistry,
-    columnSizingProp,
-    onColumnSizingChangeProp,
-    invalidate,
-  });
+  const { handleResizeStart, handleResizeMove, handleResizeEnd, handleResizeHover } =
+    useColumnResize({
+      canvasRef,
+      columnRegistry,
+      columnSizingProp,
+      onColumnSizingChangeProp,
+      invalidate,
+    });
 
   useEventAttachment({
     canvasRef,

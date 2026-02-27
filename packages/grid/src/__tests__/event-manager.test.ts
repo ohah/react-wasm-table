@@ -9,10 +9,7 @@ function makeHeader(col: number, x: number, width: number): CellLayout {
 describe("EventManager — findResizeHandle", () => {
   it("returns col index when x is within 5px of header right edge", () => {
     const em = new EventManager();
-    const headers = [
-      makeHeader(0, 0, 100),
-      makeHeader(1, 100, 150),
-    ];
+    const headers = [makeHeader(0, 0, 100), makeHeader(1, 100, 150)];
     em.setLayouts(headers, []);
 
     // Right edge of col 0 is at x=100
@@ -43,10 +40,7 @@ describe("EventManager — findResizeHandle", () => {
 
   it("detects resize handle on second column", () => {
     const em = new EventManager();
-    const headers = [
-      makeHeader(0, 0, 100),
-      makeHeader(1, 100, 200),
-    ];
+    const headers = [makeHeader(0, 0, 100), makeHeader(1, 100, 200)];
     em.setLayouts(headers, []);
 
     // Right edge of col 1 is at x=300

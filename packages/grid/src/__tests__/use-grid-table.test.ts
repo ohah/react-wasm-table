@@ -98,7 +98,8 @@ function simulateHookState(opts: {
   let internalGlobalFilter: string = opts.initialGlobalFilter ?? "";
   let internalVisibility: ColumnVisibilityState = opts.initialColumnVisibility ?? {};
   let internalSizing: ColumnSizingState = opts.initialColumnSizing ?? {};
-  let internalSizingInfo: ColumnSizingInfoState = opts.initialColumnSizingInfo ?? DEFAULT_COLUMN_SIZING_INFO;
+  let internalSizingInfo: ColumnSizingInfoState =
+    opts.initialColumnSizingInfo ?? DEFAULT_COLUMN_SIZING_INFO;
   let internalPinning: ColumnPinningState = opts.initialColumnPinning ?? { left: [], right: [] };
   let internalExpanded: ExpandedState = opts.initialExpanded ?? {};
 
@@ -801,7 +802,9 @@ describe("useGridTable state logic", () => {
       let captured: ExpandedUpdater | undefined;
       const { instance } = simulateHookState({
         controlledExpanded: {},
-        onExpandedChange: (u) => { captured = u; },
+        onExpandedChange: (u) => {
+          captured = u;
+        },
       });
       instance.setExpanded({ "0": true });
       expect(captured).toEqual({ "0": true });
@@ -811,7 +814,9 @@ describe("useGridTable state logic", () => {
       let captured: ExpandedUpdater | undefined;
       const { instance } = simulateHookState({
         controlledExpanded: { "0": true },
-        onExpandedChange: (u) => { captured = u; },
+        onExpandedChange: (u) => {
+          captured = u;
+        },
       });
       instance.resetExpanded();
       expect(captured).toEqual({});
@@ -822,7 +827,9 @@ describe("useGridTable state logic", () => {
     type TreePerson = Person & { children?: TreePerson[] };
     const treeData: TreePerson[] = [
       {
-        name: "Alice", age: 30, status: "active",
+        name: "Alice",
+        age: 30,
+        status: "active",
         children: [{ name: "Bob", age: 25, status: "inactive" }],
       },
       { name: "Charlie", age: 35, status: "active" },

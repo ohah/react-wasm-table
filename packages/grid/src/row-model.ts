@@ -201,9 +201,10 @@ export function buildExpandedRowModel<TData>(
       const actualIndex = originalIndex >= 0 ? originalIndex : allData.length - 1;
 
       const subRowData = getSubRows(item);
-      const subRows = subRowData && subRowData.length > 0
-        ? buildTreeRows(subRowData, allData, depth + 1, String(actualIndex))
-        : [];
+      const subRows =
+        subRowData && subRowData.length > 0
+          ? buildTreeRows(subRowData, allData, depth + 1, String(actualIndex))
+          : [];
 
       const row = buildRow(allData, actualIndex, viewIndex, columns, {
         subRows,
