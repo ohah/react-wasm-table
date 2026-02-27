@@ -10,6 +10,7 @@ const sections = [
       { to: "/selection", label: "Selection" },
       { to: "/event-callbacks", label: "Event Callbacks" },
       { to: "/column-features", label: "Column Features" },
+      { to: "/expanding", label: "Expanding (Tree)" },
     ],
   },
   {
