@@ -138,6 +138,76 @@ export interface BoxModelProps {
   aspectRatio?: number;
 }
 
+// ── Grid event types ───────────────────────────────────────────────────
+
+/** Base for all grid events — supports preventDefault(). */
+export interface GridEventBase {
+  preventDefault(): void;
+  defaultPrevented: boolean;
+}
+
+/** Mouse event enriched with content-space and viewport coordinates. */
+export interface GridMouseEvent extends GridEventBase {
+  nativeEvent: MouseEvent;
+  /** Content-space X (accounts for scrollLeft). */
+  contentX: number;
+  /** Content-space Y. */
+  contentY: number;
+  /** Viewport X (from canvas left edge). */
+  viewportX: number;
+  /** Viewport Y (from canvas top edge). */
+  viewportY: number;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey: boolean;
+}
+
+/** Mouse event on a data cell. */
+export interface GridCellEvent extends GridMouseEvent {
+  cell: CellCoord;
+}
+
+/** Mouse event on a header. */
+export interface GridHeaderEvent extends GridMouseEvent {
+  colIndex: number;
+}
+
+/** Keyboard event enriched with key info. */
+export interface GridKeyboardEvent extends GridEventBase {
+  nativeEvent: KeyboardEvent;
+  key: string;
+  code: string;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey: boolean;
+}
+
+/** Scroll event with normalized deltas. */
+export interface GridScrollEvent extends GridEventBase {
+  deltaY: number;
+  deltaX: number;
+  /** null for touch-scroll. */
+  nativeEvent: WheelEvent | null;
+}
+
+/** Hit-test result describing what lies under a point. */
+export interface HitTestResult {
+  type: "cell" | "header" | "resize-handle" | "empty";
+  cell?: CellCoord;
+  colIndex?: number;
+}
+
+/** Low-level canvas mouse event types. */
+export type GridCanvasEventType = "click" | "dblclick" | "mousedown" | "mousemove" | "mouseup";
+
+/** Low-level catch-all canvas event (fires before semantic handlers). */
+export interface GridCanvasEvent extends GridMouseEvent {
+  type: GridCanvasEventType;
+  hitTest: HitTestResult;
+}
+
 // ── Cell coordinates & layout ──────────────────────────────────────────
 
 /** Identifies a cell by row and column index. */
@@ -417,15 +487,28 @@ export interface GridProps extends BoxModelProps {
   /** Paste handler stub. Called on Ctrl/Cmd+V with clipboard text and target cell. */
   onPaste?: (text: string, target: CellCoord) => void;
 
-  // Event callbacks (Step 0-3)
-  /** Called on cell click. Return `false` to skip editor cancel. */
-  onCellClick?: (coord: CellCoord) => void | false;
-  /** Called on cell double-click. Return `false` to skip editing. */
-  onCellDoubleClick?: (coord: CellCoord) => void | false;
-  /** Called on header click. Return `false` to skip sorting. */
-  onHeaderClick?: (colIndex: number) => void | false;
-  /** Called on key down. Return `false` to skip default handling. */
-  onKeyDown?: (event: KeyboardEvent) => void | false;
+  // Event callbacks (enriched events — use event.preventDefault() to skip defaults)
+  /** Called on cell click. Call event.preventDefault() to skip editor cancel. */
+  onCellClick?: (event: GridCellEvent) => void;
+  /** Called on cell double-click. Call event.preventDefault() to skip editing. */
+  onCellDoubleClick?: (event: GridCellEvent) => void;
+  /** Called on header click. Call event.preventDefault() to skip sorting. */
+  onHeaderClick?: (event: GridHeaderEvent) => void;
+  /** Called on key down. Call event.preventDefault() to skip default handling. */
+  onKeyDown?: (event: GridKeyboardEvent) => void;
+
+  // NEW: expose internal events
+  /** Called on cell mousedown. */
+  onCellMouseDown?: (event: GridCellEvent) => void;
+  /** Called on cell mousemove during drag. */
+  onCellMouseMove?: (event: GridCellEvent) => void;
+  /** Called on mouseup after cell drag. */
+  onCellMouseUp?: () => void;
+  /** Called on scroll (wheel or touch). */
+  onScroll?: (event: GridScrollEvent) => void;
+  /** Low-level canvas event — fires for all mouse events before semantic handlers. */
+  onCanvasEvent?: (event: GridCanvasEvent) => void;
+
   /** Called before sorting changes. Return `false` to cancel sort. */
   onBeforeSortChange?: (next: import("./tanstack-types").SortingState) => boolean | void;
   /** Called before selection changes. Return `false` to cancel selection. */

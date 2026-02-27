@@ -1,7 +1,21 @@
 import { useEffect, useRef } from "react";
-import type { CellCoord } from "../../types";
-import type { EventManager } from "../../adapter/event-manager";
+import type {
+  CellCoord,
+  GridCellEvent,
+  GridHeaderEvent,
+  GridKeyboardEvent,
+  GridScrollEvent,
+  GridCanvasEvent,
+} from "../../types";
+import type { EventManager, EventCoords } from "../../adapter/event-manager";
 import type { EditorManager } from "../../adapter/editor-manager";
+import {
+  createGridCellEvent,
+  createGridHeaderEvent,
+  createGridKeyboardEvent,
+  createGridScrollEvent,
+  createGridCanvasEvent,
+} from "../../event-helpers";
 
 export interface UseEventAttachmentParams {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -22,10 +36,15 @@ export interface UseEventAttachmentParams {
     handleResizeEnd?: () => void;
     handleResizeHover?: (colIndex: number | null) => void;
   };
-  onCellClick?: (coord: CellCoord) => void | false;
-  onCellDoubleClick?: (coord: CellCoord) => void | false;
-  onHeaderClick?: (colIndex: number) => void | false;
-  onKeyDown?: (event: KeyboardEvent) => void | false;
+  onCellClick?: (event: GridCellEvent) => void;
+  onCellDoubleClick?: (event: GridCellEvent) => void;
+  onHeaderClick?: (event: GridHeaderEvent) => void;
+  onKeyDown?: (event: GridKeyboardEvent) => void;
+  onCellMouseDown?: (event: GridCellEvent) => void;
+  onCellMouseMove?: (event: GridCellEvent) => void;
+  onCellMouseUp?: () => void;
+  onScroll?: (event: GridScrollEvent) => void;
+  onCanvasEvent?: (event: GridCanvasEvent) => void;
   rowHeight: number;
   headerHeight: number;
   height: number;
@@ -40,6 +59,11 @@ export function useEventAttachment({
   onCellDoubleClick,
   onHeaderClick,
   onKeyDown,
+  onCellMouseDown,
+  onCellMouseMove,
+  onCellMouseUp,
+  onScroll,
+  onCanvasEvent,
   rowHeight,
   headerHeight,
   height,
@@ -49,10 +73,20 @@ export function useEventAttachment({
   const onCellDoubleClickRef = useRef(onCellDoubleClick);
   const onHeaderClickRef = useRef(onHeaderClick);
   const onKeyDownRef = useRef(onKeyDown);
+  const onCellMouseDownRef = useRef(onCellMouseDown);
+  const onCellMouseMoveRef = useRef(onCellMouseMove);
+  const onCellMouseUpRef = useRef(onCellMouseUp);
+  const onScrollRef = useRef(onScroll);
+  const onCanvasEventRef = useRef(onCanvasEvent);
   onCellClickRef.current = onCellClick;
   onCellDoubleClickRef.current = onCellDoubleClick;
   onHeaderClickRef.current = onHeaderClick;
   onKeyDownRef.current = onKeyDown;
+  onCellMouseDownRef.current = onCellMouseDown;
+  onCellMouseMoveRef.current = onCellMouseMove;
+  onCellMouseUpRef.current = onCellMouseUp;
+  onScrollRef.current = onScroll;
+  onCanvasEventRef.current = onCanvasEvent;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -62,39 +96,67 @@ export function useEventAttachment({
     em.attach(
       canvas,
       {
-        onHeaderClick: (colIndex) => {
-          if (onHeaderClickRef.current?.(colIndex) === false) return;
+        onHeaderClick: (colIndex, native, coords) => {
+          const event = createGridHeaderEvent(native, colIndex, coords);
+          onHeaderClickRef.current?.(event);
+          if (event.defaultPrevented) return;
           handlers.handleHeaderClick(colIndex);
         },
-        onCellClick: (coord) => {
-          if (onCellClickRef.current?.(coord) === false) return;
+        onCellClick: (coord, native, coords) => {
+          const event = createGridCellEvent(native, coord, coords);
+          onCellClickRef.current?.(event);
+          if (event.defaultPrevented) return;
           if (editorManagerRef.current.isEditing) {
             editorManagerRef.current.cancel();
           }
         },
-        onCellDoubleClick: (coord) => {
-          if (onCellDoubleClickRef.current?.(coord) === false) return;
+        onCellDoubleClick: (coord, native, coords) => {
+          const event = createGridCellEvent(native, coord, coords);
+          onCellDoubleClickRef.current?.(event);
+          if (event.defaultPrevented) return;
           handlers.handleCellDoubleClick(coord);
         },
-        onCellMouseDown: (coord, shiftKey) => {
+        onCellMouseDown: (coord, shiftKey, native, coords) => {
+          const event = createGridCellEvent(native, coord, coords);
+          onCellMouseDownRef.current?.(event);
+          if (event.defaultPrevented) return;
           if (editorManagerRef.current.isEditing) editorManagerRef.current.cancel();
           handlers.handleCellMouseDown(coord, shiftKey);
         },
-        onCellMouseMove: handlers.handleCellMouseMove,
+        onCellMouseMove: (coord, native, coords) => {
+          const event = createGridCellEvent(native, coord, coords);
+          onCellMouseMoveRef.current?.(event);
+          if (event.defaultPrevented) return;
+          handlers.handleCellMouseMove(coord);
+        },
         onDragEdge: handlers.handleDragEdge,
         onCellMouseUp: () => {
+          onCellMouseUpRef.current?.();
           handlers.handleCellMouseUp();
           handlers.stopAutoScroll();
         },
         onKeyDown: (e) => {
-          if (onKeyDownRef.current?.(e) === false) return;
+          const event = createGridKeyboardEvent(e);
+          onKeyDownRef.current?.(event);
+          if (event.defaultPrevented) return;
           handlers.handleKeyDown(e);
         },
-        onScroll: handlers.handleWheel,
+        onScroll: (deltaY, deltaX, native) => {
+          const event = createGridScrollEvent(deltaY, deltaX, native);
+          onScrollRef.current?.(event);
+          if (event.defaultPrevented) return;
+          handlers.handleWheel(deltaY, deltaX);
+        },
         onResizeStart: handlers.handleResizeStart,
         onResizeMove: handlers.handleResizeMove,
         onResizeEnd: handlers.handleResizeEnd,
         onResizeHover: handlers.handleResizeHover,
+        onCanvasEvent: (type, native, hitTest, coords) => {
+          if (!onCanvasEventRef.current) return;
+          const event = createGridCanvasEvent(type, native, hitTest, coords);
+          onCanvasEventRef.current(event);
+          if (event.defaultPrevented) return false;
+        },
       },
       { lineHeight: rowHeight, pageHeight: height - headerHeight },
     );

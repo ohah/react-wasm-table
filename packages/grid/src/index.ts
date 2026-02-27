@@ -109,7 +109,17 @@ export type { GridContextValue } from "./react/context";
 export { ColumnRegistry } from "./adapter/column-registry";
 export { InstructionBuilder } from "./adapter/instruction-builder";
 export { EventManager } from "./adapter/event-manager";
-export type { GridEventHandlers, ScrollNormalization } from "./adapter/event-manager";
+export type { GridEventHandlers, ScrollNormalization, EventCoords } from "./adapter/event-manager";
+
+// Event factory helpers
+export {
+  createGridCellEvent,
+  createGridHeaderEvent,
+  createGridKeyboardEvent,
+  createGridScrollEvent,
+  createGridCanvasEvent,
+} from "./event-helpers";
+export type { ContentCoords } from "./event-helpers";
 export { EditorManager } from "./adapter/editor-manager";
 export { SelectionManager, buildTSV } from "./adapter/selection-manager";
 
@@ -148,6 +158,16 @@ export type {
   ColumnProps,
   GridProps,
   WasmTableEngine,
+  // Event types
+  GridEventBase,
+  GridMouseEvent,
+  GridCellEvent,
+  GridHeaderEvent,
+  GridKeyboardEvent,
+  GridScrollEvent,
+  GridCanvasEvent,
+  GridCanvasEventType,
+  HitTestResult,
   // CSS value types
   CssDimension,
   CssLength,
