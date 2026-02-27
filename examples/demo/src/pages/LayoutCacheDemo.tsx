@@ -83,13 +83,23 @@ export function LayoutCacheDemo() {
     const iterations = 100;
 
     // Warm up cache
-    engine.updateViewportColumnar(0, makeViewport(0), makeColumns(), makeContainer(flexDirection, gap));
+    engine.updateViewportColumnar(
+      0,
+      makeViewport(0),
+      makeColumns(),
+      makeContainer(flexDirection, gap),
+    );
 
     // Benchmark with cache (scrolling different positions → same layout, different scroll)
     const start1 = performance.now();
     for (let i = 0; i < iterations; i++) {
       const scrollTop = (i % 50) * 36;
-      engine.updateViewportColumnar(scrollTop, makeViewport(scrollTop), makeColumns(), makeContainer(flexDirection, gap));
+      engine.updateViewportColumnar(
+        scrollTop,
+        makeViewport(scrollTop),
+        makeColumns(),
+        makeContainer(flexDirection, gap),
+      );
     }
     const cached = performance.now() - start1;
 
@@ -99,12 +109,22 @@ export function LayoutCacheDemo() {
     for (let i = 0; i < iterations; i++) {
       engine.invalidateLayout(); // force recompute every time
       const scrollTop = (i % 50) * 36;
-      engine.updateViewportColumnar(scrollTop, makeViewport(scrollTop), makeColumns(), makeContainer(flexDirection, gap));
+      engine.updateViewportColumnar(
+        scrollTop,
+        makeViewport(scrollTop),
+        makeColumns(),
+        makeContainer(flexDirection, gap),
+      );
     }
     const uncached = performance.now() - start2;
 
     // Restore cache for normal operation
-    engine.updateViewportColumnar(0, makeViewport(0), makeColumns(), makeContainer(flexDirection, gap));
+    engine.updateViewportColumnar(
+      0,
+      makeViewport(0),
+      makeColumns(),
+      makeContainer(flexDirection, gap),
+    );
 
     addResult(
       `${iterations}x updateViewport`,
@@ -116,18 +136,26 @@ export function LayoutCacheDemo() {
     <>
       <h1>Layout Cache</h1>
       <p>
-        The Rust <code>LayoutEngine</code> caches Taffy layout results in a 2-slot LRU cache
-        (one for header height, one for row height). Scrolling reuses cached column positions
-        instead of recomputing Taffy layout every frame.
+        The Rust <code>LayoutEngine</code> caches Taffy layout results in a 2-slot LRU cache (one
+        for header height, one for row height). Scrolling reuses cached column positions instead of
+        recomputing Taffy layout every frame.
       </p>
       <p>
-        Use <code>engineRef</code> to access <code>invalidateLayout()</code> — forces cache clear
-        so the next frame recomputes from scratch. Changing layout props (flex-direction, gap, etc.)
+        Use <code>engineRef</code> to access <code>invalidateLayout()</code> — forces cache clear so
+        the next frame recomputes from scratch. Changing layout props (flex-direction, gap, etc.)
         automatically causes a cache miss.
       </p>
 
       {/* Controls */}
-      <div style={{ display: "flex", gap: 24, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 24,
+          marginBottom: 16,
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
         <button
           onClick={handleInvalidate}
           style={{
@@ -272,8 +300,8 @@ export function LayoutCacheDemo() {
           </div>
           {results.length === 0 && (
             <div style={{ color: "#666" }}>
-              Click "Benchmark" to compare cached vs uncached performance, or
-              "invalidateLayout()" to manually clear the cache.
+              Click "Benchmark" to compare cached vs uncached performance, or "invalidateLayout()"
+              to manually clear the cache.
             </div>
           )}
           {results.map((r) => (
@@ -291,7 +319,10 @@ export function LayoutCacheDemo() {
           <li>2-slot LRU — one for header height, one for row height (both hit on every frame)</li>
           <li>Key = hash of all column + container + viewport_width + row_height + line_height</li>
           <li>Cache hit = skip Taffy tree build + compute_layout entirely</li>
-          <li>Scrolling only changes scroll_top (not a cache key), so layout is always cached during scroll</li>
+          <li>
+            Scrolling only changes scroll_top (not a cache key), so layout is always cached during
+            scroll
+          </li>
           <li>Changing flex-direction or gap = automatic cache miss = fresh Taffy computation</li>
         </ul>
       </div>
@@ -306,10 +337,34 @@ function makeViewport(scrollTop: number) {
 
 function makeColumns() {
   return [
-    { width: 180, flexGrow: 0, flexShrink: 0, align: "left", padding: { top: 0, right: 8, bottom: 0, left: 8 } },
-    { width: 140, flexGrow: 0, flexShrink: 0, align: "left", padding: { top: 0, right: 8, bottom: 0, left: 8 } },
-    { width: 120, flexGrow: 0, flexShrink: 0, align: "right", padding: { top: 0, right: 8, bottom: 0, left: 8 } },
-    { width: 100, flexGrow: 0, flexShrink: 0, align: "right", padding: { top: 0, right: 8, bottom: 0, left: 8 } },
+    {
+      width: 180,
+      flexGrow: 0,
+      flexShrink: 0,
+      align: "left",
+      padding: { top: 0, right: 8, bottom: 0, left: 8 },
+    },
+    {
+      width: 140,
+      flexGrow: 0,
+      flexShrink: 0,
+      align: "left",
+      padding: { top: 0, right: 8, bottom: 0, left: 8 },
+    },
+    {
+      width: 120,
+      flexGrow: 0,
+      flexShrink: 0,
+      align: "right",
+      padding: { top: 0, right: 8, bottom: 0, left: 8 },
+    },
+    {
+      width: 100,
+      flexGrow: 0,
+      flexShrink: 0,
+      align: "right",
+      padding: { top: 0, right: 8, bottom: 0, left: 8 },
+    },
   ];
 }
 

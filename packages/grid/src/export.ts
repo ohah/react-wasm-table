@@ -21,10 +21,7 @@ function escapeCSV(value: string): string {
 }
 
 /** Export a RowModel to CSV string (RFC 4180). */
-export function exportToCSV<TData>(
-  rowModel: RowModel<TData>,
-  options?: ExportOptions,
-): string {
+export function exportToCSV<TData>(rowModel: RowModel<TData>, options?: ExportOptions): string {
   return exportDelimited(rowModel, ",", escapeCSV, options);
 }
 
@@ -36,10 +33,7 @@ function escapeTSV(value: string): string {
 }
 
 /** Export a RowModel to TSV string. */
-export function exportToTSV<TData>(
-  rowModel: RowModel<TData>,
-  options?: ExportOptions,
-): string {
+export function exportToTSV<TData>(rowModel: RowModel<TData>, options?: ExportOptions): string {
   return exportDelimited(rowModel, "\t", escapeTSV, options);
 }
 

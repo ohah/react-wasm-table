@@ -78,9 +78,7 @@ export function MiddlewareDemo() {
   const [enableLogger, setEnableLogger] = useState(true);
   const [enableBlocker, setEnableBlocker] = useState(false);
   const [enableTimer, setEnableTimer] = useState(false);
-  const [blockedChannels, setBlockedChannels] = useState<Set<string>>(
-    new Set(["headerClick"]),
-  );
+  const [blockedChannels, setBlockedChannels] = useState<Set<string>>(new Set(["headerClick"]));
 
   const addLog = useCallback((source: string, channel: string, detail: string) => {
     setLog((prev) => {
@@ -150,9 +148,10 @@ export function MiddlewareDemo() {
     <>
       <h1>Event Middleware</h1>
       <p>
-        The <code>eventMiddleware</code> prop accepts an array of middleware functions. Each receives{" "}
-        <code>(channel, event, next)</code>. Call <code>next()</code> to continue the chain, or skip
-        it to block the event entirely (including user callbacks and internal handlers).
+        The <code>eventMiddleware</code> prop accepts an array of middleware functions. Each
+        receives <code>(channel, event, next)</code>. Call <code>next()</code> to continue the
+        chain, or skip it to block the event entirely (including user callbacks and internal
+        handlers).
       </p>
 
       {/* Middleware toggles */}
@@ -271,7 +270,9 @@ export function MiddlewareDemo() {
             </button>
           </div>
           {log.length === 0 && (
-            <div style={{ color: "#666" }}>Click cells or headers to see middleware in action...</div>
+            <div style={{ color: "#666" }}>
+              Click cells or headers to see middleware in action...
+            </div>
           )}
           {log.map((entry) => (
             <div key={entry.id} style={{ marginBottom: 2 }}>
@@ -291,17 +292,14 @@ export function MiddlewareDemo() {
           .filter(Boolean)
           .join(" → ") || "none"}
         {enableBlocker && blockedChannels.size > 0 && (
-          <span style={{ color: "#f44336" }}>
-            {" "}
-            | Blocking: {[...blockedChannels].join(", ")}
-          </span>
+          <span style={{ color: "#f44336" }}> | Blocking: {[...blockedChannels].join(", ")}</span>
         )}
       </div>
 
       <div style={{ marginTop: 8, fontSize: 13, color: "#555" }}>
-        <strong>Tip:</strong> Enable the blocker middleware and block{" "}
-        <code>headerClick</code> — sorting will stop working because the middleware blocks the
-        event before it reaches the internal sort handler.
+        <strong>Tip:</strong> Enable the blocker middleware and block <code>headerClick</code> —
+        sorting will stop working because the middleware blocks the event before it reaches the
+        internal sort handler.
       </div>
     </>
   );
