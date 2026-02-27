@@ -6,6 +6,9 @@ import type {
   GridScrollEvent,
   GridCanvasEvent,
   GridCanvasEventType,
+  GridTouchEvent,
+  GridTouchEventType,
+  GridTouchPoint,
   HitTestResult,
 } from "./types";
 
@@ -98,4 +101,21 @@ export function createGridCanvasEvent(
   (base as unknown as Record<string, unknown>).type = type;
   (base as unknown as Record<string, unknown>).hitTest = hitTest;
   return base as unknown as GridCanvasEvent;
+}
+
+export function createGridTouchEvent(
+  type: GridTouchEventType,
+  native: TouchEvent,
+  touch: GridTouchPoint,
+  hitTest: HitTestResult,
+  touchCount: number,
+): GridTouchEvent {
+  const base = createBase();
+  return Object.assign(base, {
+    nativeEvent: native,
+    type,
+    touch,
+    hitTest,
+    touchCount,
+  }) as unknown as GridTouchEvent;
 }

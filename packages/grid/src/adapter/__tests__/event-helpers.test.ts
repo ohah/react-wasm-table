@@ -5,6 +5,7 @@ import {
   createGridKeyboardEvent,
   createGridScrollEvent,
   createGridCanvasEvent,
+  createGridTouchEvent,
 } from "../../event-helpers";
 
 describe("event-helpers", () => {
@@ -150,6 +151,60 @@ describe("event-helpers", () => {
     it("supports preventDefault", () => {
       const native = new MouseEvent("click");
       const event = createGridCanvasEvent("click", native, { type: "empty" }, coords);
+
+      expect(event.defaultPrevented).toBe(false);
+      event.preventDefault();
+      expect(event.defaultPrevented).toBe(true);
+    });
+  });
+
+  describe("createGridTouchEvent", () => {
+    // TouchEvent constructor is not available in happy-dom, use Event + defineProperty
+    function makeTouchEvent(type: string, touchCount: number) {
+      const e = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(e, "touches", {
+        value: Array.from({ length: touchCount }, () => ({ clientX: 0, clientY: 0 })),
+      });
+      return e as unknown as TouchEvent;
+    }
+
+    it("creates event with type, nativeEvent, touch point, and hitTest", () => {
+      const native = makeTouchEvent("touchstart", 1);
+      const touchPoint = { contentX: 200, contentY: 50, viewportX: 100, viewportY: 50 };
+      const hitTest = { type: "cell" as const, cell: { row: 3, col: 1 } };
+      const event = createGridTouchEvent("touchstart", native, touchPoint, hitTest, 1);
+
+      expect(event.type).toBe("touchstart");
+      expect(event.nativeEvent).toBe(native);
+      expect(event.touch.contentX).toBe(200);
+      expect(event.touch.contentY).toBe(50);
+      expect(event.touch.viewportX).toBe(100);
+      expect(event.touch.viewportY).toBe(50);
+      expect(event.hitTest).toEqual(hitTest);
+      expect(event.touchCount).toBe(1);
+    });
+
+    it("creates event with empty hitTest", () => {
+      const native = makeTouchEvent("touchmove", 1);
+      const touchPoint = { contentX: 0, contentY: 0, viewportX: 0, viewportY: 0 };
+      const event = createGridTouchEvent("touchmove", native, touchPoint, { type: "empty" }, 1);
+
+      expect(event.hitTest.type).toBe("empty");
+    });
+
+    it("creates touchend event with zero touchCount", () => {
+      const native = makeTouchEvent("touchend", 0);
+      const touchPoint = { contentX: 50, contentY: 50, viewportX: 50, viewportY: 50 };
+      const event = createGridTouchEvent("touchend", native, touchPoint, { type: "cell", cell: { row: 0, col: 0 } }, 0);
+
+      expect(event.type).toBe("touchend");
+      expect(event.touchCount).toBe(0);
+    });
+
+    it("supports preventDefault", () => {
+      const native = makeTouchEvent("touchstart", 1);
+      const touchPoint = { contentX: 0, contentY: 0, viewportX: 0, viewportY: 0 };
+      const event = createGridTouchEvent("touchstart", native, touchPoint, { type: "empty" }, 1);
 
       expect(event.defaultPrevented).toBe(false);
       event.preventDefault();
