@@ -96,6 +96,12 @@ export type ColumnPinningUpdater =
 
 export type ColumnPinningPosition = "left" | "right" | false;
 
+// ── Expanded state ─────────────────────────────────────────────────
+
+/** true = all expanded, Record<string, boolean> = per-row. */
+export type ExpandedState = true | Record<string, boolean>;
+export type ExpandedUpdater = ExpandedState | ((prev: ExpandedState) => ExpandedState);
+
 // ── CellContext / HeaderContext ──────────────────────────────────────
 
 /** Context passed to the `cell` render function. Mirrors TanStack CellContext. */
