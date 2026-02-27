@@ -13,6 +13,8 @@ import type {
   ColumnSizingInfoUpdater,
   ColumnPinningState,
   ColumnPinningUpdater,
+  ExpandedState,
+  ExpandedUpdater,
 } from "./tanstack-types";
 import type { GridInstance, GridState } from "./grid-instance";
 import { buildGridInstance } from "./grid-instance";
@@ -51,13 +53,20 @@ export interface UseGridTableOptions<TData> {
   onColumnSizingInfoChange?: (updater: ColumnSizingInfoUpdater) => void;
   /** Callback when column pinning changes (controlled mode). */
   onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
+  /** Callback when expanded state changes (controlled mode). */
+  onExpandedChange?: (updater: ExpandedUpdater) => void;
   /** Initial state (for uncontrolled mode). */
   initialState?: Partial<GridState>;
+
+  // Tree data
+  /** Function to extract sub-rows for tree data. */
+  getSubRows?: (row: TData) => TData[] | undefined;
 
   // Row model factories (tree-shakeable markers)
   getCoreRowModel?: RowModelFactory<TData>;
   getSortedRowModel?: RowModelFactory<TData>;
   getFilteredRowModel?: RowModelFactory<TData>;
+  getExpandedRowModel?: RowModelFactory<TData>;
 }
 
 /**
@@ -76,6 +85,8 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     onColumnSizingChange: controlledOnColumnSizingChange,
     onColumnSizingInfoChange: controlledOnColumnSizingInfoChange,
     onColumnPinningChange: controlledOnColumnPinningChange,
+    onExpandedChange: controlledOnExpandedChange,
+    getSubRows,
     initialState,
   } = options;
 
@@ -98,6 +109,9 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   );
   const [internalColumnPinning, setInternalColumnPinning] = useState<ColumnPinningState>(
     initialState?.columnPinning ?? { left: [], right: [] },
+  );
+  const [internalExpanded, setInternalExpanded] = useState<ExpandedState>(
+    initialState?.expanded ?? {},
   );
 
   // Resolve controlled vs uncontrolled — sorting
@@ -197,6 +211,20 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     [columnPinning, controlledOnColumnPinningChange],
   );
 
+  // Resolve controlled vs uncontrolled — expanded
+  const expanded = controlledState?.expanded ?? internalExpanded;
+  const onExpandedChange = useCallback(
+    (updater: ExpandedUpdater) => {
+      const next = typeof updater === "function" ? updater(expanded) : updater;
+      if (controlledOnExpandedChange) {
+        controlledOnExpandedChange(next);
+      } else {
+        setInternalExpanded(next);
+      }
+    },
+    [expanded, controlledOnExpandedChange],
+  );
+
   const state: GridState = useMemo(
     () => ({
       sorting,
@@ -206,8 +234,9 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
       columnSizing,
       columnSizingInfo,
       columnPinning,
+      expanded,
     }),
-    [sorting, columnFilters, globalFilter, columnVisibility, columnSizing, columnSizingInfo, columnPinning],
+    [sorting, columnFilters, globalFilter, columnVisibility, columnSizing, columnSizingInfo, columnPinning, expanded],
   );
 
   const instance = useMemo(
@@ -223,8 +252,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
         onColumnSizingChange,
         onColumnSizingInfoChange,
         onColumnPinningChange,
+        onExpandedChange,
+        getSubRows,
       }),
-    [data, columns, state, onSortingChange, onColumnFiltersChange, onGlobalFilterChange, onColumnVisibilityChange, onColumnSizingChange, onColumnSizingInfoChange, onColumnPinningChange],
+    [data, columns, state, onSortingChange, onColumnFiltersChange, onGlobalFilterChange, onColumnVisibilityChange, onColumnSizingChange, onColumnSizingInfoChange, onColumnPinningChange, onExpandedChange, getSubRows],
   );
 
   return instance;
