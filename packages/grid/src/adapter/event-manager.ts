@@ -43,6 +43,10 @@ export interface GridEventHandlers {
     hitTest: import("../types").HitTestResult,
     coords: EventCoords,
   ) => boolean | void;
+  // Touch events (native TouchEvent passthrough)
+  onTouchStart?: (native: TouchEvent, coords: EventCoords, hitTest: import("../types").HitTestResult) => boolean | void;
+  onTouchMove?: (native: TouchEvent, coords: EventCoords, hitTest: import("../types").HitTestResult) => boolean | void;
+  onTouchEnd?: (native: TouchEvent, coords: EventCoords, hitTest: import("../types").HitTestResult) => boolean | void;
 }
 
 /** Options for deltaMode normalization. */
@@ -429,7 +433,9 @@ export class EventManager {
 
     /**
      * Create a synthetic MouseEvent from touch coordinates.
-     * Used to provide a nativeEvent for enriched events triggered by touch.
+     * Used internally when touch-originated events flow through mouse-style handlers
+     * (e.g., onCellClick triggered by tap). Users who need the real TouchEvent
+     * should use onTouchStart/onTouchMove/onTouchEnd instead.
      */
     const syntheticMouse = (clientX: number, clientY: number, type = "click"): MouseEvent =>
       new MouseEvent(type, { clientX, clientY, bubbles: true });
@@ -440,7 +446,12 @@ export class EventManager {
         if (e.touches.length !== 1) return; // single finger only
         e.preventDefault();
         const touch = e.touches[0]!;
+        const coords = touchToCoords(touch.clientX, touch.clientY);
+        const hitTest = buildHitTest(coords.contentX, coords.contentY);
         const now = performance.now();
+
+        // Fire user touch callback — preventDefault cancels all internal handling
+        if (handlers.onTouchStart?.(e, coords, hitTest) === false) return;
 
         this.touchState = {
           startX: touch.clientX,
@@ -457,11 +468,11 @@ export class EventManager {
             const dy = this.touchState.lastY - this.touchState.startY;
             if (Math.sqrt(dx * dx + dy * dy) < TAP_THRESHOLD) {
               this.touchState.isSelectionDrag = true;
-              const coords = touchToCoords(this.touchState.lastX, this.touchState.lastY);
-              const hit = findCell(coords.contentX, coords.contentY, this.rowLayouts);
+              const lpc = touchToCoords(this.touchState.lastX, this.touchState.lastY);
+              const hit = findCell(lpc.contentX, lpc.contentY, this.rowLayouts);
               if (hit) {
                 const native = syntheticMouse(this.touchState.lastX, this.touchState.lastY, "mousedown");
-                handlers.onCellMouseDown?.(hit, false, native, coords);
+                handlers.onCellMouseDown?.(hit, false, native, lpc);
               }
             }
           }, LONG_PRESS_DURATION),
@@ -477,6 +488,15 @@ export class EventManager {
         e.preventDefault();
         const touch = e.touches[0]!;
         const ts = this.touchState;
+        const coords = touchToCoords(touch.clientX, touch.clientY);
+        const hitTest = buildHitTest(coords.contentX, coords.contentY);
+
+        // Fire user touch callback
+        if (handlers.onTouchMove?.(e, coords, hitTest) === false) {
+          ts.lastX = touch.clientX;
+          ts.lastY = touch.clientY;
+          return;
+        }
 
         if (ts.isSelectionDrag) {
           // Selection drag — same logic as mouse drag
@@ -485,7 +505,6 @@ export class EventManager {
           const viewportY = touch.clientY - rect.top;
           this.lastViewportPos = { x: viewportX, y: viewportY };
 
-          const coords = touchToCoords(touch.clientX, touch.clientY);
           const hit =
             findCell(coords.contentX, coords.contentY, this.rowLayouts) ??
             findNearestCell(coords.contentX, coords.contentY, this.rowLayouts);
@@ -535,14 +554,22 @@ export class EventManager {
 
     canvas.addEventListener(
       "touchend",
-      (_e: TouchEvent) => {
+      (e: TouchEvent) => {
         if (!this.touchState) return;
         const ts = this.touchState;
+        const coords = touchToCoords(ts.lastX, ts.lastY);
+        const hitTest = buildHitTest(coords.contentX, coords.contentY);
 
         // Cancel long-press timer
         if (ts.longPressTimer) {
           clearTimeout(ts.longPressTimer);
           ts.longPressTimer = null;
+        }
+
+        // Fire user touch callback
+        if (handlers.onTouchEnd?.(e, coords, hitTest) === false) {
+          this.touchState = null;
+          return;
         }
 
         // Selection drag end
@@ -558,8 +585,8 @@ export class EventManager {
         const dist = Math.sqrt((ts.lastX - ts.startX) ** 2 + (ts.lastY - ts.startY) ** 2);
 
         if (dist < TAP_THRESHOLD && elapsed < TAP_DURATION) {
-          const coords = touchToCoords(ts.startX, ts.startY);
-          const { contentX: x, contentY: y } = coords;
+          const tapCoords = touchToCoords(ts.startX, ts.startY);
+          const { contentX: x, contentY: y } = tapCoords;
 
           // Double-tap detection
           const timeSinceLastTap = now - this.lastTapTime;
@@ -572,7 +599,7 @@ export class EventManager {
             const hit = findCell(x, y, this.rowLayouts);
             if (hit) {
               const native = syntheticMouse(ts.startX, ts.startY, "dblclick");
-              handlers.onCellDoubleClick?.(hit, native, coords);
+              handlers.onCellDoubleClick?.(hit, native, tapCoords);
             }
             // Reset so a third tap doesn't trigger another double-tap
             this.lastTapTime = 0;
@@ -581,14 +608,14 @@ export class EventManager {
             const headerHit = findCell(x, y, this.headerLayouts);
             if (headerHit) {
               const native = syntheticMouse(ts.startX, ts.startY);
-              handlers.onHeaderClick?.(headerHit.col, native, coords);
+              handlers.onHeaderClick?.(headerHit.col, native, tapCoords);
             } else {
               const rowHit = findCell(x, y, this.rowLayouts);
               if (rowHit) {
                 const native = syntheticMouse(ts.startX, ts.startY);
-                handlers.onCellClick?.(rowHit, native, coords);
+                handlers.onCellClick?.(rowHit, native, tapCoords);
                 const nativeDown = syntheticMouse(ts.startX, ts.startY, "mousedown");
-                handlers.onCellMouseDown?.(rowHit, false, nativeDown, coords);
+                handlers.onCellMouseDown?.(rowHit, false, nativeDown, tapCoords);
                 handlers.onCellMouseUp?.();
               }
             }
