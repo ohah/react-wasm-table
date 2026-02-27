@@ -515,9 +515,7 @@ describe("GridInstance", () => {
     });
 
     it("getCanFilter returns false for display columns by default", () => {
-      const columns = [
-        { id: "actions", header: "Actions" } as any,
-      ];
+      const columns = [{ id: "actions", header: "Actions" } as any];
       const instance = buildGridInstance({
         data: sampleData,
         columns,
@@ -614,9 +612,7 @@ describe("GridInstance", () => {
     });
 
     it("getCanHide returns false when enableHiding: false", () => {
-      const columns = [
-        helper.accessor("firstName", { header: "First", enableHiding: false }),
-      ];
+      const columns = [helper.accessor("firstName", { header: "First", enableHiding: false })];
       const instance = buildGridInstance({
         data: sampleData,
         columns,
@@ -699,9 +695,7 @@ describe("GridInstance", () => {
     });
 
     it("getCanResize returns false when enableResizing: false", () => {
-      const columns = [
-        helper.accessor("firstName", { header: "First", enableResizing: false }),
-      ];
+      const columns = [helper.accessor("firstName", { header: "First", enableResizing: false })];
       const instance = buildGridInstance({
         data: sampleData,
         columns,
@@ -793,9 +787,7 @@ describe("GridInstance", () => {
     });
 
     it("getCanPin returns false when enablePinning: false", () => {
-      const columns = [
-        helper.accessor("firstName", { header: "First", enablePinning: false }),
-      ];
+      const columns = [helper.accessor("firstName", { header: "First", enablePinning: false })];
       const instance = buildGridInstance({
         data: sampleData,
         columns,
@@ -961,7 +953,10 @@ describe("GridInstance", () => {
     const treeHelper = createColumnHelper<TreePerson>();
     const treeData: TreePerson[] = [
       {
-        firstName: "Alice", lastName: "Smith", age: 30, status: "active",
+        firstName: "Alice",
+        lastName: "Smith",
+        age: 30,
+        status: "active",
         children: [
           { firstName: "Bob", lastName: "Jones", age: 25, status: "inactive" },
           { firstName: "Charlie", lastName: "Brown", age: 35, status: "active" },
@@ -1005,7 +1000,10 @@ describe("GridInstance", () => {
       const model = instance.getExpandedRowModel();
       expect(model.rowCount).toBe(4);
       expect(model.rows.map((r) => r.original.firstName)).toEqual([
-        "Alice", "Bob", "Charlie", "Dave",
+        "Alice",
+        "Bob",
+        "Charlie",
+        "Dave",
       ]);
     });
 

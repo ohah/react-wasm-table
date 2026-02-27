@@ -155,8 +155,8 @@ export function ColumnFeatures() {
       <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
         Demonstrates per-column <strong>ordering</strong>, <strong>visibility</strong>,{" "}
         <strong>sizing</strong> (+ drag resize), <strong>pinning</strong>, and{" "}
-        <strong>filtering</strong> state APIs. Drag a header border to resize columns.
-        Pinning is state-only (rendering TBD).
+        <strong>filtering</strong> state APIs. Drag a header border to resize columns. Pinning is
+        state-only (rendering TBD).
       </p>
 
       {/* ── Ordering ── */}
@@ -167,7 +167,10 @@ export function ColumnFeatures() {
         </span>
         <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
           {columnOrder.map((colId, idx) => (
-            <div key={colId} style={{ display: "flex", alignItems: "center", gap: 2, fontSize: 12 }}>
+            <div
+              key={colId}
+              style={{ display: "flex", alignItems: "center", gap: 2, fontSize: 12 }}
+            >
               <button
                 style={btnBase}
                 disabled={idx === 0}
@@ -322,8 +325,12 @@ export function ColumnFeatures() {
               <option value="Sales">Sales</option>
             </select>
           </label>
-          <button style={btnActive} onClick={applyFilters}>Apply</button>
-          <button style={btnBase} onClick={clearFilters}>Clear</button>
+          <button style={btnActive} onClick={applyFilters}>
+            Apply
+          </button>
+          <button style={btnBase} onClick={clearFilters}>
+            Clear
+          </button>
         </div>
       </div>
 

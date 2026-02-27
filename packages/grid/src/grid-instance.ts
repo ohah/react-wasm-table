@@ -506,9 +506,7 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     },
     getCenterLeafColumns: () => {
       const pinnedIds = new Set([...pinning.left, ...pinning.right]);
-      return leafColumns.filter(
-        (col) => visibility[col.id] !== false && !pinnedIds.has(col.id),
-      );
+      return leafColumns.filter((col) => visibility[col.id] !== false && !pinnedIds.has(col.id));
     },
 
     // Row model
@@ -551,7 +549,7 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     },
     toggleAllRowsExpanded: (value?: boolean) => {
       if (!getSubRows) return;
-      const shouldExpand = value ?? !( expanded === true);
+      const shouldExpand = value ?? !(expanded === true);
       if (shouldExpand) {
         onExpandedChange(true);
       } else {

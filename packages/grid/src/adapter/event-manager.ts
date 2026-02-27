@@ -128,11 +128,7 @@ export class EventManager {
   findResizeHandle(x: number, y: number): number {
     for (const h of this.headerLayouts) {
       const rightEdge = h.x + h.width;
-      if (
-        y >= h.y &&
-        y < h.y + h.height &&
-        Math.abs(x - rightEdge) <= RESIZE_HANDLE_ZONE
-      ) {
+      if (y >= h.y && y < h.y + h.height && Math.abs(x - rightEdge) <= RESIZE_HANDLE_ZONE) {
         return h.col;
       }
     }

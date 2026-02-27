@@ -118,9 +118,12 @@ const tdStyle: React.CSSProperties = {
 export function ExpandingDemo() {
   const [expanded, setExpanded] = useState<ExpandedState>({});
 
-  const handleExpandedChange = useCallback((updater: ExpandedState | ((prev: ExpandedState) => ExpandedState)) => {
-    setExpanded((prev) => (typeof updater === "function" ? updater(prev) : updater));
-  }, []);
+  const handleExpandedChange = useCallback(
+    (updater: ExpandedState | ((prev: ExpandedState) => ExpandedState)) => {
+      setExpanded((prev) => (typeof updater === "function" ? updater(prev) : updater));
+    },
+    [],
+  );
 
   const table = useGridTable<Department>({
     data: treeData,
@@ -133,16 +136,14 @@ export function ExpandingDemo() {
 
   const expandedModel = table.getExpandedRowModel();
 
-  const formatBudget = (n: number) =>
-    "$" + n.toLocaleString("en-US");
+  const formatBudget = (n: number) => "$" + n.toLocaleString("en-US");
 
   return (
     <>
       <h1>Expanding Row Model</h1>
       <p>
-        Demonstrates <code>getExpandedRowModel</code> with tree data.
-        Uses <code>getSubRows</code> to define hierarchy and <code>expanded</code> state
-        to control which rows are visible.
+        Demonstrates <code>getExpandedRowModel</code> with tree data. Uses <code>getSubRows</code>{" "}
+        to define hierarchy and <code>expanded</code> state to control which rows are visible.
       </p>
 
       {/* Controls */}
@@ -154,10 +155,7 @@ export function ExpandingDemo() {
           >
             {expanded === true ? "Collapse All" : "Expand All"}
           </button>
-          <button
-            style={btnBase}
-            onClick={() => table.resetExpanded()}
-          >
+          <button style={btnBase} onClick={() => table.resetExpanded()}>
             Reset
           </button>
           <span style={{ fontSize: 13, color: "#666", marginLeft: 8 }}>
@@ -167,7 +165,9 @@ export function ExpandingDemo() {
       </div>
 
       {/* Tree table */}
-      <div style={{ border: "1px solid #ddd", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}>
+      <div
+        style={{ border: "1px solid #ddd", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}
+      >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
@@ -207,7 +207,9 @@ export function ExpandingDemo() {
                   </span>
                 </td>
                 <td style={{ ...tdStyle, textAlign: "right" }}>{row.original.headcount}</td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{formatBudget(row.original.budget)}</td>
+                <td style={{ ...tdStyle, textAlign: "right" }}>
+                  {formatBudget(row.original.budget)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -218,24 +220,15 @@ export function ExpandingDemo() {
       <div style={{ display: "flex", gap: 16 }}>
         <div style={{ ...sectionStyle, flex: 1 }}>
           <strong>Expanded State:</strong>
-          <pre style={{ margin: "4px 0 0", fontSize: 12 }}>
-            {JSON.stringify(expanded, null, 2)}
-          </pre>
+          <pre style={{ margin: "4px 0 0", fontSize: 12 }}>{JSON.stringify(expanded, null, 2)}</pre>
         </div>
         <div style={{ ...sectionStyle, flex: 1 }}>
           <strong>Row Model Info:</strong>
           <div style={{ marginTop: 4, fontSize: 13, color: "#555" }}>
             <div>Total visible rows: {expandedModel.rowCount}</div>
-            <div>
-              Expandable rows:{" "}
-              {expandedModel.rows.filter((r) => r.getCanExpand()).length}
-            </div>
-            <div>
-              Leaf rows: {expandedModel.rows.filter((r) => !r.getCanExpand()).length}
-            </div>
-            <div>
-              Max depth: {Math.max(0, ...expandedModel.rows.map((r) => r.depth))}
-            </div>
+            <div>Expandable rows: {expandedModel.rows.filter((r) => r.getCanExpand()).length}</div>
+            <div>Leaf rows: {expandedModel.rows.filter((r) => !r.getCanExpand()).length}</div>
+            <div>Max depth: {Math.max(0, ...expandedModel.rows.map((r) => r.depth))}</div>
           </div>
         </div>
       </div>

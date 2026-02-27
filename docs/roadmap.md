@@ -79,13 +79,13 @@ const columns = [
 
 **구현 상태:**
 
-| 기능 | State API | 렌더링 연결 | 비고 |
-|------|-----------|-------------|------|
-| Visibility | ✅ | ✅ | `resolveColumns`에서 hidden 컬럼 제외 |
-| Sizing | ✅ | ✅ | `resolveColumns`에서 width override |
-| Ordering | ✅ | ✅ | `resolveColumns`에서 `columnOrder` 기준 정렬 |
-| Drag Resize | ✅ | ✅ | EventManager resize handle hit-test + `useColumnResize` 훅 |
-| Pinning | ✅ | ❌ | state만 존재, multi-region 렌더링 필요 (→ Phase 3-3) |
+| 기능        | State API | 렌더링 연결 | 비고                                                       |
+| ----------- | --------- | ----------- | ---------------------------------------------------------- |
+| Visibility  | ✅        | ✅          | `resolveColumns`에서 hidden 컬럼 제외                      |
+| Sizing      | ✅        | ✅          | `resolveColumns`에서 width override                        |
+| Ordering    | ✅        | ✅          | `resolveColumns`에서 `columnOrder` 기준 정렬               |
+| Drag Resize | ✅        | ✅          | EventManager resize handle hit-test + `useColumnResize` 훅 |
+| Pinning     | ✅        | ❌          | state만 존재, multi-region 렌더링 필요 (→ Phase 3-3)       |
 
 **구현 내역 (Ordering + Drag Resize):**
 
@@ -383,18 +383,18 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ## 우선순위 요약
 
-| 순위 | 항목                          | 카테고리 | 상태 | 이유                          |
-| ---- | ----------------------------- | -------- | ---- | ----------------------------- |
-| 1    | Row Model Abstraction         | Core     | ✅   | 이후 모든 기능의 토대         |
-| 2    | Column Feature API            | Core     | ✅*  | 기능별 독립 모듈화 기반 (*Pinning 렌더링 제외) |
+| 순위 | 항목                          | 카테고리 | 상태 | 이유                                                               |
+| ---- | ----------------------------- | -------- | ---- | ------------------------------------------------------------------ |
+| 1    | Row Model Abstraction         | Core     | ✅   | 이후 모든 기능의 토대                                              |
+| 2    | Column Feature API            | Core     | ✅\* | 기능별 독립 모듈화 기반 (\*Pinning 렌더링 제외)                    |
 | 3    | Event System 개방             | Core     | 🔧   | 사용자 인터랙션 확장의 전제 (기본 콜백 존재, 미들웨어 체인 미구현) |
-| 4    | Column Ordering/Pinning State | State    | ✅*  | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ❌ |
-| 5    | Custom Cell Renderer          | Render   | ❌   | Canvas 차별화의 핵심          |
-| 6    | Data Access API               | Data     | 🔧   | getRowModel 등 기반 존재, export 유틸 미구현 |
-| 7    | Layer System                  | Render   | ❌   | Pinning 구현 + 확장성 (onAfterDraw 진입점만 존재) |
-| 8    | Expanding State               | State    | ✅*  | getExpandedRowModel ✅, getGroupedRowModel ❌ |
-| 9    | Worker Bridge                 | Perf     | ❌   | WASM 성능 극대화              |
-| 10   | Streaming Data                | Perf     | ❌   | 대용량 데이터 시나리오        |
+| 4    | Column Ordering/Pinning State | State    | ✅\* | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ❌           |
+| 5    | Custom Cell Renderer          | Render   | ❌   | Canvas 차별화의 핵심                                               |
+| 6    | Data Access API               | Data     | 🔧   | getRowModel 등 기반 존재, export 유틸 미구현                       |
+| 7    | Layer System                  | Render   | ❌   | Pinning 구현 + 확장성 (onAfterDraw 진입점만 존재)                  |
+| 8    | Expanding State               | State    | ✅\* | getExpandedRowModel ✅, getGroupedRowModel ❌                      |
+| 9    | Worker Bridge                 | Perf     | ❌   | WASM 성능 극대화                                                   |
+| 10   | Streaming Data                | Perf     | ❌   | 대용량 데이터 시나리오                                             |
 
 ---
 
