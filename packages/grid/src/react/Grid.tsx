@@ -65,6 +65,7 @@ export function Grid({
   onTouchMove: onTouchMoveProp,
   onTouchEnd: onTouchEndProp,
   eventMiddleware: eventMiddlewareProp,
+  cellRenderers: cellRenderersProp,
   onBeforeSortChange,
   onBeforeSelectionChange,
   // Selection (controlled/uncontrolled)
@@ -416,6 +417,7 @@ export function Grid({
     onLayoutComputed,
     onVisStartComputed,
     onAfterDraw,
+    cellRenderers: cellRenderersProp,
   });
   // Wire the bridge: all hooks using `invalidate` now delegate to useRenderLoop's internal dirtyRef
   invalidateRef.current = renderInvalidate;

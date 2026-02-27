@@ -140,6 +140,32 @@ export {
   measureText,
 } from "./renderer/draw-primitives";
 
+// Layout reader helpers (for custom cell renderers)
+export {
+  readCellX,
+  readCellY,
+  readCellWidth,
+  readCellHeight,
+  readCellAlign,
+  readCellRow,
+  readCellCol,
+  readCellPaddingTop,
+  readCellPaddingRight,
+  readCellPaddingBottom,
+  readCellPaddingLeft,
+} from "./adapter/layout-reader";
+
+// Cell renderer registry
+export {
+  CellRendererRegistry,
+  createCellRendererRegistry,
+  textCellRenderer,
+  badgeCellRenderer,
+  stubCellRenderer,
+  flexCellRenderer,
+} from "./renderer/cell-renderer";
+export type { CellRenderer, CellRenderContext } from "./renderer/cell-renderer";
+
 // Debug
 export { createLogger } from "./debug/logger";
 export type { Logger } from "./debug/logger";

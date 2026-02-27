@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useMemo } from "react";
 import type {
   WasmTableEngine,
   Theme,
@@ -26,6 +26,8 @@ import type { StringTable } from "../../adapter/string-table";
 import type { SelectionManager } from "../../adapter/selection-manager";
 import type { EventManager } from "../../adapter/event-manager";
 import { CanvasRenderer } from "../../renderer/canvas-renderer";
+import type { CellRenderer } from "../../renderer/cell-renderer";
+import { createCellRendererRegistry } from "../../renderer/cell-renderer";
 import { InstructionBuilder } from "../../adapter/instruction-builder";
 import {
   readCellRow,
@@ -107,6 +109,7 @@ export interface UseRenderLoopParams {
   onLayoutComputed: (buf: Float32Array, headerCount: number, totalCellCount: number) => void;
   onVisStartComputed: (visStart: number) => void;
   onAfterDraw?: (ctx: AfterDrawContext) => void;
+  cellRenderers?: CellRenderer[];
 }
 
 export function useRenderLoop({
@@ -135,7 +138,12 @@ export function useRenderLoop({
   onLayoutComputed,
   onVisStartComputed,
   onAfterDraw,
+  cellRenderers,
 }: UseRenderLoopParams) {
+  const cellRendererRegistry = useMemo(
+    () => createCellRendererRegistry(cellRenderers),
+    [cellRenderers],
+  );
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const instructionBuilderRef = useRef(new InstructionBuilder());
   const rafRef = useRef<number>(0);
@@ -447,6 +455,7 @@ export function useRenderLoop({
           },
           theme,
           effectiveRowHeight,
+          cellRendererRegistry,
         );
         renderer.drawGridLinesFromBuffer(
           layoutBuf,
@@ -519,6 +528,7 @@ export function useRenderLoop({
     rowHeight,
     headerHeight,
     theme,
+    cellRendererRegistry,
     /* data & callbacks */
     data,
     containerProps,
