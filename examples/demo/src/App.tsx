@@ -22,6 +22,8 @@ import { HooksOverview } from "./pages/HooksOverview";
 import { UseSortingDemo } from "./pages/UseSortingDemo";
 import { UseSelectionDemo } from "./pages/UseSelectionDemo";
 import { HookCompositionDemo } from "./pages/HookCompositionDemo";
+import { OnAfterDrawDemo } from "./pages/OnAfterDrawDemo";
+import { AdapterDIDemo } from "./pages/AdapterDIDemo";
 import { FpsCounter } from "./components/FpsCounter";
 
 setWasmUrl("/react_wasm_table_wasm_bg.wasm");
@@ -54,6 +56,8 @@ export function App() {
           <Route path="/hooks/sorting" element={<UseSortingDemo />} />
           <Route path="/hooks/selection" element={<UseSelectionDemo />} />
           <Route path="/hooks/composition" element={<HookCompositionDemo />} />
+          <Route path="/hooks/after-draw" element={<OnAfterDrawDemo />} />
+          <Route path="/hooks/adapter-di" element={<AdapterDIDemo />} />
         </Routes>
       </main>
     </div>

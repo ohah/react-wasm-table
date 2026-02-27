@@ -138,5 +138,6 @@ export type {
   CssGridPlacement,
   CssGridLine,
   BoxModelProps,
+  AfterDrawContext,
 } from "./types";
 export { DEFAULT_THEME } from "./types";

@@ -173,6 +173,19 @@ export interface CellLayout {
   contentAlign: "left" | "center" | "right";
 }
 
+// ── After-draw context ──────────────────────────────────────────────────
+
+/** Context passed to onAfterDraw callback (Phase 3 Layer System entry point). */
+export interface AfterDrawContext {
+  ctx: CanvasRenderingContext2D;
+  width: number;
+  height: number;
+  scrollTop: number;
+  scrollLeft: number;
+  headerHeight: number;
+  rowHeight: number;
+}
+
 // ── Selection style ─────────────────────────────────────────────────────
 
 /** Selection highlight style. */
@@ -422,6 +435,17 @@ export interface GridProps extends BoxModelProps {
   gridAutoFlow?: CssGridAutoFlow;
   /** Justify items on the inline axis. */
   justifyItems?: CssAlignItems;
+  /** Called after each frame draw (viewport space). Phase 3 Layer System entry point. */
+  onAfterDraw?: (ctx: AfterDrawContext) => void;
+
+  // Adapter DI (Step 0-5) — optional external manager injection
+  /** Optional external EventManager instance. */
+  eventManager?: import("./adapter/event-manager").EventManager;
+  /** Optional external SelectionManager instance. */
+  selectionManager?: import("./adapter/selection-manager").SelectionManager;
+  /** Optional external EditorManager instance. */
+  editorManager?: import("./adapter/editor-manager").EditorManager;
+
   /** Ref callback to receive the WASM engine instance (e.g., for debug logging). */
   engineRef?: React.RefObject<WasmTableEngine | null>;
 }

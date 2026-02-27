@@ -49,6 +49,12 @@ export function Grid({
   selectionStyle,
   onCopy: onCopyProp,
   onPaste: onPasteProp,
+  // After-draw callback (Step 0-4)
+  onAfterDraw,
+  // Adapter DI (Step 0-5)
+  eventManager: eventManagerProp,
+  selectionManager: selectionManagerProp,
+  editorManager: editorManagerProp,
   initialState,
   // Container flex props
   display,
@@ -106,16 +112,16 @@ export function Grid({
   }, [columnsProp, columnRegistry, data]);
 
   // Shared mutable refs
-  const dirtyRef = useRef(true);
   const layoutBufRef = useRef<Float32Array | null>(null);
   const headerCountRef = useRef(0);
   const totalCellCountRef = useRef(0);
   const visStartRef = useRef(0);
-  const invalidate = useCallback(() => {
-    dirtyRef.current = true;
-  }, []);
 
-  const eventManagerRef = useRef(new EventManager());
+  // invalidateRef bridge: stable callback delegates to useRenderLoop's invalidate (wired below)
+  const invalidateRef = useRef<() => void>(() => {});
+  const invalidate = useCallback(() => invalidateRef.current(), []);
+
+  const eventManagerRef = useRef(eventManagerProp ?? new EventManager());
   const {
     scrollTopRef,
     scrollLeftRef,
@@ -174,6 +180,7 @@ export function Grid({
     invalidate,
     getMemoryBridge,
     getStringTable,
+    selectionManager: selectionManagerProp,
   });
   const { editorManagerRef, handleCellDoubleClick } = useEditing({
     editorRef,
@@ -183,14 +190,15 @@ export function Grid({
     getLayoutBuf: () => layoutBufRef.current,
     getHeaderCount: () => headerCountRef.current,
     getTotalCellCount: () => totalCellCountRef.current,
+    editorManager: editorManagerProp,
   });
 
   // Mark dirty when columns change
   useEffect(() => {
     return columnRegistry.onChange(() => {
-      dirtyRef.current = true;
+      invalidate();
     });
-  }, [columnRegistry]);
+  }, [columnRegistry, invalidate]);
 
   useEventAttachment({
     canvasRef,
@@ -299,7 +307,7 @@ export function Grid({
     visStartRef.current = vs;
   }, []);
 
-  useRenderLoop({
+  const { invalidate: renderInvalidate } = useRenderLoop({
     engine,
     memoryBridgeRef,
     canvasRef,
@@ -314,7 +322,6 @@ export function Grid({
     eventManagerRef,
     scrollTopRef,
     scrollLeftRef,
-    dirtyRef,
     vScrollbarRef,
     hScrollbarRef,
     containerProps,
@@ -324,7 +331,10 @@ export function Grid({
     headerHeight,
     onLayoutComputed,
     onVisStartComputed,
+    onAfterDraw,
   });
+  // Wire the bridge: all hooks using `invalidate` now delegate to useRenderLoop's internal dirtyRef
+  invalidateRef.current = renderInvalidate;
 
   // Scrollbar visibility
   const totalContentHeight = data.length * rowHeight + headerHeight;
