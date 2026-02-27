@@ -154,7 +154,7 @@ const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({
 - `resolveColumns()`에서 flatten 후 `columnOrder` 기준 재정렬
 - visibility와 ordering 조합 동작 (hidden → 제거 → 순서 정렬)
 
-### 2-2. Expanding State (Row Grouping / Tree 기반)
+### 2-2. Expanding State (Row Grouping / Tree 기반) — getExpandedRowModel ✅
 
 Row Grouping이나 Tree를 "기능"으로 내장하지 않는다.
 **expanded 상태 + Row Model 조합**으로 사용자가 구현한다.
@@ -166,7 +166,7 @@ const table = useGridTable({
   data,
   columns,
   getSubRows: (row) => row.children, // Tree
-  getGroupedRowModel: getGroupedRowModel(), // 또는 Grouping
+  getGroupedRowModel: getGroupedRowModel(), // 또는 Grouping (미구현)
   getExpandedRowModel: getExpandedRowModel(),
   expanded,
   onExpandedChange: setExpanded,
@@ -174,9 +174,18 @@ const table = useGridTable({
 ```
 
 - `getSubRows` — 사용자가 계층 구조를 정의
-- `getGroupedRowModel` — 그룹핑 로직 (WASM에서 인덱스 연산)
+- `getGroupedRowModel` — 그룹핑 로직 (미구현, 별도 Phase)
 - expanded state — 어떤 행이 펼쳐져 있는지
 - 시각적 표현(들여쓰기, 아이콘)은 `cell` render prop에서 사용자가 결정
+
+**구현 내역 (getExpandedRowModel):**
+
+- `ExpandedState` (`true | Record<string, boolean>`), `ExpandedUpdater` 타입
+- `Row<TData>` 트리 필드: `subRows`, `depth`, `parentId`, `getCanExpand()`, `getIsExpanded()`, `toggleExpanded()`, `getLeafRows()`
+- `getExpandedRowModel()` 팩토리 + `buildExpandedRowModel()` 빌더
+- `GridInstance` expanding 메서드: `setExpanded`, `resetExpanded`, `getIsAllRowsExpanded`, `toggleAllRowsExpanded`, `getExpandedRowModel`
+- `useGridTable`: controlled/uncontrolled expanded state, `getSubRows` 옵션
+- 테스트: 38 row-model, 95 grid-instance, 63 use-grid-table (총 715 JS 테스트)
 
 ### 2-3. Column Visibility State ✅ (구현 완료)
 
@@ -383,7 +392,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | 5    | Custom Cell Renderer          | Render   | ❌   | Canvas 차별화의 핵심          |
 | 6    | Data Access API               | Data     | 🔧   | getRowModel 등 기반 존재, export 유틸 미구현 |
 | 7    | Layer System                  | Render   | ❌   | Pinning 구현 + 확장성 (onAfterDraw 진입점만 존재) |
-| 8    | Expanding State               | State    | ❌   | Grouping/Tree의 headless 접근 |
+| 8    | Expanding State               | State    | ✅*  | getExpandedRowModel ✅, getGroupedRowModel ❌ |
 | 9    | Worker Bridge                 | Perf     | ❌   | WASM 성능 극대화              |
 | 10   | Streaming Data                | Perf     | ❌   | 대용량 데이터 시나리오        |
 
