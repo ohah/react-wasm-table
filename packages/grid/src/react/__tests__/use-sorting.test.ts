@@ -1,11 +1,7 @@
 import { describe, expect, it, mock, beforeEach } from "bun:test";
+import { renderHook, act } from "@testing-library/react";
+import { useSorting } from "../hooks/use-sorting";
 import { ColumnRegistry } from "../../adapter/column-registry";
-
-/**
- * Test the sorting logic extracted into useSorting.
- * Since we don't have @testing-library/react, we test the core logic
- * by simulating what the hook does internally.
- */
 
 function makeEngine() {
   return {
@@ -19,142 +15,144 @@ function makeRegistry(cols: { id: string; sortable?: boolean }[]) {
   return reg;
 }
 
-/** Simulates the handleHeaderClick logic from useSorting */
-function simulateHeaderClick(
-  engine: any,
-  registry: ColumnRegistry,
-  sorting: { id: string; desc: boolean }[],
-  colIndex: number,
-  onSortingChange?: (s: any) => void,
-  onBeforeSortChange?: (next: any) => boolean | void,
-) {
-  if (!engine) return { next: sorting, called: false };
-  const columns = registry.getAll();
-  const col = columns[colIndex];
-  if (!col?.sortable) return { next: sorting, called: false };
-
-  const existing = sorting.find((s) => s.id === col.id);
-  let next: { id: string; desc: boolean }[];
-  if (!existing) {
-    next = [{ id: col.id, desc: false }];
-  } else if (!existing.desc) {
-    next = [{ id: col.id, desc: true }];
-  } else {
-    next = [];
-  }
-
-  if (onBeforeSortChange?.(next) === false) return { next: sorting, called: false, guarded: true };
-
-  if (onSortingChange) {
-    onSortingChange(next);
-  }
-
-  if (next.length > 0) {
-    engine.setColumnarSort(
-      next.map((s: any) => ({
-        columnIndex: columns.findIndex((c) => c.id === s.id),
-        direction: s.desc ? "desc" : "asc",
-      })),
-    );
-  } else {
-    engine.setColumnarSort([]);
-  }
-
-  return { next, called: true };
-}
-
-describe("useSorting logic", () => {
+describe("useSorting (renderHook)", () => {
   let engine: ReturnType<typeof makeEngine>;
   let registry: ColumnRegistry;
+  let invalidate: ReturnType<typeof mock>;
 
   beforeEach(() => {
     engine = makeEngine();
     registry = makeRegistry([{ id: "name" }, { id: "age" }]);
+    invalidate = mock(() => {});
   });
 
-  it("cycles asc → desc → clear", () => {
-    let sorting: { id: string; desc: boolean }[] = [];
+  it("starts with empty sorting by default", () => {
+    const { result } = renderHook(() =>
+      useSorting({ engine, columnRegistry: registry, invalidate }),
+    );
+    expect(result.current.sorting).toEqual([]);
+  });
+
+  it("starts with initialSorting if provided", () => {
+    const { result } = renderHook(() =>
+      useSorting({
+        engine,
+        columnRegistry: registry,
+        invalidate,
+        initialSorting: [{ id: "name", desc: false }],
+      }),
+    );
+    expect(result.current.sorting).toEqual([{ id: "name", desc: false }]);
+  });
+
+  it("cycles asc → desc → clear (uncontrolled)", () => {
+    const { result } = renderHook(() =>
+      useSorting({ engine, columnRegistry: registry, invalidate }),
+    );
 
     // Click col 0 → asc
-    let result = simulateHeaderClick(engine, registry, sorting, 0);
-    sorting = result.next;
-    expect(sorting).toEqual([{ id: "name", desc: false }]);
+    act(() => result.current.handleHeaderClick(0));
+    expect(result.current.sorting).toEqual([{ id: "name", desc: false }]);
     expect(engine.setColumnarSort).toHaveBeenCalledWith([{ columnIndex: 0, direction: "asc" }]);
+    expect(invalidate).toHaveBeenCalled();
 
     // Click col 0 → desc
-    result = simulateHeaderClick(engine, registry, sorting, 0);
-    sorting = result.next;
-    expect(sorting).toEqual([{ id: "name", desc: true }]);
-    expect(engine.setColumnarSort).toHaveBeenCalledWith([{ columnIndex: 0, direction: "desc" }]);
+    act(() => result.current.handleHeaderClick(0));
+    expect(result.current.sorting).toEqual([{ id: "name", desc: true }]);
 
     // Click col 0 → clear
-    result = simulateHeaderClick(engine, registry, sorting, 0);
-    sorting = result.next;
-    expect(sorting).toEqual([]);
+    act(() => result.current.handleHeaderClick(0));
+    expect(result.current.sorting).toEqual([]);
     expect(engine.setColumnarSort).toHaveBeenCalledWith([]);
   });
 
+  it("switches columns on different col click", () => {
+    const { result } = renderHook(() =>
+      useSorting({ engine, columnRegistry: registry, invalidate }),
+    );
+
+    act(() => result.current.handleHeaderClick(0));
+    expect(result.current.sorting).toEqual([{ id: "name", desc: false }]);
+
+    act(() => result.current.handleHeaderClick(1));
+    expect(result.current.sorting).toEqual([{ id: "age", desc: false }]);
+  });
+
   it("does nothing for non-sortable columns", () => {
-    registry = makeRegistry([{ id: "name", sortable: false }]);
-    const result = simulateHeaderClick(engine, registry, [], 0);
-    expect(result.called).toBe(false);
+    const reg = makeRegistry([{ id: "name", sortable: false }]);
+    const { result } = renderHook(() => useSorting({ engine, columnRegistry: reg, invalidate }));
+
+    act(() => result.current.handleHeaderClick(0));
+    expect(result.current.sorting).toEqual([]);
     expect(engine.setColumnarSort).not.toHaveBeenCalled();
   });
 
   it("does nothing when engine is null", () => {
-    const result = simulateHeaderClick(null, registry, [], 0);
-    expect(result.called).toBe(false);
+    const { result } = renderHook(() =>
+      useSorting({ engine: null, columnRegistry: registry, invalidate }),
+    );
+
+    act(() => result.current.handleHeaderClick(0));
+    expect(result.current.sorting).toEqual([]);
   });
 
-  it("calls onSortingChange in controlled mode", () => {
-    const onSortingChange = mock(() => {});
-    simulateHeaderClick(engine, registry, [], 0, onSortingChange);
-    expect(onSortingChange).toHaveBeenCalledWith([{ id: "name", desc: false }]);
-  });
+  describe("controlled mode (onSortingChange)", () => {
+    it("calls onSortingChange instead of internal setState", () => {
+      const onSortingChange = mock(() => {});
+      const { result } = renderHook(() =>
+        useSorting({ engine, columnRegistry: registry, invalidate, onSortingChange }),
+      );
 
-  it("switches columns on different col click", () => {
-    let sorting: { id: string; desc: boolean }[] = [];
+      act(() => result.current.handleHeaderClick(0));
+      expect(onSortingChange).toHaveBeenCalledWith([{ id: "name", desc: false }]);
+    });
 
-    // Click col 0 → asc name
-    let result = simulateHeaderClick(engine, registry, sorting, 0);
-    sorting = result.next;
-    expect(sorting).toEqual([{ id: "name", desc: false }]);
+    it("uses sortingProp as source of truth", () => {
+      const { result } = renderHook(() =>
+        useSorting({
+          engine,
+          columnRegistry: registry,
+          invalidate,
+          sortingProp: [{ id: "age", desc: true }],
+        }),
+      );
 
-    // Click col 1 → asc age (replaces name)
-    result = simulateHeaderClick(engine, registry, sorting, 1);
-    sorting = result.next;
-    expect(sorting).toEqual([{ id: "age", desc: false }]);
+      expect(result.current.sorting).toEqual([{ id: "age", desc: true }]);
+    });
   });
 
   describe("onBeforeSortChange guard", () => {
-    it("returning false prevents sort and engine call", () => {
+    it("returning false prevents sort", () => {
       const guard = mock(() => false as const);
-      const result = simulateHeaderClick(engine, registry, [], 0, undefined, guard);
-      expect(result.guarded).toBe(true);
-      expect(result.called).toBe(false);
-      expect(engine.setColumnarSort).not.toHaveBeenCalled();
+      const { result } = renderHook(() =>
+        useSorting({
+          engine,
+          columnRegistry: registry,
+          invalidate,
+          onBeforeSortChange: guard,
+        }),
+      );
+
+      act(() => result.current.handleHeaderClick(0));
       expect(guard).toHaveBeenCalledWith([{ id: "name", desc: false }]);
+      expect(result.current.sorting).toEqual([]);
+      expect(engine.setColumnarSort).not.toHaveBeenCalled();
     });
 
-    it("returning undefined allows sort normally", () => {
+    it("returning undefined allows sort", () => {
       const guard = mock(() => undefined);
-      const result = simulateHeaderClick(engine, registry, [], 0, undefined, guard);
-      expect(result.called).toBe(true);
-      expect(result.next).toEqual([{ id: "name", desc: false }]);
+      const { result } = renderHook(() =>
+        useSorting({
+          engine,
+          columnRegistry: registry,
+          invalidate,
+          onBeforeSortChange: guard,
+        }),
+      );
+
+      act(() => result.current.handleHeaderClick(0));
+      expect(result.current.sorting).toEqual([{ id: "name", desc: false }]);
       expect(engine.setColumnarSort).toHaveBeenCalled();
-    });
-
-    it("receives correct next value", () => {
-      const guard = mock(() => {});
-      simulateHeaderClick(engine, registry, [{ id: "name", desc: false }], 0, undefined, guard);
-      expect(guard).toHaveBeenCalledWith([{ id: "name", desc: true }]);
-    });
-
-    it("not called for non-sortable columns", () => {
-      const guard = mock(() => false as const);
-      registry = makeRegistry([{ id: "name", sortable: false }]);
-      simulateHeaderClick(engine, registry, [], 0, undefined, guard);
-      expect(guard).not.toHaveBeenCalled();
     });
   });
 });
