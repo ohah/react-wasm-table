@@ -537,53 +537,53 @@ fn hash_opt_f32<H: Hasher>(h: &mut H, v: Option<f32>) {
     }
 }
 
-fn hash_dimension<H: Hasher>(h: &mut H, v: &DimensionValue) {
-    std::mem::discriminant(v).hash(h);
+fn hash_dimension<H: Hasher>(h: &mut H, v: DimensionValue) {
+    std::mem::discriminant(&v).hash(h);
     match v {
-        DimensionValue::Length(f) | DimensionValue::Percent(f) => hash_f32(h, *f),
+        DimensionValue::Length(f) | DimensionValue::Percent(f) => hash_f32(h, f),
         DimensionValue::Auto => {}
     }
 }
 
-fn hash_length<H: Hasher>(h: &mut H, v: &LengthValue) {
-    std::mem::discriminant(v).hash(h);
+fn hash_length<H: Hasher>(h: &mut H, v: LengthValue) {
+    std::mem::discriminant(&v).hash(h);
     match v {
-        LengthValue::Length(f) | LengthValue::Percent(f) => hash_f32(h, *f),
+        LengthValue::Length(f) | LengthValue::Percent(f) => hash_f32(h, f),
         LengthValue::Zero => {}
     }
 }
 
-fn hash_length_auto<H: Hasher>(h: &mut H, v: &LengthAutoValue) {
-    std::mem::discriminant(v).hash(h);
+fn hash_length_auto<H: Hasher>(h: &mut H, v: LengthAutoValue) {
+    std::mem::discriminant(&v).hash(h);
     match v {
-        LengthAutoValue::Length(f) | LengthAutoValue::Percent(f) => hash_f32(h, *f),
+        LengthAutoValue::Length(f) | LengthAutoValue::Percent(f) => hash_f32(h, f),
         LengthAutoValue::Auto => {}
     }
 }
 
 fn hash_length_rect<H: Hasher>(h: &mut H, r: &RectValue<LengthValue>) {
-    hash_length(h, &r.top);
-    hash_length(h, &r.right);
-    hash_length(h, &r.bottom);
-    hash_length(h, &r.left);
+    hash_length(h, r.top);
+    hash_length(h, r.right);
+    hash_length(h, r.bottom);
+    hash_length(h, r.left);
 }
 
 fn hash_length_auto_rect<H: Hasher>(h: &mut H, r: &RectValue<LengthAutoValue>) {
-    hash_length_auto(h, &r.top);
-    hash_length_auto(h, &r.right);
-    hash_length_auto(h, &r.bottom);
-    hash_length_auto(h, &r.left);
+    hash_length_auto(h, r.top);
+    hash_length_auto(h, r.right);
+    hash_length_auto(h, r.bottom);
+    hash_length_auto(h, r.left);
 }
 
-fn hash_opt_align<H: Hasher>(h: &mut H, v: &Option<AlignValue>) {
+fn hash_opt_align<H: Hasher>(h: &mut H, v: Option<&AlignValue>) {
     v.is_some().hash(h);
     if let Some(a) = v {
         std::mem::discriminant(a).hash(h);
     }
 }
 
-fn hash_grid_placement<H: Hasher>(h: &mut H, v: &GridPlacementValue) {
-    std::mem::discriminant(v).hash(h);
+fn hash_grid_placement<H: Hasher>(h: &mut H, v: GridPlacementValue) {
+    std::mem::discriminant(&v).hash(h);
     match v {
         GridPlacementValue::Line(n) => n.hash(h),
         GridPlacementValue::Span(n) => n.hash(h),
@@ -591,11 +591,11 @@ fn hash_grid_placement<H: Hasher>(h: &mut H, v: &GridPlacementValue) {
     }
 }
 
-fn hash_opt_grid_line<H: Hasher>(h: &mut H, v: &Option<GridLineValue>) {
+fn hash_opt_grid_line<H: Hasher>(h: &mut H, v: Option<&GridLineValue>) {
     v.is_some().hash(h);
     if let Some(gl) = v {
-        hash_grid_placement(h, &gl.start);
-        hash_grid_placement(h, &gl.end);
+        hash_grid_placement(h, gl.start);
+        hash_grid_placement(h, gl.end);
     }
 }
 
@@ -640,11 +640,11 @@ fn hash_column<H: Hasher>(h: &mut H, col: &ColumnLayout) {
     hash_opt_f32(h, col.min_width);
     hash_opt_f32(h, col.max_width);
     std::mem::discriminant(&col.align).hash(h);
-    hash_dimension(h, &col.flex_basis);
-    hash_dimension(h, &col.height);
-    hash_dimension(h, &col.min_height);
-    hash_dimension(h, &col.max_height);
-    hash_opt_align(h, &col.align_self);
+    hash_dimension(h, col.flex_basis);
+    hash_dimension(h, col.height);
+    hash_dimension(h, col.min_height);
+    hash_dimension(h, col.max_height);
+    hash_opt_align(h, col.align_self.as_ref());
     hash_length_rect(h, &col.padding);
     hash_length_auto_rect(h, &col.margin);
     hash_length_rect(h, &col.border);
@@ -652,27 +652,27 @@ fn hash_column<H: Hasher>(h: &mut H, col: &ColumnLayout) {
     hash_opt_f32(h, col.aspect_ratio);
     std::mem::discriminant(&col.position).hash(h);
     hash_length_auto_rect(h, &col.inset);
-    hash_opt_grid_line(h, &col.grid_row);
-    hash_opt_grid_line(h, &col.grid_column);
-    hash_opt_align(h, &col.justify_self);
+    hash_opt_grid_line(h, col.grid_row.as_ref());
+    hash_opt_grid_line(h, col.grid_column.as_ref());
+    hash_opt_align(h, col.justify_self.as_ref());
 }
 
 fn hash_container<H: Hasher>(h: &mut H, c: &ContainerLayout) {
     std::mem::discriminant(&c.display).hash(h);
     std::mem::discriminant(&c.flex_direction).hash(h);
     std::mem::discriminant(&c.flex_wrap).hash(h);
-    hash_length(h, &c.gap);
+    hash_length(h, c.gap);
     c.row_gap.is_some().hash(h);
-    if let Some(ref rg) = c.row_gap {
+    if let Some(rg) = c.row_gap {
         hash_length(h, rg);
     }
     c.column_gap.is_some().hash(h);
-    if let Some(ref cg) = c.column_gap {
+    if let Some(cg) = c.column_gap {
         hash_length(h, cg);
     }
-    hash_opt_align(h, &c.align_items);
-    hash_opt_align(h, &c.align_content);
-    hash_opt_align(h, &c.justify_content);
+    hash_opt_align(h, c.align_items.as_ref());
+    hash_opt_align(h, c.align_content.as_ref());
+    hash_opt_align(h, c.justify_content.as_ref());
     std::mem::discriminant(&c.overflow_x).hash(h);
     std::mem::discriminant(&c.overflow_y).hash(h);
     hash_f32(h, c.scrollbar_width);
@@ -696,7 +696,7 @@ fn hash_container<H: Hasher>(h: &mut H, c: &ContainerLayout) {
         hash_track_size(h, ts);
     }
     std::mem::discriminant(&c.grid_auto_flow).hash(h);
-    hash_opt_align(h, &c.justify_items);
+    hash_opt_align(h, c.justify_items.as_ref());
 }
 
 /// Compute a hash key for all inputs to `compute_column_positions`.
@@ -827,18 +827,15 @@ impl LayoutEngine {
     ) -> (Vec<ColumnPosition>, f32) {
         let key = hash_layout_inputs(columns, container, viewport_width, row_height, line_height);
 
-        // Check both cache slots for a hit
-        for slot in &self.cache_slots {
-            if let Some(cached) = slot {
-                if cached.key == key {
-                    log::debug!(
-                        "[layout] cache HIT: cols={}, viewport_width={}, row_height={}",
-                        columns.len(),
-                        viewport_width,
-                        row_height
-                    );
-                    return (cached.positions.clone(), cached.effective_height);
-                }
+        for cached in self.cache_slots.iter().flatten() {
+            if cached.key == key {
+                log::debug!(
+                    "[layout] cache HIT: cols={}, viewport_width={}, row_height={}",
+                    columns.len(),
+                    viewport_width,
+                    row_height
+                );
+                return (cached.positions.clone(), cached.effective_height);
             }
         }
 
@@ -853,6 +850,61 @@ impl LayoutEngine {
             FlexDirectionValue::Column | FlexDirectionValue::ColumnReverse
         );
 
+        let (positions, effective_height) = self.run_taffy_column_layout(
+            columns,
+            container,
+            viewport_width,
+            row_height,
+            line_height,
+            is_column_dir,
+        );
+
+        for (i, pos) in positions.iter().enumerate() {
+            log::debug!(
+                "[layout] col[{}]: x={:.1}, y={:.1}, w={:.1}, h={:.1}, pad=[{:.1},{:.1},{:.1},{:.1}], border=[{:.1},{:.1},{:.1},{:.1}]",
+                i,
+                pos.x,
+                pos.y,
+                pos.width,
+                pos.height,
+                pos.padding[0],
+                pos.padding[1],
+                pos.padding[2],
+                pos.padding[3],
+                pos.border[0],
+                pos.border[1],
+                pos.border[2],
+                pos.border[3],
+            );
+        }
+
+        log::debug!(
+            "[layout] effective_height={effective_height:.1} (row_height={row_height:.1}, column_dir={is_column_dir})"
+        );
+
+        self.tree.clear();
+
+        let store_slot = self.cache_lru;
+        self.cache_slots[store_slot] = Some(ColumnLayoutCache {
+            key,
+            positions: positions.clone(),
+            effective_height,
+        });
+        self.cache_lru = 1 - store_slot;
+
+        (positions, effective_height)
+    }
+
+    /// Run Taffy layout for columns and return positions plus effective height.
+    fn run_taffy_column_layout(
+        &mut self,
+        columns: &[ColumnLayout],
+        container: &ContainerLayout,
+        viewport_width: f32,
+        row_height: f32,
+        line_height: f32,
+        is_column_dir: bool,
+    ) -> (Vec<ColumnPosition>, f32) {
         let root_style = Self::build_container_style(container, viewport_width, row_height);
         let root = self
             .tree
@@ -920,44 +972,6 @@ impl LayoutEngine {
                 }
             })
             .collect();
-
-        for (i, pos) in positions.iter().enumerate() {
-            log::debug!(
-                "[layout] col[{}]: x={:.1}, y={:.1}, w={:.1}, h={:.1}, pad=[{:.1},{:.1},{:.1},{:.1}], border=[{:.1},{:.1},{:.1},{:.1}]",
-                i,
-                pos.x,
-                pos.y,
-                pos.width,
-                pos.height,
-                pos.padding[0],
-                pos.padding[1],
-                pos.padding[2],
-                pos.padding[3],
-                pos.border[0],
-                pos.border[1],
-                pos.border[2],
-                pos.border[3],
-            );
-        }
-
-        log::debug!(
-            "[layout] effective_height={:.1} (row_height={:.1}, column_dir={})",
-            effective_height,
-            row_height,
-            is_column_dir
-        );
-
-        self.tree.clear();
-
-        // Store result in the LRU cache slot
-        let store_slot = self.cache_lru;
-        self.cache_slots[store_slot] = Some(ColumnLayoutCache {
-            key,
-            positions: positions.clone(),
-            effective_height,
-        });
-        // Flip LRU to the other slot
-        self.cache_lru = 1 - store_slot;
 
         (positions, effective_height)
     }
