@@ -207,13 +207,13 @@ impl TableEngine {
         let columns: Vec<ColumnLayout> = cols.into_iter().map(|c| convert_column(&c)).collect();
 
         // 3. Compute effective row height (may differ from nominal for column directions)
-        let effective_row_height = self.layout.compute_effective_row_height(
+          let effective_row_height = f64::from(self.layout.compute_effective_row_height(
             &columns,
             &container,
             viewport.width,
             viewport.row_height,
             viewport.line_height,
-        ) as f64;
+          ));
 
         // 4. Compute virtual slice using effective row height
         let total_count = self.columnar.row_count;
