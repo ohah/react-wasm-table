@@ -20,6 +20,7 @@ import { StressTest } from "./pages/StressTest";
 import { EventCallbacks } from "./pages/EventCallbacks";
 import { HooksOverview } from "./pages/HooksOverview";
 import { UseSortingDemo } from "./pages/UseSortingDemo";
+import { UseFilteringDemo } from "./pages/UseFilteringDemo";
 import { UseSelectionDemo } from "./pages/UseSelectionDemo";
 import { HookCompositionDemo } from "./pages/HookCompositionDemo";
 import { OnAfterDrawDemo } from "./pages/OnAfterDrawDemo";
@@ -54,6 +55,7 @@ export function App() {
           <Route path="/event-callbacks" element={<EventCallbacks />} />
           <Route path="/hooks" element={<HooksOverview />} />
           <Route path="/hooks/sorting" element={<UseSortingDemo />} />
+          <Route path="/hooks/filtering" element={<UseFilteringDemo />} />
           <Route path="/hooks/selection" element={<UseSelectionDemo />} />
           <Route path="/hooks/composition" element={<HookCompositionDemo />} />
           <Route path="/hooks/after-draw" element={<OnAfterDrawDemo />} />

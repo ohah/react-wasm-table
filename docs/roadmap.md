@@ -24,7 +24,7 @@
 
 현재 아키텍처의 기반 primitive를 더 열어서 조합성을 높인다.
 
-### 1-1. Row Model Abstraction
+### 1-1. Row Model Abstraction ✅ (구현 완료)
 
 현재 WASM 쪽 index indirection(정렬/필터)이 내부에 묶여 있다.
 이걸 **Row Model** 개념으로 추상화하면 그 위에 모든 기능이 조합 가능해진다.
@@ -46,6 +46,16 @@ const table = useGridTable({
 - WASM 내부의 IndexOps를 Row Model 단위로 분리
 - 각 Row Model은 독립적으로 tree-shake 가능
 - 사용자가 커스텀 Row Model을 만들 수 있는 인터페이스
+
+**구현 내역:**
+
+- Rust: `FilterOp`, `FilterValue`, `ColumnFilter`, `GlobalFilter` 타입 + 필터 로직
+- WASM: `setColumnarFilters()`, `setGlobalFilter()` 바인딩
+- TS: `Row<TData>`, `RowModel<TData>` 인터페이스 + `buildRow`/`buildRowModel` 빌더
+- TS: `getCoreRowModel()`, `getSortedRowModel()`, `getFilteredRowModel()` 팩토리
+- Hook: `useFiltering` (controlled/uncontrolled, column ID→index 변환)
+- GridInstance: `getRowModel()`, `getCoreRowModel()`, `getRow()`, filter 메서드
+- 175 Rust 테스트, 571 JS 테스트 통과
 
 ### 1-2. Column Feature API
 

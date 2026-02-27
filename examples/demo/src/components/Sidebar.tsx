@@ -16,6 +16,7 @@ const sections = [
     links: [
       { to: "/hooks", label: "Overview" },
       { to: "/hooks/sorting", label: "useSorting" },
+      { to: "/hooks/filtering", label: "useFiltering" },
       { to: "/hooks/selection", label: "useSelection" },
       { to: "/hooks/composition", label: "Composition" },
       { to: "/hooks/after-draw", label: "onAfterDraw" },

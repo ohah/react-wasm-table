@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { WasmTableEngine } from "../../types";
 import type { ColumnFiltersState, ColumnFilter } from "../../tanstack-types";
 import type { ColumnRegistry } from "../../adapter/column-registry";
@@ -13,6 +13,21 @@ export interface UseFilteringParams {
   initialColumnFilters?: ColumnFiltersState;
   initialGlobalFilter?: string;
   invalidate: () => void;
+}
+
+function toWasmFilters(filters: ColumnFiltersState, columnRegistry: ColumnRegistry) {
+  const columns = columnRegistry.getAll();
+  return filters
+    .map((f: ColumnFilter) => {
+      const colIdx = columns.findIndex((c) => c.id === f.id);
+      if (colIdx === -1) return null;
+      return {
+        columnIndex: colIdx,
+        op: f.op ?? "eq",
+        value: f.value,
+      };
+    })
+    .filter((f): f is NonNullable<typeof f> => f !== null);
 }
 
 export function useFiltering({
@@ -36,6 +51,20 @@ export function useFiltering({
   const columnFilters = columnFiltersProp ?? internalColumnFilters;
   const globalFilter = globalFilterProp ?? internalGlobalFilter;
 
+  // Sync controlled columnFilters prop → WASM engine
+  useEffect(() => {
+    if (!engine || columnFiltersProp === undefined) return;
+    engine.setColumnarFilters(toWasmFilters(columnFiltersProp, columnRegistry));
+    invalidate();
+  }, [engine, columnFiltersProp, columnRegistry, invalidate]);
+
+  // Sync controlled globalFilter prop → WASM engine
+  useEffect(() => {
+    if (!engine || globalFilterProp === undefined) return;
+    engine.setGlobalFilter(globalFilterProp || null);
+    invalidate();
+  }, [engine, globalFilterProp, invalidate]);
+
   const setColumnFilters = useCallback(
     (filters: ColumnFiltersState) => {
       if (!engine) return;
@@ -44,24 +73,10 @@ export function useFiltering({
         onColumnFiltersChange(filters);
       } else {
         setInternalColumnFilters(filters);
+        // Uncontrolled: sync to engine directly (no effect will fire)
+        engine.setColumnarFilters(toWasmFilters(filters, columnRegistry));
+        invalidate();
       }
-
-      // Convert column IDs to column indices for WASM
-      const columns = columnRegistry.getAll();
-      const wasmFilters = filters
-        .map((f: ColumnFilter) => {
-          const colIdx = columns.findIndex((c) => c.id === f.id);
-          if (colIdx === -1) return null;
-          return {
-            columnIndex: colIdx,
-            op: f.op ?? "eq",
-            value: f.value,
-          };
-        })
-        .filter((f): f is NonNullable<typeof f> => f !== null);
-
-      engine.setColumnarFilters(wasmFilters);
-      invalidate();
     },
     [engine, columnRegistry, onColumnFiltersChange, invalidate],
   );
@@ -74,10 +89,10 @@ export function useFiltering({
         onGlobalFilterChange(value);
       } else {
         setInternalGlobalFilter(value);
+        // Uncontrolled: sync to engine directly (no effect will fire)
+        engine.setGlobalFilter(value || null);
+        invalidate();
       }
-
-      engine.setGlobalFilter(value || null);
-      invalidate();
     },
     [engine, onGlobalFilterChange, invalidate],
   );

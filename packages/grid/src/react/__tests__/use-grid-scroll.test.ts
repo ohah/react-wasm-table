@@ -10,8 +10,12 @@ function makeRegistry(widths: number[]) {
 }
 
 function defaultParams(overrides?: Partial<Parameters<typeof useGridScroll>[0]>) {
+  const data =
+    overrides?.data ??
+    (Array.from({ length: 100 }, (_, i) => ({ id: i })) as Record<string, unknown>[]);
   return {
-    data: Array.from({ length: 100 }, (_, i) => ({ id: i })) as Record<string, unknown>[],
+    data,
+    viewRowCountRef: { current: data.length },
     rowHeight: 36,
     height: 600,
     headerHeight: 40,

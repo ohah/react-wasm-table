@@ -3,6 +3,7 @@ import type { ColumnRegistry } from "../../adapter/column-registry";
 
 export interface UseGridScrollParams {
   data: Record<string, unknown>[];
+  viewRowCountRef: React.RefObject<number>;
   rowHeight: number;
   height: number;
   headerHeight: number;
@@ -13,6 +14,7 @@ export interface UseGridScrollParams {
 
 export function useGridScroll({
   data,
+  viewRowCountRef,
   rowHeight,
   height,
   headerHeight,
@@ -27,7 +29,8 @@ export function useGridScroll({
 
   const applyScrollDelta = useCallback(
     (dy: number, dx: number) => {
-      const maxScrollY = Math.max(0, data.length * rowHeight - (height - headerHeight));
+      const rowCount = viewRowCountRef.current;
+      const maxScrollY = Math.max(0, rowCount * rowHeight - (height - headerHeight));
       scrollTopRef.current = Math.max(0, Math.min(maxScrollY, scrollTopRef.current + dy));
       const cols = columnRegistry.getAll();
       // CssDimension: non-number width (string/"auto") falls back to 100 for scroll math
@@ -39,7 +42,7 @@ export function useGridScroll({
       scrollLeftRef.current = Math.max(0, Math.min(maxScrollX, scrollLeftRef.current + dx));
       invalidate();
     },
-    [data.length, rowHeight, height, headerHeight, width, columnRegistry, invalidate],
+    [viewRowCountRef, rowHeight, height, headerHeight, width, columnRegistry, invalidate],
   );
 
   const handleWheel = useCallback(
