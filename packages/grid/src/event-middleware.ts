@@ -4,6 +4,7 @@ import type {
   GridKeyboardEvent,
   GridScrollEvent,
   GridCanvasEvent,
+  GridContextMenuEvent,
   GridTouchEvent,
 } from "./types";
 
@@ -18,6 +19,7 @@ export type EventChannel =
   | "keyDown"
   | "scroll"
   | "canvasEvent"
+  | "contextMenu"
   | "touchStart"
   | "touchMove"
   | "touchEnd";
@@ -29,6 +31,7 @@ export type GridEvent =
   | GridKeyboardEvent
   | GridScrollEvent
   | GridCanvasEvent
+  | GridContextMenuEvent
   | GridTouchEvent;
 
 /** Call to pass control to the next middleware (or final handler). */

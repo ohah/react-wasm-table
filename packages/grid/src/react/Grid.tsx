@@ -66,6 +66,7 @@ export function Grid({
   onCellMouseUp: onCellMouseUpProp,
   onScroll: onScrollProp,
   onCanvasEvent: onCanvasEventProp,
+  onContextMenu: onContextMenuProp,
   onTouchStart: onTouchStartProp,
   onTouchMove: onTouchMoveProp,
   onTouchEnd: onTouchEndProp,
@@ -87,6 +88,7 @@ export function Grid({
   eventManager: eventManagerProp,
   selectionManager: selectionManagerProp,
   editorManager: editorManagerProp,
+  table: tableProp,
   initialState,
   // Container flex props
   display,
@@ -301,6 +303,7 @@ export function Grid({
     canvasRef,
     eventManagerRef,
     editorManagerRef,
+    table: tableProp,
     handlers: {
       handleHeaderClick,
       handleCellDoubleClick,
@@ -328,6 +331,7 @@ export function Grid({
     onCellMouseUp: onCellMouseUpProp,
     onScroll: onScrollProp,
     onCanvasEvent: onCanvasEventProp,
+    onContextMenu: onContextMenuProp,
     onTouchStart: onTouchStartProp,
     onTouchMove: onTouchMoveProp,
     onTouchEnd: onTouchEndProp,

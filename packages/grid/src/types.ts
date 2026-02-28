@@ -1,3 +1,5 @@
+import type { GridInstance } from "./grid-instance";
+
 // ── CSS value types ──────────────────────────────────────────────────
 
 /** A CSS dimension: pixel number, percentage string, or "auto". */
@@ -206,6 +208,13 @@ export type GridCanvasEventType = "click" | "dblclick" | "mousedown" | "mousemov
 export interface GridCanvasEvent extends GridMouseEvent {
   type: GridCanvasEventType;
   hitTest: HitTestResult;
+}
+
+/** Right-click context menu event with hit-test result (cell, header, or empty). */
+export interface GridContextMenuEvent extends GridMouseEvent {
+  hitTest: HitTestResult;
+  /** Present when Grid received a `table` prop (useGridTable result). Use for getRow(), getValue(), etc. */
+  table?: GridInstance;
 }
 
 /** Touch event types exposed to users. */
@@ -603,6 +612,8 @@ export interface GridProps extends BoxModelProps {
   onScroll?: (event: GridScrollEvent) => void;
   /** Low-level canvas event — fires for all mouse events before semantic handlers. */
   onCanvasEvent?: (event: GridCanvasEvent) => void;
+  /** Called on right-click. Receives hit-test result (cell, header, resize-handle, or empty). Use to show context menu. */
+  onContextMenu?: (event: GridContextMenuEvent) => void;
 
   // Touch events (native TouchEvent access)
   /** Called on touchstart. Call event.preventDefault() to cancel internal handling. */
@@ -689,6 +700,9 @@ export interface GridProps extends BoxModelProps {
 
   /** Mutable ref to receive WASM-computed view indices (for GridInstance row model). */
   viewIndicesRef?: { current: Uint32Array | number[] | null };
+
+  /** Grid instance from useGridTable. When provided, passed to onContextMenu event so callbacks can use table.getRow(), getValue(), etc. */
+  table?: GridInstance;
 
   /** Ref callback to receive the WASM engine instance (e.g., for debug logging). */
   engineRef?: React.RefObject<WasmTableEngine | null>;

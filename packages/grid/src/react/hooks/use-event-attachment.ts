@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import type { GridInstance } from "../../grid-instance";
 import type {
   CellCoord,
   GridCellEvent,
@@ -6,6 +7,7 @@ import type {
   GridKeyboardEvent,
   GridScrollEvent,
   GridCanvasEvent,
+  GridContextMenuEvent,
   GridTouchEvent,
 } from "../../types";
 import type { EventManager, EventCoords } from "../../adapter/event-manager";
@@ -16,6 +18,7 @@ import {
   createGridKeyboardEvent,
   createGridScrollEvent,
   createGridCanvasEvent,
+  createGridContextMenuEvent,
   createGridTouchEvent,
 } from "../../event-helpers";
 import {
@@ -29,6 +32,8 @@ export interface UseEventAttachmentParams {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   eventManagerRef: React.RefObject<EventManager>;
   editorManagerRef: React.RefObject<EditorManager>;
+  /** When provided, attached to context menu event as event.table. */
+  table?: GridInstance;
   handlers: {
     handleHeaderClick: (colIndex: number) => void;
     handleCellDoubleClick: (coord: CellCoord) => void;
@@ -56,6 +61,7 @@ export interface UseEventAttachmentParams {
   onCellMouseUp?: () => void;
   onScroll?: (event: GridScrollEvent) => void;
   onCanvasEvent?: (event: GridCanvasEvent) => void;
+  onContextMenu?: (event: GridContextMenuEvent) => void;
   onTouchStart?: (event: GridTouchEvent) => void;
   onTouchMove?: (event: GridTouchEvent) => void;
   onTouchEnd?: (event: GridTouchEvent) => void;
@@ -69,6 +75,7 @@ export function useEventAttachment({
   canvasRef,
   eventManagerRef,
   editorManagerRef,
+  table,
   handlers,
   onCellClick,
   onCellDoubleClick,
@@ -79,6 +86,7 @@ export function useEventAttachment({
   onCellMouseUp,
   onScroll,
   onCanvasEvent,
+  onContextMenu,
   onTouchStart,
   onTouchMove,
   onTouchEnd,
@@ -97,6 +105,7 @@ export function useEventAttachment({
   const onCellMouseUpRef = useRef(onCellMouseUp);
   const onScrollRef = useRef(onScroll);
   const onCanvasEventRef = useRef(onCanvasEvent);
+  const onContextMenuRef = useRef(onContextMenu);
   const onTouchStartRef = useRef(onTouchStart);
   const onTouchMoveRef = useRef(onTouchMove);
   const onTouchEndRef = useRef(onTouchEnd);
@@ -110,6 +119,7 @@ export function useEventAttachment({
   onCellMouseUpRef.current = onCellMouseUp;
   onScrollRef.current = onScroll;
   onCanvasEventRef.current = onCanvasEvent;
+  onContextMenuRef.current = onContextMenu;
   onTouchStartRef.current = onTouchStart;
   onTouchMoveRef.current = onTouchMove;
   onTouchEndRef.current = onTouchEnd;
@@ -215,6 +225,14 @@ export function useEventAttachment({
             if (event.defaultPrevented) return false;
           });
         },
+        onContextMenu: onContextMenu
+          ? (native, hitTest, coords) => {
+              const event = createGridContextMenuEvent(native, hitTest, coords, table);
+              dispatch("contextMenu", event, () => {
+                onContextMenuRef.current?.(event);
+              });
+            }
+          : undefined,
         onTouchStart: (native, coords, hitTest) => {
           const touchPoint = {
             contentX: coords.contentX,
@@ -299,6 +317,8 @@ export function useEventAttachment({
     handlers.handleHeaderMouseDown,
     handlers.handleColumnDnDMove,
     handlers.handleColumnDnDEnd,
+    onContextMenu,
+    table,
     rowHeight,
     headerHeight,
     height,

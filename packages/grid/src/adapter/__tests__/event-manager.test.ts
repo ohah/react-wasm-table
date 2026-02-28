@@ -295,6 +295,87 @@ describe("EventManager", () => {
     });
   });
 
+  describe("contextmenu handler", () => {
+    it("calls onContextMenu with native event, hitTest, and coords when right-click on cell", () => {
+      const onContextMenu = mock(() => {});
+      const rowLayouts = [makeLayout(1, 2, 100, 50, 80, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onContextMenu });
+
+      const ev = new MouseEvent("contextmenu", {
+        clientX: 120,
+        clientY: 60,
+        bubbles: true,
+        cancelable: true,
+      });
+      canvas.dispatchEvent(ev);
+
+      expect(onContextMenu).toHaveBeenCalledTimes(1);
+      const [native, hitTest, coords] = (onContextMenu.mock.calls[0] as unknown) as [
+        MouseEvent,
+        HitTestResult,
+        EventCoords,
+      ];
+      expect(native).toBe(ev);
+      expect(hitTest).toEqual({ type: "cell", cell: { row: 1, col: 2 } });
+      expect(coords).toMatchObject({ contentX: 120, contentY: 60, viewportX: 120, viewportY: 60 });
+      expect(ev.defaultPrevented).toBe(true);
+    });
+
+    it("calls onContextMenu with header hitTest when right-click on header", () => {
+      const onContextMenu = mock(() => {});
+      const headerLayouts = [makeLayout(0, 1, 150, 0, 100, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onContextMenu });
+
+      canvas.dispatchEvent(
+        new MouseEvent("contextmenu", {
+          clientX: 180,
+          clientY: 20,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+
+      expect(onContextMenu).toHaveBeenCalledTimes(1);
+      const hitTest = (onContextMenu.mock.calls[0] as unknown as [MouseEvent, HitTestResult])[1];
+      expect(hitTest).toEqual({ type: "header", colIndex: 1 });
+    });
+
+    it("calls onContextMenu with empty hitTest when right-click outside cells", () => {
+      const onContextMenu = mock(() => {});
+      em.setLayouts([], [makeLayout(0, 0, 50, 50, 100, 36)]);
+      em.attach(canvas, { onContextMenu });
+
+      canvas.dispatchEvent(
+        new MouseEvent("contextmenu", {
+          clientX: 10,
+          clientY: 10,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+
+      expect(onContextMenu).toHaveBeenCalledTimes(1);
+      const hitTest = (onContextMenu.mock.calls[0] as unknown as [MouseEvent, HitTestResult])[1];
+      expect(hitTest).toEqual({ type: "empty" });
+    });
+
+    it("does not preventDefault when onContextMenu is not provided", () => {
+      em.setLayouts([], [makeLayout(0, 0, 0, 0, 100, 36)]);
+      em.attach(canvas, {});
+
+      const ev = new MouseEvent("contextmenu", {
+        clientX: 50,
+        clientY: 18,
+        bubbles: true,
+        cancelable: true,
+      });
+      canvas.dispatchEvent(ev);
+      expect(ev.defaultPrevented).toBe(false);
+    });
+  });
+
   describe("hitTestAtLastPos", () => {
     it("returns null when no mouse position stored", () => {
       expect(em.hitTestAtLastPos()).toBeNull();
