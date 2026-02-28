@@ -20,6 +20,7 @@ const sections = [
       { to: "/canvas-flex", label: "Canvas: Flex" },
       { to: "/canvas-progress-bar", label: "Canvas: ProgressBar" },
       { to: "/canvas-box", label: "Canvas: Box" },
+      { to: "/canvas-stack", label: "Canvas: Stack" },
       { to: "/custom-renderer", label: "Custom Renderer" },
       { to: "/layers", label: "Layer System" },
       { to: "/column-features", label: "Column Features" },
