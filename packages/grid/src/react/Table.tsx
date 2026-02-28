@@ -1,0 +1,147 @@
+import type { ReactNode } from "react";
+import type { GridInstance } from "../grid-instance";
+import type {
+  Theme,
+  BoxModelProps,
+  SelectionStyle,
+  NormalizedRange,
+  CellCoord,
+  GridCellEvent,
+  GridHeaderEvent,
+  GridKeyboardEvent,
+  GridScrollEvent,
+  GridCanvasEvent,
+  GridContextMenuEvent,
+  GridTouchEvent,
+  CssDisplay,
+  CssFlexDirection,
+  CssFlexWrap,
+  CssLength,
+  CssAlignItems,
+  CssAlignContent,
+  CssJustifyContent,
+  CssOverflow,
+  CssGridTrackList,
+  CssGridTrackSize,
+  CssGridAutoFlow,
+  AfterDrawContext,
+} from "../types";
+import type { EventMiddleware } from "../event-middleware";
+import type { CellRenderer } from "../renderer/cell-renderer";
+import type { GridLayer } from "../renderer/layer";
+import type { EventManager } from "../adapter/event-manager";
+import type { SelectionManager } from "../adapter/selection-manager";
+import type { EditorManager } from "../adapter/editor-manager";
+import { Grid } from "./Grid";
+
+export interface TableProps extends BoxModelProps {
+  /** Grid/Table instance from useReactTable or useGridTable (required). */
+  table: GridInstance<any>;
+  /** Grid width in pixels. */
+  width: number;
+  /** Grid height in pixels. */
+  height: number;
+  /** Row height in pixels. @default 36 */
+  rowHeight?: number;
+  /** Header height in pixels. @default 40 */
+  headerHeight?: number;
+  /** Theme overrides. */
+  theme?: Partial<Theme>;
+  /** Structural children (Thead/Tbody/Tfoot). Currently parsed for validation; rendering uses canvas. */
+  children?: ReactNode;
+
+  // Event callbacks
+  onCellClick?: (event: GridCellEvent) => void;
+  onCellDoubleClick?: (event: GridCellEvent) => void;
+  onHeaderClick?: (event: GridHeaderEvent) => void;
+  onKeyDown?: (event: GridKeyboardEvent) => void;
+  onCellMouseDown?: (event: GridCellEvent) => void;
+  onCellMouseMove?: (event: GridCellEvent) => void;
+  onCellMouseUp?: () => void;
+  onScroll?: (event: GridScrollEvent) => void;
+  onCanvasEvent?: (event: GridCanvasEvent) => void;
+  onContextMenu?: (event: GridContextMenuEvent) => void;
+  onTouchStart?: (event: GridTouchEvent) => void;
+  onTouchMove?: (event: GridTouchEvent) => void;
+  onTouchEnd?: (event: GridTouchEvent) => void;
+
+  // Selection
+  enableSelection?: boolean;
+  selection?: NormalizedRange | null;
+  onSelectionChange?: (selection: NormalizedRange | null) => void;
+  selectionStyle?: SelectionStyle;
+  onCopy?: (tsv: string, range: NormalizedRange) => string | void;
+  onPaste?: (text: string, target: CellCoord) => void;
+
+  // Middleware & renderers
+  eventMiddleware?: EventMiddleware[];
+  cellRenderers?: CellRenderer<any>[];
+  layers?: GridLayer[];
+  onBeforeSortChange?: (next: any) => boolean | void;
+  onBeforeSelectionChange?: (next: NormalizedRange | null) => boolean | void;
+  onAfterDraw?: (ctx: AfterDrawContext) => void;
+
+  // Column DnD
+  enableColumnDnD?: boolean;
+
+  // Adapter DI
+  eventManager?: EventManager;
+  selectionManager?: SelectionManager;
+  editorManager?: EditorManager;
+
+  // Layout
+  display?: CssDisplay;
+  flexDirection?: CssFlexDirection;
+  flexWrap?: CssFlexWrap;
+  gap?: CssLength;
+  rowGap?: CssLength;
+  columnGap?: CssLength;
+  alignItems?: CssAlignItems;
+  alignContent?: CssAlignContent;
+  justifyContent?: CssJustifyContent;
+  overflowX?: CssOverflow;
+  overflowY?: CssOverflow;
+  scrollbarWidth?: number;
+  gridTemplateRows?: CssGridTrackList;
+  gridTemplateColumns?: CssGridTrackList;
+  gridAutoRows?: CssGridTrackSize | CssGridTrackSize[];
+  gridAutoColumns?: CssGridTrackSize | CssGridTrackSize[];
+  gridAutoFlow?: CssGridAutoFlow;
+  justifyItems?: CssAlignItems;
+
+  viewIndicesRef?: { current: Uint32Array | number[] | null };
+  engineRef?: React.RefObject<any>;
+}
+
+/**
+ * TanStack-compatible Table component.
+ * Accepts a `table` instance (from useReactTable/useGridTable) and extracts
+ * data, columns, and state to delegate to the underlying Grid component.
+ */
+export function Table({ table, children, ...rest }: TableProps) {
+  const { data, columns } = table.options;
+  const state = table.getState();
+
+  return (
+    <Grid
+      data={data as Record<string, unknown>[]}
+      columns={columns}
+      sorting={state.sorting}
+      onSortingChange={(updater) => table.setSorting(updater)}
+      columnFilters={state.columnFilters}
+      onColumnFiltersChange={(updater) => table.setColumnFilters(updater)}
+      globalFilter={state.globalFilter}
+      onGlobalFilterChange={(v) => table.setGlobalFilter(v)}
+      columnVisibility={state.columnVisibility}
+      onColumnVisibilityChange={(u) => table.setColumnVisibility(u)}
+      columnSizing={state.columnSizing}
+      onColumnSizingChange={(u) => table.setColumnSizing(u)}
+      columnPinning={state.columnPinning}
+      onColumnPinningChange={(u) => table.setColumnPinning(u)}
+      rowPinning={state.rowPinning}
+      onRowPinningChange={(u) => table.setRowPinning(u)}
+      table={table}
+      {...rest}
+    />
+  );
+}
