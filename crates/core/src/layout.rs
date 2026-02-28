@@ -4273,7 +4273,15 @@ mod tests {
     #[test]
     fn composite_empty_children() {
         let mut engine = LayoutEngine::new();
-        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, None, [0.0; 4]);
+        let params = composite_params(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+        );
         let result = engine.compute_composite_layout(&params, &[]);
         assert!(result.is_empty());
     }
@@ -4282,7 +4290,15 @@ mod tests {
     fn composite_single_child() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(100.0, 30.0)];
-        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, None, [0.0; 4]);
+        let params = composite_params(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+        );
         let result = engine.compute_composite_layout(&params, &children);
         assert_eq!(result.len(), 1);
         assert!((result[0].x - 0.0).abs() < 0.1);
@@ -4302,7 +4318,15 @@ mod tests {
 
         // Composite layout should not invalidate grid cache
         let children = vec![child(40.0, 20.0)];
-        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, None, [0.0; 4]);
+        let params = composite_params(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+        );
         engine.compute_composite_layout(&params, &children);
 
         // Grid cache should still be valid
