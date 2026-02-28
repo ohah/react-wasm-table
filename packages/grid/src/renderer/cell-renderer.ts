@@ -243,20 +243,20 @@ export const flexCellRenderer: CellRenderer<FlexInstruction> = {
       } else {
         startY = cellY + padT;
       }
-      let childX: number;
-      const maxChildW = Math.max(...widthsOrder, 0);
-      if (align === "end") {
-        childX = cellX + cellW - padR - maxChildW;
-      } else if (align === "center" || align === "stretch") {
-        childX = cellX + padL + (contentW - maxChildW) / 2;
-      } else {
-        childX = cellX + padL;
-      }
       let y = startY;
       for (let i = 0; i < order.length; i++) {
         const child = order[i]!;
-        const w = Math.max(widthsOrder[i] ?? 0, contentW);
+        const cw = widthsOrder[i] ?? 0;
+        const w = align === "stretch" ? contentW : cw;
         const h = heightsOrder[i] ?? FLEX_CHILD_HEIGHT;
+        let childX: number;
+        if (align === "end") {
+          childX = cellX + cellW - padR - w;
+        } else if (align === "center" || align === "stretch") {
+          childX = cellX + padL + (contentW - w) / 2;
+        } else {
+          childX = cellX + padL;
+        }
         const subBuf = makeSubCellBuf(childX, y, w, h);
         const subContext: CellRenderContext = { ctx, buf: subBuf, cellIdx: 0, theme };
         drawChild(child, subContext);
