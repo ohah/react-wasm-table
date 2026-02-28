@@ -7,6 +7,7 @@ const sections = [
       { to: "/", label: "Home (50k rows)" },
       { to: "/stress-test", label: "Stress Test (1M rows)" },
       { to: "/tanstack-api", label: "TanStack API" },
+      { to: "/table-api", label: "Table API (TanStack)" },
       { to: "/selection", label: "Selection" },
       { to: "/event-callbacks", label: "Event Callbacks" },
       { to: "/event-middleware", label: "Event Middleware" },
