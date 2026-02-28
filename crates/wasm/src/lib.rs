@@ -346,6 +346,73 @@ impl TableEngine {
         self.layout.invalidate_cache();
     }
 
+    // ── Composite (in-cell) layout ──────────────────────────────────
+
+    /// Compute flexbox layout for children inside a composite cell container.
+    ///
+    /// Input encoding (f32 array):
+    /// ```text
+    /// [0]  containerWidth
+    /// [1]  containerHeight
+    /// [2]  flexDirection    (0=row, 1=column, 2=row-reverse, 3=column-reverse)
+    /// [3]  gap
+    /// [4]  alignItems       (0=start, 1=end, 2=center, 3=stretch, NaN=none)
+    /// [5]  justifyContent   (0=start, 1=end, 2=center, 3=space-between, NaN=none)
+    /// [6]  paddingTop
+    /// [7]  paddingRight
+    /// [8]  paddingBottom
+    /// [9]  paddingLeft
+    /// [10] childCount
+    /// [11..] child0Width, child0Height, child1Width, child1Height, ...
+    /// ```
+    ///
+    /// Output (f32 array): `[x0, y0, w0, h0, x1, y1, w1, h1, ...]`
+    #[wasm_bindgen(js_name = computeCompositeLayout)]
+    pub fn compute_composite_layout(&mut self, input: &[f32]) -> Vec<f32> {
+        let container_w = input[0];
+        let container_h = input[1];
+        let flex_direction = match input[2] as u32 {
+            1 => FlexDirectionValue::Column,
+            2 => FlexDirectionValue::RowReverse,
+            3 => FlexDirectionValue::ColumnReverse,
+            _ => FlexDirectionValue::Row,
+        };
+        let gap = input[3];
+        let align_items = decode_align(input[4]);
+        let justify_content = decode_justify(input[5]);
+        let padding = [input[6], input[7], input[8], input[9]];
+        let child_count = input[10] as usize;
+
+        let mut children = Vec::with_capacity(child_count);
+        for i in 0..child_count {
+            let base = 11 + i * 2;
+            children.push(react_wasm_table_core::layout::ChildSize {
+                width: input[base],
+                height: input[base + 1],
+            });
+        }
+
+        let positions = self.layout.compute_composite_layout(
+            container_w,
+            container_h,
+            flex_direction,
+            gap,
+            align_items,
+            justify_content,
+            padding,
+            &children,
+        );
+
+        let mut out = Vec::with_capacity(positions.len() * 4);
+        for p in &positions {
+            out.push(p.x);
+            out.push(p.y);
+            out.push(p.width);
+            out.push(p.height);
+        }
+        out
+    }
+
     // ── Debug logging ──────────────────────────────────────────────
 
     /// Initialize console_log backend and enable Debug-level logging.
@@ -652,6 +719,34 @@ fn parse_align_value(s: Option<&String>) -> Option<AlignValue> {
         "space-between" => AlignValue::SpaceBetween,
         "space-evenly" => AlignValue::SpaceEvenly,
         "space-around" => AlignValue::SpaceAround,
+        _ => AlignValue::Start,
+    })
+}
+
+/// Decode numeric align value from f32 (for composite layout).
+/// 0=start, 1=end, 2=center, 3=stretch, NaN=none.
+fn decode_align(v: f32) -> Option<AlignValue> {
+    if v.is_nan() {
+        return None;
+    }
+    Some(match v as u32 {
+        1 => AlignValue::End,
+        2 => AlignValue::Center,
+        3 => AlignValue::Stretch,
+        _ => AlignValue::Start,
+    })
+}
+
+/// Decode numeric justify value from f32 (for composite layout).
+/// 0=start, 1=end, 2=center, 3=space-between, NaN=none.
+fn decode_justify(v: f32) -> Option<AlignValue> {
+    if v.is_nan() {
+        return None;
+    }
+    Some(match v as u32 {
+        1 => AlignValue::End,
+        2 => AlignValue::Center,
+        3 => AlignValue::SpaceBetween,
         _ => AlignValue::Start,
     })
 }

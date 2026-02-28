@@ -1356,6 +1356,115 @@ impl LayoutEngine {
     }
 }
 
+/// Size of a child element for composite layout.
+pub struct ChildSize {
+    pub width: f32,
+    pub height: f32,
+}
+
+/// Computed position of a child element (relative to container origin).
+pub struct ChildPosition {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+}
+
+impl LayoutEngine {
+    /// Compute layout for children inside a composite container (e.g. Flex/Box/Stack cell).
+    /// Uses the existing Taffy tree, builds a temporary node hierarchy, computes layout,
+    /// extracts child positions, then clears the tree.
+    pub fn compute_composite_layout(
+        &mut self,
+        container_w: f32,
+        container_h: f32,
+        flex_direction: FlexDirectionValue,
+        gap: f32,
+        align_items: Option<AlignValue>,
+        justify_content: Option<AlignValue>,
+        padding: [f32; 4], // T, R, B, L
+        children: &[ChildSize],
+    ) -> Vec<ChildPosition> {
+        let root_style = Style {
+            display: Display::Flex,
+            flex_direction: match flex_direction {
+                FlexDirectionValue::Row => FlexDirection::Row,
+                FlexDirectionValue::Column => FlexDirection::Column,
+                FlexDirectionValue::RowReverse => FlexDirection::RowReverse,
+                FlexDirectionValue::ColumnReverse => FlexDirection::ColumnReverse,
+            },
+            size: Size {
+                width: Dimension::length(container_w),
+                height: Dimension::length(container_h),
+            },
+            gap: Size {
+                width: LengthPercentage::length(gap),
+                height: LengthPercentage::length(gap),
+            },
+            align_items: align_items.and_then(align_value_to_taffy_align),
+            align_content: None,
+            justify_content: justify_content.and_then(align_value_to_taffy_justify),
+            padding: Rect {
+                top: LengthPercentage::length(padding[0]),
+                right: LengthPercentage::length(padding[1]),
+                bottom: LengthPercentage::length(padding[2]),
+                left: LengthPercentage::length(padding[3]),
+            },
+            ..Style::default()
+        };
+
+        let root = self
+            .tree
+            .new_leaf(root_style)
+            .expect("failed to create composite root");
+
+        let child_nodes: Vec<_> = children
+            .iter()
+            .map(|c| {
+                self.tree
+                    .new_leaf(Style {
+                        size: Size {
+                            width: Dimension::length(c.width),
+                            height: Dimension::length(c.height),
+                        },
+                        ..Style::default()
+                    })
+                    .expect("failed to create composite child")
+            })
+            .collect();
+
+        self.tree
+            .set_children(root, &child_nodes)
+            .expect("failed to set composite children");
+
+        self.tree
+            .compute_layout(
+                root,
+                Size {
+                    width: AvailableSpace::Definite(container_w),
+                    height: AvailableSpace::Definite(container_h),
+                },
+            )
+            .expect("failed to compute composite layout");
+
+        let positions = child_nodes
+            .iter()
+            .map(|&node| {
+                let layout = self.tree.layout(node).expect("failed to get child layout");
+                ChildPosition {
+                    x: layout.location.x,
+                    y: layout.location.y,
+                    width: layout.size.width,
+                    height: layout.size.height,
+                }
+            })
+            .collect();
+
+        self.tree.clear();
+        positions
+    }
+}
+
 impl Default for LayoutEngine {
     fn default() -> Self {
         Self::new()
@@ -3846,5 +3955,350 @@ mod tests {
             !both_present,
             "one of the two original entries should have been evicted"
         );
+    }
+
+    // ── Composite layout tests ──────────────────────────────────────────
+
+    fn child(w: f32, h: f32) -> ChildSize {
+        ChildSize {
+            width: w,
+            height: h,
+        }
+    }
+
+    #[test]
+    fn composite_row_basic() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0), child(60.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+            &children,
+        );
+        assert_eq!(result.len(), 2);
+        assert!((result[0].x - 0.0).abs() < 0.1);
+        assert!((result[0].width - 40.0).abs() < 0.1);
+        assert!((result[1].x - 40.0).abs() < 0.1);
+        assert!((result[1].width - 60.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn composite_column_basic() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(100.0, 20.0), child(100.0, 30.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            100.0,
+            FlexDirectionValue::Column,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+            &children,
+        );
+        assert_eq!(result.len(), 2);
+        assert!((result[0].y - 0.0).abs() < 0.1);
+        assert!((result[0].height - 20.0).abs() < 0.1);
+        assert!((result[1].y - 20.0).abs() < 0.1);
+        assert!((result[1].height - 30.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn composite_row_with_gap() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0), child(60.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            10.0,
+            None,
+            None,
+            [0.0; 4],
+            &children,
+        );
+        assert!((result[0].x - 0.0).abs() < 0.1);
+        assert!((result[1].x - 50.0).abs() < 0.1); // 40 + 10 gap
+    }
+
+    #[test]
+    fn composite_column_with_gap() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(100.0, 20.0), child(100.0, 30.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            100.0,
+            FlexDirectionValue::Column,
+            5.0,
+            None,
+            None,
+            [0.0; 4],
+            &children,
+        );
+        assert!((result[0].y - 0.0).abs() < 0.1);
+        assert!((result[1].y - 25.0).abs() < 0.1); // 20 + 5 gap
+    }
+
+    #[test]
+    fn composite_row_reverse() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0), child(60.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::RowReverse,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+            &children,
+        );
+        // In row-reverse, the first child should be on the right side
+        assert!(result[0].x > result[1].x);
+    }
+
+    #[test]
+    fn composite_column_reverse() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(100.0, 20.0), child(100.0, 30.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            100.0,
+            FlexDirectionValue::ColumnReverse,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+            &children,
+        );
+        // In column-reverse, the first child should be below the second
+        assert!(result[0].y > result[1].y);
+    }
+
+    #[test]
+    fn composite_align_items_start() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            Some(AlignValue::Start),
+            None,
+            [0.0; 4],
+            &children,
+        );
+        assert!((result[0].y - 0.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn composite_align_items_end() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            Some(AlignValue::End),
+            None,
+            [0.0; 4],
+            &children,
+        );
+        assert!((result[0].y - 20.0).abs() < 0.1); // 40 - 20
+    }
+
+    #[test]
+    fn composite_align_items_center() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            Some(AlignValue::Center),
+            None,
+            [0.0; 4],
+            &children,
+        );
+        assert!((result[0].y - 10.0).abs() < 0.1); // (40 - 20) / 2
+    }
+
+    #[test]
+    fn composite_align_items_stretch() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            Some(AlignValue::Stretch),
+            None,
+            [0.0; 4],
+            &children,
+        );
+        // Children have explicit heights so Taffy respects those (no stretch beyond explicit size).
+        // Stretch only affects children with auto cross-axis size.
+        // With fixed height=20, child stays at 20 but aligns to start (stretch default).
+        assert!((result[0].height - 20.0).abs() < 0.1);
+        assert!((result[0].y - 0.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn composite_justify_content_start() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            Some(AlignValue::Start),
+            [0.0; 4],
+            &children,
+        );
+        assert!((result[0].x - 0.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn composite_justify_content_end() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            Some(AlignValue::End),
+            [0.0; 4],
+            &children,
+        );
+        assert!((result[0].x - 160.0).abs() < 0.1); // 200 - 40
+    }
+
+    #[test]
+    fn composite_justify_content_center() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            Some(AlignValue::Center),
+            [0.0; 4],
+            &children,
+        );
+        assert!((result[0].x - 80.0).abs() < 0.1); // (200 - 40) / 2
+    }
+
+    #[test]
+    fn composite_justify_content_space_between() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0), child(60.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            Some(AlignValue::SpaceBetween),
+            [0.0; 4],
+            &children,
+        );
+        assert!((result[0].x - 0.0).abs() < 0.1);
+        assert!((result[1].x - 140.0).abs() < 0.1); // 200 - 60
+    }
+
+    #[test]
+    fn composite_with_padding() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(40.0, 20.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            None,
+            [5.0, 10.0, 5.0, 10.0], // T, R, B, L
+            &children,
+        );
+        assert!((result[0].x - 10.0).abs() < 0.1); // left padding
+        assert!((result[0].y - 5.0).abs() < 0.1); // top padding
+    }
+
+    #[test]
+    fn composite_empty_children() {
+        let mut engine = LayoutEngine::new();
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+            &[],
+        );
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn composite_single_child() {
+        let mut engine = LayoutEngine::new();
+        let children = vec![child(100.0, 30.0)];
+        let result = engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+            &children,
+        );
+        assert_eq!(result.len(), 1);
+        assert!((result[0].x - 0.0).abs() < 0.1);
+        assert!((result[0].width - 100.0).abs() < 0.1);
+        assert!((result[0].height - 30.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn composite_does_not_affect_grid_cache() {
+        let mut engine = LayoutEngine::new();
+        let columns = vec![col(200.0, Align::Left)];
+        let container = default_container();
+
+        // Prime grid cache
+        engine.compute_column_positions(&columns, &container, 600.0, 36.0, 20.0);
+        assert!(engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0));
+
+        // Composite layout should not invalidate grid cache
+        let children = vec![child(40.0, 20.0)];
+        engine.compute_composite_layout(
+            200.0,
+            40.0,
+            FlexDirectionValue::Row,
+            0.0,
+            None,
+            None,
+            [0.0; 4],
+            &children,
+        );
+
+        // Grid cache should still be valid
+        assert!(engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0));
     }
 }
