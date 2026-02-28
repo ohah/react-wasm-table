@@ -1,6 +1,7 @@
 import type {
   RenderInstruction,
   FlexContainerStyle,
+  BoxModelStyle,
   TextStyle,
   BadgeStyle,
   CssFlexDirection,
@@ -175,6 +176,54 @@ export function Flex(props: FlexProps): CanvasElement {
   } as CanvasElement;
 }
 
+/** Props for the Box canvas component (padding, margin, border; no layout). */
+export interface BoxProps {
+  children?: ReactNode;
+  style?: Partial<BoxModelStyle>;
+  padding?: CssRect<CssLength>;
+  margin?: CssRect<CssLengthAuto>;
+  borderWidth?: CssRect<CssLength>;
+  borderColor?: string;
+  backgroundColor?: string;
+  boxSizing?: CssBoxSizing;
+}
+
+function pickBoxStyle(props: BoxProps): Partial<BoxModelStyle> {
+  const { style, padding, margin, borderWidth, borderColor, backgroundColor, boxSizing } = props;
+  return {
+    ...style,
+    padding: padding ?? style?.padding,
+    margin: margin ?? style?.margin,
+    borderWidth: borderWidth ?? style?.borderWidth,
+    borderColor: borderColor ?? style?.borderColor,
+    backgroundColor: backgroundColor ?? style?.backgroundColor,
+    boxSizing: boxSizing ?? style?.boxSizing,
+  };
+}
+
+/** Canvas box container. Box model only; children drawn in content rect (vertical stack). */
+export function Box(props: BoxProps): CanvasElement {
+  const resolved: RenderInstruction[] = [];
+  if (props.children != null) {
+    Children.forEach(props.children, (child) => {
+      if (isValidElement(child)) {
+        resolved.push(resolveInstruction(child));
+      }
+    });
+  }
+  const style = pickBoxStyle(props);
+  return {
+    type: "box",
+    padding: style.padding,
+    margin: style.margin,
+    borderWidth: style.borderWidth,
+    borderColor: style.borderColor,
+    backgroundColor: style.backgroundColor,
+    boxSizing: style.boxSizing,
+    children: resolved,
+  } as CanvasElement;
+}
+
 // ── Stub components (future support) ────────────────────────────────
 // These return StubInstruction objects for not-yet-implemented canvas components.
 // They accept an optional `style` object; individual props override style (same as Text/Badge/Flex).
@@ -199,10 +248,8 @@ function stub(component: string) {
 }
 
 // Layout
-export const Box = stub("Box");
+/** Stack: direction "row" | "column" for horizontal/vertical. Single component, no HStack/VStack. */
 export const Stack = stub("Stack");
-export const HStack = stub("HStack");
-export const VStack = stub("VStack");
 
 // Data display
 export const ProgressBar = stub("ProgressBar");

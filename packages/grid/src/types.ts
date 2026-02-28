@@ -363,6 +363,23 @@ export interface FlexInstruction extends FlexContainerStyle {
   children: RenderInstruction[];
 }
 
+/** Box model style for Box instruction (padding, margin, border; no layout). */
+export interface BoxModelStyle {
+  padding?: CssRect<CssLength>;
+  margin?: CssRect<CssLengthAuto>;
+  borderWidth?: CssRect<CssLength>;
+  borderColor?: string;
+  backgroundColor?: string;
+  boxSizing?: CssBoxSizing;
+}
+
+/** A box container instruction: draws background/border and content area for children. */
+export interface BoxInstruction extends BoxModelStyle {
+  type: "box";
+  /** Resolved child instructions (drawn in content rect, vertical stack). */
+  children: RenderInstruction[];
+}
+
 /** A stub instruction for not-yet-implemented components. */
 export interface StubInstruction {
   type: "stub";
@@ -375,6 +392,7 @@ export type RenderInstruction =
   | TextInstruction
   | BadgeInstruction
   | FlexInstruction
+  | BoxInstruction
   | StubInstruction;
 
 /** Styling for text cells. */
