@@ -30,32 +30,34 @@ _(None — Box and Stack are implemented.)_
 
 ### Data display
 
-| Component       | Intended use                      |
-| --------------- | --------------------------------- |
-| **ProgressBar** | Progress bar (value, max, color). |
-| **Sparkline**   | Inline sparkline.                 |
-| **Rating**      | Star or numeric rating.           |
-| **Icon**        | Icon (name or glyph).             |
-| **Image**       | Image (src, alt).                 |
-| **Avatar**      | User avatar.                      |
-| **Tag**         | Tag label.                        |
-| **Chip**        | Chip with optional icon/close.    |
-| **Link**        | Clickable link (text + href).     |
-| **Color**       | Color swatch.                     |
+Display-only; no DOM overlay. Canvas drawing only.
+
+| Component     | Intended use                   |
+| ------------- | ------------------------------ |
+| **Sparkline** | Inline sparkline.              |
+| **Rating**    | Star or numeric rating.        |
+| **Icon**      | Icon (name or glyph).          |
+| **Image**     | Image (src, alt).              |
+| **Avatar**    | User avatar.                   |
+| **Tag**       | Tag label.                     |
+| **Chip**      | Chip with optional icon/close. |
+| **Link**      | Clickable link (text + href).  |
+| **Color**     | Color swatch.                  |
 
 ### Interactive (DOM overlay)
 
-These are intended to be **DOM overlays** over the canvas (e.g. for editing). The grid already has an editor layer; these stubs reserve the component names for future overlay UI.
+These require **DOM overlays** over the canvas (e.g. for editing or user control). The grid already has an editor layer; these stubs reserve the component names for future overlay UI.
 
-| Component       | Intended use     |
-| --------------- | ---------------- |
-| **Input**       | Text input.      |
-| **NumberInput** | Number input.    |
-| **Select**      | Dropdown select. |
-| **Checkbox**    | Checkbox.        |
-| **Switch**      | Toggle switch.   |
-| **DatePicker**  | Date picker.     |
-| **Dropdown**    | Dropdown menu.   |
+| Component       | Intended use                                                                |
+| --------------- | --------------------------------------------------------------------------- |
+| **ProgressBar** | Progress bar: canvas display + `<input type="range">` overlay when editing. |
+| **Input**       | Text input.                                                                 |
+| **NumberInput** | Number input.                                                               |
+| **Select**      | Dropdown select.                                                            |
+| **Checkbox**    | Checkbox.                                                                   |
+| **Switch**      | Toggle switch.                                                              |
+| **DatePicker**  | Date picker.                                                                |
+| **Dropdown**    | Dropdown menu.                                                              |
 
 ---
 
