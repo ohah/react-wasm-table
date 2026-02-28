@@ -326,13 +326,40 @@ export interface BadgeInstruction {
   style?: Partial<BadgeStyle>;
 }
 
+/** Flex container style (Taffy-compatible). Same surface as container layout. */
+export interface FlexContainerStyle {
+  /** Flex direction. @default "row" */
+  flexDirection?: CssFlexDirection;
+  /** Flex wrap. @default "nowrap" */
+  flexWrap?: CssFlexWrap;
+  /** Gap between items (all sides). */
+  gap?: CssDimension;
+  /** Row gap (flex direction column) or vertical gap. */
+  rowGap?: CssDimension;
+  /** Column gap (flex direction row) or horizontal gap. */
+  columnGap?: CssDimension;
+  /** Cross-axis alignment. */
+  alignItems?: CssAlignItems;
+  /** Alignment of lines in multi-line flex. */
+  alignContent?: CssAlignContent;
+  /** Main-axis alignment. */
+  justifyContent?: CssJustifyContent;
+  /** Padding shorthand. */
+  padding?: CssRect<CssLength>;
+  /** Margin shorthand. */
+  margin?: CssRect<CssLengthAuto>;
+  /** Border width shorthand. */
+  borderWidth?: CssRect<CssLength>;
+  /** Box sizing. */
+  boxSizing?: CssBoxSizing;
+  /** Overflow. */
+  overflow?: CssOverflow;
+}
+
 /** A flex container instruction (mini layout within a cell). */
-export interface FlexInstruction {
+export interface FlexInstruction extends FlexContainerStyle {
   type: "flex";
-  direction?: "row" | "column";
-  gap?: number;
-  align?: string;
-  justify?: string;
+  /** Resolved child instructions. */
   children: RenderInstruction[];
 }
 

@@ -32,6 +32,7 @@ import { ExportDemo } from "./pages/ExportDemo";
 import { ClipboardDemo } from "./pages/ClipboardDemo";
 import { MiddlewareDemo } from "./pages/MiddlewareDemo";
 import { LayoutCacheDemo } from "./pages/LayoutCacheDemo";
+import { CanvasComponents } from "./pages/CanvasComponents";
 import { CustomRendererDemo } from "./pages/CustomRendererDemo";
 import { LayerDemo } from "./pages/LayerDemo";
 import { ColumnPinningDemo } from "./pages/ColumnPinningDemo";
@@ -78,6 +79,7 @@ export function App() {
           <Route path="/clipboard" element={<ClipboardDemo />} />
           <Route path="/event-middleware" element={<MiddlewareDemo />} />
           <Route path="/layout-cache" element={<LayoutCacheDemo />} />
+          <Route path="/canvas-components" element={<CanvasComponents />} />
           <Route path="/custom-renderer" element={<CustomRendererDemo />} />
           <Route path="/layers" element={<LayerDemo />} />
           <Route path="/column-pinning" element={<ColumnPinningDemo />} />

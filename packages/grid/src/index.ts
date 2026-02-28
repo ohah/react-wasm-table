@@ -5,6 +5,7 @@ export { ScrollBar } from "./react/ScrollBar";
 export type { ScrollBarProps } from "./react/ScrollBar";
 
 // Canvas JSX components
+export type { TextProps, BadgeProps, FlexProps, StubProps } from "./components";
 export {
   Text,
   Badge,
@@ -213,6 +214,7 @@ export type {
   CellLayout,
   TextInstruction,
   BadgeInstruction,
+  FlexContainerStyle,
   FlexInstruction,
   StubInstruction,
   RenderInstruction,

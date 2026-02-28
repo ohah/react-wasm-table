@@ -24,9 +24,23 @@ describe("Canvas components", () => {
       });
     });
 
-    it("omits undefined style properties", () => {
+    it("omits style when no style properties given", () => {
       const result = Text({ value: "plain" });
-      expect(result).toEqual({ type: "text", value: "plain", style: {} });
+      expect(result).toEqual({ type: "text", value: "plain" });
+      expect((result as { style?: unknown }).style).toBeUndefined();
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Text({
+        value: "x",
+        style: { color: "gray", fontSize: 14 },
+        color: "red",
+      });
+      expect(result).toEqual({
+        type: "text",
+        value: "x",
+        style: { color: "red", fontSize: 14 },
+      });
     });
   });
 
@@ -55,7 +69,7 @@ describe("Canvas components", () => {
   describe("Flex", () => {
     it("resolves children into RenderInstructions", () => {
       const element = (
-        <Flex direction="row" gap={8}>
+        <Flex flexDirection="row" gap={8}>
           <Text value="A" />
           <Badge value="B" />
         </Flex>
@@ -63,11 +77,85 @@ describe("Canvas components", () => {
       const result = resolveInstruction(element);
       expect(result.type).toBe("flex");
       if (result.type === "flex") {
-        expect(result.direction).toBe("row");
+        expect(result.flexDirection).toBe("row");
         expect(result.gap).toBe(8);
         expect(result.children).toHaveLength(2);
         expect(result.children[0]!.type).toBe("text");
         expect(result.children[1]!.type).toBe("badge");
+      }
+    });
+
+    it("accepts ReactNode children (only valid elements resolved)", () => {
+      const element = (
+        <Flex flexDirection="column" gap={4}>
+          {null}
+          <Text value="Only" />
+          {"ignored"}
+        </Flex>
+      );
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("flex");
+      if (result.type === "flex") {
+        expect(result.flexDirection).toBe("column");
+        expect(result.gap).toBe(4);
+        expect(result.children).toHaveLength(1);
+        expect(result.children[0]!.type).toBe("text");
+      }
+    });
+
+    it("passes through Taffy-style props", () => {
+      const element = (
+        <Flex
+          flexDirection="row-reverse"
+          flexWrap="wrap"
+          rowGap={10}
+          columnGap={6}
+          alignItems="center"
+          alignContent="space-between"
+          justifyContent="flex-end"
+        >
+          <Text value="X" />
+        </Flex>
+      );
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("flex");
+      if (result.type === "flex") {
+        expect(result.flexDirection).toBe("row-reverse");
+        expect(result.flexWrap).toBe("wrap");
+        expect(result.rowGap).toBe(10);
+        expect(result.columnGap).toBe(6);
+        expect(result.alignItems).toBe("center");
+        expect(result.alignContent).toBe("space-between");
+        expect(result.justifyContent).toBe("flex-end");
+      }
+    });
+
+    it("accepts style object like a normal flex node", () => {
+      const element = (
+        <Flex style={{ flexDirection: "column", gap: 12, alignItems: "center" }}>
+          <Text value="A" />
+        </Flex>
+      );
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("flex");
+      if (result.type === "flex") {
+        expect(result.flexDirection).toBe("column");
+        expect(result.gap).toBe(12);
+        expect(result.alignItems).toBe("center");
+      }
+    });
+
+    it("individual props override style object", () => {
+      const element = (
+        <Flex style={{ flexDirection: "column", gap: 8 }} flexDirection="row" gap={4}>
+          <Text value="X" />
+        </Flex>
+      );
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("flex");
+      if (result.type === "flex") {
+        expect(result.flexDirection).toBe("row");
+        expect(result.gap).toBe(4);
       }
     });
   });
