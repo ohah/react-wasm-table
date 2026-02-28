@@ -38,6 +38,7 @@ import { CanvasBadge } from "./pages/CanvasBadge";
 import { CanvasFlex } from "./pages/CanvasFlex";
 import { CanvasProgressBar } from "./pages/CanvasProgressBar";
 import { CanvasBox } from "./pages/CanvasBox";
+import { CanvasStack } from "./pages/CanvasStack";
 import { CustomRendererDemo } from "./pages/CustomRendererDemo";
 import { LayerDemo } from "./pages/LayerDemo";
 import { ColumnPinningDemo } from "./pages/ColumnPinningDemo";
@@ -90,6 +91,7 @@ export function App() {
           <Route path="/canvas-flex" element={<CanvasFlex />} />
           <Route path="/canvas-progress-bar" element={<CanvasProgressBar />} />
           <Route path="/canvas-box" element={<CanvasBox />} />
+          <Route path="/canvas-stack" element={<CanvasStack />} />
           <Route path="/custom-renderer" element={<CustomRendererDemo />} />
           <Route path="/layers" element={<LayerDemo />} />
           <Route path="/column-pinning" element={<ColumnPinningDemo />} />

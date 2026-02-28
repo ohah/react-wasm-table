@@ -41,6 +41,11 @@ export function CanvasComponents() {
             Box
           </Link>
         </li>
+        <li>
+          <Link to="/canvas-stack" style={linkStyle}>
+            Stack
+          </Link>
+        </li>
       </ul>
 
       <h2 style={{ marginTop: 24, fontSize: 16 }}>Planned (stub, placeholder only)</h2>
