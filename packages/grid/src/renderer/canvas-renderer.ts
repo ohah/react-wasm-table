@@ -108,6 +108,7 @@ export class CanvasRenderer {
     theme: Theme,
     rowHeight: number,
     rendererRegistry?: CellRendererRegistry,
+    computeChildLayout?: (input: Float32Array) => Float32Array,
   ): void {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || count === 0) return;
@@ -158,6 +159,7 @@ export class CanvasRenderer {
           cellIdx: i,
           theme,
           registry: rendererRegistry,
+          computeChildLayout,
         });
       }
     }

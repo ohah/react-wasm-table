@@ -579,6 +579,9 @@ export function useRenderLoop({
             _enableSelection: enableSelection,
             _selection: enableSelection ? selectionManagerRef.current.getNormalized() : null,
             _selectionStyle: selectionStyle,
+            _computeChildLayout: engine.computeCompositeLayout
+              ? (input: Float32Array) => engine.computeCompositeLayout!(input)
+              : undefined,
           };
 
           // Build regions (clip-based frozen column rendering)

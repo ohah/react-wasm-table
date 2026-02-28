@@ -395,3 +395,126 @@ describe("custom renderer dispatch", () => {
     expect(drawFn).toHaveBeenCalledWith(expect.anything(), context);
   });
 });
+
+// ── WASM composite layout path ────────────────────────────────────────
+
+/** Mock computeChildLayout that returns children stacked in a row with no gap. */
+function mockComputeChildLayout(input: Float32Array): Float32Array {
+  const childCount = input[10]!;
+  const result = new Float32Array(childCount * 4);
+  let x = 0;
+  for (let i = 0; i < childCount; i++) {
+    const w = input[11 + i * 2]!;
+    const h = input[11 + i * 2 + 1]!;
+    result[i * 4] = x;      // x
+    result[i * 4 + 1] = 0;  // y
+    result[i * 4 + 2] = w;  // width
+    result[i * 4 + 3] = h;  // height
+    x += w;
+  }
+  return result;
+}
+
+describe("flexCellRenderer with WASM path", () => {
+  it("uses computeChildLayout when provided", () => {
+    const computeFn = mock(mockComputeChildLayout);
+    const context = makeContext({ computeChildLayout: computeFn });
+    flexCellRenderer.draw(
+      { type: "flex", children: [{ type: "text", value: "A" }] },
+      context,
+    );
+    expect(computeFn).toHaveBeenCalledTimes(1);
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to JS layout when computeChildLayout is undefined", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      { type: "flex", children: [{ type: "text", value: "A" }] },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes correct input encoding to computeChildLayout", () => {
+    let capturedInput: Float32Array | null = null;
+    const computeFn = mock((input: Float32Array) => {
+      capturedInput = new Float32Array(input);
+      return mockComputeChildLayout(input);
+    });
+    const context = makeContext({ computeChildLayout: computeFn });
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        flexDirection: "column",
+        gap: 8,
+        alignItems: "center",
+        justifyContent: "end",
+        children: [{ type: "text", value: "A" }],
+      },
+      context,
+    );
+    expect(capturedInput).not.toBeNull();
+    // flexDirection=column → 1
+    expect(capturedInput![2]).toBe(1);
+    // gap=8
+    expect(capturedInput![3]).toBe(8);
+    // alignItems=center → 2
+    expect(capturedInput![4]).toBe(2);
+    // justifyContent=end → 1
+    expect(capturedInput![5]).toBe(1);
+    // childCount=1
+    expect(capturedInput![10]).toBe(1);
+  });
+});
+
+describe("boxCellRenderer with WASM path", () => {
+  it("uses computeChildLayout when provided", () => {
+    const computeFn = mock(mockComputeChildLayout);
+    const context = makeContext({ computeChildLayout: computeFn });
+    boxCellRenderer.draw(
+      {
+        type: "box",
+        padding: 4,
+        children: [{ type: "text", value: "inside" }],
+      },
+      context,
+    );
+    expect(computeFn).toHaveBeenCalledTimes(1);
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to JS layout without computeChildLayout", () => {
+    const context = makeContext();
+    boxCellRenderer.draw(
+      {
+        type: "box",
+        padding: 4,
+        children: [{ type: "text", value: "inside" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("propagates computeChildLayout to nested children", () => {
+    const computeFn = mock(mockComputeChildLayout);
+    const context = makeContext({ computeChildLayout: computeFn });
+    boxCellRenderer.draw(
+      {
+        type: "box",
+        padding: 4,
+        children: [
+          {
+            type: "flex",
+            children: [{ type: "text", value: "Nested" }],
+          } as RenderInstruction,
+        ],
+      },
+      context,
+    );
+    // computeChildLayout called twice: once for box, once for nested flex
+    expect(computeFn).toHaveBeenCalledTimes(2);
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+});

@@ -56,6 +56,7 @@ export interface InternalLayerContext extends LayerContext {
   _enableSelection: boolean;
   _selection: NormalizedRange | null;
   _selectionStyle?: SelectionStyle;
+  _computeChildLayout?: (input: Float32Array) => Float32Array;
 }
 
 // ── Built-in layer factories ────────────────────────────────────────────
@@ -94,6 +95,7 @@ export function dataLayer(): GridLayer {
         ctx.theme,
         ctx.rowHeight,
         ctx._cellRendererRegistry,
+        ctx._computeChildLayout,
       );
     },
   };

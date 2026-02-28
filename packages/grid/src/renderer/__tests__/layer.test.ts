@@ -110,6 +110,7 @@ describe("dataLayer", () => {
       ctx.theme,
       ctx.rowHeight,
       ctx._cellRendererRegistry,
+      ctx._computeChildLayout,
     );
   });
 });
