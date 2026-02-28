@@ -311,7 +311,7 @@ describe("EventManager", () => {
       canvas.dispatchEvent(ev);
 
       expect(onContextMenu).toHaveBeenCalledTimes(1);
-      const [native, hitTest, coords] = (onContextMenu.mock.calls[0] as unknown) as [
+      const [native, hitTest, coords] = onContextMenu.mock.calls[0] as unknown as [
         MouseEvent,
         HitTestResult,
         EventCoords,
