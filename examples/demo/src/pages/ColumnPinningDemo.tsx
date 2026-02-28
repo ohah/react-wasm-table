@@ -3,6 +3,7 @@ import {
   Grid,
   createColumnHelper,
   type ColumnPinningState,
+  type ColumnOrderState,
   type SortingState,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
@@ -92,6 +93,7 @@ const btnActive: React.CSSProperties = {
 export function ColumnPinningDemo() {
   const data = useMemo(() => generateEmployees(1000) as Record<string, unknown>[], []);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(ALL_COLUMN_IDS);
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({
     left: ["id"],
     right: ["joinDate"],
@@ -115,9 +117,9 @@ export function ColumnPinningDemo() {
     <>
       <h1>Column Pinning</h1>
       <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
-        Pin columns to the <strong>left</strong> or <strong>right</strong> edge. Pinned columns stay
-        fixed while scrolling horizontally. The grid uses 7 columns (930px total) in a 700px
-        viewport to ensure horizontal scrolling.
+        Pin columns to the <strong>left</strong> or <strong>right</strong> edge. Drag headers to
+        reorder columns. Pinned columns stay fixed while scrolling horizontally. The grid uses 7
+        columns (930px total) in a 700px viewport to ensure horizontal scrolling.
       </p>
 
       {/* Pin controls */}
@@ -171,8 +173,11 @@ export function ColumnPinningDemo() {
         columns={columnDefs}
         sorting={sorting}
         onSortingChange={setSorting}
+        columnOrder={columnOrder}
+        onColumnOrderChange={setColumnOrder}
         columnPinning={columnPinning}
         onColumnPinningChange={setColumnPinning}
+        enableColumnDnD
         overflowY="scroll"
       />
 
@@ -187,7 +192,7 @@ export function ColumnPinningDemo() {
           marginTop: 16,
         }}
       >
-        {JSON.stringify({ columnPinning, sorting }, null, 2)}
+        {JSON.stringify({ columnOrder, columnPinning, sorting }, null, 2)}
       </pre>
     </>
   );
