@@ -14,14 +14,26 @@ import type { GridColumn, GridHeader, GridHeaderGroup } from "./grid-instance";
  */
 export function buildHeaderGroups<TData>(
   allColumns: GridColumn<TData>[],
+  table?: unknown,
 ): GridHeaderGroup<TData>[] {
   const maxDepth = findMaxDepth(allColumns);
+
+  function makeGetContext<TData>(
+    header: GridHeader<TData>,
+    col: GridColumn<TData>,
+  ): () => ReturnType<GridHeader<TData>["getContext"]> {
+    return () => ({
+      column: { id: col.id, columnDef: col.columnDef },
+      header,
+      table,
+    });
+  }
 
   // For flat columns (no groups), single header row
   if (maxDepth === 0) {
     const leaves = getLeafGridColumns(allColumns);
-    const headers = leaves.map(
-      (col): GridHeader<TData> => ({
+    const headers = leaves.map((col): GridHeader<TData> => {
+      const header: GridHeader<TData> = {
         id: `${col.id}_header`,
         column: col,
         colSpan: 1,
@@ -29,17 +41,17 @@ export function buildHeaderGroups<TData>(
         depth: 0,
         isPlaceholder: false,
         subHeaders: [],
-        getContext: () => ({
-          column: { id: col.id, columnDef: col.columnDef },
-        }),
-      }),
-    );
+        getContext: null!,
+      };
+      header.getContext = makeGetContext(header, col);
+      return header;
+    });
     return [{ id: "headerGroup_0", depth: 0, headers }];
   }
 
   // Start with leaf columns at the deepest level
-  const leafHeaders = getLeafGridColumns(allColumns).map(
-    (col): GridHeader<TData> => ({
+  const leafHeaders = getLeafGridColumns(allColumns).map((col): GridHeader<TData> => {
+    const header: GridHeader<TData> = {
       id: `${col.id}_header`,
       column: col,
       colSpan: 1,
@@ -47,11 +59,11 @@ export function buildHeaderGroups<TData>(
       depth: maxDepth,
       isPlaceholder: false,
       subHeaders: [],
-      getContext: () => ({
-        column: { id: col.id, columnDef: col.columnDef },
-      }),
-    }),
-  );
+      getContext: null!,
+    };
+    header.getContext = makeGetContext(header, col);
+    return header;
+  });
 
   // Build groups bottom-up
   const headerGroups: GridHeaderGroup<TData>[] = [];
@@ -80,7 +92,7 @@ export function buildHeaderGroups<TData>(
         if (existing && !existing.isPlaceholder && existing.column === parentCol) {
           existing.subHeaders.push(header);
         } else {
-          parentHeaders.push({
+          const parentHeader: GridHeader<TData> = {
             id: `${parentCol.id}_header`,
             column: parentCol,
             colSpan: 1,
@@ -88,16 +100,16 @@ export function buildHeaderGroups<TData>(
             depth: currentDepth,
             isPlaceholder: false,
             subHeaders: [header],
-            getContext: () => ({
-              column: { id: parentCol.id, columnDef: parentCol.columnDef },
-            }),
-          });
+            getContext: null!,
+          };
+          parentHeader.getContext = makeGetContext(parentHeader, parentCol);
+          parentHeaders.push(parentHeader);
         }
       } else {
         // No ancestor at this depth — create placeholder
         // Use the leaf column (original column, not a group) for the placeholder
         const leafCol = getLeafColumn(header);
-        parentHeaders.push({
+        const placeholderHeader: GridHeader<TData> = {
           id: `${leafCol.id}_placeholder_${currentDepth}`,
           column: leafCol,
           colSpan: 1,
@@ -105,10 +117,10 @@ export function buildHeaderGroups<TData>(
           depth: currentDepth,
           isPlaceholder: true,
           subHeaders: [header],
-          getContext: () => ({
-            column: { id: leafCol.id, columnDef: leafCol.columnDef },
-          }),
-        });
+          getContext: null!,
+        };
+        placeholderHeader.getContext = makeGetContext(placeholderHeader, leafCol);
+        parentHeaders.push(placeholderHeader);
       }
     }
 
