@@ -63,8 +63,15 @@ export const boxCellRenderer: CellRenderer<BoxInstruction> = {
     if (computeChildLayout) {
       // Box = vertical column layout with no gap, stretch alignment
       const input = encodeCompositeInput(
-        innerW, innerH, "column", 0, "stretch", "start",
-        [0, 0, 0, 0], childWidths, childHeights,
+        innerW,
+        innerH,
+        "column",
+        0,
+        "stretch",
+        "start",
+        [0, 0, 0, 0],
+        childWidths,
+        childHeights,
       );
       const positions = computeChildLayout(input);
       for (let i = 0; i < children.length; i++) {
