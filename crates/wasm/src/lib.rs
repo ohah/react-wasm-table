@@ -172,6 +172,7 @@ impl TableEngine {
     /// Returns metadata as Float64Array:
     /// [cell_count, visible_start, visible_end, total_height, filtered_count, generation, total_count, visible_count, effective_row_height]
     /// Optional 5th/6th: pinnedTop, pinnedBottom. Optional 7th: skipRebuild (when true, skip rebuild_view; use after rebuildView() for row pinning).
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     #[wasm_bindgen(js_name = updateViewportColumnar)]
     pub fn update_viewport_columnar(
         &mut self,
@@ -227,8 +228,8 @@ impl TableEngine {
         ));
 
         // 4. Row pinning: optional pinned_top, pinned_bottom (row counts)
-        let pinned_top = pinned_top_js.map(|v| v as usize).unwrap_or(0);
-        let pinned_bottom = pinned_bottom_js.map(|v| v as usize).unwrap_or(0);
+        let pinned_top = pinned_top_js.map_or(0, |v| v as usize);
+        let pinned_bottom = pinned_bottom_js.map_or(0, |v| v as usize);
 
         let total_count = self.columnar.row_count;
         let col_count = columns.len();
