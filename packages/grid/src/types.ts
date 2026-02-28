@@ -629,7 +629,7 @@ export interface GridProps extends BoxModelProps {
   eventMiddleware?: import("./event-middleware").EventMiddleware[];
 
   /** Custom cell renderers merged with built-ins. Same type → override. */
-  cellRenderers?: import("./renderer/cell-renderer").CellRenderer<any>[];
+  cellRenderers?: import("./renderer/components").CellRenderer<any>[];
 
   /** Custom layer stack. Replaces default draw pipeline when provided. */
   layers?: import("./renderer/layer").GridLayer[];

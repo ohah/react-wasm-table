@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { computeSelectionRect } from "../selection-rect";
+import { computeSelectionRect } from "../selection";
 import { LAYOUT_STRIDE } from "../../adapter/layout-reader";
 
 /**

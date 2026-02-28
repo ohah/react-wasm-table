@@ -30,7 +30,7 @@ import type {
   AfterDrawContext,
 } from "../types";
 import type { EventMiddleware } from "../event-middleware";
-import type { CellRenderer } from "../renderer/cell-renderer";
+import type { CellRenderer } from "../renderer/components";
 import type { GridLayer } from "../renderer/layer";
 import type { EventManager } from "../adapter/event-manager";
 import type { SelectionManager } from "../adapter/selection-manager";

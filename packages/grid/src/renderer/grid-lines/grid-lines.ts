@@ -1,4 +1,4 @@
-import { readCellRow, readCellX, readCellY, readCellWidth } from "../adapter/layout-reader";
+import { readCellRow, readCellX, readCellY, readCellWidth } from "../../adapter/layout-reader";
 
 // ── Types ────────────────────────────────────────────────────────────
 

@@ -8,8 +8,8 @@ import {
   boxCellRenderer,
   flexCellRenderer,
   stackCellRenderer,
-} from "../cell-renderer";
-import type { CellRenderer, CellRenderContext } from "../cell-renderer";
+} from "../components";
+import type { CellRenderer, CellRenderContext } from "../components";
 import type { Theme, RenderInstruction } from "../../types";
 
 const defaultTheme: Theme = {

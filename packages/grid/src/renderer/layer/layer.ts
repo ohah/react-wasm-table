@@ -5,9 +5,9 @@ import type {
   NormalizedRange,
   SelectionStyle,
   RenderInstruction,
-} from "../types";
-import type { CanvasRenderer } from "./canvas-renderer";
-import type { CellRendererRegistry } from "./cell-renderer";
+} from "../../types";
+import type { CanvasRenderer } from "../canvas";
+import type { CellRendererRegistry } from "../components";
 
 // ── Public types ────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import { describe, expect, it, mock, beforeEach, afterEach } from "bun:test";
-import { CanvasRenderer } from "../canvas-renderer";
-import { createCellRendererRegistry } from "../cell-renderer";
-import type { CellRenderer } from "../cell-renderer";
+import { CanvasRenderer } from "../canvas";
+import { createCellRendererRegistry } from "../components";
+import type { CellRenderer } from "../components";
 import type { Theme, RenderInstruction } from "../../types";
 
 const defaultTheme: Theme = {

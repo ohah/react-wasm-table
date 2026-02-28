@@ -1,13 +1,13 @@
-import type { CellRenderer, InstructionLike } from "./cell-renderer-types";
-import { textCellRenderer } from "./cell-renderers/text";
-import { badgeCellRenderer } from "./cell-renderers/badge";
-import { stubCellRenderer } from "./cell-renderers/stub";
-import { boxCellRenderer } from "./cell-renderers/box";
-import { flexCellRenderer } from "./cell-renderers/flex";
-import { stackCellRenderer } from "./cell-renderers/stack";
+import type { CellRenderer, InstructionLike } from "./types";
+import { textCellRenderer } from "./text";
+import { badgeCellRenderer } from "./badge";
+import { stubCellRenderer } from "./stub";
+import { boxCellRenderer } from "./box";
+import { flexCellRenderer } from "./flex";
+import { stackCellRenderer } from "./stack";
 
 // Re-export types for public API
-export type { CellRenderContext, CellRenderer, InstructionLike } from "./cell-renderer-types";
+export type { CellRenderContext, CellRenderer, InstructionLike } from "./types";
 
 /** Registry that maps instruction type strings to CellRenderer instances. */
 export class CellRendererRegistry {
@@ -52,9 +52,9 @@ export function createCellRendererRegistry(
 }
 
 // Re-export built-in renderers for tests and custom registry composition
-export { textCellRenderer } from "./cell-renderers/text";
-export { badgeCellRenderer } from "./cell-renderers/badge";
-export { stubCellRenderer } from "./cell-renderers/stub";
-export { boxCellRenderer } from "./cell-renderers/box";
-export { flexCellRenderer } from "./cell-renderers/flex";
-export { stackCellRenderer } from "./cell-renderers/stack";
+export { textCellRenderer } from "./text";
+export { badgeCellRenderer } from "./badge";
+export { stubCellRenderer } from "./stub";
+export { boxCellRenderer } from "./box";
+export { flexCellRenderer } from "./flex";
+export { stackCellRenderer } from "./stack";
