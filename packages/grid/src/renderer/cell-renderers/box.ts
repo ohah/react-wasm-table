@@ -1,12 +1,19 @@
 import type { BoxInstruction, RenderInstruction } from "../../types";
 import type { CellRenderer } from "../cell-renderer-types";
 import { readCellX, readCellY, readCellWidth, readCellHeight } from "../../adapter/layout-reader";
-import { rectToPx, measureInstructionHeight, makeSubCellBuf, FLEX_CHILD_HEIGHT } from "./shared";
+import {
+  rectToPx,
+  measureInstructionWidth,
+  measureInstructionHeight,
+  makeSubCellBuf,
+  encodeCompositeInput,
+  FLEX_CHILD_HEIGHT,
+} from "./shared";
 
 export const boxCellRenderer: CellRenderer<BoxInstruction> = {
   type: "box",
   draw(instruction, context) {
-    const { ctx, buf, cellIdx, theme, registry } = context;
+    const { ctx, buf, cellIdx, theme, registry, computeChildLayout } = context;
     const cellX = readCellX(buf, cellIdx);
     const cellY = readCellY(buf, cellIdx);
     const cellW = readCellWidth(buf, cellIdx);
@@ -50,19 +57,37 @@ export const boxCellRenderer: CellRenderer<BoxInstruction> = {
     const children = instruction.children;
     if (children.length === 0 || !registry) return;
 
+    const childWidths = children.map((c) => measureInstructionWidth(ctx, c, theme));
     const childHeights = children.map((c) => measureInstructionHeight(ctx, c));
-    let y = innerY;
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i]!;
-      const h = childHeights[i] ?? FLEX_CHILD_HEIGHT;
-      const subBuf = makeSubCellBuf(innerX, y, innerW, h);
-      const subContext = {
-        ...context,
-        buf: subBuf,
-        cellIdx: 0,
-      };
-      registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
-      y += h;
+
+    if (computeChildLayout) {
+      // Box = vertical column layout with no gap, stretch alignment
+      const input = encodeCompositeInput(
+        innerW, innerH, "column", 0, "stretch", "start",
+        [0, 0, 0, 0], childWidths, childHeights,
+      );
+      const positions = computeChildLayout(input);
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i]!;
+        const px = positions[i * 4]!;
+        const py = positions[i * 4 + 1]!;
+        const pw = positions[i * 4 + 2]!;
+        const ph = positions[i * 4 + 3]!;
+        const subBuf = makeSubCellBuf(innerX + px, innerY + py, pw, ph);
+        const subContext = { ...context, buf: subBuf, cellIdx: 0 };
+        registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
+      }
+    } else {
+      // Fallback: simple vertical stack (no WASM)
+      let y = innerY;
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i]!;
+        const h = childHeights[i] ?? FLEX_CHILD_HEIGHT;
+        const subBuf = makeSubCellBuf(innerX, y, innerW, h);
+        const subContext = { ...context, buf: subBuf, cellIdx: 0 };
+        registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
+        y += h;
+      }
     }
   },
 };

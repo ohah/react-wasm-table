@@ -86,3 +86,85 @@ export function makeSubCellBuf(x: number, y: number, w: number, h: number): Floa
   buf[6] = 0; // align left
   return buf;
 }
+
+// ── Composite layout encoding helpers ─────────────────────────────────
+
+/** Encode flexDirection string to numeric value for WASM. */
+function encodeFlexDirection(v: string): number {
+  switch (v) {
+    case "column":
+      return 1;
+    case "row-reverse":
+      return 2;
+    case "column-reverse":
+      return 3;
+    default:
+      return 0; // row
+  }
+}
+
+/** Encode align-items string to numeric value for WASM. NaN = none. */
+function encodeAlign(v: string | undefined): number {
+  if (v === undefined) return NaN;
+  switch (v) {
+    case "end":
+      return 1;
+    case "center":
+      return 2;
+    case "stretch":
+      return 3;
+    default:
+      return 0; // start
+  }
+}
+
+/** Encode justify-content string to numeric value for WASM. NaN = none. */
+function encodeJustify(v: string | undefined): number {
+  if (v === undefined) return NaN;
+  switch (v) {
+    case "end":
+      return 1;
+    case "center":
+      return 2;
+    case "space-between":
+      return 3;
+    default:
+      return 0; // start
+  }
+}
+
+/**
+ * Build the flat f32 input array for computeCompositeLayout.
+ * Layout: [containerW, containerH, flexDir, gap, alignItems, justifyContent,
+ *          padT, padR, padB, padL, childCount, ...childW, childH pairs]
+ */
+export function encodeCompositeInput(
+  containerW: number,
+  containerH: number,
+  flexDirection: string,
+  gap: number,
+  alignItems: string | undefined,
+  justifyContent: string | undefined,
+  padding: [number, number, number, number],
+  childWidths: number[],
+  childHeights: number[],
+): Float32Array {
+  const childCount = childWidths.length;
+  const buf = new Float32Array(11 + childCount * 2);
+  buf[0] = containerW;
+  buf[1] = containerH;
+  buf[2] = encodeFlexDirection(flexDirection);
+  buf[3] = gap;
+  buf[4] = encodeAlign(alignItems);
+  buf[5] = encodeJustify(justifyContent);
+  buf[6] = padding[0];
+  buf[7] = padding[1];
+  buf[8] = padding[2];
+  buf[9] = padding[3];
+  buf[10] = childCount;
+  for (let i = 0; i < childCount; i++) {
+    buf[11 + i * 2] = childWidths[i]!;
+    buf[11 + i * 2 + 1] = childHeights[i]!;
+  }
+  return buf;
+}

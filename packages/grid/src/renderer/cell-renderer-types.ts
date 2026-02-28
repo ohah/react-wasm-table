@@ -8,6 +8,8 @@ export interface CellRenderContext {
   theme: Theme;
   /** Registry to resolve child renderers (e.g. for Flex/Box). Omitted when not drawing from a registry. */
   registry?: CellRendererRegistryLike;
+  /** WASM Taffy child layout function. */
+  computeChildLayout?: (input: Float32Array) => Float32Array;
 }
 
 /** Minimal registry interface so renderers can draw children without importing the class. */
