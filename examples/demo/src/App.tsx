@@ -33,6 +33,11 @@ import { ClipboardDemo } from "./pages/ClipboardDemo";
 import { MiddlewareDemo } from "./pages/MiddlewareDemo";
 import { LayoutCacheDemo } from "./pages/LayoutCacheDemo";
 import { CanvasComponents } from "./pages/CanvasComponents";
+import { CanvasText } from "./pages/CanvasText";
+import { CanvasBadge } from "./pages/CanvasBadge";
+import { CanvasFlex } from "./pages/CanvasFlex";
+import { CanvasProgressBar } from "./pages/CanvasProgressBar";
+import { CanvasBox } from "./pages/CanvasBox";
 import { CustomRendererDemo } from "./pages/CustomRendererDemo";
 import { LayerDemo } from "./pages/LayerDemo";
 import { ColumnPinningDemo } from "./pages/ColumnPinningDemo";
@@ -80,6 +85,11 @@ export function App() {
           <Route path="/event-middleware" element={<MiddlewareDemo />} />
           <Route path="/layout-cache" element={<LayoutCacheDemo />} />
           <Route path="/canvas-components" element={<CanvasComponents />} />
+          <Route path="/canvas-text" element={<CanvasText />} />
+          <Route path="/canvas-badge" element={<CanvasBadge />} />
+          <Route path="/canvas-flex" element={<CanvasFlex />} />
+          <Route path="/canvas-progress-bar" element={<CanvasProgressBar />} />
+          <Route path="/canvas-box" element={<CanvasBox />} />
           <Route path="/custom-renderer" element={<CustomRendererDemo />} />
           <Route path="/layers" element={<LayerDemo />} />
           <Route path="/column-pinning" element={<ColumnPinningDemo />} />
