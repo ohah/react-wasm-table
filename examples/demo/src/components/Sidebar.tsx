@@ -18,6 +18,7 @@ const sections = [
       { to: "/layers", label: "Layer System" },
       { to: "/column-features", label: "Column Features" },
       { to: "/column-pinning", label: "Column Pinning" },
+      { to: "/column-dnd-row-pinning", label: "Column DnD & Row Pinning" },
       { to: "/expanding", label: "Expanding (Tree)" },
     ],
   },
