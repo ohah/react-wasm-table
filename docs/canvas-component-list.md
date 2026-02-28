@@ -62,5 +62,5 @@ These are intended to be **DOM overlays** over the canvas (e.g. for editing). Th
 
 ## Adding a new component
 
-1. **Supported**: Implement a cell renderer (see `packages/grid/src/renderer/cell-renderer.ts`), register it in `createCellRendererRegistry`, and add a component in `components.tsx` that returns the corresponding instruction type.
+1. **Supported**: Implement a cell renderer in `packages/grid/src/renderer/cell-renderers/<name>.ts` (see existing `text.ts`, `badge.ts`, `box.ts`, `flex.ts`), export it and register it in `createCellRendererRegistry` in `cell-renderer.ts`, and add a component in `components.tsx` that returns the corresponding instruction type.
 2. **Planned**: Add a stub in `components.tsx` with `stub("ComponentName")` and document it in the “Planned” table above. No renderer change until implementation.
