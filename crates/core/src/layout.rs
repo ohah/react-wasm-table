@@ -1169,6 +1169,154 @@ impl LayoutEngine {
         total_cells
     }
 
+    /// Compute layout with row pinning: header + top pinned + visible middle + bottom pinned.
+    /// Uses different y formulas so that drawing with clip+translate per row region lines up.
+    pub fn compute_into_buffer_row_pinned(
+        &mut self,
+        columns: &[ColumnLayout],
+        viewport: &Viewport,
+        container: &ContainerLayout,
+        pinned_top: usize,
+        pinned_bottom: usize,
+        _scroll_top: f32,
+        total_rows: usize,
+        middle_range: std::ops::Range<usize>,
+        buf: &mut [f32],
+    ) -> usize {
+        if columns.is_empty() || total_rows == 0 {
+            return 0;
+        }
+        let scrollable_count = total_rows
+            .saturating_sub(pinned_top)
+            .saturating_sub(pinned_bottom);
+        let col_count = columns.len();
+        let top_cells = pinned_top * col_count;
+        let middle_cells = middle_range.len() * col_count;
+        let bottom_cells = pinned_bottom * col_count;
+        let total_cells = col_count + top_cells + middle_cells + bottom_cells;
+
+        debug_assert!(
+            buf.len() >= layout_buffer::buf_len(total_cells),
+            "buffer too small for row-pinned layout"
+        );
+
+        let (positions, effective_header_height) = self.compute_column_positions(
+            columns,
+            container,
+            viewport.width,
+            viewport.header_height,
+            viewport.line_height,
+        );
+        let (row_positions, effective_row_height) =
+            if (viewport.row_height - viewport.header_height).abs() > f32::EPSILON {
+                self.compute_column_positions(
+                    columns,
+                    container,
+                    viewport.width,
+                    viewport.row_height,
+                    viewport.line_height,
+                )
+            } else {
+                (positions.clone(), effective_header_height)
+            };
+
+        let mut cell_idx = 0;
+
+        // Header at y = 0 (fixed at top; drawn in top region)
+        for (col_idx, pos) in positions.iter().enumerate() {
+            layout_buffer::write_cell(
+                buf,
+                cell_idx,
+                0,
+                col_idx,
+                pos.x,
+                pos.y,
+                pos.width,
+                pos.height,
+                columns
+                    .get(col_idx)
+                    .map_or_else(Align::default, |c| c.align),
+                pos.padding,
+                pos.border,
+            );
+            cell_idx += 1;
+        }
+
+        // Top pinned rows: y = header_height + row_idx * row_height
+        for row_idx in 0..pinned_top {
+            let row_base_y = effective_header_height + (row_idx as f32) * effective_row_height;
+            for (col_idx, pos) in row_positions.iter().enumerate() {
+                layout_buffer::write_cell(
+                    buf,
+                    cell_idx,
+                    row_idx,
+                    col_idx,
+                    pos.x,
+                    row_base_y + pos.y,
+                    pos.width,
+                    pos.height,
+                    columns
+                        .get(col_idx)
+                        .map_or_else(Align::default, |c| c.align),
+                    pos.padding,
+                    pos.border,
+                );
+                cell_idx += 1;
+            }
+        }
+
+        // Middle (scrollable) rows: absolute content y (scroll handled by JS translateY)
+        for row_idx in middle_range.clone() {
+            let row_base_y = effective_header_height + (row_idx as f32) * effective_row_height;
+            for (col_idx, pos) in row_positions.iter().enumerate() {
+                layout_buffer::write_cell(
+                    buf,
+                    cell_idx,
+                    row_idx,
+                    col_idx,
+                    pos.x,
+                    row_base_y + pos.y,
+                    pos.width,
+                    pos.height,
+                    columns
+                        .get(col_idx)
+                        .map_or_else(Align::default, |c| c.align),
+                    pos.padding,
+                    pos.border,
+                );
+                cell_idx += 1;
+            }
+        }
+
+        // Bottom pinned rows: y = header + (pinned_top + scrollable_count)*rh + (row_idx - (total - pinned_bottom))*rh
+        let bottom_start = total_rows.saturating_sub(pinned_bottom);
+        for (i, row_idx) in (bottom_start..total_rows).enumerate() {
+            let row_base_y = effective_header_height
+                + (pinned_top + scrollable_count) as f32 * effective_row_height
+                + (i as f32) * effective_row_height;
+            for (col_idx, pos) in row_positions.iter().enumerate() {
+                layout_buffer::write_cell(
+                    buf,
+                    cell_idx,
+                    row_idx,
+                    col_idx,
+                    pos.x,
+                    row_base_y + pos.y,
+                    pos.width,
+                    pos.height,
+                    columns
+                        .get(col_idx)
+                        .map_or_else(Align::default, |c| c.align),
+                    pos.padding,
+                    pos.border,
+                );
+                cell_idx += 1;
+            }
+        }
+
+        total_cells
+    }
+
     /// Compute the effective row height for the given columns/container.
     /// In column/column-reverse direction the effective height may be larger
     /// than the nominal `row_height` because Taffy stacks children vertically.
