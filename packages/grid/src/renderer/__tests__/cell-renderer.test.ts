@@ -5,6 +5,7 @@ import {
   textCellRenderer,
   badgeCellRenderer,
   stubCellRenderer,
+  boxCellRenderer,
   flexCellRenderer,
 } from "../cell-renderer";
 import type { CellRenderer, CellRenderContext } from "../cell-renderer";
@@ -112,9 +113,9 @@ describe("CellRendererRegistry", () => {
 });
 
 describe("createCellRendererRegistry", () => {
-  it("creates registry with 4 built-in renderers", () => {
+  it("creates registry with 5 built-in renderers", () => {
     const registry = createCellRendererRegistry();
-    expect(registry.size).toBe(4);
+    expect(registry.size).toBe(5);
     expect(registry.get("text")).toBe(textCellRenderer);
     expect(registry.get("badge")).toBe(badgeCellRenderer);
     expect(registry.get("stub")).toBe(stubCellRenderer);
@@ -124,7 +125,7 @@ describe("createCellRendererRegistry", () => {
   it("merges user renderers on top of built-ins", () => {
     const custom: CellRenderer<{ type: "progress" }> = { type: "progress", draw: mock(() => {}) };
     const registry = createCellRendererRegistry([custom]);
-    expect(registry.size).toBe(5);
+    expect(registry.size).toBe(6);
     expect(registry.get("progress")).toBe(custom);
     // Built-ins still present
     expect(registry.get("text")).toBe(textCellRenderer);
@@ -133,14 +134,14 @@ describe("createCellRendererRegistry", () => {
   it("user renderer overrides built-in with same type", () => {
     const customText: CellRenderer = { type: "text", draw: mock(() => {}) };
     const registry = createCellRendererRegistry([customText]);
-    expect(registry.size).toBe(4);
+    expect(registry.size).toBe(5);
     expect(registry.get("text")).toBe(customText);
     expect(registry.get("text")).not.toBe(textCellRenderer);
   });
 
   it("handles empty user renderers array", () => {
     const registry = createCellRendererRegistry([]);
-    expect(registry.size).toBe(4);
+    expect(registry.size).toBe(5);
   });
 });
 
@@ -214,6 +215,116 @@ describe("stubCellRenderer", () => {
   });
 });
 
+describe("boxCellRenderer", () => {
+  it("has type 'box'", () => {
+    expect(boxCellRenderer.type).toBe("box");
+  });
+
+  it("draws background and border then child text", () => {
+    const context = makeContext();
+    boxCellRenderer.draw(
+      {
+        type: "box",
+        padding: 8,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        backgroundColor: "#f5f5f5",
+        children: [{ type: "text", value: "inside" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillRect).toHaveBeenCalled();
+    expect(context.ctx.fillText).toHaveBeenCalledWith(
+      "inside",
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+
+  it("does nothing with empty children", () => {
+    const context = makeContext();
+    boxCellRenderer.draw({ type: "box", padding: 4, children: [] }, context);
+    expect(context.ctx.fillText).not.toHaveBeenCalled();
+  });
+
+  it("draws multiple children in vertical stack", () => {
+    const context = makeContext();
+    boxCellRenderer.draw(
+      {
+        type: "box",
+        padding: 4,
+        children: [
+          { type: "text", value: "A" },
+          { type: "text", value: "B" },
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
+    const calls = (context.ctx.fillText as any).mock.calls;
+    expect(calls[0][0]).toBe("A");
+    expect(calls[1][0]).toBe("B");
+  });
+
+  it("draws nested Flex as child", () => {
+    const context = makeContext();
+    boxCellRenderer.draw(
+      {
+        type: "box",
+        padding: 4,
+        children: [
+          {
+            type: "flex",
+            children: [{ type: "text", value: "Flex child" }],
+          } as RenderInstruction,
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledWith(
+      "Flex child",
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+
+  it("draws border only when no backgroundColor", () => {
+    const context = makeContext();
+    boxCellRenderer.draw(
+      {
+        type: "box",
+        padding: 0,
+        borderWidth: 2,
+        borderColor: "#333",
+        children: [],
+      },
+      context,
+    );
+    expect(context.ctx.fillRect).toHaveBeenCalled();
+    expect(context.ctx.fillText).not.toHaveBeenCalled();
+  });
+
+  it("applies padding shorthand [top, right, bottom, left]", () => {
+    const context = makeContext();
+    boxCellRenderer.draw(
+      {
+        type: "box",
+        padding: [2, 4, 2, 4],
+        children: [{ type: "text", value: "padded" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledWith(
+      "padded",
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+});
+
 describe("flexCellRenderer", () => {
   it("has type 'flex'", () => {
     expect(flexCellRenderer.type).toBe("flex");
@@ -255,8 +366,13 @@ describe("flexCellRenderer", () => {
       { type: "flex", children: [{ type: "stub", component: "X" } as RenderInstruction] },
       context,
     );
-    // stub child is not handled by flex renderer — no text or badge drawn
-    expect(context.ctx.fillText).not.toHaveBeenCalled();
+    // stub child is drawn as [X] placeholder
+    expect(context.ctx.fillText).toHaveBeenCalledWith(
+      "[X]",
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+    );
   });
 });
 

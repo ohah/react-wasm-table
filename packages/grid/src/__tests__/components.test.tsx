@@ -6,6 +6,7 @@ import type {
   RenderInstruction,
   TextInstruction,
   BadgeInstruction,
+  BoxInstruction,
   StubInstruction,
 } from "../types";
 
@@ -186,6 +187,82 @@ describe("Canvas components", () => {
     });
   });
 
+  describe("Box", () => {
+    it("returns a BoxInstruction when called directly", () => {
+      const result = Box({ padding: 8 }) as RenderInstruction;
+      const expected: BoxInstruction = {
+        type: "box",
+        padding: 8,
+        children: [],
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("returns BoxInstruction with resolved children", () => {
+      const result = Box({
+        padding: 8,
+        borderWidth: 1,
+        children: <Text value="inner" />,
+      }) as RenderInstruction;
+      expect(result.type).toBe("box");
+      if (result.type === "box") {
+        expect(result.padding).toBe(8);
+        expect(result.borderWidth).toBe(1);
+        expect(result.children).toHaveLength(1);
+        expect(result.children[0]).toEqual({ type: "text", value: "inner" });
+      }
+    });
+
+    it("Box via JSX + resolveInstruction", () => {
+      const element = (
+        <Box padding={4}>
+          <Text value="x" />
+        </Box>
+      );
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("box");
+      if (result.type === "box") {
+        expect(result.children).toHaveLength(1);
+      }
+    });
+
+    it("returns BoxInstruction with multiple children", () => {
+      const result = Box({
+        padding: 4,
+        children: [<Text key="a" value="first" />, <Badge key="b" value="second" />],
+      }) as RenderInstruction;
+      expect(result.type).toBe("box");
+      if (result.type === "box") {
+        expect(result.children).toHaveLength(2);
+        expect(result.children[0]).toEqual({ type: "text", value: "first" });
+        expect(result.children[1]).toMatchObject({ type: "badge", value: "second" });
+      }
+    });
+
+    it("accepts style object; individual props override style", () => {
+      const result = Box({
+        style: { padding: 16, backgroundColor: "#eee" },
+        padding: 8,
+        borderWidth: 1,
+      }) as RenderInstruction;
+      expect(result.type).toBe("box");
+      if (result.type === "box") {
+        expect(result.padding).toBe(8);
+        expect(result.backgroundColor).toBe("#eee");
+        expect(result.borderWidth).toBe(1);
+      }
+    });
+
+    it("omits style when no box props given", () => {
+      const result = Box({}) as RenderInstruction;
+      expect(result.type).toBe("box");
+      if (result.type === "box") {
+        expect(result.children).toEqual([]);
+        expect(Object.keys(result)).toEqual(expect.arrayContaining(["type", "children"]));
+      }
+    });
+  });
+
   describe("Stub components", () => {
     it("ProgressBar returns a StubInstruction", () => {
       const result = ProgressBar({
@@ -197,16 +274,6 @@ describe("Canvas components", () => {
         type: "stub",
         component: "ProgressBar",
         props: { value: 75, max: 100, color: "blue" },
-      };
-      expect(result).toEqual(expected);
-    });
-
-    it("Box returns a StubInstruction", () => {
-      const result = Box({ padding: 8 }) as RenderInstruction;
-      const expected: StubInstruction = {
-        type: "stub",
-        component: "Box",
-        props: { padding: 8 },
       };
       expect(result).toEqual(expected);
     });
