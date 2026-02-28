@@ -1,5 +1,8 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { GridInstance } from "../grid-instance";
+import type { RenderInstruction } from "../types";
+import { parseTableChildren } from "./parse-table-children";
+import { resolveInstruction } from "../resolve-instruction";
 import type {
   Theme,
   BoxModelProps,
@@ -122,6 +125,31 @@ export function Table({ table, children, ...rest }: TableProps) {
   const { data, columns } = table.options;
   const state = table.getState();
 
+  // Parse <Tbody><Tr><Td> children into a content map for canvas rendering
+  const parsedBodyContent = useMemo(() => {
+    if (!children) return undefined;
+    const parsed = parseTableChildren(children);
+    if (!parsed.hasStructure || parsed.bodyRows.length === 0) return undefined;
+
+    const map = new Map<string, RenderInstruction>();
+    for (const row of parsed.bodyRows) {
+      if (!row.key) continue;
+      for (const cell of row.cells) {
+        if (!cell.key || cell.content == null) continue;
+        // cell.key format: "${rowId}_${columnId}" — extract columnId after first "_"
+        const sep = cell.key.indexOf("_");
+        if (sep < 0) continue;
+        const columnId = cell.key.slice(sep + 1);
+        const instruction: RenderInstruction =
+          typeof cell.content === "string"
+            ? { type: "text", value: cell.content }
+            : resolveInstruction(cell.content);
+        map.set(`${row.key}:${columnId}`, instruction);
+      }
+    }
+    return map.size > 0 ? map : undefined;
+  }, [children]);
+
   return (
     <Grid
       data={data as Record<string, unknown>[]}
@@ -141,6 +169,7 @@ export function Table({ table, children, ...rest }: TableProps) {
       rowPinning={state.rowPinning}
       onRowPinningChange={(u) => table.setRowPinning(u)}
       table={table}
+      _parsedBodyContent={parsedBodyContent}
       {...rest}
     />
   );
