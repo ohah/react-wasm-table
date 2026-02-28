@@ -130,6 +130,16 @@ export { SelectionManager, buildTSV } from "./adapter/selection-manager";
 export { exportToCSV, exportToTSV, exportToJSON } from "./export";
 export type { ExportOptions } from "./export";
 
+// Clipboard utilities (copy/paste format + onCopy/onPaste wiring)
+export {
+  copyToClipboard,
+  parseClipboardText,
+  pasteFromClipboard,
+  buildCSV,
+  buildHTML,
+} from "./clipboard";
+export type { CopyToClipboardOptions, PasteFromClipboardResult } from "./clipboard";
+
 // Event middleware
 export { composeMiddleware } from "./event-middleware";
 export type { EventChannel, GridEvent, NextFn, EventMiddleware } from "./event-middleware";
