@@ -38,13 +38,6 @@ export class CanvasRenderer {
     this.ctx.clearRect(0, 0, this.canvas.width / dpr, this.canvas.height / dpr);
   }
 
-  /** Get logical canvas width (CSS pixels). */
-  private canvasWidth(): number {
-    if (!this.canvas) return 0;
-    const dpr = window.devicePixelRatio || 1;
-    return this.canvas.width / dpr;
-  }
-
   /** Stroke a GridLineSpec onto the canvas context. */
   private strokeLines(ctx: CanvasRenderingContext2D, spec: GridLineSpec): void {
     ctx.beginPath();
@@ -78,10 +71,9 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || count === 0) return;
 
-    // Draw header background — use max content right edge so fills cover
-    // pinned regions that are translated beyond the canvas viewport width.
-    const canvasW = this.canvasWidth();
-    let contentRight = canvasW;
+    // Draw header background — use max content right edge from actual cells.
+    // Region clipping handles pinned column coverage; no need for canvasWidth floor.
+    let contentRight = 0;
     for (let i = start; i < start + count; i++) {
       contentRight = Math.max(contentRight, readCellX(buf, i) + readCellWidth(buf, i));
     }
@@ -116,9 +108,9 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || count === 0) return;
 
-    // Compute max content right edge so fills cover pinned regions.
-    const canvasW = this.canvasWidth();
-    let contentRight = canvasW;
+    // Compute max content right edge from actual cells.
+    // Region clipping handles pinned column coverage; no need for canvasWidth floor.
+    let contentRight = 0;
     for (let i = start; i < start + count; i++) {
       contentRight = Math.max(contentRight, readCellX(buf, i) + readCellWidth(buf, i));
     }
@@ -171,8 +163,9 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || totalCount === 0) return;
 
-    // Use max content right edge for grid line extents (covers pinned regions)
-    let contentRight = this.canvasWidth();
+    // Use max content right edge from actual cells for grid line extents.
+    // Region clipping handles pinned column coverage; no need for canvasWidth floor.
+    let contentRight = 0;
     for (let i = 0; i < totalCount; i++) {
       contentRight = Math.max(contentRight, readCellX(buf, i) + readCellWidth(buf, i));
     }
