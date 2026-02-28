@@ -435,7 +435,7 @@ describe("GridInstance", () => {
       expect(model.rowCount).toBe(4);
     });
 
-    it("getRowModel with viewIndices returns filtered view", () => {
+    it("getRowModel with viewIndicesRef returns filtered view", () => {
       const columns = [
         helper.accessor("firstName", { header: "First" }),
         helper.accessor("age", { header: "Age" }),
@@ -448,7 +448,7 @@ describe("GridInstance", () => {
         onSortingChange: () => {},
         onColumnFiltersChange: () => {},
         onGlobalFilterChange: () => {},
-        viewIndices: indices,
+        viewIndicesRef: { current: indices },
       });
       const model = instance.getRowModel();
       expect(model.rowCount).toBe(2);
@@ -480,6 +480,107 @@ describe("GridInstance", () => {
       const first = instance.getRowModel();
       const second = instance.getRowModel();
       expect(first).toBe(second);
+    });
+
+    it("getRowModel cache invalidates when viewIndicesRef.current identity changes", () => {
+      const columns = [
+        helper.accessor("firstName", { header: "First" }),
+        helper.accessor("age", { header: "Age" }),
+      ];
+      const ref = { current: new Uint32Array([2, 0]) as Uint32Array | number[] | null };
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        viewIndicesRef: ref,
+      });
+
+      const first = instance.getRowModel();
+      expect(first.rowCount).toBe(2);
+      expect(first.rows[0]!.original.firstName).toBe("Charlie");
+
+      // Same ref identity → cached
+      const second = instance.getRowModel();
+      expect(second).toBe(first);
+
+      // New identity → cache invalidated
+      ref.current = new Uint32Array([1, 3, 0]); // Bob, Dave, Alice
+      const third = instance.getRowModel();
+      expect(third).not.toBe(first);
+      expect(third.rowCount).toBe(3);
+      expect(third.rows[0]!.original.firstName).toBe("Bob");
+    });
+
+    it("getRow uses cached row model when viewIndicesRef identity unchanged", () => {
+      const columns = [
+        helper.accessor("firstName", { header: "First" }),
+        helper.accessor("age", { header: "Age" }),
+      ];
+      const indices = new Uint32Array([2, 0]);
+      const ref = { current: indices as Uint32Array | number[] | null };
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        viewIndicesRef: ref,
+      });
+
+      // Prime the cache
+      instance.getRowModel();
+      // getRow should reuse cached model
+      const row = instance.getRow(0);
+      expect(row.original.firstName).toBe("Charlie");
+    });
+
+    it("getRow reflects updated viewIndicesRef", () => {
+      const columns = [
+        helper.accessor("firstName", { header: "First" }),
+        helper.accessor("age", { header: "Age" }),
+      ];
+      const ref = { current: new Uint32Array([0, 1]) as Uint32Array | number[] | null };
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        viewIndicesRef: ref,
+      });
+
+      expect(instance.getRow(0).original.firstName).toBe("Alice");
+
+      // Update ref to reversed order
+      ref.current = new Uint32Array([3, 2, 1, 0]);
+      expect(instance.getRow(0).original.firstName).toBe("Dave");
+      expect(instance.getRow(1).original.firstName).toBe("Charlie");
+    });
+
+    it("getRowModel returns all data when viewIndicesRef.current is null", () => {
+      const columns = [
+        helper.accessor("firstName", { header: "First" }),
+        helper.accessor("age", { header: "Age" }),
+      ];
+      const ref = { current: null as Uint32Array | number[] | null };
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        viewIndicesRef: ref,
+      });
+
+      const model = instance.getRowModel();
+      expect(model.rowCount).toBe(4);
+      expect(model.rows[0]!.original.firstName).toBe("Alice");
     });
   });
 
