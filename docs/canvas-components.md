@@ -88,7 +88,7 @@ Same extensible pattern as Flex:
 
 ## 4. Stub components
 
-ProgressBar, Sparkline, etc. are stubs (placeholder instructions). They use the same pattern:
+Sparkline, Rating, Icon, etc. are stubs (placeholder instructions). ProgressBar is also a stub but is planned as an **interactive (DOM overlay)** component: canvas-drawn bar for display, plus `<input type="range">` overlay when the cell is edited. Stubs use the same pattern:
 
 - **`style` prop**: Optional `style?: Record<string, unknown>`. Merged with other props; individual props override `style`. When implemented, each stub can expose a typed style surface like Text/Badge/Flex.
 
