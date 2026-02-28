@@ -43,6 +43,7 @@ import { CustomRendererDemo } from "./pages/CustomRendererDemo";
 import { LayerDemo } from "./pages/LayerDemo";
 import { ColumnPinningDemo } from "./pages/ColumnPinningDemo";
 import { ColumnDnDAndRowPinningDemo } from "./pages/ColumnDnDAndRowPinningDemo";
+import { TableApiDemo } from "./pages/TableApiDemo";
 import { FpsCounter } from "./components/FpsCounter";
 
 setWasmUrl("/react_wasm_table_wasm_bg.wasm");
@@ -56,6 +57,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/tanstack-api" element={<TanStackApi />} />
+          <Route path="/table-api" element={<TableApiDemo />} />
           <Route path="/flex-direction" element={<FlexDirection />} />
           <Route path="/flex-wrap" element={<FlexWrap />} />
           <Route path="/flex-grow" element={<FlexGrow />} />
