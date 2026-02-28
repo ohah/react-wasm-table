@@ -36,6 +36,11 @@ export function CanvasComponents() {
             Flex
           </Link>
         </li>
+        <li>
+          <Link to="/canvas-box" style={linkStyle}>
+            Box
+          </Link>
+        </li>
       </ul>
 
       <h2 style={{ marginTop: 24, fontSize: 16 }}>Planned (stub, placeholder only)</h2>
@@ -43,11 +48,6 @@ export function CanvasComponents() {
         <li>
           <Link to="/canvas-progress-bar" style={linkStyle}>
             ProgressBar
-          </Link>
-        </li>
-        <li>
-          <Link to="/canvas-box" style={linkStyle}>
-            Box
           </Link>
         </li>
       </ul>
