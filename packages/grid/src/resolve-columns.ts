@@ -116,6 +116,7 @@ export function resolveColumns<TData>(
           getValue: () => value,
           renderValue: () => value,
           row: {
+            id: "",
             original: {} as TData,
             index: 0,
             getValue: () => undefined,
