@@ -2,32 +2,40 @@ import { describe, expect, it } from "bun:test";
 import React from "react";
 import { Text, Badge, Flex, ProgressBar, Box } from "../components";
 import { resolveInstruction } from "../resolve-instruction";
+import type {
+  RenderInstruction,
+  TextInstruction,
+  BadgeInstruction,
+  StubInstruction,
+} from "../types";
 
 describe("Canvas components", () => {
   describe("Text", () => {
     it("returns a TextInstruction when called directly", () => {
-      const result = Text({ value: "hello", color: "red" });
-      expect(result).toEqual({
+      const result = Text({ value: "hello", color: "red" }) as RenderInstruction;
+      const expected: TextInstruction = {
         type: "text",
         value: "hello",
         style: { color: "red" },
-      });
+      };
+      expect(result).toEqual(expected);
     });
 
     it("returns a TextInstruction via JSX + resolveInstruction", () => {
       const element = <Text value="hello" fontWeight="bold" />;
       const result = resolveInstruction(element);
-      expect(result).toEqual({
+      const expected: TextInstruction = {
         type: "text",
         value: "hello",
         style: { fontWeight: "bold" },
-      });
+      };
+      expect(result).toEqual(expected);
     });
 
     it("omits style when no style properties given", () => {
-      const result = Text({ value: "plain" });
+      const result = Text({ value: "plain" }) as RenderInstruction;
       expect(result).toEqual({ type: "text", value: "plain" });
-      expect((result as { style?: unknown }).style).toBeUndefined();
+      expect((result as TextInstruction).style).toBeUndefined();
     });
 
     it("accepts style object; individual props override", () => {
@@ -35,12 +43,13 @@ describe("Canvas components", () => {
         value: "x",
         style: { color: "gray", fontSize: 14 },
         color: "red",
-      });
-      expect(result).toEqual({
+      }) as RenderInstruction;
+      const expected: TextInstruction = {
         type: "text",
         value: "x",
         style: { color: "red", fontSize: 14 },
-      });
+      };
+      expect(result).toEqual(expected);
     });
   });
 
@@ -50,19 +59,34 @@ describe("Canvas components", () => {
         value: "Active",
         color: "white",
         backgroundColor: "#4caf50",
-      });
-      expect(result).toEqual({
+      }) as RenderInstruction;
+      const expected: BadgeInstruction = {
         type: "badge",
         value: "Active",
         style: { color: "white", backgroundColor: "#4caf50" },
-      });
+      };
+      expect(result).toEqual(expected);
     });
 
     it("returns a BadgeInstruction via JSX + resolveInstruction", () => {
       const element = <Badge value="Done" color="white" backgroundColor="green" />;
       const result = resolveInstruction(element);
       expect(result.type).toBe("badge");
-      expect(result.value).toBe("Done");
+      if (result.type === "badge") expect(result.value).toBe("Done");
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Badge({
+        value: "x",
+        style: { color: "gray", borderRadius: 2 },
+        backgroundColor: "blue",
+      }) as RenderInstruction;
+      const expected: BadgeInstruction = {
+        type: "badge",
+        value: "x",
+        style: { color: "gray", backgroundColor: "blue", borderRadius: 2 },
+      };
+      expect(result).toEqual(expected);
     });
   });
 
@@ -80,7 +104,9 @@ describe("Canvas components", () => {
         expect(result.flexDirection).toBe("row");
         expect(result.gap).toBe(8);
         expect(result.children).toHaveLength(2);
+        expect(result.children[0]).toBeDefined();
         expect(result.children[0]!.type).toBe("text");
+        expect(result.children[1]).toBeDefined();
         expect(result.children[1]!.type).toBe("badge");
       }
     });
@@ -162,21 +188,27 @@ describe("Canvas components", () => {
 
   describe("Stub components", () => {
     it("ProgressBar returns a StubInstruction", () => {
-      const result = ProgressBar({ value: 75, max: 100, color: "blue" });
-      expect(result).toEqual({
+      const result = ProgressBar({
+        value: 75,
+        max: 100,
+        color: "blue",
+      }) as RenderInstruction;
+      const expected: StubInstruction = {
         type: "stub",
         component: "ProgressBar",
         props: { value: 75, max: 100, color: "blue" },
-      });
+      };
+      expect(result).toEqual(expected);
     });
 
     it("Box returns a StubInstruction", () => {
-      const result = Box({ padding: 8 });
-      expect(result).toEqual({
+      const result = Box({ padding: 8 }) as RenderInstruction;
+      const expected: StubInstruction = {
         type: "stub",
         component: "Box",
         props: { padding: 8 },
-      });
+      };
+      expect(result).toEqual(expected);
     });
 
     it("stub via JSX + resolveInstruction", () => {
@@ -186,6 +218,20 @@ describe("Canvas components", () => {
       if (result.type === "stub") {
         expect(result.component).toBe("ProgressBar");
       }
+    });
+
+    it("stub merges style with rest; rest overrides style", () => {
+      const result = ProgressBar({
+        style: { color: "gray" },
+        value: 50,
+        color: "blue",
+      }) as RenderInstruction;
+      const expected: StubInstruction = {
+        type: "stub",
+        component: "ProgressBar",
+        props: { color: "blue", value: 50 },
+      };
+      expect(result).toEqual(expected);
     });
   });
 });
