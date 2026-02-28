@@ -3,6 +3,7 @@ import { createColumnHelper } from "../column-helper";
 import {
   buildRow,
   buildRowModel,
+  buildVirtualRowModel,
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
@@ -144,6 +145,73 @@ describe("Factory markers", () => {
 
   it("getExpandedRowModel returns expanded marker", () => {
     expect(getExpandedRowModel()._type).toBe("expanded");
+  });
+});
+
+describe("buildVirtualRowModel", () => {
+  it("returns only rows within the given range", () => {
+    const model = buildVirtualRowModel(data, null, columns, { start: 1, end: 3 });
+    expect(model.rows).toHaveLength(2);
+    expect(model.rows[0]!.original.name).toBe("Bob");
+    expect(model.rows[0]!.index).toBe(1);
+    expect(model.rows[1]!.original.name).toBe("Charlie");
+    expect(model.rows[1]!.index).toBe(2);
+  });
+
+  it("rowCount reflects total data size, not range", () => {
+    const model = buildVirtualRowModel(data, null, columns, { start: 0, end: 2 });
+    expect(model.rowCount).toBe(4);
+    expect(model.rows).toHaveLength(2);
+  });
+
+  it("applies index indirection within range", () => {
+    const indices = new Uint32Array([2, 0, 3, 1]); // Charlie, Alice, Dave, Bob
+    const model = buildVirtualRowModel(data, indices, columns, { start: 1, end: 3 });
+    expect(model.rows).toHaveLength(2);
+    expect(model.rows[0]!.original.name).toBe("Alice"); // indices[1] = 0
+    expect(model.rows[1]!.original.name).toBe("Dave"); // indices[2] = 3
+  });
+
+  it("getRow accesses any row by index (not limited to range)", () => {
+    const model = buildVirtualRowModel(data, null, columns, { start: 0, end: 2 });
+    const row = model.getRow(3);
+    expect(row.original.name).toBe("Dave");
+  });
+
+  it("getRow throws RangeError for out-of-bounds", () => {
+    const model = buildVirtualRowModel(data, null, columns, { start: 0, end: 2 });
+    expect(() => model.getRow(-1)).toThrow(RangeError);
+    expect(() => model.getRow(4)).toThrow(RangeError);
+  });
+
+  it("clamps range to valid bounds", () => {
+    const model = buildVirtualRowModel(data, null, columns, { start: -5, end: 100 });
+    expect(model.rows).toHaveLength(4);
+    expect(model.rowCount).toBe(4);
+  });
+
+  it("handles empty range", () => {
+    const model = buildVirtualRowModel(data, null, columns, { start: 2, end: 2 });
+    expect(model.rows).toHaveLength(0);
+    expect(model.rowCount).toBe(4);
+  });
+
+  it("handles inverted range (start > end)", () => {
+    const model = buildVirtualRowModel(data, null, columns, { start: 3, end: 1 });
+    expect(model.rows).toHaveLength(0);
+  });
+
+  it("rows are lazily cached", () => {
+    const model = buildVirtualRowModel(data, null, columns, { start: 0, end: 2 });
+    const first = model.rows;
+    const second = model.rows;
+    expect(first).toBe(second);
+  });
+
+  it("handles empty data", () => {
+    const model = buildVirtualRowModel([], null, columns, { start: 0, end: 10 });
+    expect(model.rows).toHaveLength(0);
+    expect(model.rowCount).toBe(0);
   });
 });
 

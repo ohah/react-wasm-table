@@ -126,13 +126,14 @@ export { buildCell } from "./cell";
 export {
   buildRow,
   buildRowModel,
+  buildVirtualRowModel,
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
   getExpandedRowModel,
   buildExpandedRowModel,
 } from "./row-model";
-export type { Row, RowModel, RowModelFactory } from "./row-model";
+export type { Row, RowModel, RowModelFactory, VisibleRange } from "./row-model";
 
 // Parse table children
 export { parseTableChildren } from "./react/parse-table-children";

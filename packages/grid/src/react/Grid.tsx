@@ -129,6 +129,7 @@ export function Grid({
   viewIndicesRef,
   engineRef,
   _parsedBodyContent,
+  _onVisibleRangeChange,
 }: GridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -459,6 +460,7 @@ export function Grid({
     rowPinning: rowPinningProp,
     getRowId: getRowIdProp,
     parsedBodyContent: _parsedBodyContent,
+    onVisibleRangeChange: _onVisibleRangeChange,
   });
   // Wire the bridge: all hooks using `invalidate` now delegate to useRenderLoop's internal dirtyRef
   invalidateRef.current = renderInvalidate;

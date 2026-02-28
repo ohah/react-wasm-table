@@ -1232,4 +1232,76 @@ describe("GridInstance", () => {
       expect(instance.options.state.sorting).toEqual([]);
     });
   });
+
+  // ══════════════════════════════════════════════════════════════════
+  // Virtual Row Model
+  // ══════════════════════════════════════════════════════════════════
+
+  describe("virtual row model", () => {
+    it("getRowModel returns all rows when no visible range set", () => {
+      const { instance } = createInstance();
+      const model = instance.getRowModel();
+      expect(model.rowCount).toBe(4);
+      expect(model.rows).toHaveLength(4);
+    });
+
+    it("getRowModel returns only rows in visible range after _setVisibleRange", () => {
+      const { instance } = createInstance();
+      instance._setVisibleRange({ start: 1, end: 3 });
+      const model = instance.getRowModel();
+      expect(model.rows).toHaveLength(2);
+      expect(model.rows[0]!.original.firstName).toBe("Bob");
+      expect(model.rows[1]!.original.firstName).toBe("Charlie");
+      expect(model.rowCount).toBe(4);
+    });
+
+    it("_setVisibleRange(null) reverts to full row model", () => {
+      const { instance } = createInstance();
+      instance._setVisibleRange({ start: 0, end: 2 });
+      expect(instance.getRowModel().rows).toHaveLength(2);
+      instance._setVisibleRange(null);
+      expect(instance.getRowModel().rows).toHaveLength(4);
+    });
+
+    it("getTotalRowModel always returns all rows regardless of visible range", () => {
+      const { instance } = createInstance();
+      instance._setVisibleRange({ start: 0, end: 1 });
+      const virtual = instance.getRowModel();
+      const total = instance.getTotalRowModel();
+      expect(virtual.rows).toHaveLength(1);
+      expect(total.rows).toHaveLength(4);
+      expect(total.rowCount).toBe(4);
+    });
+
+    it("getRowCount returns total count without building Row objects", () => {
+      const { instance } = createInstance();
+      expect(instance.getRowCount()).toBe(4);
+    });
+
+    it("getRowCount returns count from viewIndices when set", () => {
+      const viewIndicesRef = { current: new Uint32Array([0, 2]) };
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns: [
+          helper.accessor("firstName", { header: "First" }),
+          helper.accessor("age", { header: "Age" }),
+        ],
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        viewIndicesRef,
+      });
+      expect(instance.getRowCount()).toBe(2);
+    });
+
+    it("virtual getRowModel getRow accesses any row", () => {
+      const { instance } = createInstance();
+      instance._setVisibleRange({ start: 0, end: 2 });
+      const model = instance.getRowModel();
+      // .rows only has 2, but getRow(3) should work
+      const row = model.getRow(3);
+      expect(row.original.firstName).toBe("Dave");
+    });
+  });
 });
