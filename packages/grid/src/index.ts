@@ -38,7 +38,8 @@ export { resolveInstruction } from "./resolve-instruction";
 // Column helper (TanStack-compatible API)
 export { createColumnHelper } from "./column-helper";
 export type { ColumnHelper } from "./column-helper";
-export { resolveColumns, getLeafColumns } from "./resolve-columns";
+export { resolveColumns, getLeafColumns, computePinningInfo } from "./resolve-columns";
+export type { PinningInfo } from "./resolve-columns";
 export type {
   GridColumnDef,
   AccessorKeyColumnDef,

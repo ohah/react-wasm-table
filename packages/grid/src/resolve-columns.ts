@@ -5,6 +5,7 @@ import type {
   ColumnOrderState,
   ColumnVisibilityState,
   ColumnSizingState,
+  ColumnPinningState,
 } from "./tanstack-types";
 import { resolveInstruction } from "./resolve-instruction";
 
@@ -19,6 +20,7 @@ export function resolveColumns<TData>(
     columnOrder?: ColumnOrderState;
     columnVisibility?: ColumnVisibilityState;
     columnSizing?: ColumnSizingState;
+    columnPinning?: ColumnPinningState;
   },
 ): ColumnProps[] {
   const result: ColumnProps[] = [];
@@ -145,6 +147,23 @@ export function resolveColumns<TData>(
     });
   }
 
+  // Reorder by columnPinning: left → center → right
+  if (options?.columnPinning) {
+    const { left = [], right = [] } = options.columnPinning;
+    if (left.length > 0 || right.length > 0) {
+      const pinnedSet = new Set([...left, ...right]);
+      const pinnedLeft = left
+        .map((id) => result.find((c) => c.id === id))
+        .filter((c): c is ColumnProps => c != null);
+      const center = result.filter((c) => !pinnedSet.has(c.id));
+      const pinnedRight = right
+        .map((id) => result.find((c) => c.id === id))
+        .filter((c): c is ColumnProps => c != null);
+      result.length = 0;
+      result.push(...pinnedLeft, ...center, ...pinnedRight);
+    }
+  }
+
   return result;
 }
 
@@ -153,6 +172,23 @@ function getId<TData>(def: GridColumnDef<TData, any>): string {
   if ("id" in def && def.id) return def.id;
   if ("accessorKey" in def && def.accessorKey) return def.accessorKey as string;
   return `col_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export interface PinningInfo {
+  leftCount: number;
+  rightCount: number;
+  centerCount: number;
+}
+
+export function computePinningInfo(
+  columns: ColumnProps[],
+  columnPinning?: ColumnPinningState,
+): PinningInfo {
+  if (!columnPinning) return { leftCount: 0, rightCount: 0, centerCount: columns.length };
+  const visibleIds = new Set(columns.map((c) => c.id));
+  const leftCount = (columnPinning.left ?? []).filter((id) => visibleIds.has(id)).length;
+  const rightCount = (columnPinning.right ?? []).filter((id) => visibleIds.has(id)).length;
+  return { leftCount, rightCount, centerCount: columns.length - leftCount - rightCount };
 }
 
 /**

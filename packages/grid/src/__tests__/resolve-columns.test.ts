@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { createColumnHelper } from "../column-helper";
-import { resolveColumns, getLeafColumns } from "../resolve-columns";
+import { resolveColumns, getLeafColumns, computePinningInfo } from "../resolve-columns";
 
 type Person = {
   firstName: string;
@@ -464,5 +464,96 @@ describe("getLeafColumns", () => {
     expect((leaves[0] as { accessorKey: string }).accessorKey).toBe("firstName");
     expect((leaves[1] as { accessorKey: string }).accessorKey).toBe("lastName");
     expect((leaves[2] as { accessorKey: string }).accessorKey).toBe("age");
+  });
+});
+
+describe("resolveColumns — columnPinning", () => {
+  const defs = [
+    helper.accessor("firstName", { header: "First", size: 100 }),
+    helper.accessor("lastName", { header: "Last", size: 100 }),
+    helper.accessor("age", { header: "Age", size: 80 }),
+    helper.accessor("status", { header: "Status", size: 120 }),
+  ];
+
+  it("reorders columns left → center → right", () => {
+    const result = resolveColumns(defs, [], {
+      columnPinning: { left: ["age"], right: ["firstName"] },
+    });
+    expect(result.map((c) => c.id)).toEqual(["age", "lastName", "status", "firstName"]);
+  });
+
+  it("handles left-only pinning", () => {
+    const result = resolveColumns(defs, [], {
+      columnPinning: { left: ["lastName", "age"], right: [] },
+    });
+    expect(result.map((c) => c.id)).toEqual(["lastName", "age", "firstName", "status"]);
+  });
+
+  it("handles right-only pinning", () => {
+    const result = resolveColumns(defs, [], {
+      columnPinning: { left: [], right: ["status"] },
+    });
+    expect(result.map((c) => c.id)).toEqual(["firstName", "lastName", "age", "status"]);
+  });
+
+  it("ignores non-existent column IDs", () => {
+    const result = resolveColumns(defs, [], {
+      columnPinning: { left: ["nonexistent"], right: ["alsoMissing"] },
+    });
+    expect(result.map((c) => c.id)).toEqual(["firstName", "lastName", "age", "status"]);
+  });
+
+  it("works with visibility + pinning combined", () => {
+    const result = resolveColumns(defs, [], {
+      columnVisibility: { lastName: false },
+      columnPinning: { left: ["age"], right: ["status"] },
+    });
+    // lastName is hidden, so only 3 columns remain
+    expect(result.map((c) => c.id)).toEqual(["age", "firstName", "status"]);
+  });
+
+  it("works with ordering + pinning combined", () => {
+    const result = resolveColumns(defs, [], {
+      columnOrder: ["status", "age", "lastName", "firstName"],
+      columnPinning: { left: ["firstName"], right: [] },
+    });
+    // First reorder by columnOrder, then pinning moves firstName to left
+    expect(result[0]!.id).toBe("firstName");
+    expect(result.slice(1).map((c) => c.id)).toEqual(["status", "age", "lastName"]);
+  });
+
+  it("preserves original order when columnPinning has empty arrays", () => {
+    const result = resolveColumns(defs, [], {
+      columnPinning: { left: [], right: [] },
+    });
+    expect(result.map((c) => c.id)).toEqual(["firstName", "lastName", "age", "status"]);
+  });
+});
+
+describe("computePinningInfo", () => {
+  const columns = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }] as any[];
+
+  it("returns all center when no pinning", () => {
+    expect(computePinningInfo(columns)).toEqual({
+      leftCount: 0,
+      rightCount: 0,
+      centerCount: 4,
+    });
+  });
+
+  it("returns correct counts with pinning", () => {
+    expect(computePinningInfo(columns, { left: ["a"], right: ["d"] })).toEqual({
+      leftCount: 1,
+      rightCount: 1,
+      centerCount: 2,
+    });
+  });
+
+  it("ignores IDs not in visible columns", () => {
+    expect(computePinningInfo(columns, { left: ["a", "x"], right: ["y"] })).toEqual({
+      leftCount: 1,
+      rightCount: 0,
+      centerCount: 3,
+    });
   });
 });
