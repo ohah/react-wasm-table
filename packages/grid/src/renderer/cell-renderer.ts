@@ -4,7 +4,10 @@ import type {
   BadgeInstruction,
   StubInstruction,
   FlexInstruction,
+  BoxInstruction,
   Theme,
+  CssRect,
+  CssLength,
 } from "../types";
 import { drawTextCellFromBuffer, drawBadgeFromBuffer, measureText } from "./draw-primitives";
 import {
@@ -60,8 +63,44 @@ export class CellRendererRegistry {
   }
 }
 
+/** Resolve CssLength to px; refPx used for percentage. */
+function lengthToPx(v: CssLength | undefined, refPx: number): number {
+  if (v === undefined) return 0;
+  if (typeof v === "number") return v;
+  const m = String(v).match(/^(\d+(?:\.\d+)?)%$/);
+  return m ? (parseFloat(m[1]!) / 100) * refPx : 0;
+}
+
+/** Resolve CssRect<CssLength> to { top, right, bottom, left } in px. */
+function rectToPx(
+  rect: CssRect<CssLength> | undefined,
+  refW: number,
+  refH: number,
+): { top: number; right: number; bottom: number; left: number } {
+  if (rect === undefined) return { top: 0, right: 0, bottom: 0, left: 0 };
+  if (typeof rect === "number") return { top: rect, right: rect, bottom: rect, left: rect };
+  const [a, b, c, d] = rect as [CssLength?, CssLength?, CssLength?, CssLength?];
+  if (rect.length === 2) {
+    const top = lengthToPx(a, refH);
+    const right = lengthToPx(b, refW);
+    return { top, right, bottom: top, left: right };
+  }
+  if (rect.length === 3) {
+    const top = lengthToPx(a, refH);
+    const right = lengthToPx(b, refW);
+    const bottom = lengthToPx(c, refH);
+    return { top, right, bottom, left: right };
+  }
+  return {
+    top: lengthToPx(a, refH),
+    right: lengthToPx(b, refW),
+    bottom: lengthToPx(c, refH),
+    left: lengthToPx(d, refW),
+  };
+}
+
 /**
- * Create a CellRendererRegistry pre-loaded with the 4 built-in renderers.
+ * Create a CellRendererRegistry pre-loaded with the 5 built-in renderers.
  * Optional `userRenderers` are merged on top — same type overrides built-in.
  */
 export function createCellRendererRegistry(
@@ -71,6 +110,7 @@ export function createCellRendererRegistry(
   registry.register(textCellRenderer);
   registry.register(badgeCellRenderer);
   registry.register(stubCellRenderer);
+  registry.register(boxCellRenderer);
   registry.register(flexCellRenderer);
   if (userRenderers) {
     for (const r of userRenderers) {
@@ -132,7 +172,7 @@ function measureInstructionWidth(
     const tw = ctx.measureText(instruction.value).width;
     return tw + BADGE_PADDING * 2;
   }
-  if (instruction.type === "stub") {
+  if (instruction.type === "stub" || instruction.type === "box" || instruction.type === "flex") {
     return 60;
   }
   return 0;
@@ -143,7 +183,11 @@ function measureInstructionHeight(
   _ctx: CanvasRenderingContext2D,
   instruction: RenderInstruction,
 ): number {
-  return instruction.type === "badge" || instruction.type === "text" || instruction.type === "stub"
+  return instruction.type === "badge" ||
+    instruction.type === "text" ||
+    instruction.type === "stub" ||
+    instruction.type === "box" ||
+    instruction.type === "flex"
     ? FLEX_CHILD_HEIGHT
     : 0;
 }
@@ -159,6 +203,67 @@ function makeSubCellBuf(x: number, y: number, w: number, h: number): Float32Arra
   // padding 0 by default (indices 7-10)
   return buf;
 }
+
+/** Renders a box container: background, border, then children in content rect (vertical stack). */
+export const boxCellRenderer: CellRenderer<BoxInstruction> = {
+  type: "box",
+  draw(instruction, context) {
+    const { ctx, buf, cellIdx, theme } = context;
+    const cellX = readCellX(buf, cellIdx);
+    const cellY = readCellY(buf, cellIdx);
+    const cellW = readCellWidth(buf, cellIdx);
+    const cellH = readCellHeight(buf, cellIdx);
+
+    const padding = rectToPx(instruction.padding, cellW, cellH);
+    const border = rectToPx(instruction.borderWidth, cellW, cellH);
+    const boxSizing = instruction.boxSizing ?? "border-box";
+
+    let innerX = cellX;
+    let innerY = cellY;
+    let innerW = cellW;
+    let innerH = cellH;
+    if (boxSizing === "border-box") {
+      innerX += border.left + padding.left;
+      innerY += border.top + padding.top;
+      innerW -= border.left + border.right + padding.left + padding.right;
+      innerH -= border.top + border.bottom + padding.top + padding.bottom;
+    }
+
+    if (instruction.backgroundColor) {
+      ctx.fillStyle = instruction.backgroundColor;
+      ctx.fillRect(cellX, cellY, cellW, cellH);
+    }
+    const bc = instruction.borderColor ?? theme.borderColor;
+    if (border.top > 0 || border.right > 0 || border.bottom > 0 || border.left > 0) {
+      ctx.fillStyle = bc;
+      if (border.top) ctx.fillRect(cellX, cellY, cellW, border.top);
+      if (border.bottom) ctx.fillRect(cellX, cellY + cellH - border.bottom, cellW, border.bottom);
+      if (border.left)
+        ctx.fillRect(cellX, cellY + border.top, border.left, cellH - border.top - border.bottom);
+      if (border.right)
+        ctx.fillRect(
+          cellX + cellW - border.right,
+          cellY + border.top,
+          border.right,
+          cellH - border.top - border.bottom,
+        );
+    }
+
+    const children = instruction.children;
+    if (children.length === 0) return;
+
+    const childHeights = children.map((c) => measureInstructionHeight(ctx, c));
+    let y = innerY;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i]!;
+      const h = childHeights[i] ?? FLEX_CHILD_HEIGHT;
+      const subBuf = makeSubCellBuf(innerX, y, innerW, h);
+      const subContext: CellRenderContext = { ctx, buf: subBuf, cellIdx: 0, theme };
+      drawChild(child, subContext);
+      y += h;
+    }
+  },
+};
 
 /** Renders a flex container: lays out all children in a row with gap and draws each. */
 export const flexCellRenderer: CellRenderer<FlexInstruction> = {
@@ -273,5 +378,9 @@ function drawChild(instruction: RenderInstruction, context: CellRenderContext): 
     badgeCellRenderer.draw(instruction, context);
   } else if (instruction.type === "stub") {
     stubCellRenderer.draw(instruction, context);
+  } else if (instruction.type === "box") {
+    boxCellRenderer.draw(instruction, context);
+  } else if (instruction.type === "flex") {
+    flexCellRenderer.draw(instruction, context);
   }
 }

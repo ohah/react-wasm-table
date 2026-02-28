@@ -6,6 +6,7 @@ export {
   textCellRenderer,
   badgeCellRenderer,
   stubCellRenderer,
+  boxCellRenderer,
   flexCellRenderer,
 } from "./cell-renderer";
 export type { CellRenderer, CellRenderContext } from "./cell-renderer";
