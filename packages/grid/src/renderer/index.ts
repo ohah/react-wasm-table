@@ -18,3 +18,5 @@ export {
   createAfterDrawLayer,
 } from "./layer";
 export type { GridLayer, LayerContext, LayerSpace } from "./layer";
+export { buildRegions } from "./region";
+export type { CanvasRegion, RegionLayout } from "./region";
