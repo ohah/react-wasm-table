@@ -19,7 +19,7 @@ export interface LayerContext {
   ctx: CanvasRenderingContext2D;
   renderer: CanvasRenderer;
   layoutBuf: Float32Array;
-  viewIndices: Uint32Array;
+  viewIndices: Uint32Array | number[];
   width: number;
   height: number;
   scrollLeft: number;
