@@ -1,17 +1,7 @@
 import type { BoxInstruction, RenderInstruction } from "../../types";
 import type { CellRenderer } from "../cell-renderer-types";
-import {
-  readCellX,
-  readCellY,
-  readCellWidth,
-  readCellHeight,
-} from "../../adapter/layout-reader";
-import {
-  rectToPx,
-  measureInstructionHeight,
-  makeSubCellBuf,
-  FLEX_CHILD_HEIGHT,
-} from "./shared";
+import { readCellX, readCellY, readCellWidth, readCellHeight } from "../../adapter/layout-reader";
+import { rectToPx, measureInstructionHeight, makeSubCellBuf, FLEX_CHILD_HEIGHT } from "./shared";
 
 export const boxCellRenderer: CellRenderer<BoxInstruction> = {
   type: "box",
@@ -33,10 +23,8 @@ export const boxCellRenderer: CellRenderer<BoxInstruction> = {
     if (boxSizing === "border-box") {
       innerX += border.left + padding.left;
       innerY += border.top + padding.top;
-      innerW -=
-        border.left + border.right + padding.left + padding.right;
-      innerH -=
-        border.top + border.bottom + padding.top + padding.bottom;
+      innerW -= border.left + border.right + padding.left + padding.right;
+      innerH -= border.top + border.bottom + padding.top + padding.bottom;
     }
 
     if (instruction.backgroundColor) {
@@ -44,28 +32,12 @@ export const boxCellRenderer: CellRenderer<BoxInstruction> = {
       ctx.fillRect(cellX, cellY, cellW, cellH);
     }
     const bc = instruction.borderColor ?? theme.borderColor;
-    if (
-      border.top > 0 ||
-      border.right > 0 ||
-      border.bottom > 0 ||
-      border.left > 0
-    ) {
+    if (border.top > 0 || border.right > 0 || border.bottom > 0 || border.left > 0) {
       ctx.fillStyle = bc;
       if (border.top) ctx.fillRect(cellX, cellY, cellW, border.top);
-      if (border.bottom)
-        ctx.fillRect(
-          cellX,
-          cellY + cellH - border.bottom,
-          cellW,
-          border.bottom,
-        );
+      if (border.bottom) ctx.fillRect(cellX, cellY + cellH - border.bottom, cellW, border.bottom);
       if (border.left)
-        ctx.fillRect(
-          cellX,
-          cellY + border.top,
-          border.left,
-          cellH - border.top - border.bottom,
-        );
+        ctx.fillRect(cellX, cellY + border.top, border.left, cellH - border.top - border.bottom);
       if (border.right)
         ctx.fillRect(
           cellX + cellW - border.right,
@@ -78,9 +50,7 @@ export const boxCellRenderer: CellRenderer<BoxInstruction> = {
     const children = instruction.children;
     if (children.length === 0 || !registry) return;
 
-    const childHeights = children.map((c) =>
-      measureInstructionHeight(ctx, c),
-    );
+    const childHeights = children.map((c) => measureInstructionHeight(ctx, c));
     let y = innerY;
     for (let i = 0; i < children.length; i++) {
       const child = children[i]!;
