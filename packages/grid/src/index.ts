@@ -121,6 +121,7 @@ export {
   createGridKeyboardEvent,
   createGridScrollEvent,
   createGridCanvasEvent,
+  createGridContextMenuEvent,
   createGridTouchEvent,
 } from "./event-helpers";
 export type { ContentCoords } from "./event-helpers";
@@ -233,6 +234,7 @@ export type {
   GridScrollEvent,
   GridCanvasEvent,
   GridCanvasEventType,
+  GridContextMenuEvent,
   GridTouchEvent,
   GridTouchEventType,
   GridTouchPoint,

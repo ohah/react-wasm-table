@@ -6,6 +6,7 @@ import type {
   GridScrollEvent,
   GridCanvasEvent,
   GridCanvasEventType,
+  GridContextMenuEvent,
   GridTouchEvent,
   GridTouchEventType,
   GridTouchPoint,
@@ -101,6 +102,19 @@ export function createGridCanvasEvent(
   (base as unknown as Record<string, unknown>).type = type;
   (base as unknown as Record<string, unknown>).hitTest = hitTest;
   return base as unknown as GridCanvasEvent;
+}
+
+export function createGridContextMenuEvent(
+  native: MouseEvent,
+  hitTest: HitTestResult,
+  coords: ContentCoords,
+  table?: import("./grid-instance").GridInstance,
+): GridContextMenuEvent {
+  const base = createBase();
+  assignMouse(base as unknown as Record<string, unknown>, native, coords);
+  (base as unknown as Record<string, unknown>).hitTest = hitTest;
+  if (table != null) (base as unknown as Record<string, unknown>).table = table;
+  return base as unknown as GridContextMenuEvent;
 }
 
 export function createGridTouchEvent(

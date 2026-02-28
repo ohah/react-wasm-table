@@ -53,6 +53,12 @@ export interface GridEventHandlers {
     hitTest: import("../types").HitTestResult,
     coords: EventCoords,
   ) => boolean | void;
+  /** Right-click context menu. Receives native event, hit-test result, and coords. Call preventDefault on native to suppress browser menu. */
+  onContextMenu?: (
+    native: MouseEvent,
+    hitTest: import("../types").HitTestResult,
+    coords: EventCoords,
+  ) => void;
   // Touch events (native TouchEvent passthrough)
   onTouchStart?: (
     native: TouchEvent,
@@ -283,6 +289,19 @@ export class EventManager {
         const rowHit = findCell(x, y, this.rowLayouts);
         if (rowHit) {
           handlers.onCellClick?.(rowHit, e, coords);
+        }
+      },
+      { signal },
+    );
+
+    canvas.addEventListener(
+      "contextmenu",
+      (e: MouseEvent) => {
+        const coords = toContentCoords(e.clientX, e.clientY);
+        const hitTest = buildHitTest(coords.contentX, coords.contentY);
+        if (handlers.onContextMenu) {
+          e.preventDefault();
+          handlers.onContextMenu(e, hitTest, coords);
         }
       },
       { signal },
