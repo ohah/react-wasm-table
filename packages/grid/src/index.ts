@@ -85,6 +85,7 @@ export type {
   GridHeaderGroup,
   GridState,
   BuildOptions,
+  ViewIndicesRef,
 } from "./grid-instance";
 
 // Row model

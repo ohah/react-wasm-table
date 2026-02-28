@@ -16,7 +16,7 @@ import type {
   ExpandedState,
   ExpandedUpdater,
 } from "./tanstack-types";
-import type { GridInstance, GridState } from "./grid-instance";
+import type { GridInstance, GridState, ViewIndicesRef } from "./grid-instance";
 import { buildGridInstance } from "./grid-instance";
 import type { RowModelFactory } from "./row-model";
 
@@ -67,6 +67,9 @@ export interface UseGridTableOptions<TData> {
   getSortedRowModel?: RowModelFactory<TData>;
   getFilteredRowModel?: RowModelFactory<TData>;
   getExpandedRowModel?: RowModelFactory<TData>;
+
+  /** Mutable ref holding WASM-computed view indices. Grid writes, GridInstance reads lazily. */
+  viewIndicesRef?: ViewIndicesRef;
 }
 
 /**
@@ -78,6 +81,7 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     data,
     columns,
     state: controlledState,
+    viewIndicesRef,
     onSortingChange: controlledOnSortingChange,
     onColumnFiltersChange: controlledOnColumnFiltersChange,
     onGlobalFilterChange: controlledOnGlobalFilterChange,
@@ -263,6 +267,7 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
         onColumnPinningChange,
         onExpandedChange,
         getSubRows,
+        viewIndicesRef,
       }),
     [
       data,

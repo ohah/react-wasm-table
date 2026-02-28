@@ -618,6 +618,9 @@ export interface GridProps extends BoxModelProps {
   /** Optional external EditorManager instance. */
   editorManager?: import("./adapter/editor-manager").EditorManager;
 
+  /** Mutable ref to receive WASM-computed view indices (for GridInstance row model). */
+  viewIndicesRef?: { current: Uint32Array | number[] | null };
+
   /** Ref callback to receive the WASM engine instance (e.g., for debug logging). */
   engineRef?: React.RefObject<WasmTableEngine | null>;
 }

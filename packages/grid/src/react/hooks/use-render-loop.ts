@@ -118,6 +118,7 @@ export interface UseRenderLoopParams {
   cellRenderers?: CellRenderer[];
   layers?: GridLayer[];
   columnPinning?: ColumnPinningState;
+  viewIndicesRef?: { current: Uint32Array | number[] | null };
 }
 
 export function useRenderLoop({
@@ -149,6 +150,7 @@ export function useRenderLoop({
   cellRenderers,
   layers,
   columnPinning,
+  viewIndicesRef,
 }: UseRenderLoopParams) {
   const cellRendererRegistry = useMemo(
     () => createCellRendererRegistry(cellRenderers),
@@ -362,6 +364,9 @@ export function useRenderLoop({
         // Zero-copy reads from WASM memory
         const layoutBuf = bridge.getLayoutBuffer();
         const viewIndices = bridge.getViewIndices();
+        if (viewIndicesRef) {
+          viewIndicesRef.current = viewIndices;
+        }
 
         // Update filtered row count / effective row height → scroll height + clamping
         const filteredCount = viewIndices.length;
