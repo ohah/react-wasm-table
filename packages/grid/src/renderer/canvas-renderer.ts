@@ -152,7 +152,13 @@ export class CanvasRenderer {
 
       const renderer = rendererRegistry?.get(instruction.type);
       if (renderer) {
-        renderer.draw(instruction, { ctx, buf, cellIdx: i, theme });
+        renderer.draw(instruction, {
+          ctx,
+          buf,
+          cellIdx: i,
+          theme,
+          registry: rendererRegistry,
+        });
       }
     }
   }
