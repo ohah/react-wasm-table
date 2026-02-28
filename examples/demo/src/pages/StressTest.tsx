@@ -136,16 +136,21 @@ export function StressTest() {
       </p>
       <div ref={ref} style={{ width: "100%", height: 600 }}>
         {size.width > 0 && (
-          <Grid
-            data={data as Record<string, unknown>[]}
-            width={size.width}
-            height={size.height}
-            columns={columns}
-            sorting={sorting}
-            onSortingChange={setSorting}
-            overflowY="scroll"
-            overflowX="scroll"
-          />
+          <>
+            <section style={{ marginBottom: 16 }}>
+              <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+              <Grid
+                data={data as Record<string, unknown>[]}
+                width={size.width}
+                height={size.height}
+                columns={columns}
+                sorting={sorting}
+                onSortingChange={setSorting}
+                overflowY="scroll"
+                overflowX="scroll"
+              />
+            </section>
+          </>
         )}
       </div>
     </>

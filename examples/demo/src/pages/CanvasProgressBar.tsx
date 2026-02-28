@@ -36,7 +36,10 @@ export function CanvasProgressBar() {
         implemented, it will draw a progress bar on canvas.
       </p>
 
-      <Grid data={data} columns={columns} width={480} height={320} rowHeight={40} />
+      <section style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
+        <Grid data={data} columns={columns} width={480} height={320} rowHeight={40} />
+      </section>
     </>
   );
 }

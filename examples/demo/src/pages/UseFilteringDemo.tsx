@@ -185,17 +185,20 @@ export function UseFilteringDemo() {
         style={{ ...inputStyle, width: 300, marginBottom: 12 }}
       />
 
-      <Grid
-        data={data}
-        width={640}
-        height={400}
-        columns={columns}
-        columnFilters={columnFilters}
-        onColumnFiltersChange={setColumnFilters}
-        globalFilter={globalFilter}
-        onGlobalFilterChange={setGlobalFilter}
-        overflowY="scroll"
-      />
+      <section style={{ marginBottom: 16 }}>
+        <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+        <Grid
+          data={data}
+          width={640}
+          height={400}
+          columns={columns}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+          globalFilter={globalFilter}
+          onGlobalFilterChange={setGlobalFilter}
+          overflowY="scroll"
+        />
+      </section>
 
       <pre
         style={{

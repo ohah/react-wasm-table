@@ -165,21 +165,24 @@ export function ColumnPinningDemo() {
         </div>
       </div>
 
-      {/* Grid */}
-      <Grid
-        data={data}
-        width={700}
-        height={400}
-        columns={columnDefs}
-        sorting={sorting}
-        onSortingChange={setSorting}
-        columnOrder={columnOrder}
-        onColumnOrderChange={setColumnOrder}
-        columnPinning={columnPinning}
-        onColumnPinningChange={setColumnPinning}
-        enableColumnDnD
-        overflowY="scroll"
-      />
+      {/* Grid API */}
+      <section style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+        <Grid
+          data={data}
+          width={700}
+          height={400}
+          columns={columnDefs}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          columnOrder={columnOrder}
+          onColumnOrderChange={setColumnOrder}
+          columnPinning={columnPinning}
+          onColumnPinningChange={setColumnPinning}
+          enableColumnDnD
+          overflowY="scroll"
+        />
+      </section>
 
       {/* State display */}
       <pre

@@ -146,16 +146,19 @@ export function UseSelectionDemo() {
 
       <div style={{ display: "flex", gap: 16 }}>
         <div>
-          <Grid
-            data={data}
-            width={560}
-            height={340}
-            columns={columns}
-            selection={selection}
-            onSelectionChange={setSelection}
-            onBeforeSelectionChange={onBeforeSelectionChange}
-            onCopy={onCopy}
-          />
+          <section style={{ marginBottom: 16 }}>
+            <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+            <Grid
+              data={data}
+              width={560}
+              height={340}
+              columns={columns}
+              selection={selection}
+              onSelectionChange={setSelection}
+              onBeforeSelectionChange={onBeforeSelectionChange}
+              onCopy={onCopy}
+            />
+          </section>
         </div>
 
         <div style={{ flex: 1, minWidth: 200 }}>

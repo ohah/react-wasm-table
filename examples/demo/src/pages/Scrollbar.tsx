@@ -92,7 +92,9 @@ export function Scrollbar() {
       </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+            Grid API — Canvas (WASM/Taffy)
+          </h3>
           <Grid
             data={largeData}
             width={550}

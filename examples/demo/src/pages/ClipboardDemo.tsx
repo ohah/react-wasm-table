@@ -3,7 +3,6 @@ import {
   Grid,
   createColumnHelper,
   useGridTable,
-  getCoreRowModel,
   copyToClipboard,
   pasteFromClipboard,
   type NormalizedRange,
@@ -193,19 +192,22 @@ export function ClipboardDemo() {
 
       <div style={{ display: "flex", gap: 24 }}>
         <div>
-          <Grid
-            data={data}
-            width={560}
-            height={320}
-            columns={columns}
-            sorting={sorting}
-            onSortingChange={setSorting}
-            selection={selection}
-            onSelectionChange={setSelection}
-            onCopy={onCopy}
-            onPaste={onPaste}
-            viewIndicesRef={viewIndicesRef}
-          />
+          <section style={{ marginBottom: 16 }}>
+            <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+            <Grid
+              data={data}
+              width={560}
+              height={320}
+              columns={columns}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              selection={selection}
+              onSelectionChange={setSelection}
+              onCopy={onCopy}
+              onPaste={onPaste}
+              viewIndicesRef={viewIndicesRef}
+            />
+          </section>
         </div>
         <div style={{ minWidth: 200 }}>
           <div

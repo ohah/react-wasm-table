@@ -119,16 +119,19 @@ export function UseSortingDemo() {
             </button>
           </div>
 
-          <Grid
-            data={data}
-            width={640}
-            height={400}
-            columns={columns}
-            sorting={sorting}
-            onSortingChange={handleSortingChange}
-            onBeforeSortChange={onBeforeSortChange}
-            overflowY="scroll"
-          />
+          <section style={{ marginBottom: 16 }}>
+            <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+            <Grid
+              data={data}
+              width={640}
+              height={400}
+              columns={columns}
+              sorting={sorting}
+              onSortingChange={handleSortingChange}
+              onBeforeSortChange={onBeforeSortChange}
+              overflowY="scroll"
+            />
+          </section>
         </div>
       </div>
 
@@ -196,7 +199,10 @@ export function UseSortingDemo() {
         Without <code>sorting</code> / <code>onSortingChange</code> props, the Grid manages sort
         state internally. Click headers to test.
       </p>
-      <Grid data={data} width={640} height={300} columns={columns} overflowY="scroll" />
+      <section style={{ marginBottom: 16 }}>
+        <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+        <Grid data={data} width={640} height={300} columns={columns} overflowY="scroll" />
+      </section>
     </>
   );
 }

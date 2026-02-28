@@ -115,7 +115,10 @@ export function CanvasBox() {
         </li>
       </ul>
 
-      <Grid data={data} columns={columns} width={900} height={360} rowHeight={48} />
+      <section style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
+        <Grid data={data} columns={columns} width={900} height={360} rowHeight={48} />
+      </section>
     </>
   );
 }

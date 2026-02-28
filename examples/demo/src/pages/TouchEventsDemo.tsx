@@ -169,17 +169,20 @@ export function TouchEventsDemo() {
 
       <div style={{ display: "flex", gap: 16 }}>
         <div>
-          <Grid
-            data={data}
-            width={560}
-            height={340}
-            columns={columns}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            onCellClick={onCellClick}
-            onHeaderClick={onHeaderClick}
-          />
+          <section style={{ marginBottom: 16 }}>
+            <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+            <Grid
+              data={data}
+              width={560}
+              height={340}
+              columns={columns}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              onCellClick={onCellClick}
+              onHeaderClick={onHeaderClick}
+            />
+          </section>
         </div>
 
         <div

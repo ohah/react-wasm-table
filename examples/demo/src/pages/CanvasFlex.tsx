@@ -165,7 +165,16 @@ export function CanvasFlex() {
       </div>
 
       <h3 style={{ margin: "16px 0 8px", fontSize: 14, color: "#666" }}>Canvas preview</h3>
-      <Grid data={previewData} columns={previewColumns} width={440} height={200} rowHeight={120} />
+      <section style={{ marginBottom: 32 }}>
+        <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+        <Grid
+          data={previewData}
+          columns={previewColumns}
+          width={440}
+          height={200}
+          rowHeight={120}
+        />
+      </section>
 
       <pre
         style={{

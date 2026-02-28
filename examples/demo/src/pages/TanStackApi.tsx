@@ -257,14 +257,17 @@ export function TanStackApi() {
         </p>
       )}
 
-      <Grid
-        data={data as Record<string, unknown>[]}
-        width={960}
-        height={500}
-        columns={columns}
-        sorting={sorting}
-        onSortingChange={setSorting}
-      />
+      <section style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
+        <Grid
+          data={data as Record<string, unknown>[]}
+          width={960}
+          height={500}
+          columns={columns}
+          sorting={sorting}
+          onSortingChange={setSorting}
+        />
+      </section>
 
       <details style={{ marginTop: 16 }}>
         <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 14 }}>View Code</summary>
