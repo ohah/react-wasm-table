@@ -49,7 +49,7 @@ export function Grid({
   onColumnVisibilityChange: _onColumnVisibilityChangeProp,
   columnSizing: columnSizingProp,
   onColumnSizingChange: onColumnSizingChangeProp,
-  columnPinning: _columnPinningProp,
+  columnPinning: columnPinningProp,
   onColumnPinningChange: _onColumnPinningChangeProp,
   // Event callbacks (enriched events)
   onCellClick: onCellClickProp,
@@ -147,10 +147,18 @@ export function Grid({
       columnOrder: columnOrderProp,
       columnVisibility: columnVisibilityProp,
       columnSizing: columnSizingProp,
+      columnPinning: columnPinningProp,
     });
     columnRegistry.setAll(resolved);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columnsProp, columnRegistry, columnOrderProp, columnVisibilityProp, columnSizingProp]);
+  }, [
+    columnsProp,
+    columnRegistry,
+    columnOrderProp,
+    columnVisibilityProp,
+    columnSizingProp,
+    columnPinningProp,
+  ]);
 
   // Shared mutable refs
   const layoutBufRef = useRef<Float32Array | null>(null);
@@ -420,6 +428,7 @@ export function Grid({
     onAfterDraw,
     cellRenderers: cellRenderersProp,
     layers: layersProp,
+    columnPinning: columnPinningProp,
   });
   // Wire the bridge: all hooks using `invalidate` now delegate to useRenderLoop's internal dirtyRef
   invalidateRef.current = renderInvalidate;

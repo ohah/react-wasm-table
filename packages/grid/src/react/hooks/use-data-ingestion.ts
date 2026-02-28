@@ -26,22 +26,37 @@ export function useDataIngestion({
   invalidate,
 }: UseDataIngestionParams) {
   const stringTableRef = useRef(new StringTable());
+  const prevColumnKeyRef = useRef("");
 
   useEffect(() => {
     if (!engine) return;
-    const columns = columnRegistry.getAll();
-    if (columns.length === 0) return;
 
-    const columnIds = columns.map((c) => c.id);
+    // Full ingestion — runs when React deps change (data, engine, etc.)
+    const ingest = (columns: ReturnType<ColumnRegistry["getAll"]>) => {
+      if (columns.length === 0) return;
+      const columnIds = columns.map((c) => c.id);
+      prevColumnKeyRef.current = columnIds.join("\0");
+      ingestData(engine, data, columnIds);
+      engine.setColumnarScrollConfig(rowHeight, height - headerHeight, OVERSCAN);
+      stringTableRef.current.populate(data, columnIds);
+      invalidate();
+    };
 
-    // Columnar ingestion: Object[] → typed arrays → WASM (no serde for numerics)
-    ingestData(engine, data, columnIds);
-    engine.setColumnarScrollConfig(rowHeight, height - headerHeight, OVERSCAN);
+    ingest(columnRegistry.getAll());
 
-    // Populate JS-side string table for display
-    stringTableRef.current.populate(data, columnIds);
+    // Column change listener — only re-ingest if column ID order changed
+    // (skip on size-only changes from drag resize)
+    const onColumnChange = () => {
+      const columns = columnRegistry.getAll();
+      if (columns.length === 0) return;
+      const columnIds = columns.map((c) => c.id);
+      const key = columnIds.join("\0");
+      if (key !== prevColumnKeyRef.current) {
+        ingest(columns);
+      }
+    };
 
-    invalidate();
+    return columnRegistry.onChange(onColumnChange);
   }, [engine, data, columnRegistry, rowHeight, height, headerHeight, invalidate]);
 
   return { stringTableRef };
