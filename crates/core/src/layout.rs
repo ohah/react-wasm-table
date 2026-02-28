@@ -1256,7 +1256,8 @@ impl LayoutEngine {
 
         // Top pinned rows: y = header_height + row_idx * row_height
         for row_idx in 0..pinned_top {
-            let row_base_y = (row_idx as f32).mul_add(effective_row_height, effective_header_height);
+            let row_base_y =
+                (row_idx as f32).mul_add(effective_row_height, effective_header_height);
             for (col_idx, pos) in row_positions.iter().enumerate() {
                 layout_buffer::write_cell(
                     buf,
@@ -1279,7 +1280,8 @@ impl LayoutEngine {
 
         // Middle (scrollable) rows: absolute content y (scroll handled by JS translateY)
         for row_idx in middle_range.start..middle_range.end {
-            let row_base_y = (row_idx as f32).mul_add(effective_row_height, effective_header_height);
+            let row_base_y =
+                (row_idx as f32).mul_add(effective_row_height, effective_header_height);
             for (col_idx, pos) in row_positions.iter().enumerate() {
                 layout_buffer::write_cell(
                     buf,
@@ -1302,8 +1304,8 @@ impl LayoutEngine {
 
         // Bottom pinned rows: y = header + (pinned_top + scrollable_count)*rh + (row_idx - (total - pinned_bottom))*rh
         let bottom_start = total_rows.saturating_sub(pinned_bottom);
-        let bottom_base_y =
-            ((pinned_top + scrollable_count) as f32).mul_add(effective_row_height, effective_header_height);
+        let bottom_base_y = ((pinned_top + scrollable_count) as f32)
+            .mul_add(effective_row_height, effective_header_height);
         for (i, row_idx) in (bottom_start..total_rows).enumerate() {
             let row_base_y = (i as f32).mul_add(effective_row_height, bottom_base_y);
             for (col_idx, pos) in row_positions.iter().enumerate() {
