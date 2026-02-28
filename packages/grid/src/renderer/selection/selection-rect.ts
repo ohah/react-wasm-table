@@ -1,4 +1,4 @@
-import type { NormalizedRange } from "../types";
+import type { NormalizedRange } from "../../types";
 import {
   readCellRow,
   readCellCol,
@@ -6,7 +6,7 @@ import {
   readCellY,
   readCellWidth,
   readCellHeight,
-} from "../adapter/layout-reader";
+} from "../../adapter/layout-reader";
 
 export interface SelectionRect {
   x: number;

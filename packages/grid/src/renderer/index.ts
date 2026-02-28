@@ -1,4 +1,4 @@
-export { CanvasRenderer } from "./canvas-renderer";
+export { CanvasRenderer } from "./canvas";
 export { drawTextCellFromBuffer, drawBadgeFromBuffer, measureText } from "./draw-primitives";
 export {
   CellRendererRegistry,
@@ -9,8 +9,8 @@ export {
   boxCellRenderer,
   stackCellRenderer,
   flexCellRenderer,
-} from "./cell-renderer";
-export type { CellRenderer, CellRenderContext } from "./cell-renderer";
+} from "./components";
+export type { CellRenderer, CellRenderContext } from "./components";
 export {
   headerLayer,
   dataLayer,

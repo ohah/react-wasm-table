@@ -183,7 +183,7 @@ export { composeMiddleware } from "./event-middleware";
 export type { EventChannel, GridEvent, NextFn, EventMiddleware } from "./event-middleware";
 
 // Renderer
-export { CanvasRenderer } from "./renderer/canvas-renderer";
+export { CanvasRenderer } from "./renderer/canvas";
 export {
   drawTextCellFromBuffer,
   drawBadgeFromBuffer,
@@ -213,8 +213,8 @@ export {
   badgeCellRenderer,
   stubCellRenderer,
   flexCellRenderer,
-} from "./renderer/cell-renderer";
-export type { CellRenderer, CellRenderContext } from "./renderer/cell-renderer";
+} from "./renderer/components";
+export type { CellRenderer, CellRenderContext } from "./renderer/components";
 
 // Layer system
 export {

@@ -1,4 +1,4 @@
-import type { TextStyle, BadgeStyle } from "../types";
+import type { TextStyle, BadgeStyle } from "../../types";
 import {
   readCellX,
   readCellY,
@@ -9,7 +9,7 @@ import {
   readCellPaddingRight,
   readCellPaddingBottom,
   readCellPaddingLeft,
-} from "../adapter/layout-reader";
+} from "../../adapter/layout-reader";
 
 /** Measure text width for a given font configuration. */
 export function measureText(

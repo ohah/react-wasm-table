@@ -1,5 +1,5 @@
 import type { RenderInstruction, StackInstruction } from "../../types";
-import type { CellRenderer } from "../cell-renderer-types";
+import type { CellRenderer } from "./types";
 import {
   readCellX,
   readCellY,

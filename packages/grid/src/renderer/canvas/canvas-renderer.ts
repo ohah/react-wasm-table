@@ -1,13 +1,13 @@
-import type { NormalizedRange, RenderInstruction, SelectionStyle, Theme } from "../types";
-import type { CellRendererRegistry } from "./cell-renderer";
-import { drawTextCellFromBuffer } from "./draw-primitives";
+import type { NormalizedRange, RenderInstruction, SelectionStyle, Theme } from "../../types";
+import type { CellRendererRegistry } from "../components";
+import { drawTextCellFromBuffer } from "../draw-primitives";
 import {
   computeHeaderLinesFromBuffer,
   computeDataLinesFromBuffer,
   type GridLineSpec,
-} from "./grid-lines";
-import { readCellRow, readCellX, readCellY, readCellWidth } from "../adapter/layout-reader";
-import { computeSelectionRect } from "./selection-rect";
+} from "../grid-lines";
+import { readCellRow, readCellX, readCellY, readCellWidth } from "../../adapter/layout-reader";
+import { computeSelectionRect } from "../selection";
 
 /**
  * Draws the grid onto a <canvas> 2D context.

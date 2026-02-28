@@ -1,5 +1,5 @@
 import type { BadgeInstruction } from "../../types";
-import type { CellRenderer } from "../cell-renderer-types";
+import type { CellRenderer } from "./types";
 import { drawBadgeFromBuffer } from "../draw-primitives";
 
 export const badgeCellRenderer: CellRenderer<BadgeInstruction> = {

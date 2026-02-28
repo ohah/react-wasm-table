@@ -1,5 +1,5 @@
 import type { FlexInstruction, RenderInstruction } from "../../types";
-import type { CellRenderer } from "../cell-renderer-types";
+import type { CellRenderer } from "./types";
 import {
   readCellX,
   readCellY,

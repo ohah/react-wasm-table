@@ -1,5 +1,5 @@
 import type { TextInstruction } from "../../types";
-import type { CellRenderer } from "../cell-renderer-types";
+import type { CellRenderer } from "./types";
 import { drawTextCellFromBuffer } from "../draw-primitives";
 
 export const textCellRenderer: CellRenderer<TextInstruction> = {
