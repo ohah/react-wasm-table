@@ -160,7 +160,9 @@ export class EventManager {
 
   // Column DnD state (header drag for reorder)
   private columnDnDState: { colIndex: number } | null = null;
+  private columnDnDMoved = false;
   private columnDnDJustEnded = false;
+  private resizeJustEnded = false;
 
   /** Update the layouts used for hit-testing. */
   setLayouts(headerLayouts: CellLayout[], rowLayouts: CellLayout[]): void {
@@ -272,6 +274,12 @@ export class EventManager {
           if (handlers.onCanvasEvent("click", e, hitTest, coords) === false) return;
         }
 
+        // Skip header click if we just finished a resize drag (avoid toggling sort on drop)
+        if (this.resizeJustEnded) {
+          this.resizeJustEnded = false;
+          return;
+        }
+
         // Skip header click if we just finished a column DnD (avoid toggling sort on drop)
         if (this.columnDnDJustEnded) {
           this.columnDnDJustEnded = false;
@@ -355,6 +363,7 @@ export class EventManager {
         const headerHit = findCell(x, y, this.headerLayouts);
         if (headerHit && handlers.onHeaderMouseDown) {
           this.columnDnDState = { colIndex: headerHit.col };
+          this.columnDnDMoved = false;
           this.columnDnDJustEnded = false;
           handlers.onHeaderMouseDown(headerHit.col, e, coords);
           e.preventDefault();
@@ -388,6 +397,7 @@ export class EventManager {
 
         // Column DnD in progress
         if (this.columnDnDState && handlers.onColumnDnDMove) {
+          this.columnDnDMoved = true;
           const rect = canvas.getBoundingClientRect();
           const viewportX = e.clientX - rect.left;
           const contentX = this.toContentX(viewportX, rect.width);
@@ -452,6 +462,7 @@ export class EventManager {
       (e: MouseEvent) => {
         // Resize end
         if (this.resizeState) {
+          this.resizeJustEnded = true;
           handlers.onResizeEnd?.();
           this.resizeState = null;
           return;
@@ -459,9 +470,12 @@ export class EventManager {
 
         // Column DnD end
         if (this.columnDnDState) {
-          this.columnDnDJustEnded = true;
+          this.columnDnDJustEnded = this.columnDnDMoved;
+          // Always call onColumnDnDEnd to clean up React DnD state
+          // (isDragging was set to true on mousedown)
           handlers.onColumnDnDEnd?.();
           this.columnDnDState = null;
+          this.columnDnDMoved = false;
           return;
         }
 
