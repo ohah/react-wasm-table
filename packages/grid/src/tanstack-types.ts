@@ -96,6 +96,16 @@ export type ColumnPinningUpdater =
 
 export type ColumnPinningPosition = "left" | "right" | false;
 
+// ── Row Pinning state ─────────────────────────────────────────────
+
+/** Row IDs pinned to top / bottom (e.g. summary row, total row). */
+export interface RowPinningState {
+  top: string[];
+  bottom: string[];
+}
+
+export type RowPinningUpdater = RowPinningState | ((prev: RowPinningState) => RowPinningState);
+
 // ── Expanded state ─────────────────────────────────────────────────
 
 /** true = all expanded, Record<string, boolean> = per-row. */

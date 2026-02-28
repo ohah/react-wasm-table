@@ -501,6 +501,14 @@ export interface GridProps extends BoxModelProps {
   columnPinning?: import("./tanstack-types").ColumnPinningState;
   /** Callback when column pinning changes (controlled mode). */
   onColumnPinningChange?: (updater: import("./tanstack-types").ColumnPinningUpdater) => void;
+  /** Enable header drag to reorder columns. Uses columnOrder + onColumnOrderChange. */
+  enableColumnDnD?: boolean;
+  /** Row pinning state (top/bottom row IDs). Requires getRowId when using row IDs. */
+  rowPinning?: import("./tanstack-types").RowPinningState;
+  /** Callback when row pinning changes (controlled mode). */
+  onRowPinningChange?: (updater: import("./tanstack-types").RowPinningUpdater) => void;
+  /** Get unique row ID for row pinning. Default: (_, i) => String(i) */
+  getRowId?: (row: Record<string, unknown>, index: number) => string;
 
   // Selection state management (controlled/uncontrolled)
   /** Controlled selection state. undefined = uncontrolled, null = no selection. */
@@ -569,6 +577,7 @@ export interface GridProps extends BoxModelProps {
     columnVisibility?: import("./tanstack-types").ColumnVisibilityState;
     columnSizing?: import("./tanstack-types").ColumnSizingState;
     columnPinning?: import("./tanstack-types").ColumnPinningState;
+    rowPinning?: import("./tanstack-types").RowPinningState;
     selection?: NormalizedRange | null;
   };
   /** CSS display. @default "flex" */
@@ -641,11 +650,15 @@ export interface WasmTableEngine {
   finalizeColumnar(): void;
 
   // Hot path — single WASM call per frame
+  rebuildView?: () => void;
   updateViewportColumnar(
     scrollTop: number,
     viewport: unknown,
     columns: unknown,
     container?: unknown,
+    pinnedTop?: number,
+    pinnedBottom?: number,
+    skipRebuild?: boolean,
   ): Float64Array;
   setColumnarSort(configs: unknown): void;
   setColumnarFilters(filters: unknown): void;
