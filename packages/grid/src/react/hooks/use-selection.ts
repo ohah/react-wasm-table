@@ -139,8 +139,13 @@ export function useSelection({
         sm.writeToClipboardText(typeof custom === "string" ? custom : tsv);
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "v" && onPaste) {
-        // Paste stub: read clipboard and delegate to onPaste callback
-        // Full implementation is future work
+        e.preventDefault();
+        const norm = sm.getNormalized();
+        const target = norm ? { row: norm.minRow, col: norm.minCol } : { row: 0, col: 0 };
+        navigator.clipboard?.readText?.()?.then(
+          (text) => onPaste(text, target),
+          () => {},
+        );
       }
       if (e.key === "Escape") {
         if (onBeforeSelectionChange?.(null) === false) return;
