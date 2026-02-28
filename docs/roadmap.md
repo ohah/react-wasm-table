@@ -431,6 +431,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | Layer System (3-2)            | Render   | GridLayer pipeline + space-based transform + 4 built-in factories. 15 테스트                                |
 | Virtual Canvas Region (3-3)   | Render   | clip-based 3-region + buildRegions + region-aware hit-test. 29 테스트                                       |
 | Pinning 렌더링 (1-2 잔여)     | Render   | resolveColumns reorder + StringTable ID 키 + data re-ingestion. 데모 포함                                   |
+| Context Menu (6-5)            | UX       | EventManager contextmenu, GridProps.onContextMenu, GridContextMenuEvent, 미들웨어 "contextMenu". 4 테스트   |
 
 ---
 
@@ -476,7 +477,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | 13   | Column DnD Reorder        | 6-2  | ✅   | EventManager 헤더 드래그 + useColumnDnD + 고스트/드롭 인디케이터. enableColumnDnD prop |
 | 14   | Cell Editing 고도화       | 6-3  | ❌   | EditorManager + DOM overlay 완성. editCell render prop                                 |
 | 15   | Multi-level Column Header | 6-4  | ❌   | helper.group() + 다단 헤더 레이아웃. 복잡도 높음                                       |
-| 16   | Context Menu              | 6-5  | ❌   | EventManager contextmenu + hit-test 결과 제공. 난이도 낮음                             |
+| 16   | Context Menu              | 6-5  | ✅   | EventManager contextmenu + hit-test. GridProps.onContextMenu, GridContextMenuEvent. 4 테스트 |
 
 ### 의존성 그래프
 
@@ -588,15 +589,15 @@ const columns = [
 - 그룹 헤더 클릭 → 하위 컬럼 전체 선택/정렬 등은 사용자 구현
 - 그룹 경계에 맞춘 그리드 라인 + 병합 셀 렌더링
 
-### 6-5. Context Menu
+### 6-5. Context Menu ✅
 
 우클릭 메뉴 primitive.
 
 ```ts
 <Grid
-  onContextMenu={(e, cell) => {
-    // cell: { row, col, value } 또는 header 정보
-    showMenu(e.clientX, e.clientY, [
+  onContextMenu={(event: GridContextMenuEvent) => {
+    // event.hitTest: { type: "cell", cell } | { type: "header", colIndex } | { type: "resize-handle", colIndex } | { type: "empty" }
+    showMenu(event.nativeEvent.clientX, event.nativeEvent.clientY, [
       { label: "Copy", action: () => ... },
       { label: "Sort Ascending", action: () => ... },
     ]);
@@ -604,9 +605,9 @@ const columns = [
 />
 ```
 
-- Grid는 hit-test 결과만 제공 (어떤 셀에서 우클릭했는지)
+- Grid는 hit-test 결과만 제공 (`event.hitTest`). `onContextMenu` 등록 시 브라우저 기본 메뉴는 자동 `preventDefault`.
 - 메뉴 UI는 사용자가 구현 (또는 선택적 유틸리티)
-- EventManager에 `contextmenu` 이벤트 핸들러 추가
+- EventManager `contextmenu` 리스너 + 미들웨어 채널 `"contextMenu"` 지원
 
 ---
 
