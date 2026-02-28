@@ -23,6 +23,7 @@ import type {
 import { getLeafColumns } from "./resolve-columns";
 import type { Row, RowModel, RowModelFactory } from "./row-model";
 import { buildRowModel, buildExpandedRowModel } from "./row-model";
+import { buildHeaderGroups } from "./build-header-groups";
 
 // ── Default state values ────────────────────────────────────────────
 
@@ -151,6 +152,10 @@ export interface GridInstance<TData = unknown> {
   getAllLeafColumns: () => GridColumn<TData>[];
   /** Get a specific column by ID. */
   getColumn: (id: string) => GridColumn<TData> | undefined;
+  /** Get header groups for multi-level header rendering (TanStack-compatible). */
+  getHeaderGroups: () => GridHeaderGroup<TData>[];
+  /** The original options used to build this instance. */
+  options: BuildOptions<TData>;
 
   // Sorting
   /** Set the sorting state. */
@@ -473,6 +478,9 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
   const visibility = state.columnVisibility ?? {};
   const pinning = state.columnPinning ?? { left: [], right: [] };
 
+  // Header groups cache
+  let cachedHeaderGroups: GridHeaderGroup<TData>[] | null = null;
+
   // Row model caches
   let cachedRowModel: RowModel<TData> | null = null;
   let lastViewIndices: Uint32Array | number[] | null = null;
@@ -481,11 +489,18 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
 
   const expanded = state.expanded ?? {};
 
-  return {
+  const instance: GridInstance<TData> = {
     getState: () => state,
     getAllColumns: () => allColumns,
     getAllLeafColumns: () => leafColumns,
     getColumn: (id) => columnMap.get(id),
+    getHeaderGroups: () => {
+      if (!cachedHeaderGroups) {
+        cachedHeaderGroups = buildHeaderGroups(allColumns, instance);
+      }
+      return cachedHeaderGroups;
+    },
+    options,
 
     // Sorting
     setSorting: onSortingChange,
@@ -535,13 +550,21 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
       const currentIndices = viewIndicesRef?.current ?? null;
       if (!cachedRowModel || currentIndices !== lastViewIndices) {
         lastViewIndices = currentIndices;
-        cachedRowModel = buildRowModel(data, currentIndices, defs);
+        const visibleLeaf = leafColumns.filter((col) => visibility[col.id] !== false);
+        cachedRowModel = buildRowModel(data, currentIndices, defs, {
+          visibleColumns: visibleLeaf,
+          table: instance,
+        });
       }
       return cachedRowModel;
     },
     getCoreRowModel: () => {
       if (!cachedCoreRowModel) {
-        cachedCoreRowModel = buildRowModel(data, null, defs);
+        const visibleLeaf = leafColumns.filter((col) => visibility[col.id] !== false);
+        cachedCoreRowModel = buildRowModel(data, null, defs, {
+          visibleColumns: visibleLeaf,
+          table: instance,
+        });
       }
       return cachedCoreRowModel;
     },
@@ -549,7 +572,11 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
       const currentIndices = viewIndicesRef?.current ?? null;
       if (!cachedRowModel || currentIndices !== lastViewIndices) {
         lastViewIndices = currentIndices;
-        cachedRowModel = buildRowModel(data, currentIndices, defs);
+        const visibleLeaf = leafColumns.filter((col) => visibility[col.id] !== false);
+        cachedRowModel = buildRowModel(data, currentIndices, defs, {
+          visibleColumns: visibleLeaf,
+          table: instance,
+        });
       }
       return cachedRowModel.getRow(index);
     },
@@ -601,6 +628,8 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
       return cachedExpandedRowModel;
     },
   };
+
+  return instance;
 }
 
 /** Extract or derive column ID from a definition. */
@@ -609,3 +638,20 @@ function getColumnId<TData>(def: GridColumnDef<TData, any>): string {
   if ("accessorKey" in def && def.accessorKey) return def.accessorKey as string;
   return `col_${Math.random().toString(36).slice(2, 8)}`;
 }
+
+// ── TanStack-compatible type aliases ────────────────────────────────
+
+/** TanStack-compatible alias for GridInstance. */
+export type TableInstance<TData = unknown> = GridInstance<TData>;
+
+/** TanStack-compatible alias for GridColumn. */
+export type TableColumn<TData = unknown, TValue = unknown> = GridColumn<TData, TValue>;
+
+/** TanStack-compatible alias for GridHeader. */
+export type TableHeader<TData = unknown, TValue = unknown> = GridHeader<TData, TValue>;
+
+/** TanStack-compatible alias for GridHeaderGroup. */
+export type TableHeaderGroup<TData = unknown> = GridHeaderGroup<TData>;
+
+/** TanStack-compatible alias for GridState. */
+export type TableState = GridState;

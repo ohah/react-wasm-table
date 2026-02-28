@@ -1160,4 +1160,76 @@ describe("GridInstance", () => {
       expect(model.rowCount).toBe(4);
     });
   });
+
+  describe("getHeaderGroups", () => {
+    it("returns header groups for flat columns", () => {
+      const { instance } = createInstance();
+      const groups = instance.getHeaderGroups();
+      expect(groups.length).toBe(1);
+      expect(groups[0]!.headers.length).toBe(4);
+      expect(groups[0]!.headers[0]!.column.id).toBe("firstName");
+    });
+
+    it("returns cached header groups on second call", () => {
+      const { instance } = createInstance();
+      const groups1 = instance.getHeaderGroups();
+      const groups2 = instance.getHeaderGroups();
+      expect(groups1).toBe(groups2);
+    });
+
+    it("header getContext includes table reference", () => {
+      const { instance } = createInstance();
+      const groups = instance.getHeaderGroups();
+      const ctx = groups[0]!.headers[0]!.getContext();
+      expect(ctx.table).toBe(instance);
+    });
+
+    it("header getContext includes header self-reference", () => {
+      const { instance } = createInstance();
+      const groups = instance.getHeaderGroups();
+      const header = groups[0]!.headers[0]!;
+      const ctx = header.getContext();
+      expect(ctx.header).toBe(header);
+    });
+
+    it("returns header groups for grouped columns", () => {
+      const groupedColumns = [
+        helper.group({
+          header: "Name",
+          columns: [
+            helper.accessor("firstName", { header: "First" }),
+            helper.accessor("lastName", { header: "Last" }),
+          ],
+        }),
+        helper.accessor("age", { header: "Age" }),
+      ];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns: groupedColumns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      const groups = instance.getHeaderGroups();
+      expect(groups.length).toBe(2);
+      // First group (depth 0) should have 2 headers: "Name" group + "Age" placeholder
+      expect(groups[0]!.headers.length).toBe(2);
+    });
+  });
+
+  describe("options", () => {
+    it("exposes original data and columns", () => {
+      const { instance } = createInstance();
+      expect(instance.options.data).toBe(sampleData);
+      expect(instance.options.columns).toBeDefined();
+      expect(instance.options.columns.length).toBe(4);
+    });
+
+    it("exposes state on options", () => {
+      const { instance } = createInstance();
+      expect(instance.options.state).toBeDefined();
+      expect(instance.options.state.sorting).toEqual([]);
+    });
+  });
 });
