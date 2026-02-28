@@ -122,9 +122,13 @@ export interface CellContext<TData, TValue> {
   renderValue: () => TValue | null;
   /** Row information. */
   row: {
+    /** Unique row identifier. */
+    id: string;
     original: TData;
     index: number;
     getValue: (columnId: string) => unknown;
+    /** All cell values keyed by column ID. */
+    getAllCellValues?: () => Record<string, unknown>;
   };
   /** Column information. */
   column: {
@@ -132,6 +136,10 @@ export interface CellContext<TData, TValue> {
     // Use `any` for TValue to avoid covariance issues when mixing column types in arrays
     columnDef: GridColumnDef<TData, any>;
   };
+  /** The cell instance (available when rendered via Table/flexRender). */
+  cell?: unknown;
+  /** The table instance (available when rendered via Table/flexRender). */
+  table?: unknown;
 }
 
 /** Context passed to the `header` render function. */
@@ -141,6 +149,10 @@ export interface HeaderContext<TData, TValue = unknown> {
     // Use `any` for TValue to avoid covariance issues when mixing column types in arrays
     columnDef: GridColumnDef<TData, any>;
   };
+  /** The header instance (available when rendered via Table/flexRender). */
+  header?: unknown;
+  /** The table instance (available when rendered via Table/flexRender). */
+  table?: unknown;
 }
 
 // ── Column definition types ─────────────────────────────────────────
