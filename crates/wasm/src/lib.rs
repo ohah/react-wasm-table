@@ -258,15 +258,18 @@ impl TableEngine {
                 self.layout_buf.resize(needed, 0.0);
             }
 
-            self.layout_cell_count = self.layout.compute_into_buffer_row_pinned(
-                &columns,
-                &viewport,
-                &container,
+            let row_pinned_params = react_wasm_table_core::layout::RowPinnedLayoutParams {
+                viewport: &viewport,
+                container: &container,
                 pinned_top,
                 pinned_bottom,
-                scroll_top as f32,
-                filtered_count,
+                scroll_top: scroll_top as f32,
+                total_rows: filtered_count,
                 middle_range,
+            };
+            self.layout_cell_count = self.layout.compute_into_buffer_row_pinned(
+                &columns,
+                &row_pinned_params,
                 &mut self.layout_buf,
             );
 
