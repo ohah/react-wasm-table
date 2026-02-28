@@ -178,6 +178,10 @@ export {
 } from "./renderer/layer";
 export type { GridLayer, LayerContext, LayerSpace } from "./renderer/layer";
 
+// Region system (frozen columns)
+export { buildRegions } from "./renderer/region";
+export type { CanvasRegion, RegionLayout } from "./renderer/region";
+
 // Debug
 export { createLogger } from "./debug/logger";
 export type { Logger } from "./debug/logger";
