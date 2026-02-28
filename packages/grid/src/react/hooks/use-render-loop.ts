@@ -543,6 +543,16 @@ export function useRenderLoop({
             return { type: "text" as const, value: text };
           };
 
+          // Compute actual content bounds from cell edges
+          let contentLeft = Infinity;
+          let contentWidth = 0;
+          for (let i = 0; i < cellCount; i++) {
+            const cx = readCellX(layoutBuf, i);
+            contentLeft = Math.min(contentLeft, cx);
+            contentWidth = Math.max(contentWidth, cx + readCellWidth(layoutBuf, i));
+          }
+          if (contentLeft === Infinity) contentLeft = 0;
+
           const layerCtx: InternalLayerContext = {
             ctx,
             renderer,
@@ -550,6 +560,8 @@ export function useRenderLoop({
             viewIndices: effectiveViewIndices,
             width,
             height,
+            contentLeft,
+            contentWidth,
             scrollLeft,
             scrollTop: scrollTopRef.current,
             headerHeight,

@@ -22,6 +22,10 @@ export interface LayerContext {
   viewIndices: Uint32Array | number[];
   width: number;
   height: number;
+  /** Left edge of the first cell (x coordinate). */
+  contentLeft: number;
+  /** Right edge of the last cell (max x + width across all cells). */
+  contentWidth: number;
   scrollLeft: number;
   scrollTop: number;
   headerHeight: number;
