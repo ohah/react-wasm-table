@@ -214,6 +214,75 @@ export function buildRowModel<TData>(
   };
 }
 
+// ── Visible Range ───────────────────────────────────────────────────
+
+/** Range of visible rows (inclusive start, exclusive end). */
+export interface VisibleRange {
+  start: number;
+  end: number;
+}
+
+// ── Virtual Row Model ───────────────────────────────────────────────
+
+/** Build a RowModel that only materializes rows within the given range. */
+export function buildVirtualRowModel<TData>(
+  data: TData[],
+  indices: Uint32Array | number[] | null,
+  columns: GridColumnDef<TData, any>[],
+  range: VisibleRange,
+  modelOptions?: BuildRowModelOptions<TData>,
+): RowModel<TData> {
+  const effectiveIndices = indices ?? Array.from({ length: data.length }, (_, i) => i);
+  const totalCount = effectiveIndices.length;
+  const clampedStart = Math.max(0, Math.min(range.start, totalCount));
+  const clampedEnd = Math.max(clampedStart, Math.min(range.end, totalCount));
+
+  let cachedRows: Row<TData>[] | null = null;
+
+  return {
+    get rows(): Row<TData>[] {
+      if (!cachedRows) {
+        cachedRows = [];
+        for (let viewIndex = clampedStart; viewIndex < clampedEnd; viewIndex++) {
+          cachedRows.push(
+            buildRow(
+              data,
+              effectiveIndices[viewIndex]!,
+              viewIndex,
+              columns,
+              modelOptions
+                ? {
+                    visibleColumns: modelOptions.visibleColumns,
+                    table: modelOptions.table,
+                  }
+                : undefined,
+            ),
+          );
+        }
+      }
+      return cachedRows;
+    },
+    rowCount: totalCount,
+    getRow(index: number): Row<TData> {
+      if (index < 0 || index >= totalCount) {
+        throw new RangeError(`Row index ${index} out of range [0, ${totalCount})`);
+      }
+      return buildRow(
+        data,
+        effectiveIndices[index]!,
+        index,
+        columns,
+        modelOptions
+          ? {
+              visibleColumns: modelOptions.visibleColumns,
+              table: modelOptions.table,
+            }
+          : undefined,
+      );
+    },
+  };
+}
+
 // ── Expanded Row Model ──────────────────────────────────────────────
 
 /** Marker factory for the expanded row model. */

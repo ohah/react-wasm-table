@@ -711,6 +711,8 @@ export interface GridProps extends BoxModelProps {
 
   /** Parsed body content from Table children (Td JSX → RenderInstruction map). @internal */
   _parsedBodyContent?: Map<string, RenderInstruction>;
+  /** Callback to notify Table of visible row range changes from render loop. @internal */
+  _onVisibleRangeChange?: (visStart: number, visibleRowCount: number) => void;
 }
 
 // ── WASM engine interface ──────────────────────────────────────────────

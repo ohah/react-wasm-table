@@ -128,6 +128,8 @@ export interface UseRenderLoopParams {
   getRowId?: (row: Record<string, unknown>, index: number) => string;
   /** Parsed body content from Table <Td> children (keyed by "rowId:columnId"). */
   parsedBodyContent?: Map<string, import("../../types").RenderInstruction>;
+  /** Callback to notify Table of visible row range changes. @internal */
+  onVisibleRangeChange?: (visStart: number, visibleRowCount: number) => void;
 }
 
 export function useRenderLoop({
@@ -164,6 +166,7 @@ export function useRenderLoop({
   rowPinning,
   getRowId,
   parsedBodyContent,
+  onVisibleRangeChange,
 }: UseRenderLoopParams) {
   const cellRendererRegistry = useMemo(
     () => createCellRendererRegistry(cellRenderers),
@@ -183,6 +186,10 @@ export function useRenderLoop({
   // Ref-wrap onAfterDraw to avoid effect restarts
   const onAfterDrawRef = useRef(onAfterDraw);
   onAfterDrawRef.current = onAfterDraw;
+
+  // Ref-wrap onVisibleRangeChange to avoid effect restarts
+  const onVisibleRangeChangeRef = useRef(onVisibleRangeChange);
+  onVisibleRangeChangeRef.current = onVisibleRangeChange;
 
   // Attach canvas renderer — re-run when size changes because
   // React setting canvas.width/height resets the 2D context (loses DPR scale).
@@ -421,6 +428,12 @@ export function useRenderLoop({
         const dataCount = cellCount - headerCount;
 
         onVisStartComputed(visStart);
+
+        // Notify Table of visible range for virtual row model
+        if (onVisibleRangeChangeRef.current) {
+          const visibleRowCount = Math.ceil((height - headerHeight) / effectiveRowHeight);
+          onVisibleRangeChangeRef.current(visStart, visibleRowCount);
+        }
 
         const layoutBuf = bridge.getLayoutBuffer();
         const viewIndices = bridge.getViewIndices();

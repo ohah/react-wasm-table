@@ -60,7 +60,7 @@ export function TanStackExport() {
   });
 
   const doExport = useCallback(() => {
-    const rowModel = table.getRowModel();
+    const rowModel = table.getTotalRowModel();
     if (format === "csv") setOutput(exportToCSV(rowModel, { includeHeaders: true }));
     else if (format === "tsv") setOutput(exportToTSV(rowModel, { includeHeaders: true }));
     else setOutput(JSON.stringify(exportToJSON(rowModel), null, 2));
@@ -141,13 +141,13 @@ export function TanStackExport() {
       <CodeSnippet>{`const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel(), state: { sorting }, onSortingChange: setSorting });
 
 const doExport = () => {
-  const rowModel = table.getRowModel();
+  const rowModel = table.getTotalRowModel();
   if (format === "csv") setOutput(exportToCSV(rowModel, { includeHeaders: true }));
   else if (format === "tsv") setOutput(exportToTSV(rowModel, { includeHeaders: true }));
   else setOutput(JSON.stringify(exportToJSON(rowModel), null, 2));
 };
 
-// table.getRowModel() returns current view (sorted) RowModel for exportToCSV/TSV/JSON`}</CodeSnippet>
+// table.getTotalRowModel() returns all rows (ignoring virtual range) for export`}</CodeSnippet>
     </>
   );
 }

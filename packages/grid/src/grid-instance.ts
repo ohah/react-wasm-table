@@ -22,7 +22,8 @@ import type {
 } from "./tanstack-types";
 import { getLeafColumns } from "./resolve-columns";
 import type { Row, RowModel, RowModelFactory } from "./row-model";
-import { buildRowModel, buildExpandedRowModel } from "./row-model";
+import { buildRowModel, buildVirtualRowModel, buildExpandedRowModel } from "./row-model";
+import type { VisibleRange } from "./row-model";
 import { buildHeaderGroups } from "./build-header-groups";
 
 // ── Default state values ────────────────────────────────────────────
@@ -206,12 +207,18 @@ export interface GridInstance<TData = unknown> {
   resetRowPinning: () => void;
 
   // Row model
-  /** Get the current view row model (after filter + sort, using viewIndices). */
+  /** Get the current view row model (after filter + sort, using viewIndices). When a visible range is set via _setVisibleRange, returns only rows in that range. */
   getRowModel: () => RowModel<TData>;
+  /** Get the full row model (all rows, ignoring visible range). Use for export. */
+  getTotalRowModel: () => RowModel<TData>;
   /** Get the core row model (original data order). */
   getCoreRowModel: () => RowModel<TData>;
   /** Get a single row by view index. */
   getRow: (index: number) => Row<TData>;
+  /** Get the total row count without building Row objects. */
+  getRowCount: () => number;
+  /** Set the visible range for virtual row model. Pass null to disable. @internal */
+  _setVisibleRange: (range: VisibleRange | null) => void;
 
   // Expanding
   /** Set the expanded state. */
@@ -486,6 +493,11 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
   let lastViewIndices: Uint32Array | number[] | null = null;
   let cachedCoreRowModel: RowModel<TData> | null = null;
   let cachedExpandedRowModel: RowModel<TData> | null = null;
+  let cachedTotalRowModel: RowModel<TData> | null = null;
+  let lastTotalViewIndices: Uint32Array | number[] | null = null;
+
+  // Virtual range
+  let visibleRange: VisibleRange | null = null;
 
   const expanded = state.expanded ?? {};
 
@@ -548,6 +560,14 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     // Row model
     getRowModel: () => {
       const currentIndices = viewIndicesRef?.current ?? null;
+      if (visibleRange) {
+        // Virtual mode: only build rows in the visible range
+        const visibleLeaf = leafColumns.filter((col) => visibility[col.id] !== false);
+        return buildVirtualRowModel(data, currentIndices, defs, visibleRange, {
+          visibleColumns: visibleLeaf,
+          table: instance,
+        });
+      }
       if (!cachedRowModel || currentIndices !== lastViewIndices) {
         lastViewIndices = currentIndices;
         const visibleLeaf = leafColumns.filter((col) => visibility[col.id] !== false);
@@ -557,6 +577,18 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
         });
       }
       return cachedRowModel;
+    },
+    getTotalRowModel: () => {
+      const currentIndices = viewIndicesRef?.current ?? null;
+      if (!cachedTotalRowModel || currentIndices !== lastTotalViewIndices) {
+        lastTotalViewIndices = currentIndices;
+        const visibleLeaf = leafColumns.filter((col) => visibility[col.id] !== false);
+        cachedTotalRowModel = buildRowModel(data, currentIndices, defs, {
+          visibleColumns: visibleLeaf,
+          table: instance,
+        });
+      }
+      return cachedTotalRowModel;
     },
     getCoreRowModel: () => {
       if (!cachedCoreRowModel) {
@@ -579,6 +611,14 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
         });
       }
       return cachedRowModel.getRow(index);
+    },
+    getRowCount: () => {
+      const currentIndices = viewIndicesRef?.current ?? null;
+      if (currentIndices) return currentIndices.length;
+      return data.length;
+    },
+    _setVisibleRange: (range: VisibleRange | null) => {
+      visibleRange = range;
     },
 
     // Expanding

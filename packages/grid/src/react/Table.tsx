@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useRef, useCallback, type ReactNode } from "react";
 import type { GridInstance } from "../grid-instance";
 import type { RenderInstruction } from "../types";
 import { parseTableChildren } from "./parse-table-children";
@@ -48,6 +48,8 @@ export interface TableProps extends BoxModelProps {
   rowHeight?: number;
   /** Header height in pixels. @default 40 */
   headerHeight?: number;
+  /** Number of extra rows to render above/below the visible area. @default 5 */
+  overscan?: number;
   /** Theme overrides. */
   theme?: Partial<Theme>;
   /** Structural children (Thead/Tbody/Tfoot). Currently parsed for validation; rendering uses canvas. */
@@ -121,9 +123,44 @@ export interface TableProps extends BoxModelProps {
  * Accepts a `table` instance (from useReactTable/useGridTable) and extracts
  * data, columns, and state to delegate to the underlying Grid component.
  */
-export function Table({ table, children, ...rest }: TableProps) {
+const DEFAULT_ROW_HEIGHT = 36;
+const DEFAULT_HEADER_HEIGHT = 40;
+
+export function Table({ table, children, overscan = 5, ...rest }: TableProps) {
   const { data, columns } = table.options;
   const state = table.getState();
+
+  const effectiveRowHeight = rest.rowHeight ?? DEFAULT_ROW_HEIGHT;
+  const effectiveHeaderHeight = rest.headerHeight ?? DEFAULT_HEADER_HEIGHT;
+  const effectiveHeight = rest.height;
+
+  // Visible range ref — updated from render loop callback, no React re-render
+  const visRangeRef = useRef<{ start: number; end: number } | null>(null);
+
+  // Estimate initial visible range on first render
+  if (!visRangeRef.current) {
+    const visibleCount = Math.ceil((effectiveHeight - effectiveHeaderHeight) / effectiveRowHeight);
+    const totalRowCount = table.getRowCount();
+    visRangeRef.current = {
+      start: 0,
+      end: Math.min(visibleCount + overscan, totalRowCount),
+    };
+  }
+
+  // Set visible range on the table instance before children evaluate
+  table._setVisibleRange(visRangeRef.current);
+
+  // Callback for render loop to update visible range (ref only, no React re-render)
+  const onVisibleRangeChange = useCallback(
+    (visStart: number, count: number) => {
+      const totalRowCount = table.getRowCount();
+      visRangeRef.current = {
+        start: Math.max(0, visStart - overscan),
+        end: Math.min(visStart + count + overscan, totalRowCount),
+      };
+    },
+    [overscan, table],
+  );
 
   // Parse <Tbody><Tr><Td> children into a content map for canvas rendering
   const parsedBodyContent = useMemo(() => {
@@ -170,6 +207,7 @@ export function Table({ table, children, ...rest }: TableProps) {
       onRowPinningChange={(u) => table.setRowPinning(u)}
       table={table}
       _parsedBodyContent={parsedBodyContent}
+      _onVisibleRangeChange={onVisibleRangeChange}
       {...rest}
     />
   );
