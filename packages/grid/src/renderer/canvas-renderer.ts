@@ -6,7 +6,7 @@ import {
   computeDataLinesFromBuffer,
   type GridLineSpec,
 } from "./grid-lines";
-import { readCellRow, readCellY } from "../adapter/layout-reader";
+import { readCellRow, readCellX, readCellY, readCellWidth } from "../adapter/layout-reader";
 import { computeSelectionRect } from "./selection-rect";
 
 /**
@@ -78,11 +78,16 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || count === 0) return;
 
-    // Draw header background at the Y position from the buffer (scrolls with content)
+    // Draw header background — use max content right edge so fills cover
+    // pinned regions that are translated beyond the canvas viewport width.
     const canvasW = this.canvasWidth();
+    let contentRight = canvasW;
+    for (let i = start; i < start + count; i++) {
+      contentRight = Math.max(contentRight, readCellX(buf, i) + readCellWidth(buf, i));
+    }
     const headerY = count > 0 ? readCellY(buf, start) : 0;
     ctx.fillStyle = theme.headerBackground;
-    ctx.fillRect(0, headerY, canvasW, headerHeight);
+    ctx.fillRect(0, headerY, contentRight, headerHeight);
 
     // Draw header text
     for (let i = 0; i < count; i++) {
@@ -111,7 +116,12 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || count === 0) return;
 
+    // Compute max content right edge so fills cover pinned regions.
     const canvasW = this.canvasWidth();
+    let contentRight = canvasW;
+    for (let i = start; i < start + count; i++) {
+      contentRight = Math.max(contentRight, readCellX(buf, i) + readCellWidth(buf, i));
+    }
 
     // Group by row for alternating backgrounds.
     // Use minY across all cells in a row + rowHeight for bounds —
@@ -128,11 +138,11 @@ export class CanvasRenderer {
       }
     }
 
-    // Alternating row backgrounds (extend to full canvas width)
+    // Alternating row backgrounds (extend to full content width)
     for (const [rowIdx, bounds] of rowBounds) {
       const bg = rowIdx % 2 === 0 ? theme.cellBackground : `${theme.cellBackground}f5`;
       ctx.fillStyle = bg;
-      ctx.fillRect(0, bounds.y, canvasW, bounds.h);
+      ctx.fillRect(0, bounds.y, contentRight, bounds.h);
     }
 
     // Draw cell contents via registry dispatch
@@ -161,21 +171,28 @@ export class CanvasRenderer {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || totalCount === 0) return;
 
-    const canvasW = this.canvasWidth();
+    // Use max content right edge for grid line extents (covers pinned regions)
+    let contentRight = this.canvasWidth();
+    for (let i = 0; i < totalCount; i++) {
+      contentRight = Math.max(contentRight, readCellX(buf, i) + readCellWidth(buf, i));
+    }
 
     ctx.strokeStyle = theme.borderColor;
     ctx.lineWidth = 0.5;
 
     // Header grid lines
     if (headerCount > 0) {
-      this.strokeLines(ctx, computeHeaderLinesFromBuffer(buf, headerCount, canvasW, headerHeight));
+      this.strokeLines(
+        ctx,
+        computeHeaderLinesFromBuffer(buf, headerCount, contentRight, headerHeight),
+      );
     }
 
     // Data area grid lines
     if (totalCount > headerCount) {
       this.strokeLines(
         ctx,
-        computeDataLinesFromBuffer(buf, headerCount, totalCount, canvasW, rowHeight),
+        computeDataLinesFromBuffer(buf, headerCount, totalCount, contentRight, rowHeight),
       );
     }
   }
