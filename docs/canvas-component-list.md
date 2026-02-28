@@ -14,20 +14,19 @@ These components have a dedicated cell renderer and are fully drawn on canvas.
 | **Badge** | Pill/chip with background.                                                                         | `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`                                               |
 | **Flex**  | Taffy-compatible flex container; lays out and draws all children (Text, Badge, Stub, nested Flex). | `children`, `style?`, `flexDirection?`, `gap?`, `alignItems?`, `justifyContent?`, …                            |
 | **Box**   | Generic container: padding, margin, border; children drawn in content rect (vertical stack).       | `children?`, `style?`, `padding?`, `margin?`, `borderWidth?`, `borderColor?`, `backgroundColor?`, `boxSizing?` |
+| **Stack** | Row or column layout with gap (no padding from layout buffer).                                     | `children?`, `direction?` ("row" \| "column"), `gap?`, `style?`                                                |
 
-All four support the same pattern: optional `style` object and individual props (individual overrides `style`). See [Canvas Components](canvas-components.md) for API details.
+All five support the same pattern: optional `style` object and individual props (individual overrides `style`). See [Canvas Components](canvas-components.md) for API details.
 
 ---
 
 ## Planned components (stub)
 
-These components are **exported and usable in JSX**, but the renderer only draws a placeholder (e.g. `[ProgressBar]`, `[Stack]`). They return a `StubInstruction`; props (including `style`) are stored and will apply when a real renderer is added.
+These components are **exported and usable in JSX**, but the renderer only draws a placeholder (e.g. `[ProgressBar]`). They return a `StubInstruction`; props (including `style`) are stored and will apply when a real renderer is added.
 
 ### Layout
 
-| Component | Intended use                                                                |
-| --------- | --------------------------------------------------------------------------- |
-| **Stack** | Stack children; use `direction: "row"` or `direction: "column"` for layout. |
+_(None — Box and Stack are implemented.)_
 
 ### Data display
 
