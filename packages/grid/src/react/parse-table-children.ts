@@ -5,11 +5,15 @@ import { Thead, Tbody, Tfoot, Tr, Th, Td } from "./table-components";
 export interface ParsedCell {
   colSpan: number;
   content: ReactNode;
+  /** React element key (e.g., cell.id = "${rowId}_${columnId}"). */
+  key?: string;
 }
 
 /** Parsed row from a Tr element. */
 export interface ParsedRow {
   cells: ParsedCell[];
+  /** React element key (e.g., row.id). */
+  key?: string;
 }
 
 /** Result of parsing Table children. */
@@ -32,9 +36,13 @@ function parseTrChildren(children: ReactNode): ParsedRow[] {
       cells.push({
         colSpan: cellChild.props.colSpan ?? 1,
         content: cellChild.props.children,
+        ...(cellChild.key != null && { key: String(cellChild.key) }),
       });
     });
-    rows.push({ cells });
+    rows.push({
+      cells,
+      ...(child.key != null && { key: String(child.key) }),
+    });
   });
   return rows;
 }
