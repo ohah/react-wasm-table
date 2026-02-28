@@ -461,6 +461,146 @@ describe("EventManager", () => {
     });
   });
 
+  describe("resize + sort conflict", () => {
+    it("suppresses header click after resize drag ends (resizeJustEnded)", () => {
+      const onHeaderClick = mock(() => {});
+      const onResizeStart = mock(() => {});
+      const onResizeMove = mock(() => {});
+      const onResizeEnd = mock(() => {});
+      // Header with right edge at x=200. RESIZE_HANDLE_ZONE = 5, so x=196..200 is the handle.
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderClick, onResizeStart, onResizeMove, onResizeEnd });
+
+      // mousedown on resize handle (x=198, right edge zone)
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 198, clientY: 20, bubbles: true }),
+      );
+      expect(onResizeStart).toHaveBeenCalledTimes(1);
+
+      // drag
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 250, clientY: 20, buttons: 1, bubbles: true }),
+      );
+      expect(onResizeMove).toHaveBeenCalledTimes(1);
+
+      // mouseup ends resize
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      expect(onResizeEnd).toHaveBeenCalledTimes(1);
+
+      // click fires after mouseup — should be suppressed
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 198, clientY: 20, bubbles: true }));
+      expect(onHeaderClick).not.toHaveBeenCalled();
+    });
+
+    it("allows header click when no resize occurred", () => {
+      const onHeaderClick = mock(() => {});
+      // Header from x=0..200, resize zone is x=195..200
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderClick });
+
+      // Normal click on header (x=100, far from right edge)
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 100, clientY: 20, bubbles: true }));
+      expect(onHeaderClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("resizeJustEnded flag is reset after one click", () => {
+      const onHeaderClick = mock(() => {});
+      const onResizeStart = mock(() => {});
+      const onResizeEnd = mock(() => {});
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderClick, onResizeStart, onResizeEnd, onResizeMove: () => {} });
+
+      // Resize drag cycle
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 198, clientY: 20, bubbles: true }),
+      );
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 250, clientY: 20, buttons: 1, bubbles: true }),
+      );
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+
+      // First click — suppressed
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 100, clientY: 20, bubbles: true }));
+      expect(onHeaderClick).not.toHaveBeenCalled();
+
+      // Second click — should go through (flag was cleared)
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 100, clientY: 20, bubbles: true }));
+      expect(onHeaderClick).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("column DnD + sort conflict", () => {
+    it("allows header click (sort) when DnD handler exists but no drag occurred", () => {
+      const onHeaderClick = mock(() => {});
+      const onHeaderMouseDown = mock(() => {});
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderClick, onHeaderMouseDown });
+
+      // mousedown on header (sets columnDnDState)
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 100, clientY: 20, bubbles: true }),
+      );
+      expect(onHeaderMouseDown).toHaveBeenCalledTimes(1);
+
+      // mouseup without any mousemove (no drag)
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+
+      // click should go through since no actual drag movement
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 100, clientY: 20, bubbles: true }));
+      expect(onHeaderClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("suppresses header click after actual DnD drag", () => {
+      const onHeaderClick = mock(() => {});
+      const onHeaderMouseDown = mock(() => {});
+      const onColumnDnDMove = mock(() => {});
+      const onColumnDnDEnd = mock(() => {});
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40), makeLayout(0, 1, 200, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderClick, onHeaderMouseDown, onColumnDnDMove, onColumnDnDEnd });
+
+      // mousedown on header
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 100, clientY: 20, bubbles: true }),
+      );
+
+      // actual drag movement
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 300, clientY: 20, buttons: 1, bubbles: true }),
+      );
+      expect(onColumnDnDMove).toHaveBeenCalled();
+
+      // mouseup
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      expect(onColumnDnDEnd).toHaveBeenCalledTimes(1);
+
+      // click should be suppressed
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 300, clientY: 20, bubbles: true }));
+      expect(onHeaderClick).not.toHaveBeenCalled();
+    });
+
+    it("always calls onColumnDnDEnd to clean up React state even without movement", () => {
+      const onColumnDnDEnd = mock(() => {});
+      const onHeaderMouseDown = mock(() => {});
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderMouseDown, onColumnDnDEnd });
+
+      // mousedown + mouseup without movement
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 100, clientY: 20, bubbles: true }),
+      );
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+
+      // onColumnDnDEnd should fire to clean up isDragging state
+      expect(onColumnDnDEnd).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("touch events", () => {
     it("tap fires onCellClick and onHeaderClick", () => {
       const onCellClick = mock(() => {});
