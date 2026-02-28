@@ -47,10 +47,8 @@ export const flexCellRenderer: CellRenderer<FlexInstruction> = {
       childWidths.push(measureInstructionWidth(ctx, child, theme));
       childHeights.push(measureInstructionHeight(ctx, child));
     }
-    const totalW =
-      childWidths.reduce((a, b) => a + b, 0) + gap * (children.length - 1);
-    const totalH =
-      childHeights.reduce((a, b) => a + b, 0) + gap * (children.length - 1);
+    const totalW = childWidths.reduce((a, b) => a + b, 0) + gap * (children.length - 1);
+    const totalH = childHeights.reduce((a, b) => a + b, 0) + gap * (children.length - 1);
     const childHeight = Math.min(contentH, FLEX_CHILD_HEIGHT);
 
     const order =

@@ -20,8 +20,7 @@ export function rectToPx(
   refH: number,
 ): { top: number; right: number; bottom: number; left: number } {
   if (rect === undefined) return { top: 0, right: 0, bottom: 0, left: 0 };
-  if (typeof rect === "number")
-    return { top: rect, right: rect, bottom: rect, left: rect };
+  if (typeof rect === "number") return { top: rect, right: rect, bottom: rect, left: rect };
   const [a, b, c, d] = rect as [CssLength?, CssLength?, CssLength?, CssLength?];
   if (rect.length === 2) {
     const top = lengthToPx(a, refH);
@@ -57,11 +56,7 @@ export function measureInstructionWidth(
     const tw = ctx.measureText(instruction.value).width;
     return tw + BADGE_PADDING * 2;
   }
-  if (
-    instruction.type === "stub" ||
-    instruction.type === "box" ||
-    instruction.type === "flex"
-  ) {
+  if (instruction.type === "stub" || instruction.type === "box" || instruction.type === "flex") {
     return 60;
   }
   return 0;
@@ -82,12 +77,7 @@ export function measureInstructionHeight(
 }
 
 /** Build a single-cell layout buffer for a sub-rect (used for flex children). */
-export function makeSubCellBuf(
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-): Float32Array {
+export function makeSubCellBuf(x: number, y: number, w: number, h: number): Float32Array {
   const buf = new Float32Array(LAYOUT_STRIDE);
   buf[2] = x;
   buf[3] = y;
