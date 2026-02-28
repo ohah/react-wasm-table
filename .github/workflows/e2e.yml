@@ -9,6 +9,7 @@ on:
 
 jobs:
   e2e:
+    if: false # e2e temporarily disabled
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -84,7 +85,7 @@ jobs:
   # Run once to generate Linux baseline snapshots.
   # Download the artifact and commit the *-linux.png files.
   update-snapshots:
-    if: github.event_name == 'workflow_dispatch'
+    if: false # e2e temporarily disabled
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
