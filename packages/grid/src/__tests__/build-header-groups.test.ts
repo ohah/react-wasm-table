@@ -262,4 +262,42 @@ describe("buildHeaderGroups", () => {
     const placeholderCtx = groups[0]!.headers[1]!.getContext();
     expect(placeholderCtx.column.id).toBe("age");
   });
+
+  it("passes table reference to header getContext", () => {
+    const instance = buildGridInstance({
+      columns: [
+        helper.accessor("firstName", { header: "First" }),
+        helper.accessor("age", { header: "Age" }),
+      ],
+      state: { sorting: [] },
+      onSortingChange: () => {},
+    });
+    const tableRef = { id: "test-table" };
+    const groups = buildHeaderGroups(instance.getAllColumns(), tableRef);
+    const ctx = groups[0]!.headers[0]!.getContext();
+    expect(ctx.table).toBe(tableRef);
+  });
+
+  it("includes header self-reference in getContext", () => {
+    const instance = buildGridInstance({
+      columns: [helper.accessor("firstName", { header: "First" })],
+      state: { sorting: [] },
+      onSortingChange: () => {},
+    });
+    const groups = buildHeaderGroups(instance.getAllColumns());
+    const header = groups[0]!.headers[0]!;
+    const ctx = header.getContext();
+    expect(ctx.header).toBe(header);
+  });
+
+  it("table reference is undefined when not provided", () => {
+    const instance = buildGridInstance({
+      columns: [helper.accessor("firstName", { header: "First" })],
+      state: { sorting: [] },
+      onSortingChange: () => {},
+    });
+    const groups = buildHeaderGroups(instance.getAllColumns());
+    const ctx = groups[0]!.headers[0]!.getContext();
+    expect(ctx.table).toBeUndefined();
+  });
 });
