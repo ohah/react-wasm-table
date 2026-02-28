@@ -29,6 +29,7 @@ import { ColumnFeatures } from "./pages/ColumnFeatures";
 import { ExpandingDemo } from "./pages/ExpandingDemo";
 import { TouchEventsDemo } from "./pages/TouchEventsDemo";
 import { ExportDemo } from "./pages/ExportDemo";
+import { ClipboardDemo } from "./pages/ClipboardDemo";
 import { MiddlewareDemo } from "./pages/MiddlewareDemo";
 import { LayoutCacheDemo } from "./pages/LayoutCacheDemo";
 import { CustomRendererDemo } from "./pages/CustomRendererDemo";
@@ -73,6 +74,7 @@ export function App() {
           <Route path="/expanding" element={<ExpandingDemo />} />
           <Route path="/touch-events" element={<TouchEventsDemo />} />
           <Route path="/export" element={<ExportDemo />} />
+          <Route path="/clipboard" element={<ClipboardDemo />} />
           <Route path="/event-middleware" element={<MiddlewareDemo />} />
           <Route path="/layout-cache" element={<LayoutCacheDemo />} />
           <Route path="/custom-renderer" element={<CustomRendererDemo />} />
