@@ -429,6 +429,10 @@ function buildGridColumns<TData>(
   });
 }
 
+// Auto-virtual: datasets above this threshold auto-limit getRowModel().rows
+const AUTO_VIRTUAL_THRESHOLD = 1000;
+const DEFAULT_VIRTUAL_WINDOW = 100;
+
 /** Build a GridInstance from options. */
 export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInstance<TData> {
   const {
@@ -560,10 +564,18 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     // Row model
     getRowModel: () => {
       const currentIndices = viewIndicesRef?.current ?? null;
-      if (visibleRange) {
-        // Virtual mode: only build rows in the visible range
+      const effectiveCount = currentIndices ? currentIndices.length : data.length;
+
+      // Use explicit range, or auto-virtual for large datasets
+      const effectiveRange =
+        visibleRange ??
+        (effectiveCount > AUTO_VIRTUAL_THRESHOLD
+          ? { start: 0, end: Math.min(DEFAULT_VIRTUAL_WINDOW, effectiveCount) }
+          : null);
+
+      if (effectiveRange) {
         const visibleLeaf = leafColumns.filter((col) => visibility[col.id] !== false);
-        return buildVirtualRowModel(data, currentIndices, defs, visibleRange, {
+        return buildVirtualRowModel(data, currentIndices, defs, effectiveRange, {
           visibleColumns: visibleLeaf,
           table: instance,
         });

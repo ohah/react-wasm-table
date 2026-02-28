@@ -54,7 +54,7 @@ const columns = [
 export function TanStackStressTest() {
   const data = useMemo(() => generateEmployees(ROW_COUNT), []);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [containerRef, size] = useContainerSize({ width: 600, height: 500 });
+  const { ref: containerRef, size } = useContainerSize(500);
 
   const table = useReactTable({
     data: data as Employee[],
@@ -109,7 +109,7 @@ export function TanStackStressTest() {
       </div>
       <CodeSnippet>{`const ROW_COUNT = 1_000_000;
 const data = useMemo(() => generateEmployees(ROW_COUNT), []);
-const [containerRef, size] = useContainerSize({ width: 600, height: 500 });
+const { ref: containerRef, size } = useContainerSize(500);
 
 const table = useReactTable({
   data,

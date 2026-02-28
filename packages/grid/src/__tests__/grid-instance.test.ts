@@ -1303,5 +1303,57 @@ describe("GridInstance", () => {
       const row = model.getRow(3);
       expect(row.original.firstName).toBe("Dave");
     });
+
+    it("auto-virtual: getRowModel limits rows for large datasets (>1000)", () => {
+      // Generate data larger than AUTO_VIRTUAL_THRESHOLD (1000)
+      const largeData = Array.from({ length: 2000 }, (_, i) => ({
+        firstName: `First${i}`,
+        lastName: `Last${i}`,
+        age: 20 + (i % 50),
+        status: "active",
+      }));
+      const instance = buildGridInstance({
+        data: largeData,
+        columns: [
+          helper.accessor("firstName", { header: "First" }),
+          helper.accessor("age", { header: "Age" }),
+        ],
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      const model = instance.getRowModel();
+      // Auto-virtual: rows limited to DEFAULT_VIRTUAL_WINDOW (100)
+      expect(model.rows.length).toBeLessThanOrEqual(100);
+      // But rowCount reflects full data
+      expect(model.rowCount).toBe(2000);
+      // getTotalRowModel still returns all
+      expect(instance.getTotalRowModel().rows).toHaveLength(2000);
+    });
+
+    it("auto-virtual is overridden by _setVisibleRange", () => {
+      const largeData = Array.from({ length: 2000 }, (_, i) => ({
+        firstName: `First${i}`,
+        lastName: `Last${i}`,
+        age: 20,
+        status: "active",
+      }));
+      const instance = buildGridInstance({
+        data: largeData,
+        columns: [helper.accessor("firstName", { header: "First" })],
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+      });
+      // Auto-virtual gives 100
+      expect(instance.getRowModel().rows.length).toBe(100);
+      // Explicit range overrides
+      instance._setVisibleRange({ start: 10, end: 30 });
+      const model = instance.getRowModel();
+      expect(model.rows.length).toBe(20);
+      expect(model.rows[0]!.original.firstName).toBe("First10");
+    });
   });
 });
