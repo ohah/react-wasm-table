@@ -1,13 +1,11 @@
-import type { ColumnProps, RenderInstruction } from "./types";
+import type { ColumnProps } from "./types";
 import type {
   GridColumnDef,
-  CellContext,
   ColumnOrderState,
   ColumnVisibilityState,
   ColumnSizingState,
   ColumnPinningState,
 } from "./tanstack-types";
-import { resolveInstruction } from "./resolve-instruction";
 
 /**
  * Flatten a potentially nested GridColumnDef tree into leaf ColumnProps[].
@@ -101,34 +99,10 @@ export function resolveColumns<TData>(
       });
     }
 
-    // Cell render: TanStack cell(CellContext) → children(value)
+    // Cell render: store original cellDef + columnDefRef for render loop to call with real row data
     if (def.cell) {
-      const cellDef = def.cell;
-      const colDef = def;
-      props.children = (value: unknown): RenderInstruction => {
-        if (typeof cellDef === "string") {
-          return { type: "text", value: cellDef };
-        }
-        // Build a CellContext
-        // Note: row.original and row.index are approximated here.
-        // The actual row data and index will be resolved in the render loop.
-        const ctx: CellContext<TData, unknown> = {
-          getValue: () => value,
-          renderValue: () => value,
-          row: {
-            id: "",
-            original: {} as TData,
-            index: 0,
-            getValue: () => undefined,
-          },
-          column: {
-            id,
-            columnDef: colDef as GridColumnDef<TData, unknown>,
-          },
-        };
-        const result = cellDef(ctx);
-        return resolveInstruction(result);
-      };
+      props.cellDef = def.cell;
+      props.columnDefRef = def;
     }
 
     result.push(props);

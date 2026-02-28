@@ -515,8 +515,10 @@ export interface ColumnProps extends BoxModelProps {
   selectable?: boolean;
   /** Editor type for inline editing. */
   editor?: "text" | "number" | "select";
-  /** Render function: receives cell value, returns a render instruction. */
-  children?: (value: unknown) => RenderInstruction;
+  /** Original TanStack cell definition (string or function). Resolved with real row data in render loop. */
+  cellDef?: string | ((info: any) => unknown);
+  /** Reference to the original column definition (for CellContext.column.columnDef). */
+  columnDefRef?: any;
 }
 
 // ── Grid props ─────────────────────────────────────────────────────────
@@ -706,6 +708,9 @@ export interface GridProps extends BoxModelProps {
 
   /** Ref callback to receive the WASM engine instance (e.g., for debug logging). */
   engineRef?: React.RefObject<WasmTableEngine | null>;
+
+  /** Parsed body content from Table children (Td JSX → RenderInstruction map). @internal */
+  _parsedBodyContent?: Map<string, RenderInstruction>;
 }
 
 // ── WASM engine interface ──────────────────────────────────────────────

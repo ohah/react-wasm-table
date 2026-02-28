@@ -35,7 +35,7 @@ import type { ColumnPinningState } from "../../tanstack-types";
 import { computePinningInfo } from "../../resolve-columns";
 import { buildRegions, buildRowRegions, contentToViewportX } from "../../renderer/region";
 import type { ColumnDnDState } from "./use-column-dnd";
-import { InstructionBuilder } from "../../adapter/instruction-builder";
+import { resolveInstruction } from "../../resolve-instruction";
 import {
   readCellRow,
   readCellCol,
@@ -126,6 +126,8 @@ export interface UseRenderLoopParams {
   rowPinning?: import("../../tanstack-types").RowPinningState;
   /** Get row ID for row pinning (display -> data index when reordered). */
   getRowId?: (row: Record<string, unknown>, index: number) => string;
+  /** Parsed body content from Table <Td> children (keyed by "rowId:columnId"). */
+  parsedBodyContent?: Map<string, import("../../types").RenderInstruction>;
 }
 
 export function useRenderLoop({
@@ -161,6 +163,7 @@ export function useRenderLoop({
   columnDnDStateRef,
   rowPinning,
   getRowId,
+  parsedBodyContent,
 }: UseRenderLoopParams) {
   const cellRendererRegistry = useMemo(
     () => createCellRendererRegistry(cellRenderers),
@@ -168,7 +171,6 @@ export function useRenderLoop({
   );
   const effectiveLayers = useMemo(() => layers ?? DEFAULT_LAYERS, [layers]);
   const rendererRef = useRef<CanvasRenderer | null>(null);
-  const instructionBuilderRef = useRef(new InstructionBuilder());
   const rafRef = useRef<number>(0);
   const prevEffectiveRowHeightRef = useRef(0);
 
@@ -198,7 +200,6 @@ export function useRenderLoop({
     if (!engine) return;
     const renderer = rendererRef.current;
     if (!renderer) return;
-    const builder = instructionBuilderRef.current;
     const bridge = memoryBridgeRef.current;
     const strTable = stringTableRef.current;
     if (!bridge) return;
@@ -535,10 +536,41 @@ export function useRenderLoop({
           const getInstruction = (cellIdx: number) => {
             const col = columns[readCellCol(layoutBuf, cellIdx)];
             const actualRow = effectiveViewIndices[readCellRow(layoutBuf, cellIdx)] ?? 0;
-            if (col?.children) {
-              const value = data[actualRow]?.[col.id];
-              return builder.build(col, value);
+
+            // 1. Td JSX content from Table children (highest priority)
+            if (parsedBodyContent) {
+              const key = `${String(actualRow)}:${col?.id ?? ""}`;
+              const parsed = parsedBodyContent.get(key);
+              if (parsed) return parsed;
             }
+
+            // 2. cellDef: TanStack cell callback with real row data
+            if (col?.cellDef) {
+              if (typeof col.cellDef === "string") {
+                return { type: "text" as const, value: col.cellDef };
+              }
+              const rowData = data[actualRow];
+              // Resolve value: use accessorFn if available, else property lookup
+              const colDef = col.columnDefRef;
+              const value =
+                colDef && "accessorFn" in colDef && typeof colDef.accessorFn === "function"
+                  ? colDef.accessorFn(rowData, actualRow)
+                  : rowData?.[col.id];
+              const ctx = {
+                getValue: () => value,
+                renderValue: () => value,
+                row: {
+                  id: String(actualRow),
+                  original: rowData,
+                  index: actualRow,
+                  getValue: (columnId: string) => rowData?.[columnId],
+                },
+                column: { id: col.id, columnDef: colDef },
+              };
+              return resolveInstruction(col.cellDef(ctx));
+            }
+
+            // 3. StringTable fallback (default text)
             const text = strTable.get(col?.id ?? "", actualRow);
             return { type: "text" as const, value: text };
           };
@@ -770,6 +802,7 @@ export function useRenderLoop({
     columnDnDStateRef,
     rowPinning,
     getRowId,
+    parsedBodyContent,
   ]);
 
   return { invalidate };
