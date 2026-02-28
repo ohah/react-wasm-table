@@ -44,8 +44,8 @@ export function computeHeaderLinesFromBuffer(
     firstX = Math.min(firstX, readCellX(buf, i));
   }
   const horizontal: HLine[] = [
-    { y: headerY + 0.25, x1: 0, x2: canvasW },
-    { y: headerY + headerHeight - 0.25, x1: 0, x2: canvasW },
+    { y: headerY + 0.25, x1: firstX, x2: canvasW },
+    { y: headerY + headerHeight - 0.25, x1: firstX, x2: canvasW },
   ];
 
   const vertical: VLine[] = [{ x: firstX + 0.25, y1: headerY, y2: headerY + headerHeight }];
@@ -116,7 +116,7 @@ export function computeDataLinesFromBuffer(
   for (const edge of rowEdges) {
     // Last row bottom border: inset so the line stays fully inside the canvas
     const y = edge >= maxY ? edge - 0.5 : edge + 0.5;
-    horizontal.push({ y, x1: 0, x2: canvasW });
+    horizontal.push({ y, x1: firstColX, x2: canvasW });
   }
 
   const vertical: VLine[] = [{ x: firstColX + 0.25, y1: minY, y2: maxY }];
