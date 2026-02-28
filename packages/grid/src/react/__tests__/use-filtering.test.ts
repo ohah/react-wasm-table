@@ -177,6 +177,25 @@ describe("useFiltering (renderHook)", () => {
     });
   });
 
+  describe("updater pattern (TanStack-compatible)", () => {
+    it("onColumnFiltersChange receives resolved ColumnFiltersState", () => {
+      const onChange = mock(() => {});
+      const { result } = renderHook(() =>
+        useFiltering({
+          engine,
+          columnRegistry: registry,
+          invalidate,
+          onColumnFiltersChange: onChange,
+        }),
+      );
+
+      act(() => result.current.setColumnFilters([{ id: "name", value: "A" }]));
+      const arg = onChange.mock.calls[0]![0];
+      expect(Array.isArray(arg)).toBe(true);
+      expect(arg).toEqual([{ id: "name", value: "A" }]);
+    });
+  });
+
   it("does nothing when engine is null", () => {
     const { result } = renderHook(() =>
       useFiltering({ engine: null, columnRegistry: registry, invalidate }),

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import type { WasmTableEngine } from "../../types";
-import type { ColumnFiltersState, ColumnFilter } from "../../tanstack-types";
+import type { ColumnFiltersState, ColumnFilter, ColumnFiltersUpdater } from "../../tanstack-types";
 import type { ColumnRegistry } from "../../adapter/column-registry";
 
 export interface UseFilteringParams {
@@ -8,7 +8,7 @@ export interface UseFilteringParams {
   columnRegistry: ColumnRegistry;
   columnFiltersProp?: ColumnFiltersState;
   globalFilterProp?: string;
-  onColumnFiltersChange?: (filters: ColumnFiltersState) => void;
+  onColumnFiltersChange?: (updater: ColumnFiltersUpdater) => void;
   onGlobalFilterChange?: (value: string) => void;
   initialColumnFilters?: ColumnFiltersState;
   initialGlobalFilter?: string;

@@ -96,9 +96,14 @@ export function useColumnDnD({
       return;
     }
 
-    const order = columnOrder ?? columns.map((c) => c.id);
-    const newOrder = reorderColumnOrder(order, state.dragColIndex, state.dropIndicatorColIndex);
-    onColumnOrderChange(newOrder);
+    // Only reorder if column was actually moved to a different position
+    const from = state.dragColIndex;
+    const to = state.dropIndicatorColIndex;
+    if (from !== to && from + 1 !== to) {
+      const order = columnOrder ?? columns.map((c) => c.id);
+      const newOrder = reorderColumnOrder(order, from, to);
+      onColumnOrderChange(newOrder);
+    }
 
     setDndState(null);
     syncRef(null);

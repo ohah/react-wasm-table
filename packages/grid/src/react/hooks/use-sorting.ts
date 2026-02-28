@@ -1,13 +1,13 @@
 import { useState, useCallback } from "react";
 import type { WasmTableEngine } from "../../types";
-import type { SortingState } from "../../tanstack-types";
+import type { SortingState, SortingUpdater } from "../../tanstack-types";
 import type { ColumnRegistry } from "../../adapter/column-registry";
 
 export interface UseSortingParams {
   engine: WasmTableEngine | null;
   columnRegistry: ColumnRegistry;
   sortingProp?: SortingState;
-  onSortingChange?: (sorting: SortingState) => void;
+  onSortingChange?: (updater: SortingUpdater) => void;
   onBeforeSortChange?: (next: SortingState) => boolean | void;
   initialSorting?: SortingState;
   invalidate: () => void;

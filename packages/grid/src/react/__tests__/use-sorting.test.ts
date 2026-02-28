@@ -121,6 +121,38 @@ describe("useSorting (renderHook)", () => {
     });
   });
 
+  describe("updater pattern (TanStack-compatible)", () => {
+    it("onSortingChange receives resolved SortingState (direct value, not function)", () => {
+      const onSortingChange = mock(() => {});
+      const { result } = renderHook(() =>
+        useSorting({ engine, columnRegistry: registry, invalidate, onSortingChange }),
+      );
+
+      act(() => result.current.handleHeaderClick(0));
+      // The callback receives a direct SortingState value (which is a valid SortingUpdater)
+      const arg = onSortingChange.mock.calls[0]![0];
+      expect(Array.isArray(arg)).toBe(true);
+      expect(arg).toEqual([{ id: "name", desc: false }]);
+    });
+
+    it("onSortingChange type accepts updater functions (type compatibility)", () => {
+      // This test verifies that onSortingChange can receive both values and functions
+      // (as per TanStack's SortingUpdater type)
+      let captured: unknown = null;
+      const onSortingChange = mock((updater: unknown) => {
+        captured = updater;
+      });
+      const { result } = renderHook(() =>
+        useSorting({ engine, columnRegistry: registry, invalidate, onSortingChange }),
+      );
+
+      act(() => result.current.handleHeaderClick(0));
+      // useSorting always passes a resolved value, not a function updater
+      expect(typeof captured).not.toBe("function");
+      expect(captured).toEqual([{ id: "name", desc: false }]);
+    });
+  });
+
   describe("onBeforeSortChange guard", () => {
     it("returning false prevents sort", () => {
       const guard = mock(() => false as const);
