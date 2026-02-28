@@ -78,9 +78,18 @@ So `style` and individual props are merged at the component level; the instructi
 
 ---
 
-## 3. Other canvas components
+## 3. Text and Badge
 
-- **Text**, **Badge**: Return `TextInstruction` and `BadgeInstruction` respectively. Styles via optional `style` or per-component props.
-- **Stub** (Box, Stack, ProgressBar, etc.): Return `StubInstruction` until implemented; the renderer draws a placeholder only.
+Same extensible pattern as Flex:
 
-New components should follow the same rules: Taffy-compatible style surface, optional `style` + individual prop merging, and `ReactNode` children where applicable.
+- **`style` prop**: Optional `style` object (`Partial<TextStyle>` / `Partial<BadgeStyle>`). Individual props override `style` when both are set.
+- **Text**: `value`, `style?`, `color?`, `fontWeight?`, `fontSize?`.
+- **Badge**: `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`.
+
+## 4. Stub components
+
+Box, Stack, HStack, VStack, ProgressBar, Sparkline, etc. are stubs (placeholder instructions). They use the same pattern:
+
+- **`style` prop**: Optional `style?: Record<string, unknown>`. Merged with other props; individual props override `style`. When implemented, each stub can expose a typed style surface like Text/Badge/Flex.
+
+New components should follow the same rules: optional `style` + individual prop merging (individual overrides), and `ReactNode` children where applicable.
