@@ -146,7 +146,7 @@ const columns = [
     size: 160,
     padding: [0, 8],
     cell: (info) => (
-      <Flex direction="row" gap={8} align="center">
+      <Flex flexDirection="row" gap={8} alignItems="center">
         <Text
           value={`${info.getValue()}%`}
           fontSize={12}

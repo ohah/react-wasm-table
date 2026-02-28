@@ -6,7 +6,18 @@ import type {
   FlexInstruction,
   Theme,
 } from "../types";
-import { drawTextCellFromBuffer, drawBadgeFromBuffer } from "./draw-primitives";
+import { drawTextCellFromBuffer, drawBadgeFromBuffer, measureText } from "./draw-primitives";
+import {
+  readCellX,
+  readCellY,
+  readCellWidth,
+  readCellHeight,
+  readCellPaddingTop,
+  readCellPaddingBottom,
+  readCellPaddingLeft,
+  readCellPaddingRight,
+} from "../adapter/layout-reader";
+import { LAYOUT_STRIDE } from "../adapter/layout-reader";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -103,18 +114,164 @@ export const stubCellRenderer: CellRenderer<StubInstruction> = {
   },
 };
 
-/** Renders a flex container (first child fallback). */
+const FLEX_CHILD_HEIGHT = 22;
+const BADGE_PADDING = 6;
+
+/** Measure approximate width of a single instruction for flex layout. */
+function measureInstructionWidth(
+  ctx: CanvasRenderingContext2D,
+  instruction: RenderInstruction,
+  theme: Theme,
+): number {
+  if (instruction.type === "text") {
+    const fontSize = instruction.style?.fontSize ?? theme.fontSize;
+    return measureText(ctx, instruction.value, fontSize, "system-ui, sans-serif");
+  }
+  if (instruction.type === "badge") {
+    ctx.font = "12px system-ui, sans-serif";
+    const tw = ctx.measureText(instruction.value).width;
+    return tw + BADGE_PADDING * 2;
+  }
+  if (instruction.type === "stub") {
+    return 60;
+  }
+  return 0;
+}
+
+/** Approximate height for flex child (row layout uses single row). */
+function measureInstructionHeight(
+  _ctx: CanvasRenderingContext2D,
+  instruction: RenderInstruction,
+): number {
+  return instruction.type === "badge" || instruction.type === "text" || instruction.type === "stub"
+    ? FLEX_CHILD_HEIGHT
+    : 0;
+}
+
+/** Build a single-cell layout buffer for a sub-rect (used for flex children). */
+function makeSubCellBuf(x: number, y: number, w: number, h: number): Float32Array {
+  const buf = new Float32Array(LAYOUT_STRIDE);
+  buf[2] = x;
+  buf[3] = y;
+  buf[4] = w;
+  buf[5] = h;
+  buf[6] = 0; // align left
+  // padding 0 by default (indices 7-10)
+  return buf;
+}
+
+/** Renders a flex container: lays out all children in a row with gap and draws each. */
 export const flexCellRenderer: CellRenderer<FlexInstruction> = {
   type: "flex",
   draw(instruction, context) {
-    if (instruction.children.length > 0) {
-      const first = instruction.children[0];
-      if (!first) return;
-      if (first.type === "text") {
-        textCellRenderer.draw(first, context);
-      } else if (first.type === "badge") {
-        badgeCellRenderer.draw(first, context);
+    const { ctx, buf, cellIdx, theme } = context;
+    const children = instruction.children;
+    if (children.length === 0) return;
+
+    const cellX = readCellX(buf, cellIdx);
+    const cellY = readCellY(buf, cellIdx);
+    const cellW = readCellWidth(buf, cellIdx);
+    const cellH = readCellHeight(buf, cellIdx);
+    const padT = readCellPaddingTop(buf, cellIdx);
+    const padB = readCellPaddingBottom(buf, cellIdx);
+    const padL = readCellPaddingLeft(buf, cellIdx);
+    const padR = readCellPaddingRight(buf, cellIdx);
+    const contentW = cellW - padL - padR;
+    const contentH = cellH - padT - padB;
+
+    const gap = typeof instruction.gap === "number" ? instruction.gap : 4;
+    const flexDir = instruction.flexDirection ?? "row";
+    const align = instruction.alignItems ?? "center";
+    const justify = instruction.justifyContent ?? "start";
+
+    const isRow = flexDir === "row" || flexDir === "row-reverse";
+    const childWidths: number[] = [];
+    const childHeights: number[] = [];
+    for (const child of children) {
+      childWidths.push(measureInstructionWidth(ctx, child, theme));
+      childHeights.push(measureInstructionHeight(ctx, child));
+    }
+    const totalW = childWidths.reduce((a, b) => a + b, 0) + gap * (children.length - 1);
+    const totalH = childHeights.reduce((a, b) => a + b, 0) + gap * (children.length - 1);
+    const childHeight = Math.min(contentH, FLEX_CHILD_HEIGHT);
+
+    const order =
+      flexDir === "row-reverse" || flexDir === "column-reverse"
+        ? [...children].reverse()
+        : children;
+    const widthsOrder =
+      flexDir === "row-reverse" || flexDir === "column-reverse"
+        ? [...childWidths].reverse()
+        : childWidths;
+    const heightsOrder =
+      flexDir === "row-reverse" || flexDir === "column-reverse"
+        ? [...childHeights].reverse()
+        : childHeights;
+
+    if (isRow) {
+      let startX: number;
+      if (justify === "end") {
+        startX = cellX + cellW - padR - totalW;
+      } else if (justify === "center") {
+        startX = cellX + padL + (contentW - totalW) / 2;
+      } else {
+        startX = cellX + padL;
+      }
+      let childY: number;
+      if (align === "end") {
+        childY = cellY + cellH - padB - childHeight;
+      } else if (align === "center" || align === "stretch") {
+        childY = cellY + padT + (contentH - childHeight) / 2;
+      } else {
+        childY = cellY + padT;
+      }
+      let x = startX;
+      for (let i = 0; i < order.length; i++) {
+        const child = order[i]!;
+        const w = widthsOrder[i]!;
+        const subBuf = makeSubCellBuf(x, childY, w, childHeight);
+        const subContext: CellRenderContext = { ctx, buf: subBuf, cellIdx: 0, theme };
+        drawChild(child, subContext);
+        x += w + gap;
+      }
+    } else {
+      let startY: number;
+      if (justify === "end") {
+        startY = cellY + cellH - padB - totalH;
+      } else if (justify === "center") {
+        startY = cellY + padT + (contentH - totalH) / 2;
+      } else {
+        startY = cellY + padT;
+      }
+      let childX: number;
+      const maxChildW = Math.max(...widthsOrder, 0);
+      if (align === "end") {
+        childX = cellX + cellW - padR - maxChildW;
+      } else if (align === "center" || align === "stretch") {
+        childX = cellX + padL + (contentW - maxChildW) / 2;
+      } else {
+        childX = cellX + padL;
+      }
+      let y = startY;
+      for (let i = 0; i < order.length; i++) {
+        const child = order[i]!;
+        const w = Math.max(widthsOrder[i] ?? 0, contentW);
+        const h = heightsOrder[i] ?? FLEX_CHILD_HEIGHT;
+        const subBuf = makeSubCellBuf(childX, y, w, h);
+        const subContext: CellRenderContext = { ctx, buf: subBuf, cellIdx: 0, theme };
+        drawChild(child, subContext);
+        y += h + gap;
       }
     }
   },
 };
+
+function drawChild(instruction: RenderInstruction, context: CellRenderContext): void {
+  if (instruction.type === "text") {
+    textCellRenderer.draw(instruction, context);
+  } else if (instruction.type === "badge") {
+    badgeCellRenderer.draw(instruction, context);
+  } else if (instruction.type === "stub") {
+    stubCellRenderer.draw(instruction, context);
+  }
+}

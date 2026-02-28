@@ -14,6 +14,7 @@ const sections = [
       { to: "/export", label: "Data Export" },
       { to: "/clipboard", label: "Clipboard (Copy/Paste)" },
       { to: "/layout-cache", label: "Layout Cache" },
+      { to: "/canvas-components", label: "Canvas Components (Flex)" },
       { to: "/custom-renderer", label: "Custom Renderer" },
       { to: "/layers", label: "Layer System" },
       { to: "/column-features", label: "Column Features" },

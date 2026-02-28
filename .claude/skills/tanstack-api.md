@@ -88,7 +88,7 @@ const [sorting, setSorting] = useState([]);
 ```tsx
 <Text value="hello" color="#333" fontWeight="bold" fontSize={14} />
 <Badge value="Active" color="white" backgroundColor="green" />
-<Flex direction="row" gap={8} align="center">
+<Flex flexDirection="row" gap={8} alignItems="center">
   <Text value="A" />
   <Badge value="B" />
 </Flex>
