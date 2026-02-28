@@ -141,4 +141,90 @@ describe("parseTableChildren", () => {
     expect(result.bodyRows[0]!.cells.length).toBe(1);
     expect(result.bodyRows[0]!.cells[0]!.content).toBe("valid");
   });
+
+  it("should capture key from Tr elements", () => {
+    const children = (
+      <Tbody>
+        <Tr key="row-0">
+          <Td>Alice</Td>
+        </Tr>
+        <Tr key="row-1">
+          <Td>Bob</Td>
+        </Tr>
+      </Tbody>
+    );
+    const result = parseTableChildren(children);
+    expect(result.bodyRows[0]!.key).toBe("row-0");
+    expect(result.bodyRows[1]!.key).toBe("row-1");
+  });
+
+  it("should capture key from Td elements", () => {
+    const children = (
+      <Tbody>
+        <Tr key="0">
+          <Td key="0_name">Alice</Td>
+          <Td key="0_age">30</Td>
+        </Tr>
+      </Tbody>
+    );
+    const result = parseTableChildren(children);
+    expect(result.bodyRows[0]!.cells[0]!.key).toBe("0_name");
+    expect(result.bodyRows[0]!.cells[1]!.key).toBe("0_age");
+  });
+
+  it("should omit key when not present on element", () => {
+    const children = (
+      <Tbody>
+        <Tr>
+          <Td>Alice</Td>
+        </Tr>
+      </Tbody>
+    );
+    const result = parseTableChildren(children);
+    expect(result.bodyRows[0]!.key).toBeUndefined();
+    expect(result.bodyRows[0]!.cells[0]!.key).toBeUndefined();
+  });
+
+  it("should capture key from Thead Tr and Th elements", () => {
+    const children = (
+      <Thead>
+        <Tr key="header-0">
+          <Th key="h_name">Name</Th>
+          <Th key="h_age">Age</Th>
+        </Tr>
+      </Thead>
+    );
+    const result = parseTableChildren(children);
+    expect(result.headerRows[0]!.key).toBe("header-0");
+    expect(result.headerRows[0]!.cells[0]!.key).toBe("h_name");
+    expect(result.headerRows[0]!.cells[1]!.key).toBe("h_age");
+  });
+
+  it("should capture keys from combined Thead + Tbody", () => {
+    const children = [
+      <Thead key="h">
+        <Tr key="hg-0">
+          <Th key="h_name">Name</Th>
+        </Tr>
+      </Thead>,
+      <Tbody key="b">
+        <Tr key="0">
+          <Td key="0_name">Alice</Td>
+        </Tr>
+        <Tr key="1">
+          <Td key="1_name">Bob</Td>
+        </Tr>
+      </Tbody>,
+    ];
+    const result = parseTableChildren(children);
+    expect(result.hasStructure).toBe(true);
+    // Header keys
+    expect(result.headerRows[0]!.key).toBe("hg-0");
+    expect(result.headerRows[0]!.cells[0]!.key).toBe("h_name");
+    // Body keys
+    expect(result.bodyRows[0]!.key).toBe("0");
+    expect(result.bodyRows[0]!.cells[0]!.key).toBe("0_name");
+    expect(result.bodyRows[1]!.key).toBe("1");
+    expect(result.bodyRows[1]!.cells[0]!.key).toBe("1_name");
+  });
 });

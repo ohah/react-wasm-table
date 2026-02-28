@@ -286,4 +286,276 @@ describe("useRenderLoop", () => {
       expect(params.onLayoutComputed).not.toHaveBeenCalled();
     });
   });
+
+  describe("cellDef with real row data", () => {
+    it("calls cellDef with actual row.original and row.index", () => {
+      const cellDefSpy = mock((info: any) => `Name: ${info.row.original.name}`);
+
+      const registry = new ColumnRegistry();
+      registry.setAll([
+        {
+          id: "name",
+          width: 200,
+          header: "Name",
+          cellDef: cellDefSpy,
+          columnDefRef: { accessorKey: "name" },
+        },
+      ] as any);
+
+      const data = [{ name: "Alice" }, { name: "Bob" }] as Record<string, unknown>[];
+      const st = new StringTable();
+      st.populate(data, ["name"]);
+
+      // Layout: 1 header + 1 data cell (row=0 maps to data[0])
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 200, h: 40 }, // header
+        { row: 0, col: 0, x: 0, y: 40, w: 200, h: 36 }, // data row 0
+      ]);
+
+      const params = defaultParams({
+        columnRegistry: registry,
+        data,
+        stringTableRef: { current: st },
+      });
+      // Override the bridge to use our layout buf with viewIndices [0]
+      params.memoryBridgeRef = {
+        current: {
+          getLayoutBuffer: () => buf,
+          getViewIndices: () => new Uint32Array([0]),
+        } as any,
+      };
+
+      renderHook(() => useRenderLoop(params));
+      flushRAF();
+
+      // cellDef should have been called at least once
+      expect(cellDefSpy).toHaveBeenCalled();
+      const info = cellDefSpy.mock.calls[0]![0];
+      // Verify real row data is passed
+      expect(info.row.original).toEqual({ name: "Alice" });
+      expect(info.row.index).toBe(0);
+      expect(info.row.id).toBe("0");
+      expect(info.getValue()).toBe("Alice");
+      expect(info.column.id).toBe("name");
+    });
+
+    it("string cellDef produces text instruction without calling function", () => {
+      const registry = new ColumnRegistry();
+      registry.setAll([{ id: "status", width: 100, header: "Status", cellDef: "N/A" }] as any);
+
+      const data = [{ status: "active" }] as Record<string, unknown>[];
+      const st = new StringTable();
+      st.populate(data, ["status"]);
+
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      ]);
+
+      const { canvas, ctx: mockCtx } = makeMockCanvas();
+      const params = defaultParams({
+        columnRegistry: registry,
+        data,
+        stringTableRef: { current: st },
+        canvasRef: { current: canvas },
+      });
+      params.memoryBridgeRef = {
+        current: {
+          getLayoutBuffer: () => buf,
+          getViewIndices: () => new Uint32Array([0]),
+        } as any,
+      };
+
+      renderHook(() => useRenderLoop(params));
+      flushRAF();
+
+      // "N/A" should be drawn (not "active" from StringTable)
+      const textCalls = mockCtx.fillText.mock.calls;
+      const drawn = textCalls.map((c: any) => c[0]);
+      expect(drawn.some((t: string) => t === "N/A")).toBe(true);
+    });
+
+    it("uses accessorFn when available on columnDefRef", () => {
+      const cellDefSpy = mock((info: any) => `Full: ${info.getValue()}`);
+
+      const registry = new ColumnRegistry();
+      registry.setAll([
+        {
+          id: "fullName",
+          width: 200,
+          header: "Full Name",
+          cellDef: cellDefSpy,
+          columnDefRef: {
+            id: "fullName",
+            accessorFn: (row: any) => `${row.first} ${row.last}`,
+          },
+        },
+      ] as any);
+
+      const data = [{ first: "Alice", last: "Kim" }] as Record<string, unknown>[];
+      const st = new StringTable();
+      st.populate(data, ["fullName"]);
+
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 200, h: 40 },
+        { row: 0, col: 0, x: 0, y: 40, w: 200, h: 36 },
+      ]);
+
+      const params = defaultParams({
+        columnRegistry: registry,
+        data,
+        stringTableRef: { current: st },
+      });
+      params.memoryBridgeRef = {
+        current: {
+          getLayoutBuffer: () => buf,
+          getViewIndices: () => new Uint32Array([0]),
+        } as any,
+      };
+
+      renderHook(() => useRenderLoop(params));
+      flushRAF();
+
+      expect(cellDefSpy).toHaveBeenCalled();
+      const info = cellDefSpy.mock.calls[0]![0];
+      // getValue should return the accessorFn result
+      expect(info.getValue()).toBe("Alice Kim");
+    });
+  });
+
+  describe("parsedBodyContent priority", () => {
+    it("parsedBodyContent takes priority over cellDef", () => {
+      const cellDefSpy = mock((info: any) => `cellDef: ${info.getValue()}`);
+
+      const registry = new ColumnRegistry();
+      registry.setAll([
+        {
+          id: "name",
+          width: 200,
+          header: "Name",
+          cellDef: cellDefSpy,
+          columnDefRef: { accessorKey: "name" },
+        },
+      ] as any);
+
+      const data = [{ name: "Alice" }] as Record<string, unknown>[];
+      const st = new StringTable();
+      st.populate(data, ["name"]);
+
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 200, h: 40 },
+        { row: 0, col: 0, x: 0, y: 40, w: 200, h: 36 },
+      ]);
+
+      // parsedBodyContent: row 0, column "name" → "OVERRIDE"
+      const parsedBodyContent = new Map([["0:name", { type: "text" as const, value: "OVERRIDE" }]]);
+
+      const { canvas, ctx: mockCtx } = makeMockCanvas();
+      const params = defaultParams({
+        columnRegistry: registry,
+        data,
+        stringTableRef: { current: st },
+        canvasRef: { current: canvas },
+        parsedBodyContent,
+      });
+      params.memoryBridgeRef = {
+        current: {
+          getLayoutBuffer: () => buf,
+          getViewIndices: () => new Uint32Array([0]),
+        } as any,
+      };
+
+      renderHook(() => useRenderLoop(params));
+      flushRAF();
+
+      // cellDef should NOT have been called — parsedBodyContent takes priority
+      expect(cellDefSpy).not.toHaveBeenCalled();
+      // "OVERRIDE" should be drawn
+      const textCalls = mockCtx.fillText.mock.calls;
+      const drawn = textCalls.map((c: any) => c[0]);
+      expect(drawn.some((t: string) => t === "OVERRIDE")).toBe(true);
+    });
+
+    it("falls through to cellDef when parsedBodyContent has no matching key", () => {
+      const cellDefSpy = mock((info: any) => `from-cellDef`);
+
+      const registry = new ColumnRegistry();
+      registry.setAll([
+        {
+          id: "name",
+          width: 200,
+          header: "Name",
+          cellDef: cellDefSpy,
+          columnDefRef: { accessorKey: "name" },
+        },
+      ] as any);
+
+      const data = [{ name: "Alice" }] as Record<string, unknown>[];
+      const st = new StringTable();
+      st.populate(data, ["name"]);
+
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 200, h: 40 },
+        { row: 0, col: 0, x: 0, y: 40, w: 200, h: 36 },
+      ]);
+
+      // parsedBodyContent with a different key — no match for row 0
+      const parsedBodyContent = new Map([["99:name", { type: "text" as const, value: "WRONG" }]]);
+
+      const params = defaultParams({
+        columnRegistry: registry,
+        data,
+        stringTableRef: { current: st },
+        parsedBodyContent,
+      });
+      params.memoryBridgeRef = {
+        current: {
+          getLayoutBuffer: () => buf,
+          getViewIndices: () => new Uint32Array([0]),
+        } as any,
+      };
+
+      renderHook(() => useRenderLoop(params));
+      flushRAF();
+
+      // cellDef should be called since parsedBodyContent didn't match
+      expect(cellDefSpy).toHaveBeenCalled();
+    });
+
+    it("falls through to StringTable when no cellDef and no parsedBodyContent", () => {
+      const registry = new ColumnRegistry();
+      registry.setAll([{ id: "name", width: 200, header: "Name" }] as any);
+
+      const data = [{ name: "Alice" }] as Record<string, unknown>[];
+      const st = new StringTable();
+      st.populate(data, ["name"]);
+
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 200, h: 40 },
+        { row: 0, col: 0, x: 0, y: 40, w: 200, h: 36 },
+      ]);
+
+      const { canvas, ctx: mockCtx } = makeMockCanvas();
+      const params = defaultParams({
+        columnRegistry: registry,
+        data,
+        stringTableRef: { current: st },
+        canvasRef: { current: canvas },
+      });
+      params.memoryBridgeRef = {
+        current: {
+          getLayoutBuffer: () => buf,
+          getViewIndices: () => new Uint32Array([0]),
+        } as any,
+      };
+
+      renderHook(() => useRenderLoop(params));
+      flushRAF();
+
+      // StringTable should produce "Alice"
+      const textCalls = mockCtx.fillText.mock.calls;
+      const drawn = textCalls.map((c: any) => c[0]);
+      expect(drawn.some((t: string) => t === "Alice")).toBe(true);
+    });
+  });
 });
