@@ -71,6 +71,7 @@ function makeContext(overrides?: Partial<CellRenderContext>): CellRenderContext 
     buf,
     cellIdx: 0,
     theme: defaultTheme,
+    registry: createCellRendererRegistry(),
     ...overrides,
   };
 }
