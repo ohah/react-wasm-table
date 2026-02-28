@@ -147,7 +147,6 @@ export type { GridContextValue } from "./react/context";
 
 // Adapter
 export { ColumnRegistry } from "./adapter/column-registry";
-export { InstructionBuilder } from "./adapter/instruction-builder";
 export { EventManager } from "./adapter/event-manager";
 export type { GridEventHandlers, ScrollNormalization, EventCoords } from "./adapter/event-manager";
 

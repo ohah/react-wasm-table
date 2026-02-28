@@ -101,26 +101,25 @@ describe("resolveColumns", () => {
     expect(result[2]!.id).toBe("age");
   });
 
-  it("wraps cell function into children with CellContext", () => {
+  it("stores cellDef and columnDefRef for cell function", () => {
+    const cellFn = (info: any) => ({
+      type: "text" as const,
+      value: String(info.getValue()),
+      style: { fontWeight: "bold" },
+    });
     const defs = [
       helper.accessor("age", {
         header: "Age",
-        cell: (info) => ({
-          type: "text" as const,
-          value: String(info.getValue()),
-          style: { fontWeight: "bold" },
-        }),
+        cell: cellFn,
       }),
     ];
     const result = resolveColumns(defs, []);
-    expect(result[0]!.children).toBeDefined();
-    // Call children with a value — it should produce a RenderInstruction
-    const instruction = result[0]!.children!(42);
-    expect(instruction.type).toBe("text");
-    expect(instruction.value).toBe("42");
+    expect(result[0]!.cellDef).toBe(cellFn);
+    expect(result[0]!.columnDefRef).toBeDefined();
+    expect(result[0]!.columnDefRef.accessorKey).toBe("age");
   });
 
-  it("wraps string cell into text instruction", () => {
+  it("stores string cellDef", () => {
     const defs = [
       helper.accessor("status", {
         header: "Status",
@@ -128,8 +127,7 @@ describe("resolveColumns", () => {
       }),
     ];
     const result = resolveColumns(defs, []);
-    const instruction = result[0]!.children!("anything");
-    expect(instruction).toEqual({ type: "text", value: "N/A" });
+    expect(result[0]!.cellDef).toBe("N/A");
   });
 
   it("converts display column", () => {
@@ -312,7 +310,7 @@ describe("resolveColumns", () => {
     expect("selectable" in result[2]!).toBe(false);
   });
 
-  it("cell with JSX-like return resolves via resolveInstruction", () => {
+  it("stores cellDef for string-returning cell function", () => {
     const defs = [
       helper.accessor("age", {
         header: "Age",
@@ -320,9 +318,9 @@ describe("resolveColumns", () => {
       }),
     ];
     const result = resolveColumns(defs, []);
-    const instruction = result[0]!.children!(25);
-    expect(instruction.type).toBe("text");
-    expect(instruction.value).toBe("Age: 25");
+    expect(result[0]!.cellDef).toBeDefined();
+    expect(typeof result[0]!.cellDef).toBe("function");
+    expect(result[0]!.columnDefRef).toBeDefined();
   });
 });
 

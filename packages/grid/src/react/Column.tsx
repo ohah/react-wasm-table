@@ -34,7 +34,6 @@ export function Column(props: ColumnProps): null {
     align,
     sortable,
     editor,
-    children,
     // Box model
     padding,
     paddingTop,
@@ -87,7 +86,6 @@ export function Column(props: ColumnProps): null {
     align,
     sortable,
     editor,
-    children,
     padding,
     paddingTop,
     paddingRight,
