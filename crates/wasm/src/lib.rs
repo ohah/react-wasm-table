@@ -392,7 +392,7 @@ impl TableEngine {
             });
         }
 
-        let positions = self.layout.compute_composite_layout(
+        let params = react_wasm_table_core::layout::CompositeLayoutParams {
             container_w,
             container_h,
             flex_direction,
@@ -400,8 +400,8 @@ impl TableEngine {
             align_items,
             justify_content,
             padding,
-            &children,
-        );
+        };
+        let positions = self.layout.compute_composite_layout(&params, &children);
 
         let mut out = Vec::with_capacity(positions.len() * 4);
         for p in &positions {

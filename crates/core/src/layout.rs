@@ -1370,24 +1370,33 @@ pub struct ChildPosition {
     pub height: f32,
 }
 
+/// Parameters for composite (in-cell) layout: container size, flex direction, gap, alignment, padding.
+#[derive(Debug, Clone)]
+pub struct CompositeLayoutParams {
+    pub container_w: f32,
+    pub container_h: f32,
+    pub flex_direction: FlexDirectionValue,
+    pub gap: f32,
+    pub align_items: Option<AlignValue>,
+    pub justify_content: Option<AlignValue>,
+    /// Padding [top, right, bottom, left].
+    pub padding: [f32; 4],
+}
+
 impl LayoutEngine {
     /// Compute layout for children inside a composite container (e.g. Flex/Box/Stack cell).
     /// Uses the existing Taffy tree, builds a temporary node hierarchy, computes layout,
     /// extracts child positions, then clears the tree.
     pub fn compute_composite_layout(
         &mut self,
-        container_w: f32,
-        container_h: f32,
-        flex_direction: FlexDirectionValue,
-        gap: f32,
-        align_items: Option<AlignValue>,
-        justify_content: Option<AlignValue>,
-        padding: [f32; 4], // T, R, B, L
+        params: &CompositeLayoutParams,
         children: &[ChildSize],
     ) -> Vec<ChildPosition> {
+        let container_w = params.container_w;
+        let container_h = params.container_h;
         let root_style = Style {
             display: Display::Flex,
-            flex_direction: match flex_direction {
+            flex_direction: match params.flex_direction {
                 FlexDirectionValue::Row => FlexDirection::Row,
                 FlexDirectionValue::Column => FlexDirection::Column,
                 FlexDirectionValue::RowReverse => FlexDirection::RowReverse,
@@ -1398,17 +1407,17 @@ impl LayoutEngine {
                 height: Dimension::length(container_h),
             },
             gap: Size {
-                width: LengthPercentage::length(gap),
-                height: LengthPercentage::length(gap),
+                width: LengthPercentage::length(params.gap),
+                height: LengthPercentage::length(params.gap),
             },
-            align_items: align_items.and_then(align_value_to_taffy_align),
+            align_items: params.align_items.and_then(align_value_to_taffy_align),
             align_content: None,
-            justify_content: justify_content.and_then(align_value_to_taffy_justify),
+            justify_content: params.justify_content.and_then(align_value_to_taffy_justify),
             padding: Rect {
-                top: LengthPercentage::length(padding[0]),
-                right: LengthPercentage::length(padding[1]),
-                bottom: LengthPercentage::length(padding[2]),
-                left: LengthPercentage::length(padding[3]),
+                top: LengthPercentage::length(params.padding[0]),
+                right: LengthPercentage::length(params.padding[1]),
+                bottom: LengthPercentage::length(params.padding[2]),
+                left: LengthPercentage::length(params.padding[3]),
             },
             ..Style::default()
         };
@@ -3966,20 +3975,32 @@ mod tests {
         }
     }
 
+    fn composite_params(
+        container_w: f32,
+        container_h: f32,
+        flex_direction: FlexDirectionValue,
+        gap: f32,
+        align_items: Option<AlignValue>,
+        justify_content: Option<AlignValue>,
+        padding: [f32; 4],
+    ) -> CompositeLayoutParams {
+        CompositeLayoutParams {
+            container_w,
+            container_h,
+            flex_direction,
+            gap,
+            align_items,
+            justify_content,
+            padding,
+        }
+    }
+
     #[test]
     fn composite_row_basic() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0), child(60.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            None,
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert_eq!(result.len(), 2);
         assert!((result[0].x - 0.0).abs() < 0.1);
         assert!((result[0].width - 40.0).abs() < 0.1);
@@ -3991,16 +4012,8 @@ mod tests {
     fn composite_column_basic() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(100.0, 20.0), child(100.0, 30.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            100.0,
-            FlexDirectionValue::Column,
-            0.0,
-            None,
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 100.0, FlexDirectionValue::Column, 0.0, None, None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert_eq!(result.len(), 2);
         assert!((result[0].y - 0.0).abs() < 0.1);
         assert!((result[0].height - 20.0).abs() < 0.1);
@@ -4012,16 +4025,8 @@ mod tests {
     fn composite_row_with_gap() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0), child(60.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            10.0,
-            None,
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 10.0, None, None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].x - 0.0).abs() < 0.1);
         assert!((result[1].x - 50.0).abs() < 0.1); // 40 + 10 gap
     }
@@ -4030,16 +4035,8 @@ mod tests {
     fn composite_column_with_gap() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(100.0, 20.0), child(100.0, 30.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            100.0,
-            FlexDirectionValue::Column,
-            5.0,
-            None,
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 100.0, FlexDirectionValue::Column, 5.0, None, None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].y - 0.0).abs() < 0.1);
         assert!((result[1].y - 25.0).abs() < 0.1); // 20 + 5 gap
     }
@@ -4048,16 +4045,8 @@ mod tests {
     fn composite_row_reverse() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0), child(60.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::RowReverse,
-            0.0,
-            None,
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::RowReverse, 0.0, None, None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         // In row-reverse, the first child should be on the right side
         assert!(result[0].x > result[1].x);
     }
@@ -4066,16 +4055,8 @@ mod tests {
     fn composite_column_reverse() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(100.0, 20.0), child(100.0, 30.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            100.0,
-            FlexDirectionValue::ColumnReverse,
-            0.0,
-            None,
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 100.0, FlexDirectionValue::ColumnReverse, 0.0, None, None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         // In column-reverse, the first child should be below the second
         assert!(result[0].y > result[1].y);
     }
@@ -4084,16 +4065,8 @@ mod tests {
     fn composite_align_items_start() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            Some(AlignValue::Start),
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, Some(AlignValue::Start), None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].y - 0.0).abs() < 0.1);
     }
 
@@ -4101,16 +4074,8 @@ mod tests {
     fn composite_align_items_end() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            Some(AlignValue::End),
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, Some(AlignValue::End), None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].y - 20.0).abs() < 0.1); // 40 - 20
     }
 
@@ -4118,16 +4083,8 @@ mod tests {
     fn composite_align_items_center() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            Some(AlignValue::Center),
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, Some(AlignValue::Center), None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].y - 10.0).abs() < 0.1); // (40 - 20) / 2
     }
 
@@ -4135,16 +4092,8 @@ mod tests {
     fn composite_align_items_stretch() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            Some(AlignValue::Stretch),
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, Some(AlignValue::Stretch), None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         // Children have explicit heights so Taffy respects those (no stretch beyond explicit size).
         // Stretch only affects children with auto cross-axis size.
         // With fixed height=20, child stays at 20 but aligns to start (stretch default).
@@ -4156,16 +4105,8 @@ mod tests {
     fn composite_justify_content_start() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            None,
-            Some(AlignValue::Start),
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, Some(AlignValue::Start), [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].x - 0.0).abs() < 0.1);
     }
 
@@ -4173,16 +4114,8 @@ mod tests {
     fn composite_justify_content_end() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            None,
-            Some(AlignValue::End),
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, Some(AlignValue::End), [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].x - 160.0).abs() < 0.1); // 200 - 40
     }
 
@@ -4190,16 +4123,8 @@ mod tests {
     fn composite_justify_content_center() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            None,
-            Some(AlignValue::Center),
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, Some(AlignValue::Center), [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].x - 80.0).abs() < 0.1); // (200 - 40) / 2
     }
 
@@ -4207,16 +4132,8 @@ mod tests {
     fn composite_justify_content_space_between() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0), child(60.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            None,
-            Some(AlignValue::SpaceBetween),
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, Some(AlignValue::SpaceBetween), [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].x - 0.0).abs() < 0.1);
         assert!((result[1].x - 140.0).abs() < 0.1); // 200 - 60
     }
@@ -4225,16 +4142,8 @@ mod tests {
     fn composite_with_padding() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(40.0, 20.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            None,
-            None,
-            [5.0, 10.0, 5.0, 10.0], // T, R, B, L
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, None, [5.0, 10.0, 5.0, 10.0]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert!((result[0].x - 10.0).abs() < 0.1); // left padding
         assert!((result[0].y - 5.0).abs() < 0.1); // top padding
     }
@@ -4242,16 +4151,8 @@ mod tests {
     #[test]
     fn composite_empty_children() {
         let mut engine = LayoutEngine::new();
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            None,
-            None,
-            [0.0; 4],
-            &[],
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &[]);
         assert!(result.is_empty());
     }
 
@@ -4259,16 +4160,8 @@ mod tests {
     fn composite_single_child() {
         let mut engine = LayoutEngine::new();
         let children = vec![child(100.0, 30.0)];
-        let result = engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            None,
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, None, [0.0; 4]);
+        let result = engine.compute_composite_layout(&params, &children);
         assert_eq!(result.len(), 1);
         assert!((result[0].x - 0.0).abs() < 0.1);
         assert!((result[0].width - 100.0).abs() < 0.1);
@@ -4287,16 +4180,8 @@ mod tests {
 
         // Composite layout should not invalidate grid cache
         let children = vec![child(40.0, 20.0)];
-        engine.compute_composite_layout(
-            200.0,
-            40.0,
-            FlexDirectionValue::Row,
-            0.0,
-            None,
-            None,
-            [0.0; 4],
-            &children,
-        );
+        let params = composite_params(200.0, 40.0, FlexDirectionValue::Row, 0.0, None, None, [0.0; 4]);
+        engine.compute_composite_layout(&params, &children);
 
         // Grid cache should still be valid
         assert!(engine.cache_contains(&columns, &container, 600.0, 36.0, 20.0));
