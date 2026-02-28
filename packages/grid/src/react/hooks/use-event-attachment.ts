@@ -43,6 +43,9 @@ export interface UseEventAttachmentParams {
     handleResizeMove?: (deltaX: number) => void;
     handleResizeEnd?: () => void;
     handleResizeHover?: (colIndex: number | null) => void;
+    handleHeaderMouseDown?: (colIndex: number) => void;
+    handleColumnDnDMove?: (viewportX: number, contentX: number) => void;
+    handleColumnDnDEnd?: () => void;
   };
   onCellClick?: (event: GridCellEvent) => void;
   onCellDoubleClick?: (event: GridCellEvent) => void;
@@ -200,6 +203,11 @@ export function useEventAttachment({
         onResizeMove: handlers.handleResizeMove,
         onResizeEnd: handlers.handleResizeEnd,
         onResizeHover: handlers.handleResizeHover,
+        onHeaderMouseDown: handlers.handleHeaderMouseDown
+          ? (colIndex) => handlers.handleHeaderMouseDown!(colIndex)
+          : undefined,
+        onColumnDnDMove: handlers.handleColumnDnDMove,
+        onColumnDnDEnd: handlers.handleColumnDnDEnd,
         onCanvasEvent: (type, native, hitTest, coords) => {
           const event = createGridCanvasEvent(type, native, hitTest, coords);
           dispatch("canvasEvent", event, () => {
@@ -288,6 +296,9 @@ export function useEventAttachment({
     handlers.handleResizeMove,
     handlers.handleResizeEnd,
     handlers.handleResizeHover,
+    handlers.handleHeaderMouseDown,
+    handlers.handleColumnDnDMove,
+    handlers.handleColumnDnDEnd,
     rowHeight,
     headerHeight,
     height,

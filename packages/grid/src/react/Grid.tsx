@@ -15,6 +15,7 @@ import { useEditing } from "./hooks/use-editing";
 import { useGridScroll } from "./hooks/use-grid-scroll";
 import { useEventAttachment } from "./hooks/use-event-attachment";
 import { useColumnResize } from "./hooks/use-column-resize";
+import { useColumnDnD } from "./hooks/use-column-dnd";
 import { useRenderLoop } from "./hooks/use-render-loop";
 
 const DEFAULT_ROW_HEIGHT = 36;
@@ -44,13 +45,17 @@ export function Grid({
   onGlobalFilterChange: onGlobalFilterChangeProp,
   // Column features
   columnOrder: columnOrderProp,
-  onColumnOrderChange: _onColumnOrderChangeProp,
+  onColumnOrderChange: onColumnOrderChangeProp,
   columnVisibility: columnVisibilityProp,
   onColumnVisibilityChange: _onColumnVisibilityChangeProp,
   columnSizing: columnSizingProp,
   onColumnSizingChange: onColumnSizingChangeProp,
   columnPinning: columnPinningProp,
   onColumnPinningChange: _onColumnPinningChangeProp,
+  enableColumnDnD: enableColumnDnDProp = false,
+  rowPinning: rowPinningProp,
+  onRowPinningChange: onRowPinningChangeProp,
+  getRowId: getRowIdProp,
   // Event callbacks (enriched events)
   onCellClick: onCellClickProp,
   onCellDoubleClick: onCellDoubleClickProp,
@@ -281,6 +286,17 @@ export function Grid({
       invalidate,
     });
 
+  const columnsForDnD = columnRegistry.getAll();
+  const { dndStateRef, handleHeaderMouseDown, handleColumnDnDMove, handleColumnDnDEnd } =
+    useColumnDnD({
+      enableColumnDnD: enableColumnDnDProp,
+      columnOrder: columnOrderProp,
+      columns: columnsForDnD,
+      onColumnOrderChange: onColumnOrderChangeProp,
+      eventManagerRef,
+      invalidate,
+    });
+
   useEventAttachment({
     canvasRef,
     eventManagerRef,
@@ -299,6 +315,9 @@ export function Grid({
       handleResizeMove,
       handleResizeEnd,
       handleResizeHover,
+      handleHeaderMouseDown,
+      handleColumnDnDMove,
+      handleColumnDnDEnd,
     },
     onCellClick: onCellClickProp,
     onCellDoubleClick: onCellDoubleClickProp,
@@ -431,6 +450,9 @@ export function Grid({
     layers: layersProp,
     columnPinning: columnPinningProp,
     viewIndicesRef,
+    columnDnDStateRef: dndStateRef,
+    rowPinning: rowPinningProp,
+    getRowId: getRowIdProp,
   });
   // Wire the bridge: all hooks using `invalidate` now delegate to useRenderLoop's internal dirtyRef
   invalidateRef.current = renderInvalidate;

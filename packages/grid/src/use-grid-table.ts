@@ -13,6 +13,8 @@ import type {
   ColumnSizingInfoUpdater,
   ColumnPinningState,
   ColumnPinningUpdater,
+  RowPinningState,
+  RowPinningUpdater,
   ExpandedState,
   ExpandedUpdater,
 } from "./tanstack-types";
@@ -53,6 +55,8 @@ export interface UseGridTableOptions<TData> {
   onColumnSizingInfoChange?: (updater: ColumnSizingInfoUpdater) => void;
   /** Callback when column pinning changes (controlled mode). */
   onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
+  /** Callback when row pinning changes (controlled mode). */
+  onRowPinningChange?: (updater: RowPinningUpdater) => void;
   /** Callback when expanded state changes (controlled mode). */
   onExpandedChange?: (updater: ExpandedUpdater) => void;
   /** Initial state (for uncontrolled mode). */
@@ -89,6 +93,7 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     onColumnSizingChange: controlledOnColumnSizingChange,
     onColumnSizingInfoChange: controlledOnColumnSizingInfoChange,
     onColumnPinningChange: controlledOnColumnPinningChange,
+    onRowPinningChange: controlledOnRowPinningChange,
     onExpandedChange: controlledOnExpandedChange,
     getSubRows,
     initialState,
@@ -113,6 +118,9 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   );
   const [internalColumnPinning, setInternalColumnPinning] = useState<ColumnPinningState>(
     initialState?.columnPinning ?? { left: [], right: [] },
+  );
+  const [internalRowPinning, setInternalRowPinning] = useState<RowPinningState>(
+    initialState?.rowPinning ?? { top: [], bottom: [] },
   );
   const [internalExpanded, setInternalExpanded] = useState<ExpandedState>(
     initialState?.expanded ?? {},
@@ -215,6 +223,20 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     [columnPinning, controlledOnColumnPinningChange],
   );
 
+  // Resolve controlled vs uncontrolled — row pinning
+  const rowPinning = controlledState?.rowPinning ?? internalRowPinning;
+  const onRowPinningChange = useCallback(
+    (updater: RowPinningUpdater) => {
+      const next = typeof updater === "function" ? updater(rowPinning) : updater;
+      if (controlledOnRowPinningChange) {
+        controlledOnRowPinningChange(next);
+      } else {
+        setInternalRowPinning(next);
+      }
+    },
+    [rowPinning, controlledOnRowPinningChange],
+  );
+
   // Resolve controlled vs uncontrolled — expanded
   const expanded = controlledState?.expanded ?? internalExpanded;
   const onExpandedChange = useCallback(
@@ -238,6 +260,7 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
       columnSizing,
       columnSizingInfo,
       columnPinning,
+      rowPinning,
       expanded,
     }),
     [
@@ -248,6 +271,7 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
       columnSizing,
       columnSizingInfo,
       columnPinning,
+      rowPinning,
       expanded,
     ],
   );
@@ -265,6 +289,7 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
         onColumnSizingChange,
         onColumnSizingInfoChange,
         onColumnPinningChange,
+        onRowPinningChange,
         onExpandedChange,
         getSubRows,
         viewIndicesRef,
@@ -280,6 +305,7 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
       onColumnSizingChange,
       onColumnSizingInfoChange,
       onColumnPinningChange,
+      onRowPinningChange,
       onExpandedChange,
       getSubRows,
     ],

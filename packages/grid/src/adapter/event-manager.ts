@@ -42,6 +42,10 @@ export interface GridEventHandlers {
   onResizeMove?: (deltaX: number) => void;
   onResizeEnd?: () => void;
   onResizeHover?: (colIndex: number | null) => void;
+  // Column DnD reorder (header drag)
+  onHeaderMouseDown?: (colIndex: number, native: MouseEvent, coords: EventCoords) => void;
+  onColumnDnDMove?: (viewportX: number, contentX: number) => void;
+  onColumnDnDEnd?: () => void;
   // Low-level canvas events (fires before semantic handlers)
   onCanvasEvent?: (
     type: "click" | "dblclick" | "mousedown" | "mousemove" | "mouseup",
@@ -148,6 +152,10 @@ export class EventManager {
   // Resize state
   private resizeState: { colIndex: number; startX: number; startWidth: number } | null = null;
 
+  // Column DnD state (header drag for reorder)
+  private columnDnDState: { colIndex: number } | null = null;
+  private columnDnDJustEnded = false;
+
   /** Update the layouts used for hit-testing. */
   setLayouts(headerLayouts: CellLayout[], rowLayouts: CellLayout[]): void {
     this.headerLayouts = headerLayouts;
@@ -162,6 +170,11 @@ export class EventManager {
   /** Set region layout for region-aware coordinate conversion. */
   setRegions(regionLayout: RegionLayout): void {
     this.regionLayout = regionLayout;
+  }
+
+  /** Return current header layouts (for column DnD drop index computation). */
+  getHeaderLayouts(): CellLayout[] {
+    return this.headerLayouts;
   }
 
   /** Region-aware viewport → content X conversion. */
@@ -253,6 +266,12 @@ export class EventManager {
           if (handlers.onCanvasEvent("click", e, hitTest, coords) === false) return;
         }
 
+        // Skip header click if we just finished a column DnD (avoid toggling sort on drop)
+        if (this.columnDnDJustEnded) {
+          this.columnDnDJustEnded = false;
+          return;
+        }
+
         // Check header first
         const headerHit = findCell(x, y, this.headerLayouts);
         if (headerHit) {
@@ -313,6 +332,16 @@ export class EventManager {
           }
         }
 
+        // Column DnD: header mousedown starts drag (if handler provided)
+        const headerHit = findCell(x, y, this.headerLayouts);
+        if (headerHit && handlers.onHeaderMouseDown) {
+          this.columnDnDState = { colIndex: headerHit.col };
+          this.columnDnDJustEnded = false;
+          handlers.onHeaderMouseDown(headerHit.col, e, coords);
+          e.preventDefault();
+          return;
+        }
+
         this.mouseDownPos = { x: e.clientX, y: e.clientY };
         this.mouseDragActive = false;
         this.lastViewportPos = null;
@@ -335,6 +364,15 @@ export class EventManager {
         if (this.resizeState) {
           const deltaX = e.clientX - this.resizeState.startX;
           handlers.onResizeMove?.(deltaX);
+          return;
+        }
+
+        // Column DnD in progress
+        if (this.columnDnDState && handlers.onColumnDnDMove) {
+          const rect = canvas.getBoundingClientRect();
+          const viewportX = e.clientX - rect.left;
+          const contentX = this.toContentX(viewportX, rect.width);
+          handlers.onColumnDnDMove(viewportX, contentX);
           return;
         }
 
@@ -397,6 +435,14 @@ export class EventManager {
         if (this.resizeState) {
           handlers.onResizeEnd?.();
           this.resizeState = null;
+          return;
+        }
+
+        // Column DnD end
+        if (this.columnDnDState) {
+          this.columnDnDJustEnded = true;
+          handlers.onColumnDnDEnd?.();
+          this.columnDnDState = null;
           return;
         }
 

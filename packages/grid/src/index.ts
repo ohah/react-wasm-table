@@ -67,6 +67,8 @@ export type {
   ColumnPinningState,
   ColumnPinningUpdater,
   ColumnPinningPosition,
+  RowPinningState,
+  RowPinningUpdater,
   ExpandedState,
   ExpandedUpdater,
 } from "./tanstack-types";
