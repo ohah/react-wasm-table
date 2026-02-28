@@ -771,8 +771,8 @@ export function useRenderLoop({
         }
 
         // Sync native scrollbar positions (canvas wheel → scrollbar DOM)
-        syncScrollBarPosition(vScrollbarRef.current, scrollTopRef.current, "vertical");
-        syncScrollBarPosition(hScrollbarRef.current, scrollLeftRef.current, "horizontal");
+        syncScrollBarPosition(vScrollbarRef.current, scrollTopRef.current, "vertical", height);
+        syncScrollBarPosition(hScrollbarRef.current, scrollLeftRef.current, "horizontal", width);
       }
 
       rafRef.current = requestAnimationFrame(loop);

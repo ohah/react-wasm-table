@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import type {
   GridColumnDef,
   SortingState,
@@ -276,25 +276,11 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     ],
   );
 
-  const instance = useMemo(
-    () =>
-      buildGridInstance({
-        data,
-        columns,
-        state,
-        onSortingChange,
-        onColumnFiltersChange,
-        onGlobalFilterChange,
-        onColumnVisibilityChange,
-        onColumnSizingChange,
-        onColumnSizingInfoChange,
-        onColumnPinningChange,
-        onRowPinningChange,
-        onExpandedChange,
-        getSubRows,
-        viewIndicesRef,
-      }),
-    [
+  // Persist visible range across instance rebuilds (useMemo recreates instance on dep change)
+  const visibleRangeRef = useRef<{ start: number; end: number } | null>(null);
+
+  const instance = useMemo(() => {
+    const inst = buildGridInstance({
       data,
       columns,
       state,
@@ -308,8 +294,34 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
       onRowPinningChange,
       onExpandedChange,
       getSubRows,
-    ],
-  );
+      viewIndicesRef,
+    });
+    // Restore visible range from previous instance
+    if (visibleRangeRef.current) {
+      inst._setVisibleRange(visibleRangeRef.current);
+    }
+    // Wrap _setVisibleRange to keep ref in sync
+    const original = inst._setVisibleRange;
+    inst._setVisibleRange = (range) => {
+      visibleRangeRef.current = range;
+      original(range);
+    };
+    return inst;
+  }, [
+    data,
+    columns,
+    state,
+    onSortingChange,
+    onColumnFiltersChange,
+    onGlobalFilterChange,
+    onColumnVisibilityChange,
+    onColumnSizingChange,
+    onColumnSizingInfoChange,
+    onColumnPinningChange,
+    onRowPinningChange,
+    onExpandedChange,
+    getSubRows,
+  ]);
 
   return instance;
 }
