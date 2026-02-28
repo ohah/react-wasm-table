@@ -9,6 +9,8 @@ import {
   type GridLayer,
   type LayerContext,
   type SortingState,
+  readCellRow,
+  readCellY,
 } from "@ohah/react-wasm-table";
 
 // ── Data ────────────────────────────────────────────────────────────────
@@ -73,18 +75,17 @@ function rowHighlightLayer(highlightRow: number): GridLayer {
     name: "rowHighlight",
     space: "content",
     draw(context: LayerContext) {
-      const { ctx, layoutBuf, headerCount, totalCellCount, headerHeight, rowHeight } = context;
+      const { ctx, layoutBuf, headerCount, totalCellCount, contentLeft, contentWidth, rowHeight } =
+        context;
       if (totalCellCount <= headerCount) return;
 
       // Find cells belonging to the target row
-      const stride = 16;
       for (let i = headerCount; i < totalCellCount; i++) {
-        const row = layoutBuf[i * stride]!;
+        const row = readCellRow(layoutBuf, i);
         if (row === highlightRow) {
-          const y = layoutBuf[i * stride + 3]!;
-          const canvasW = context.width;
+          const y = readCellY(layoutBuf, i);
           ctx.fillStyle = "rgba(255, 235, 59, 0.3)";
-          ctx.fillRect(0, y, canvasW, rowHeight);
+          ctx.fillRect(contentLeft, y, contentWidth - contentLeft, rowHeight);
           return; // only need to highlight once per row
         }
       }
