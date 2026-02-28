@@ -8,28 +8,26 @@ Overview of canvas JSX components: **supported** (implemented and drawn on canva
 
 These components have a dedicated cell renderer and are fully drawn on canvas.
 
-| Component | Description                                                                                        | Main props                                                                          |
-| --------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **Text**  | Single-line text.                                                                                  | `value`, `style?`, `color?`, `fontWeight?`, `fontSize?`                             |
-| **Badge** | Pill/chip with background.                                                                         | `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`                    |
-| **Flex**  | Taffy-compatible flex container; lays out and draws all children (Text, Badge, Stub, nested Flex). | `children`, `style?`, `flexDirection?`, `gap?`, `alignItems?`, `justifyContent?`, … |
+| Component | Description                                                                                        | Main props                                                                                                     |
+| --------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Text**  | Single-line text.                                                                                  | `value`, `style?`, `color?`, `fontWeight?`, `fontSize?`                                                        |
+| **Badge** | Pill/chip with background.                                                                         | `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`                                               |
+| **Flex**  | Taffy-compatible flex container; lays out and draws all children (Text, Badge, Stub, nested Flex). | `children`, `style?`, `flexDirection?`, `gap?`, `alignItems?`, `justifyContent?`, …                            |
+| **Box**   | Generic container: padding, margin, border; children drawn in content rect (vertical stack).       | `children?`, `style?`, `padding?`, `margin?`, `borderWidth?`, `borderColor?`, `backgroundColor?`, `boxSizing?` |
 
-All three support the same pattern: optional `style` object and individual props (individual overrides `style`). See [Canvas Components](canvas-components.md) for API details.
+All four support the same pattern: optional `style` object and individual props (individual overrides `style`). See [Canvas Components](canvas-components.md) for API details.
 
 ---
 
 ## Planned components (stub)
 
-These components are **exported and usable in JSX**, but the renderer only draws a placeholder (e.g. `[ProgressBar]`, `[Box]`). They return a `StubInstruction`; props (including `style`) are stored and will apply when a real renderer is added.
+These components are **exported and usable in JSX**, but the renderer only draws a placeholder (e.g. `[ProgressBar]`, `[Stack]`). They return a `StubInstruction`; props (including `style`) are stored and will apply when a real renderer is added.
 
 ### Layout
 
-| Component  | Intended use                                 |
-| ---------- | -------------------------------------------- |
-| **Box**    | Generic container (padding, margin, border). |
-| **Stack**  | Stack children (layout).                     |
-| **HStack** | Horizontal stack.                            |
-| **VStack** | Vertical stack.                              |
+| Component | Intended use                                                                |
+| --------- | --------------------------------------------------------------------------- |
+| **Stack** | Stack children; use `direction: "row"` or `direction: "column"` for layout. |
 
 ### Data display
 
