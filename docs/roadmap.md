@@ -57,7 +57,7 @@ const table = useGridTable({
 - GridInstance: `getRowModel()`, `getCoreRowModel()`, `getRow()`, filter 메서드
 - 175 Rust 테스트, 571 JS 테스트 통과
 
-### 1-2. Column Feature API — State ✅ / Rendering ✅ (Pinning 제외)
+### 1-2. Column Feature API — State ✅ / Rendering ✅
 
 컬럼별 기능(정렬, 선택, 크기 조절 등)을 Feature 단위로 분리.
 
@@ -85,7 +85,7 @@ const columns = [
 | Sizing      | ✅        | ✅          | `resolveColumns`에서 width override                        |
 | Ordering    | ✅        | ✅          | `resolveColumns`에서 `columnOrder` 기준 정렬               |
 | Drag Resize | ✅        | ✅          | EventManager resize handle hit-test + `useColumnResize` 훅 |
-| Pinning     | ✅        | ❌          | state만 존재, multi-region 렌더링 필요 (→ Phase 3-3)       |
+| Pinning     | ✅        | ✅          | clip-based region 렌더링 (Phase 3-3)                       |
 
 **구현 내역 (Ordering + Drag Resize):**
 
@@ -95,10 +95,6 @@ const columns = [
 - `useColumnResize` 훅: controlled/uncontrolled 모드, min/max width clamp, 커서 변경
 - `useEventAttachment`에 resize 핸들러 연결
 - 테스트: resolve-columns ordering 4개, event-manager resize 5개, use-column-resize 7개
-
-**미구현 항목:**
-
-- **Pinning 렌더링**: `columnPinning` state를 읽어 left/right frozen region에 고정 렌더링. Phase 3-3 Virtual Canvas Region 선행 필요.
 
 ### 1-3. Event System 개방
 
@@ -277,14 +273,29 @@ Canvas에 레이어를 쌓을 수 있는 구조.
 - 15 layer 테스트, 전체 822 JS 테스트 통과
 - 데모: Watermark(viewport) + Row Highlight(content) + 레이어 토글 체크박스
 
-### 3-3. Virtual Canvas Region
+### 3-3. Virtual Canvas Region ✅ (구현 완료)
 
 하나의 Grid에 여러 가상 영역을 둘 수 있는 primitive.
 Column Pinning의 실제 구현체.
 
 - Left frozen region + scrollable region + right frozen region
 - 각 region은 독립적으로 스크롤/렌더
-- WASM layout은 region별로 분리 계산
+- Canvas `clip()` + `translate()` 기반 region 분할
+
+**구현 내역:**
+
+- `resolveColumns`에서 `columnPinning` 옵션으로 left→center→right 컬럼 재배치
+- `computePinningInfo()` 헬퍼: visible 컬럼 기준 left/right/center count 계산
+- `CanvasRegion` 타입 (name, clipRect, translateX) + `RegionLayout` 타입
+- `buildRegions()` 함수: header cell width 기반으로 left/center/right clip rect + translate 계산
+- Render loop: region별 `clip()` + `translate()` → layer 파이프라인 실행 → `restore()`
+- `EventManager.toContentX()`: region-aware viewport→content 좌표 변환 (left: 고정, center: +scrollLeft, right: +totalContentWidth-canvasWidth)
+- `StringTable` ID 기반 키: 컬럼 순서 변경에 무관한 데이터 조회
+- `useDataIngestion` `columnRegistry.onChange` 구독: 컬럼 ID 순서 변경 시 WASM 데이터 재적재 (리사이즈 시 skip)
+- Background fill `contentRight` (max cell edge) 사용: pinned region에서도 배경/그리드라인 정확 커버
+- Pinning 미지정 시 단일 center region → 기존 동작과 동일 (regression 없음)
+- 테스트: resolve-columns pinning 10개, region 9개, event-manager region 5개, data-ingestion reorder 5개 (전체 852 JS 테스트)
+- 데모: Column Pinning 페이지 (7컬럼, Pin L/R 토글, 가로 스크롤, 정렬 연동)
 
 ---
 
@@ -405,18 +416,21 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ## 완료 항목
 
-| 항목                          | 카테고리 | 비고                                                                         |
-| ----------------------------- | -------- | ---------------------------------------------------------------------------- |
-| Row Model Abstraction (1-1)   | Core     | 이후 모든 기능의 토대                                                        |
-| Column Feature API (1-2)      | Core     | 기능별 독립 모듈화 기반 (Pinning 렌더링 제외)                                |
-| Column Ordering State (2-1)   | State    | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ❌                     |
-| Expanding State (2-2)         | State    | getExpandedRowModel ✅, getGroupedRowModel ❌                                |
-| Column Visibility State (2-3) | State    | resolveColumns에서 hidden 컬럼 제외                                          |
-| Data Access API (4-1)         | Utility  | exportToCSV/TSV/JSON + ExportOptions. 20 테스트                              |
-| Event System 미들웨어 (1-3)   | Core     | composeMiddleware + GridProps.eventMiddleware. 8 테스트                      |
-| Layout Cache (5-3)            | Perf     | 2-slot LRU Rust 캐시 + invalidateLayout() API. 6 테스트                      |
-| Custom Cell Renderer (3-1)    | Render   | CellRendererRegistry + built-in 4개 + GridProps.cellRenderers. 25 테스트     |
-| Layer System (3-2)            | Render   | GridLayer pipeline + space-based transform + 4 built-in factories. 15 테스트 |
+| 항목                          | 카테고리 | 비고                                                                                                        |
+| ----------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| Row Model Abstraction (1-1)   | Core     | 이후 모든 기능의 토대                                                                                       |
+| Column Feature API (1-2)      | Core     | 기능별 독립 모듈화 기반 (Pinning 렌더링 제외)                                                               |
+| Column Ordering State (2-1)   | State    | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ✅                                                    |
+| Expanding State (2-2)         | State    | getExpandedRowModel ✅, getGroupedRowModel ❌                                                               |
+| Column Visibility State (2-3) | State    | resolveColumns에서 hidden 컬럼 제외                                                                         |
+| Data Access API (4-1)         | Utility  | exportToCSV/TSV/JSON + ExportOptions. 20 테스트                                                             |
+| Clipboard Utilities (4-2)     | Utility  | copyToClipboard, pasteFromClipboard, buildCSV/buildHTML, parseClipboardText. onCopy/onPaste 연결. 15 테스트 |
+| Event System 미들웨어 (1-3)   | Core     | composeMiddleware + GridProps.eventMiddleware. 8 테스트                                                     |
+| Layout Cache (5-3)            | Perf     | 2-slot LRU Rust 캐시 + invalidateLayout() API. 6 테스트                                                     |
+| Custom Cell Renderer (3-1)    | Render   | CellRendererRegistry + built-in 4개 + GridProps.cellRenderers. 25 테스트                                    |
+| Layer System (3-2)            | Render   | GridLayer pipeline + space-based transform + 4 built-in factories. 15 테스트                                |
+| Virtual Canvas Region (3-3)   | Render   | clip-based 3-region + buildRegions + region-aware hit-test. 29 테스트                                       |
+| Pinning 렌더링 (1-2 잔여)     | Render   | resolveColumns reorder + StringTable ID 키 + data re-ingestion. 데모 포함                                   |
 
 ---
 
@@ -436,15 +450,15 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | ---- | ------------------------ | -------- | ---- | ---------------------------------------------------------------------------------- |
 | 4    | Custom Cell Renderer API | 3-1      | ✅   | `CellRendererRegistry` + built-in 4개 + `GridProps.cellRenderers`. 25 테스트       |
 | 5    | Layer System             | 3-2      | ✅   | `GridLayer` pipeline + space-based transform + 4 built-in factories. 15 테스트     |
-| 6    | Virtual Canvas Region    | 3-3      | ❌   | Layer System 위에 left/scrollable/right 3개 region 분리. Pinning의 실제 구현체     |
-| 7    | Pinning 렌더링           | 1-2 잔여 | ❌   | Virtual Canvas Region이 있으면 `columnPinning` state를 region에 매핑하는 것만 남음 |
+| 6    | Virtual Canvas Region    | 3-3      | ✅   | clip+translate 기반 3-region 분리. buildRegions + region-aware hit-test. 29 테스트 |
+| 7    | Pinning 렌더링           | 1-2 잔여 | ✅   | resolveColumns pinning reorder + StringTable ID 키 + data re-ingestion. 데모 포함  |
 
 ### Tier 3 — 유틸리티 (Tier 2와 독립, 언제든 가능)
 
-| 순서 | 항목                | 참조     | 상태 | 이유                                                                                   |
-| ---- | ------------------- | -------- | ---- | -------------------------------------------------------------------------------------- |
-| 8    | Clipboard Utilities | 4-2      | ❌   | Data Access API(✅) 위에 진행. `buildTSV()` 존재하므로 포맷 확장 + onCopy/onPaste 연결 |
-| 9    | getGroupedRowModel  | 2-2 잔여 | ❌   | Row Model 인프라 위에 추가. 독립적이지만 그룹핑 로직 자체가 복잡 (aggregate 함수 등)   |
+| 순서 | 항목                | 참조     | 상태 | 이유                                                                                                               |
+| ---- | ------------------- | -------- | ---- | ------------------------------------------------------------------------------------------------------------------ |
+| 8    | Clipboard Utilities | 4-2      | ✅   | copyToClipboard/pasteFromClipboard + buildCSV/buildHTML, parseClipboardText. onPaste 클립보드 읽기 연결. 15 테스트 |
+| 9    | getGroupedRowModel  | 2-2 잔여 | ❌   | Row Model 인프라 위에 추가. 독립적이지만 그룹핑 로직 자체가 복잡 (aggregate 함수 등)                               |
 
 ### Tier 4 — 고급 성능 (아키텍처 변경, 기존 기능 안정 후 마지막)
 
@@ -453,16 +467,145 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | 10   | Worker Bridge  | 5-1  | ❌   | SharedArrayBuffer + Worker 통신 구조 전면 변경. 기존 기능 안정 후 opt-in 추가 |
 | 11   | Streaming Data | 5-2  | ❌   | ColumnarStore chunk append + 가상화 데이터 소스. Worker Bridge와 시너지       |
 
+### Tier 5 — UX Primitive (렌더링 파이프라인 완성 후, 독립 진행 가능)
+
+| 순서 | 항목                      | 참조 | 상태 | 이유                                                            |
+| ---- | ------------------------- | ---- | ---- | --------------------------------------------------------------- |
+| 12   | Row Pinning               | 6-1  | ❌   | Column Pinning 인프라 재사용. top/bottom clip region 추가       |
+| 13   | Column DnD Reorder        | 6-2  | ❌   | columnOrder state(✅) 위에 drag 시퀀스 추가. 고스트 컬럼 레이어 |
+| 14   | Cell Editing 고도화       | 6-3  | ❌   | EditorManager + DOM overlay 완성. editCell render prop          |
+| 15   | Multi-level Column Header | 6-4  | ❌   | helper.group() + 다단 헤더 레이아웃. 복잡도 높음                |
+| 16   | Context Menu              | 6-5  | ❌   | EventManager contextmenu + hit-test 결과 제공. 난이도 낮음      |
+
 ### 의존성 그래프
 
 ```
-1. Data Access API ✅ ───────→ 8. Clipboard Utilities
+1. Data Access API ✅ ───────→ 8. Clipboard Utilities ✅
 2. Event System 미들웨어 ✅
 3. Layout Cache ✅
-4. Custom Cell Renderer ✅ ──→ 5. Layer System ✅ ──→ 6. Virtual Canvas Region ──→ 7. Pinning 렌더링
+4. Custom Cell Renderer ✅ ──→ 5. Layer System ✅ ──→ 6. Virtual Canvas Region ✅ ──→ 7. Pinning 렌더링 ✅
 9. getGroupedRowModel (독립, 복잡도 높음)
 10. Worker Bridge ──→ 11. Streaming Data (시너지)
+7. Pinning 렌더링 ✅ ──→ 12. Row Pinning
+2. Event System ✅ ──→ 13. Column DnD Reorder
+                   ──→ 14. Cell Editing 고도화
+                   ──→ 16. Context Menu
+15. Multi-level Column Header (독립, 복잡도 높음)
 ```
+
+---
+
+## Phase 6 — UX Primitive
+
+사용자 인터랙션을 위한 primitive. 기능을 내장하지 않고 조합 가능한 블록을 제공.
+
+### 6-1. Row Pinning
+
+Column Pinning과 대칭. 상단/하단에 행을 고정하는 primitive.
+
+```ts
+const [rowPinning, setRowPinning] = useState<RowPinningState>({
+  top: ["summary-row"],
+  bottom: ["total-row"],
+});
+
+<Grid
+  rowPinning={rowPinning}
+  onRowPinningChange={setRowPinning}
+/>
+```
+
+- Column Pinning의 세로 버전 — clip 기반 top/scrollable/bottom region
+- Summary row, 합계 행 등 고정 행 유스케이스
+- `resolveRows`에서 row reorder + `buildRowRegions()` 수평 clip
+- 기존 Virtual Canvas Region 인프라 재사용
+
+### 6-2. Column DnD Reorder
+
+헤더 드래그로 컬럼 순서 변경.
+
+```ts
+<Grid
+  columnOrder={columnOrder}
+  onColumnOrderChange={setColumnOrder}
+  enableColumnDnD  // 드래그 리오더 활성화
+/>
+```
+
+- `columnOrder` state는 이미 존재 (2-1 ✅)
+- EventManager에 drag 시퀀스 (mousedown → move → drop) 추가
+- 드래그 중 시각적 피드백: 고스트 컬럼 + 드롭 위치 인디케이터 (레이어)
+- 사용자가 `onColumnOrderChange`로 최종 순서 제어
+
+### 6-3. Cell Editing 고도화
+
+현재 stub 수준인 inline editor를 완성.
+
+```ts
+helper.accessor("name", {
+  enableEditing: true,
+  editCell: (info) => <input value={info.getValue()} onChange={...} />,
+});
+
+<Grid
+  onCellEdit={(rowIndex, columnId, newValue) => {
+    // 사용자가 데이터 업데이트 처리
+  }}
+/>
+```
+
+- EditorManager가 셀 위에 DOM overlay 배치 (이미 editorRef div 존재)
+- 더블클릭 → edit mode 진입, Escape/Enter → 종료
+- 사용자가 `editCell` render prop으로 에디터 UI 결정
+- 유효성 검증은 `onCellEdit` 콜백에서 사용자가 처리
+
+### 6-4. Multi-level Column Header (Column Grouping)
+
+다단 헤더를 지원하는 컬럼 그룹 구조.
+
+```ts
+const columns = [
+  helper.group({
+    header: "Personal Info",
+    columns: [
+      helper.accessor("name", { header: "Name", size: 200 }),
+      helper.accessor("age", { header: "Age", size: 80 }),
+    ],
+  }),
+  helper.group({
+    header: "Work",
+    columns: [
+      helper.accessor("dept", { header: "Department", size: 150 }),
+      helper.accessor("salary", { header: "Salary", size: 120 }),
+    ],
+  }),
+];
+```
+
+- `helper.group()` — 중첩 가능한 그룹 컬럼 정의
+- WASM layout에서 다단 헤더 행 높이 계산
+- 그룹 헤더 클릭 → 하위 컬럼 전체 선택/정렬 등은 사용자 구현
+- 그룹 경계에 맞춘 그리드 라인 + 병합 셀 렌더링
+
+### 6-5. Context Menu
+
+우클릭 메뉴 primitive.
+
+```ts
+<Grid
+  onContextMenu={(e, cell) => {
+    // cell: { row, col, value } 또는 header 정보
+    showMenu(e.clientX, e.clientY, [
+      { label: "Copy", action: () => ... },
+      { label: "Sort Ascending", action: () => ... },
+    ]);
+  }}
+/>
+```
+
+- Grid는 hit-test 결과만 제공 (어떤 셀에서 우클릭했는지)
+- 메뉴 UI는 사용자가 구현 (또는 선택적 유틸리티)
+- EventManager에 `contextmenu` 이벤트 핸들러 추가
 
 ---
 
