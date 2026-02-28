@@ -1,4 +1,7 @@
 import type { GridColumnDef, ExpandedState, ExpandedUpdater } from "./tanstack-types";
+import type { GridColumn } from "./grid-instance";
+import type { Cell } from "./cell";
+import { buildCell } from "./cell";
 
 // ── Row ─────────────────────────────────────────────────────────────
 
@@ -14,6 +17,8 @@ export interface Row<TData> {
   getValue(columnId: string): unknown;
   /** Get all cell values as a record keyed by column ID. */
   getAllCellValues(): Record<string, unknown>;
+  /** Get visible cells for this row (TanStack-compatible). */
+  getVisibleCells(): Cell<TData>[];
   // ── Tree fields ──
   /** Child rows (empty if leaf). */
   subRows: Row<TData>[];
@@ -74,6 +79,8 @@ export interface BuildRowOptions<TData> {
   parentId?: string;
   expanded?: ExpandedState;
   onExpandedChange?: (updater: ExpandedUpdater) => void;
+  visibleColumns?: GridColumn<TData>[];
+  table?: import("./grid-instance").GridInstance<TData>;
 }
 
 /** Build a single Row object from data. */
@@ -91,7 +98,11 @@ export function buildRow<TData>(
   const parentId = options?.parentId;
   const expanded = options?.expanded;
   const onExpandedChange = options?.onExpandedChange;
+  const visibleColumns = options?.visibleColumns;
+  const tableRef = options?.table;
   const rowId = String(originalIndex);
+
+  let cachedCells: Cell<TData>[] | null = null;
 
   const row: Row<TData> = {
     id: rowId,
@@ -108,6 +119,13 @@ export function buildRow<TData>(
         result[id] = accessor(original, originalIndex);
       }
       return result;
+    },
+    getVisibleCells(): Cell<TData>[] {
+      if (!visibleColumns) return [];
+      if (!cachedCells) {
+        cachedCells = visibleColumns.map((col) => buildCell(row, col, tableRef));
+      }
+      return cachedCells;
     },
     subRows,
     depth,
@@ -137,11 +155,18 @@ export function buildRow<TData>(
   return row;
 }
 
+/** Options for buildRowModel. */
+export interface BuildRowModelOptions<TData> {
+  visibleColumns?: GridColumn<TData>[];
+  table?: import("./grid-instance").GridInstance<TData>;
+}
+
 /** Build a RowModel from data + optional index indirection. */
 export function buildRowModel<TData>(
   data: TData[],
   indices: Uint32Array | number[] | null,
   columns: GridColumnDef<TData, any>[],
+  modelOptions?: BuildRowModelOptions<TData>,
 ): RowModel<TData> {
   const effectiveIndices = indices ?? Array.from({ length: data.length }, (_, i) => i);
   const rowCount = effectiveIndices.length;
@@ -152,7 +177,18 @@ export function buildRowModel<TData>(
     get rows(): Row<TData>[] {
       if (!cachedRows) {
         cachedRows = Array.from({ length: rowCount }, (_, viewIndex) =>
-          buildRow(data, effectiveIndices[viewIndex]!, viewIndex, columns),
+          buildRow(
+            data,
+            effectiveIndices[viewIndex]!,
+            viewIndex,
+            columns,
+            modelOptions
+              ? {
+                  visibleColumns: modelOptions.visibleColumns,
+                  table: modelOptions.table,
+                }
+              : undefined,
+          ),
         );
       }
       return cachedRows;
@@ -162,7 +198,18 @@ export function buildRowModel<TData>(
       if (index < 0 || index >= rowCount) {
         throw new RangeError(`Row index ${index} out of range [0, ${rowCount})`);
       }
-      return buildRow(data, effectiveIndices[index]!, index, columns);
+      return buildRow(
+        data,
+        effectiveIndices[index]!,
+        index,
+        columns,
+        modelOptions
+          ? {
+              visibleColumns: modelOptions.visibleColumns,
+              table: modelOptions.table,
+            }
+          : undefined,
+      );
     },
   };
 }
