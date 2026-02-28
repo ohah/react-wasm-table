@@ -44,6 +44,29 @@ import { LayerDemo } from "./pages/LayerDemo";
 import { ColumnPinningDemo } from "./pages/ColumnPinningDemo";
 import { ColumnDnDAndRowPinningDemo } from "./pages/ColumnDnDAndRowPinningDemo";
 import { TableApiDemo } from "./pages/TableApiDemo";
+import {
+  TanStackColumnPinning,
+  TanStackHome,
+  TanStackUseSorting,
+  TanStackSelection,
+  TanStackUseFiltering,
+  TanStackUseSelection,
+  TanStackColumnDnDAndRowPinning,
+  TanStackColumnFeatures,
+  TanStackHookComposition,
+  TanStackLayoutCache,
+  TanStackMiddleware,
+  TanStackExport,
+  TanStackLayer,
+  TanStackCustomRenderer,
+  TanStackEventCallbacks,
+  TanStackClipboard,
+  TanStackStressTest,
+  TanStackAdapterDI,
+  TanStackOnAfterDraw,
+  TanStackTouchEvents,
+  TanStackTdContent,
+} from "./pages/tanstack";
 import { FpsCounter } from "./components/FpsCounter";
 
 setWasmUrl("/react_wasm_table_wasm_bg.wasm");
@@ -57,6 +80,30 @@ export function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/tanstack-api" element={<TanStackApi />} />
+          <Route path="/tanstack/column-pinning" element={<TanStackColumnPinning />} />
+          <Route path="/tanstack/home" element={<TanStackHome />} />
+          <Route path="/tanstack/selection" element={<TanStackSelection />} />
+          <Route path="/tanstack/hooks/sorting" element={<TanStackUseSorting />} />
+          <Route path="/tanstack/hooks/filtering" element={<TanStackUseFiltering />} />
+          <Route path="/tanstack/hooks/selection" element={<TanStackUseSelection />} />
+          <Route
+            path="/tanstack/column-dnd-row-pinning"
+            element={<TanStackColumnDnDAndRowPinning />}
+          />
+          <Route path="/tanstack/column-features" element={<TanStackColumnFeatures />} />
+          <Route path="/tanstack/hooks/composition" element={<TanStackHookComposition />} />
+          <Route path="/tanstack/layout-cache" element={<TanStackLayoutCache />} />
+          <Route path="/tanstack/event-middleware" element={<TanStackMiddleware />} />
+          <Route path="/tanstack/export" element={<TanStackExport />} />
+          <Route path="/tanstack/layers" element={<TanStackLayer />} />
+          <Route path="/tanstack/custom-renderer" element={<TanStackCustomRenderer />} />
+          <Route path="/tanstack/event-callbacks" element={<TanStackEventCallbacks />} />
+          <Route path="/tanstack/clipboard" element={<TanStackClipboard />} />
+          <Route path="/tanstack/stress-test" element={<TanStackStressTest />} />
+          <Route path="/tanstack/hooks/adapter-di" element={<TanStackAdapterDI />} />
+          <Route path="/tanstack/hooks/after-draw" element={<TanStackOnAfterDraw />} />
+          <Route path="/tanstack/touch-events" element={<TanStackTouchEvents />} />
+          <Route path="/tanstack/td-content" element={<TanStackTdContent />} />
           <Route path="/table-api" element={<TableApiDemo />} />
           <Route path="/flex-direction" element={<FlexDirection />} />
           <Route path="/flex-wrap" element={<FlexWrap />} />
