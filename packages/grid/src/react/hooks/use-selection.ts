@@ -129,9 +129,10 @@ export function useSelection({
         if (!norm) return;
         const viewIndices = getMemoryBridge()?.getViewIndices();
         const strTable = getStringTable();
+        const columns = columnRegistry.getAll();
         const getText = (viewRow: number, col: number) => {
           const actualRow = viewIndices?.[viewRow] ?? viewRow;
-          return strTable.get(col, actualRow);
+          return strTable.get(columns[col]?.id ?? "", actualRow);
         };
         const tsv = buildTSV(norm, getText);
         const custom = onCopy?.(tsv, norm);
