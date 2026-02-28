@@ -1,12 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import React from "react";
-import { Text, Badge, Flex, ProgressBar, Box } from "../components";
+import { Text, Badge, Flex, ProgressBar, Box, Stack } from "../components";
 import { resolveInstruction } from "../resolve-instruction";
 import type {
   RenderInstruction,
   TextInstruction,
   BadgeInstruction,
   BoxInstruction,
+  StackInstruction,
   StubInstruction,
 } from "../types";
 
@@ -259,6 +260,54 @@ describe("Canvas components", () => {
       if (result.type === "box") {
         expect(result.children).toEqual([]);
         expect(Object.keys(result)).toEqual(expect.arrayContaining(["type", "children"]));
+      }
+    });
+  });
+
+  describe("Stack", () => {
+    it("returns a StackInstruction when called directly", () => {
+      const result = Stack({ direction: "row", gap: 8 }) as RenderInstruction;
+      const expected: StackInstruction = {
+        type: "stack",
+        direction: "row",
+        gap: 8,
+        children: [],
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("returns StackInstruction with resolved children", () => {
+      const result = Stack({
+        direction: "column",
+        children: <Text value="a" />,
+      }) as RenderInstruction;
+      expect(result.type).toBe("stack");
+      if (result.type === "stack") {
+        expect(result.direction).toBe("column");
+        expect(result.children).toHaveLength(1);
+        expect(result.children[0]).toEqual({ type: "text", value: "a" });
+      }
+    });
+
+    it("defaults to row and gap 4", () => {
+      const result = Stack({}) as RenderInstruction;
+      expect(result.type).toBe("stack");
+      if (result.type === "stack") {
+        expect(result.direction).toBe("row");
+        expect(result.gap).toBe(4);
+      }
+    });
+
+    it("Stack via JSX + resolveInstruction", () => {
+      const element = (
+        <Stack direction="column">
+          <Text value="x" />
+        </Stack>
+      );
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("stack");
+      if (result.type === "stack") {
+        expect(result.children).toHaveLength(1);
       }
     });
   });
