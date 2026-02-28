@@ -51,8 +51,15 @@ export const flexCellRenderer: CellRenderer<FlexInstruction> = {
     if (computeChildLayout) {
       // Use WASM/Taffy for layout — padding is passed as container padding
       const input = encodeCompositeInput(
-        cellW, cellH, flexDir, gap, align, justify,
-        [padT, padR, padB, padL], childWidths, childHeights,
+        cellW,
+        cellH,
+        flexDir,
+        gap,
+        align,
+        justify,
+        [padT, padR, padB, padL],
+        childWidths,
+        childHeights,
       );
       const positions = computeChildLayout(input);
       for (let i = 0; i < children.length; i++) {

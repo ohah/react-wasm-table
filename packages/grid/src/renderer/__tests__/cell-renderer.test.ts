@@ -406,10 +406,10 @@ function mockComputeChildLayout(input: Float32Array): Float32Array {
   for (let i = 0; i < childCount; i++) {
     const w = input[11 + i * 2]!;
     const h = input[11 + i * 2 + 1]!;
-    result[i * 4] = x;      // x
-    result[i * 4 + 1] = 0;  // y
-    result[i * 4 + 2] = w;  // width
-    result[i * 4 + 3] = h;  // height
+    result[i * 4] = x; // x
+    result[i * 4 + 1] = 0; // y
+    result[i * 4 + 2] = w; // width
+    result[i * 4 + 3] = h; // height
     x += w;
   }
   return result;
@@ -419,20 +419,14 @@ describe("flexCellRenderer with WASM path", () => {
   it("uses computeChildLayout when provided", () => {
     const computeFn = mock(mockComputeChildLayout);
     const context = makeContext({ computeChildLayout: computeFn });
-    flexCellRenderer.draw(
-      { type: "flex", children: [{ type: "text", value: "A" }] },
-      context,
-    );
+    flexCellRenderer.draw({ type: "flex", children: [{ type: "text", value: "A" }] }, context);
     expect(computeFn).toHaveBeenCalledTimes(1);
     expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
   });
 
   it("falls back to JS layout when computeChildLayout is undefined", () => {
     const context = makeContext();
-    flexCellRenderer.draw(
-      { type: "flex", children: [{ type: "text", value: "A" }] },
-      context,
-    );
+    flexCellRenderer.draw({ type: "flex", children: [{ type: "text", value: "A" }] }, context);
     expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
   });
 
