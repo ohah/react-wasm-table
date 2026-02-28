@@ -162,9 +162,16 @@ impl TableEngine {
             .set_scroll_config(row_height, viewport_height, overscan);
     }
 
+    /// Rebuild view indices only (for row pinning: call before getViewIndices, then updateViewportColumnar with skipRebuild=true).
+    #[wasm_bindgen(js_name = rebuildView)]
+    pub fn rebuild_view_only(&mut self) {
+        self.columnar.rebuild_view();
+    }
+
     /// Unified hot path: rebuild view + virtual slice + layout buffer.
     /// Returns metadata as Float64Array:
     /// [cell_count, visible_start, visible_end, total_height, filtered_count, generation, total_count, visible_count, effective_row_height]
+    /// Optional 5th/6th: pinnedTop, pinnedBottom. Optional 7th: skipRebuild (when true, skip rebuild_view; use after rebuildView() for row pinning).
     #[wasm_bindgen(js_name = updateViewportColumnar)]
     pub fn update_viewport_columnar(
         &mut self,
@@ -172,10 +179,15 @@ impl TableEngine {
         viewport_js: JsValue,
         columns_js: JsValue,
         container_js: JsValue,
+        pinned_top_js: Option<f64>,
+        pinned_bottom_js: Option<f64>,
+        skip_rebuild_js: Option<bool>,
     ) -> Result<Vec<f64>, JsError> {
-        // 1. Rebuild view indices
-        self.columnar.rebuild_view();
+        if !skip_rebuild_js.unwrap_or(false) {
+            self.columnar.rebuild_view();
+        }
 
+        let filtered_count = self.columnar.view_indices().len();
         log::debug!(
             "[wasm] updateViewport: scroll_top={:.1}, total_rows={}, filtered={}",
             scroll_top,
@@ -184,7 +196,6 @@ impl TableEngine {
         );
 
         // 2. Parse viewport + columns + container BEFORE virtual scroll
-        //    (needed to compute effective row height for column directions)
         let vp: JsViewport = serde_wasm_bindgen::from_value(viewport_js)?;
         let cols: Vec<JsColumnLayout> = serde_wasm_bindgen::from_value(columns_js)?;
 
@@ -206,7 +217,7 @@ impl TableEngine {
 
         let columns: Vec<ColumnLayout> = cols.into_iter().map(|c| convert_column(&c)).collect();
 
-        // 3. Compute effective row height (may differ from nominal for column directions)
+        // 3. Compute effective row height
         let effective_row_height = f64::from(self.layout.compute_effective_row_height(
             &columns,
             &container,
@@ -215,51 +226,105 @@ impl TableEngine {
             viewport.line_height,
         ));
 
-        // 4. Compute virtual slice using effective row height
+        // 4. Row pinning: optional pinned_top, pinned_bottom (row counts)
+        let pinned_top = pinned_top_js.map(|v| v as usize).unwrap_or(0);
+        let pinned_bottom = pinned_bottom_js.map(|v| v as usize).unwrap_or(0);
+
         let total_count = self.columnar.row_count;
-        let filtered_count = self.columnar.view_indices().len();
-        let scroll_state = react_wasm_table_core::virtual_scroll::ScrollState {
-            scroll_top,
-            viewport_height: self.columnar.viewport_height(),
-            row_height: effective_row_height,
-            total_rows: filtered_count,
-            overscan: self.columnar.overscan(),
-        };
-        let virtual_slice =
-            react_wasm_table_core::virtual_scroll::compute_virtual_slice(&scroll_state);
-
-        // 5. Compute layout into buffer
         let col_count = columns.len();
-        let row_count = virtual_slice
-            .end_index
-            .saturating_sub(virtual_slice.start_index);
-        let total_cells = col_count + row_count * col_count;
-        let needed = layout_buffer::buf_len(total_cells);
 
-        if self.layout_buf.len() < needed {
-            self.layout_buf.resize(needed, 0.0);
+        if pinned_top > 0 || pinned_bottom > 0 {
+            // Row pinning path: three segments (top, middle visible, bottom)
+            let scroll_state = react_wasm_table_core::virtual_scroll::ScrollState {
+                scroll_top,
+                viewport_height: self.columnar.viewport_height(),
+                row_height: effective_row_height,
+                total_rows: filtered_count,
+                overscan: self.columnar.overscan(),
+                pinned_top: Some(pinned_top),
+                pinned_bottom: Some(pinned_bottom),
+            };
+            let virtual_slice =
+                react_wasm_table_core::virtual_scroll::compute_virtual_slice(&scroll_state);
+
+            let middle_range = virtual_slice.start_index..virtual_slice.end_index;
+            let total_cells = col_count
+                + pinned_top * col_count
+                + middle_range.len() * col_count
+                + pinned_bottom * col_count;
+            let needed = layout_buffer::buf_len(total_cells);
+
+            if self.layout_buf.len() < needed {
+                self.layout_buf.resize(needed, 0.0);
+            }
+
+            self.layout_cell_count = self.layout.compute_into_buffer_row_pinned(
+                &columns,
+                &viewport,
+                &container,
+                pinned_top,
+                pinned_bottom,
+                scroll_top as f32,
+                filtered_count,
+                middle_range,
+                &mut self.layout_buf,
+            );
+
+            Ok(vec![
+                self.layout_cell_count as f64,
+                virtual_slice.start_index as f64,
+                virtual_slice.end_index as f64,
+                virtual_slice.total_height,
+                filtered_count as f64,
+                self.columnar.generation as f64,
+                total_count as f64,
+                virtual_slice.visible_count as f64,
+                effective_row_height,
+            ])
+        } else {
+            // Default path: single visible range
+            let scroll_state = react_wasm_table_core::virtual_scroll::ScrollState {
+                scroll_top,
+                viewport_height: self.columnar.viewport_height(),
+                row_height: effective_row_height,
+                total_rows: filtered_count,
+                overscan: self.columnar.overscan(),
+                pinned_top: None,
+                pinned_bottom: None,
+            };
+            let virtual_slice =
+                react_wasm_table_core::virtual_scroll::compute_virtual_slice(&scroll_state);
+
+            let row_count = virtual_slice
+                .end_index
+                .saturating_sub(virtual_slice.start_index);
+            let total_cells = col_count + row_count * col_count;
+            let needed = layout_buffer::buf_len(total_cells);
+
+            if self.layout_buf.len() < needed {
+                self.layout_buf.resize(needed, 0.0);
+            }
+
+            self.layout_cell_count = self.layout.compute_into_buffer(
+                &columns,
+                &viewport,
+                &container,
+                virtual_slice.start_index..virtual_slice.end_index,
+                &mut self.layout_buf,
+            );
+
+            Ok(vec![
+                self.layout_cell_count as f64,
+                virtual_slice.start_index as f64,
+                virtual_slice.end_index as f64,
+                virtual_slice.total_height,
+                filtered_count as f64,
+                self.columnar.generation as f64,
+                total_count as f64,
+                virtual_slice.visible_count as f64,
+                effective_row_height,
+            ])
         }
-
-        self.layout_cell_count = self.layout.compute_into_buffer(
-            &columns,
-            &viewport,
-            &container,
-            virtual_slice.start_index..virtual_slice.end_index,
-            &mut self.layout_buf,
-        );
-
-        // 6. Return metadata
-        Ok(vec![
-            self.layout_cell_count as f64,
-            virtual_slice.start_index as f64,
-            virtual_slice.end_index as f64,
-            virtual_slice.total_height,
-            filtered_count as f64,
-            self.columnar.generation as f64,
-            total_count as f64,
-            virtual_slice.visible_count as f64,
-            effective_row_height,
-        ])
     }
 
     /// Return [pointer_offset, length] for the view indices buffer.
