@@ -13,6 +13,8 @@ import type {
   ColumnPinningState,
   ColumnPinningUpdater,
   ColumnPinningPosition,
+  RowPinningState,
+  RowPinningUpdater,
   ExpandedState,
   ExpandedUpdater,
   CellContext,
@@ -133,6 +135,7 @@ export interface GridState {
   columnSizing?: ColumnSizingState;
   columnSizingInfo?: ColumnSizingInfoState;
   columnPinning?: ColumnPinningState;
+  rowPinning?: RowPinningState;
   expanded?: ExpandedState;
 }
 
@@ -191,6 +194,12 @@ export interface GridInstance<TData = unknown> {
   /** Get center (unpinned) visible leaf columns. */
   getCenterLeafColumns: () => GridColumn<TData>[];
 
+  // Row pinning
+  /** Set row pinning state (top/bottom row IDs). */
+  setRowPinning: (updater: RowPinningUpdater) => void;
+  /** Reset row pinning to empty. */
+  resetRowPinning: () => void;
+
   // Row model
   /** Get the current view row model (after filter + sort, using viewIndices). */
   getRowModel: () => RowModel<TData>;
@@ -221,6 +230,7 @@ interface BuildColumnCallbacks {
   onColumnSizingChange: (updater: ColumnSizingUpdater) => void;
   onColumnSizingInfoChange: (updater: ColumnSizingInfoUpdater) => void;
   onColumnPinningChange: (updater: ColumnPinningUpdater) => void;
+  onRowPinningChange: (updater: RowPinningUpdater) => void;
   onExpandedChange: (updater: ExpandedUpdater) => void;
 }
 
@@ -240,6 +250,7 @@ export interface BuildOptions<TData> {
   onColumnSizingChange?: (updater: ColumnSizingUpdater) => void;
   onColumnSizingInfoChange?: (updater: ColumnSizingInfoUpdater) => void;
   onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
+  onRowPinningChange?: (updater: RowPinningUpdater) => void;
   onExpandedChange?: (updater: ExpandedUpdater) => void;
   getSubRows?: (row: TData) => TData[] | undefined;
   viewIndicesRef?: ViewIndicesRef;
@@ -419,6 +430,7 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     onColumnSizingChange = () => {},
     onColumnSizingInfoChange = () => {},
     onColumnPinningChange = () => {},
+    onRowPinningChange = () => {},
     onExpandedChange = () => {},
     getSubRows,
     viewIndicesRef,
@@ -431,6 +443,7 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     onColumnSizingChange,
     onColumnSizingInfoChange,
     onColumnPinningChange,
+    onRowPinningChange,
     onExpandedChange,
   };
 
@@ -512,6 +525,10 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
       const pinnedIds = new Set([...pinning.left, ...pinning.right]);
       return leafColumns.filter((col) => visibility[col.id] !== false && !pinnedIds.has(col.id));
     },
+
+    // Row pinning
+    setRowPinning: onRowPinningChange,
+    resetRowPinning: () => onRowPinningChange({ top: [], bottom: [] }),
 
     // Row model
     getRowModel: () => {
