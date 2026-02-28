@@ -1,4 +1,5 @@
 import type { CellCoord, CellLayout } from "../types";
+import type { RegionLayout } from "../renderer/region";
 
 // ── Constants ────────────────────────────────────────────────────────
 const EDGE_ZONE = 30; // px from edge to trigger auto-scroll
@@ -123,6 +124,7 @@ export class EventManager {
   private rowLayouts: CellLayout[] = [];
   private scrollLeft = 0;
   private lastViewportPos: { x: number; y: number } | null = null;
+  private regionLayout: RegionLayout | null = null;
 
   // Touch state
   private touchState: {
@@ -157,6 +159,23 @@ export class EventManager {
     this.scrollLeft = scrollLeft;
   }
 
+  /** Set region layout for region-aware coordinate conversion. */
+  setRegions(regionLayout: RegionLayout): void {
+    this.regionLayout = regionLayout;
+  }
+
+  /** Region-aware viewport → content X conversion. */
+  private toContentX(viewportX: number, canvasWidth: number): number {
+    const rl = this.regionLayout;
+    if (!rl || rl.regions.length <= 1) return viewportX + this.scrollLeft;
+    const { leftWidth, rightWidth, totalContentWidth } = rl;
+    if (viewportX < leftWidth) return viewportX;
+    if (rightWidth > 0 && viewportX >= canvasWidth - rightWidth) {
+      return viewportX + totalContentWidth - canvasWidth;
+    }
+    return viewportX + this.scrollLeft;
+  }
+
   /**
    * Check if x is within resize handle zone of any header's right edge.
    * Returns col index or -1.
@@ -175,9 +194,13 @@ export class EventManager {
    * Re-run hit-test at the last known mouse position (for auto-scroll extend).
    * Falls back to nearest-cell when the mouse is outside the data area.
    */
-  hitTestAtLastPos(): CellCoord | null {
+  hitTestAtLastPos(canvasWidth?: number): CellCoord | null {
     if (!this.lastViewportPos) return null;
-    const x = this.lastViewportPos.x + this.scrollLeft;
+    const cw = canvasWidth ?? 0;
+    const x =
+      cw > 0
+        ? this.toContentX(this.lastViewportPos.x, cw)
+        : this.lastViewportPos.x + this.scrollLeft;
     const y = this.lastViewportPos.y;
     return findCell(x, y, this.rowLayouts) ?? findNearestCell(x, y, this.rowLayouts);
   }
@@ -198,7 +221,7 @@ export class EventManager {
       const viewportX = clientX - rect.left;
       const viewportY = clientY - rect.top;
       return {
-        contentX: viewportX + this.scrollLeft,
+        contentX: this.toContentX(viewportX, rect.width),
         contentY: viewportY,
         viewportX,
         viewportY,
@@ -330,7 +353,7 @@ export class EventManager {
           this.mouseDragActive = true;
         }
 
-        const x = viewportX + this.scrollLeft;
+        const x = this.toContentX(viewportX, rect.width);
         const y = viewportY;
         const coords: EventCoords = { contentX: x, contentY: y, viewportX, viewportY };
 
