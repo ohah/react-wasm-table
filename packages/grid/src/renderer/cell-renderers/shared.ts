@@ -56,7 +56,12 @@ export function measureInstructionWidth(
     const tw = ctx.measureText(instruction.value).width;
     return tw + BADGE_PADDING * 2;
   }
-  if (instruction.type === "stub" || instruction.type === "box" || instruction.type === "flex") {
+  if (
+    instruction.type === "stub" ||
+    instruction.type === "box" ||
+    instruction.type === "flex" ||
+    instruction.type === "stack"
+  ) {
     return 60;
   }
   return 0;
@@ -71,7 +76,8 @@ export function measureInstructionHeight(
     instruction.type === "text" ||
     instruction.type === "stub" ||
     instruction.type === "box" ||
-    instruction.type === "flex"
+    instruction.type === "flex" ||
+    instruction.type === "stack"
     ? FLEX_CHILD_HEIGHT
     : 0;
 }
