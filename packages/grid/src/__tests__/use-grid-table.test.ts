@@ -748,7 +748,7 @@ describe("useGridTable state logic", () => {
       expect(model.rows[0]!.original.name).toBe("Alice");
     });
 
-    it("getRowModel returns all data when no viewIndices", () => {
+    it("getRowModel returns all data when no viewIndicesRef", () => {
       const { instance } = simulateHookState({});
       const model = instance.getRowModel();
       expect(model.rowCount).toBe(3);
@@ -764,6 +764,45 @@ describe("useGridTable state logic", () => {
     it("getRow throws for out-of-bounds", () => {
       const { instance } = simulateHookState({});
       expect(() => instance.getRow(99)).toThrow(RangeError);
+    });
+
+    it("getRowModel uses viewIndicesRef when provided", () => {
+      const ref = { current: new Uint32Array([2, 0]) as Uint32Array | number[] | null };
+      const instance = buildGridInstance({
+        data,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        viewIndicesRef: ref,
+      });
+      const model = instance.getRowModel();
+      expect(model.rowCount).toBe(2);
+      expect(model.rows[0]!.original.name).toBe("Charlie");
+      expect(model.rows[1]!.original.name).toBe("Alice");
+    });
+
+    it("getRowModel lazily reflects viewIndicesRef mutations", () => {
+      const ref = { current: null as Uint32Array | number[] | null };
+      const instance = buildGridInstance({
+        data,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "" },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        viewIndicesRef: ref,
+      });
+
+      // null → all data
+      expect(instance.getRowModel().rowCount).toBe(3);
+
+      // Mutate ref (simulating render loop writing WASM indices)
+      ref.current = new Uint32Array([1]);
+      const model = instance.getRowModel();
+      expect(model.rowCount).toBe(1);
+      expect(model.rows[0]!.original.name).toBe("Bob");
     });
   });
 
