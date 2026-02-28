@@ -130,10 +130,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   const sorting = controlledState?.sorting ?? internalSorting;
   const onSortingChange = useCallback(
     (updater: SortingUpdater) => {
-      const next = typeof updater === "function" ? updater(sorting) : updater;
       if (controlledOnSortingChange) {
-        controlledOnSortingChange(next);
+        controlledOnSortingChange(updater);
       } else {
+        const next = typeof updater === "function" ? updater(sorting) : updater;
         setInternalSorting(next);
       }
     },
@@ -144,10 +144,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   const columnFilters = controlledState?.columnFilters ?? internalColumnFilters;
   const onColumnFiltersChange = useCallback(
     (updater: ColumnFiltersUpdater) => {
-      const next = typeof updater === "function" ? updater(columnFilters) : updater;
       if (controlledOnColumnFiltersChange) {
-        controlledOnColumnFiltersChange(next);
+        controlledOnColumnFiltersChange(updater);
       } else {
+        const next = typeof updater === "function" ? updater(columnFilters) : updater;
         setInternalColumnFilters(next);
       }
     },
@@ -171,10 +171,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   const columnVisibility = controlledState?.columnVisibility ?? internalColumnVisibility;
   const onColumnVisibilityChange = useCallback(
     (updater: ColumnVisibilityUpdater) => {
-      const next = typeof updater === "function" ? updater(columnVisibility) : updater;
       if (controlledOnColumnVisibilityChange) {
-        controlledOnColumnVisibilityChange(next);
+        controlledOnColumnVisibilityChange(updater);
       } else {
+        const next = typeof updater === "function" ? updater(columnVisibility) : updater;
         setInternalColumnVisibility(next);
       }
     },
@@ -185,10 +185,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   const columnSizing = controlledState?.columnSizing ?? internalColumnSizing;
   const onColumnSizingChange = useCallback(
     (updater: ColumnSizingUpdater) => {
-      const next = typeof updater === "function" ? updater(columnSizing) : updater;
       if (controlledOnColumnSizingChange) {
-        controlledOnColumnSizingChange(next);
+        controlledOnColumnSizingChange(updater);
       } else {
+        const next = typeof updater === "function" ? updater(columnSizing) : updater;
         setInternalColumnSizing(next);
       }
     },
@@ -199,10 +199,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   const columnSizingInfo = controlledState?.columnSizingInfo ?? internalColumnSizingInfo;
   const onColumnSizingInfoChange = useCallback(
     (updater: ColumnSizingInfoUpdater) => {
-      const next = typeof updater === "function" ? updater(columnSizingInfo) : updater;
       if (controlledOnColumnSizingInfoChange) {
-        controlledOnColumnSizingInfoChange(next);
+        controlledOnColumnSizingInfoChange(updater);
       } else {
+        const next = typeof updater === "function" ? updater(columnSizingInfo) : updater;
         setInternalColumnSizingInfo(next);
       }
     },
@@ -213,10 +213,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   const columnPinning = controlledState?.columnPinning ?? internalColumnPinning;
   const onColumnPinningChange = useCallback(
     (updater: ColumnPinningUpdater) => {
-      const next = typeof updater === "function" ? updater(columnPinning) : updater;
       if (controlledOnColumnPinningChange) {
-        controlledOnColumnPinningChange(next);
+        controlledOnColumnPinningChange(updater);
       } else {
+        const next = typeof updater === "function" ? updater(columnPinning) : updater;
         setInternalColumnPinning(next);
       }
     },
@@ -227,10 +227,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   const rowPinning = controlledState?.rowPinning ?? internalRowPinning;
   const onRowPinningChange = useCallback(
     (updater: RowPinningUpdater) => {
-      const next = typeof updater === "function" ? updater(rowPinning) : updater;
       if (controlledOnRowPinningChange) {
-        controlledOnRowPinningChange(next);
+        controlledOnRowPinningChange(updater);
       } else {
+        const next = typeof updater === "function" ? updater(rowPinning) : updater;
         setInternalRowPinning(next);
       }
     },
@@ -241,10 +241,10 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   const expanded = controlledState?.expanded ?? internalExpanded;
   const onExpandedChange = useCallback(
     (updater: ExpandedUpdater) => {
-      const next = typeof updater === "function" ? updater(expanded) : updater;
       if (controlledOnExpandedChange) {
-        controlledOnExpandedChange(next);
+        controlledOnExpandedChange(updater);
       } else {
+        const next = typeof updater === "function" ? updater(expanded) : updater;
         setInternalExpanded(next);
       }
     },
