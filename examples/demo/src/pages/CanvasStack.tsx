@@ -115,7 +115,10 @@ export function CanvasStack() {
         </label>
       </div>
 
-      <Grid data={data} columns={columns} width={780} height={340} rowHeight={44} />
+      <section style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
+        <Grid data={data} columns={columns} width={780} height={340} rowHeight={44} />
+      </section>
     </>
   );
 }

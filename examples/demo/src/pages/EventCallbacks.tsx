@@ -262,27 +262,30 @@ export function EventCallbacks() {
 
       <div style={{ display: "flex", gap: 16 }}>
         <div>
-          <Grid
-            data={data}
-            width={560}
-            height={340}
-            columns={columns}
-            sorting={sorting}
-            onSortingChange={setSorting}
-            selection={selection}
-            onSelectionChange={setSelection}
-            onCellClick={onCellClick}
-            onCellDoubleClick={onCellDoubleClick}
-            onHeaderClick={onHeaderClick}
-            onKeyDown={onKeyDown}
-            onCellMouseDown={onCellMouseDown}
-            onCellMouseMove={onCellMouseMove}
-            onCellMouseUp={onCellMouseUp}
-            onScroll={onScroll}
-            onCanvasEvent={onCanvasEvent}
-            onBeforeSortChange={onBeforeSortChange}
-            onBeforeSelectionChange={onBeforeSelectionChange}
-          />
+          <section style={{ marginBottom: 16 }}>
+            <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+            <Grid
+              data={data}
+              width={560}
+              height={340}
+              columns={columns}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              selection={selection}
+              onSelectionChange={setSelection}
+              onCellClick={onCellClick}
+              onCellDoubleClick={onCellDoubleClick}
+              onHeaderClick={onHeaderClick}
+              onKeyDown={onKeyDown}
+              onCellMouseDown={onCellMouseDown}
+              onCellMouseMove={onCellMouseMove}
+              onCellMouseUp={onCellMouseUp}
+              onScroll={onScroll}
+              onCanvasEvent={onCanvasEvent}
+              onBeforeSortChange={onBeforeSortChange}
+              onBeforeSelectionChange={onBeforeSelectionChange}
+            />
+          </section>
         </div>
 
         <div

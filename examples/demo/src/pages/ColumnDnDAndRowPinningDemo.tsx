@@ -188,9 +188,9 @@ export function ColumnDnDAndRowPinningDemo() {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Grid API */}
       <div style={sectionStyle}>
-        <h2 style={{ margin: "0 0 12px", fontSize: 16 }}>Grid</h2>
+        <h2 style={{ margin: "0 0 12px", fontSize: 16 }}>Grid API</h2>
         <Grid
           data={data}
           width={700}

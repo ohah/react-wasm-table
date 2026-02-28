@@ -121,14 +121,19 @@ export function OnAfterDrawDemo() {
       </pre>
 
       <div style={{ display: "flex", gap: 16 }}>
-        <Grid
-          data={data}
-          width={640}
-          height={400}
-          columns={columns}
-          onAfterDraw={mode !== "none" ? onAfterDraw : undefined}
-          overflowY="scroll"
-        />
+        <div>
+          <section style={{ marginBottom: 16 }}>
+            <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+            <Grid
+              data={data}
+              width={640}
+              height={400}
+              columns={columns}
+              onAfterDraw={mode !== "none" ? onAfterDraw : undefined}
+              overflowY="scroll"
+            />
+          </section>
+        </div>
 
         <div
           style={{

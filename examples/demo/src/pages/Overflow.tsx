@@ -83,7 +83,9 @@ export function Overflow() {
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+            Grid API — Canvas (WASM/Taffy)
+          </h3>
           <Grid
             data={data}
             width={800}

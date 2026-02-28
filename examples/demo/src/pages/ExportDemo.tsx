@@ -117,14 +117,17 @@ export function ExportDemo() {
 
       <div style={{ display: "flex", gap: 16, marginBottom: 16, alignItems: "flex-start" }}>
         <div>
-          <Grid
-            data={data}
-            width={560}
-            height={340}
-            columns={columns}
-            sorting={sorting}
-            onSortingChange={setSorting}
-          />
+          <section style={{ marginBottom: 16 }}>
+            <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+            <Grid
+              data={data}
+              width={560}
+              height={340}
+              columns={columns}
+              sorting={sorting}
+              onSortingChange={setSorting}
+            />
+          </section>
         </div>
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>

@@ -250,16 +250,19 @@ const progressRenderer: CellRenderer = {
 />`}
       </pre>
 
-      <Grid
-        data={data as any}
-        width={600}
-        height={400}
-        columns={columns}
-        sorting={sorting}
-        onSortingChange={setSorting}
-        cellRenderers={cellRenderers}
-        padding={[0, 4]}
-      />
+      <section style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+        <Grid
+          data={data as any}
+          width={600}
+          height={400}
+          columns={columns}
+          sorting={sorting}
+          onSortingChange={setSorting}
+          cellRenderers={cellRenderers}
+          padding={[0, 4]}
+        />
+      </section>
 
       <div style={{ marginTop: 12, fontSize: 13, color: "#555" }}>
         <strong>How it works:</strong> The <code>cellRenderers</code> prop accepts an array of{" "}

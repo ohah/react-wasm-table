@@ -29,19 +29,22 @@ export function Position() {
   const data = useMemo(() => generateSmallData(), []);
 
   const helper = createColumnHelper<SmallRow>();
-  const columns = [
-    helper.accessor("name", { header: "Name", size: 180, padding: [0, 8] }),
-    helper.accessor("dept", {
-      header: "Dept (positioned)",
-      size: 120,
-      position: pos,
-      insetLeft,
-      insetTop,
-      padding: [0, 8],
-    }),
-    helper.accessor("salary", { header: "Salary", size: 100, align: "right", padding: [0, 8] }),
-    helper.accessor("score", { header: "Score", size: 80, align: "right", padding: [0, 8] }),
-  ];
+  const columns = useMemo(
+    () => [
+      helper.accessor("name", { header: "Name", size: 180, padding: [0, 8] }),
+      helper.accessor("dept", {
+        header: "Dept (positioned)",
+        size: 120,
+        position: pos,
+        insetLeft,
+        insetTop,
+        padding: [0, 8],
+      }),
+      helper.accessor("salary", { header: "Salary", size: 100, align: "right", padding: [0, 8] }),
+      helper.accessor("score", { header: "Score", size: 80, align: "right", padding: [0, 8] }),
+    ],
+    [pos, insetLeft, insetTop],
+  );
 
   return (
     <>
@@ -104,7 +107,9 @@ helper.accessor("salary", { size: 100 })
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+            Grid API — Canvas (WASM/Taffy)
+          </h3>
           <Grid data={data} width={800} height={400} columns={columns} />
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />

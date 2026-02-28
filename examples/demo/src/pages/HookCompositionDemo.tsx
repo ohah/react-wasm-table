@@ -171,21 +171,23 @@ export function HookCompositionDemo() {
       </p>
 
       <div style={{ display: "flex", gap: 16 }}>
-        {/* Grid */}
         <div style={{ flexShrink: 0 }}>
-          <Grid
-            data={data}
-            width={580}
-            height={450}
-            columns={columns}
-            sorting={sorting}
-            onSortingChange={handleSortingChange}
-            selection={selection}
-            onSelectionChange={handleSelectionChange}
-            onCellClick={onCellClick}
-            onHeaderClick={onHeaderClick}
-            overflowY="scroll"
-          />
+          <section style={{ marginBottom: 16 }}>
+            <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+            <Grid
+              data={data}
+              width={580}
+              height={450}
+              columns={columns}
+              sorting={sorting}
+              onSortingChange={handleSortingChange}
+              selection={selection}
+              onSelectionChange={handleSelectionChange}
+              onCellClick={onCellClick}
+              onHeaderClick={onHeaderClick}
+              overflowY="scroll"
+            />
+          </section>
         </div>
 
         {/* Side panels */}

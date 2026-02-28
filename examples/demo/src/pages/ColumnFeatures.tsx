@@ -334,24 +334,27 @@ export function ColumnFeatures() {
         </div>
       </div>
 
-      {/* ── Grid ── */}
-      <Grid
-        data={data}
-        width={600}
-        height={360}
-        columns={columnDefs}
-        columnOrder={columnOrder}
-        onColumnOrderChange={setColumnOrder}
-        columnFilters={columnFilters}
-        onColumnFiltersChange={setColumnFilters}
-        columnVisibility={columnVisibility}
-        onColumnVisibilityChange={setColumnVisibility}
-        columnSizing={columnSizing}
-        onColumnSizingChange={setColumnSizing}
-        columnPinning={columnPinning}
-        onColumnPinningChange={setColumnPinning}
-        overflowY="scroll"
-      />
+      {/* ── Grid API ── */}
+      <section style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+        <Grid
+          data={data}
+          width={600}
+          height={360}
+          columns={columnDefs}
+          columnOrder={columnOrder}
+          onColumnOrderChange={setColumnOrder}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+          columnSizing={columnSizing}
+          onColumnSizingChange={setColumnSizing}
+          columnPinning={columnPinning}
+          onColumnPinningChange={setColumnPinning}
+          overflowY="scroll"
+        />
+      </section>
 
       {/* ── State display ── */}
       <pre

@@ -61,15 +61,18 @@ export function Selection() {
       </pre>
 
       <div style={{ marginBottom: 12 }}>
-        <Grid
-          data={data}
-          width={800}
-          height={340}
-          columns={columns}
-          enableSelection={gridEnabled}
-          selection={selection}
-          onSelectionChange={setSelection}
-        />
+        <section style={{ marginBottom: 16 }}>
+          <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
+          <Grid
+            data={data}
+            width={800}
+            height={340}
+            columns={columns}
+            enableSelection={gridEnabled}
+            selection={selection}
+            onSelectionChange={setSelection}
+          />
+        </section>
       </div>
 
       <div

@@ -187,17 +187,20 @@ export function LayerDemo() {
           </div>
         </div>
 
-        {/* Grid */}
-        <Grid
-          data={data as any}
-          width={600}
-          height={400}
-          columns={columns}
-          sorting={sorting}
-          onSortingChange={setSorting}
-          layers={activeLayers}
-          padding={[0, 4]}
-        />
+        {/* Grid API */}
+        <section style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+          <Grid
+            data={data as any}
+            width={600}
+            height={400}
+            columns={columns}
+            sorting={sorting}
+            onSortingChange={setSorting}
+            layers={activeLayers}
+            padding={[0, 4]}
+          />
+        </section>
       </div>
 
       <pre

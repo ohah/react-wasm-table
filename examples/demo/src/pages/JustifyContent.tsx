@@ -71,7 +71,9 @@ export function JustifyContent() {
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+            Grid API — Canvas (WASM/Taffy)
+          </h3>
           <Grid data={data} width={800} height={400} justifyContent={justify} columns={columns} />
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
