@@ -313,6 +313,18 @@ pub struct Viewport {
     pub line_height: f32,
 }
 
+/// Parameters for row-pinned layout computation (reduces argument count).
+#[derive(Debug)]
+pub struct RowPinnedLayoutParams<'a> {
+    pub viewport: &'a Viewport,
+    pub container: &'a ContainerLayout,
+    pub pinned_top: usize,
+    pub pinned_bottom: usize,
+    pub scroll_top: f32,
+    pub total_rows: usize,
+    pub middle_range: std::ops::Range<usize>,
+}
+
 /// Column position from Taffy layout result (includes cross-axis info).
 #[derive(Debug, Clone)]
 struct ColumnPosition {
@@ -1171,18 +1183,18 @@ impl LayoutEngine {
 
     /// Compute layout with row pinning: header + top pinned + visible middle + bottom pinned.
     /// Uses different y formulas so that drawing with clip+translate per row region lines up.
+    #[allow(clippy::too_many_lines)]
     pub fn compute_into_buffer_row_pinned(
         &mut self,
         columns: &[ColumnLayout],
-        viewport: &Viewport,
-        container: &ContainerLayout,
-        pinned_top: usize,
-        pinned_bottom: usize,
-        _scroll_top: f32,
-        total_rows: usize,
-        middle_range: std::ops::Range<usize>,
+        params: &RowPinnedLayoutParams<'_>,
         buf: &mut [f32],
     ) -> usize {
+        let pinned_top = params.pinned_top;
+        let pinned_bottom = params.pinned_bottom;
+        let total_rows = params.total_rows;
+        let middle_range = &params.middle_range;
+
         if columns.is_empty() || total_rows == 0 {
             return 0;
         }
@@ -1202,19 +1214,19 @@ impl LayoutEngine {
 
         let (positions, effective_header_height) = self.compute_column_positions(
             columns,
-            container,
-            viewport.width,
-            viewport.header_height,
-            viewport.line_height,
+            params.container,
+            params.viewport.width,
+            params.viewport.header_height,
+            params.viewport.line_height,
         );
         let (row_positions, effective_row_height) =
-            if (viewport.row_height - viewport.header_height).abs() > f32::EPSILON {
+            if (params.viewport.row_height - params.viewport.header_height).abs() > f32::EPSILON {
                 self.compute_column_positions(
                     columns,
-                    container,
-                    viewport.width,
-                    viewport.row_height,
-                    viewport.line_height,
+                    params.container,
+                    params.viewport.width,
+                    params.viewport.row_height,
+                    params.viewport.line_height,
                 )
             } else {
                 (positions.clone(), effective_header_height)
@@ -1244,7 +1256,7 @@ impl LayoutEngine {
 
         // Top pinned rows: y = header_height + row_idx * row_height
         for row_idx in 0..pinned_top {
-            let row_base_y = effective_header_height + (row_idx as f32) * effective_row_height;
+            let row_base_y = (row_idx as f32).mul_add(effective_row_height, effective_header_height);
             for (col_idx, pos) in row_positions.iter().enumerate() {
                 layout_buffer::write_cell(
                     buf,
@@ -1266,8 +1278,8 @@ impl LayoutEngine {
         }
 
         // Middle (scrollable) rows: absolute content y (scroll handled by JS translateY)
-        for row_idx in middle_range.clone() {
-            let row_base_y = effective_header_height + (row_idx as f32) * effective_row_height;
+        for row_idx in middle_range.start..middle_range.end {
+            let row_base_y = (row_idx as f32).mul_add(effective_row_height, effective_header_height);
             for (col_idx, pos) in row_positions.iter().enumerate() {
                 layout_buffer::write_cell(
                     buf,
@@ -1290,10 +1302,10 @@ impl LayoutEngine {
 
         // Bottom pinned rows: y = header + (pinned_top + scrollable_count)*rh + (row_idx - (total - pinned_bottom))*rh
         let bottom_start = total_rows.saturating_sub(pinned_bottom);
+        let bottom_base_y =
+            ((pinned_top + scrollable_count) as f32).mul_add(effective_row_height, effective_header_height);
         for (i, row_idx) in (bottom_start..total_rows).enumerate() {
-            let row_base_y = effective_header_height
-                + (pinned_top + scrollable_count) as f32 * effective_row_height
-                + (i as f32) * effective_row_height;
+            let row_base_y = (i as f32).mul_add(effective_row_height, bottom_base_y);
             for (col_idx, pos) in row_positions.iter().enumerate() {
                 layout_buffer::write_cell(
                     buf,

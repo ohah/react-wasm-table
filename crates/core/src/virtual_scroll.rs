@@ -23,8 +23,9 @@ pub struct VirtualSlice {
 }
 
 /// Compute which rows should be rendered given the current scroll state.
-/// When pinned_top/pinned_bottom are set, only the middle segment is scrolled;
-/// start_index/end_index refer to the visible middle rows; top and bottom are always fully included by the caller.
+///
+/// When `pinned_top`/`pinned_bottom` are set, only the middle segment is scrolled;
+/// `start_index`/`end_index` refer to the visible middle rows; top and bottom are always fully included by the caller.
 pub fn compute_virtual_slice(state: &ScrollState) -> VirtualSlice {
     if state.total_rows == 0 || state.row_height <= 0.0 {
         return VirtualSlice {
