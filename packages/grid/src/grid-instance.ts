@@ -226,6 +226,9 @@ interface BuildColumnCallbacks {
 
 // ── Builder ─────────────────────────────────────────────────────────
 
+/** Mutable ref holding WASM-computed view indices. Grid writes, GridInstance reads lazily. */
+export type ViewIndicesRef = { current: Uint32Array | number[] | null };
+
 export interface BuildOptions<TData> {
   data: TData[];
   columns: GridColumnDef<TData, any>[];
@@ -239,7 +242,7 @@ export interface BuildOptions<TData> {
   onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
   onExpandedChange?: (updater: ExpandedUpdater) => void;
   getSubRows?: (row: TData) => TData[] | undefined;
-  viewIndices?: Uint32Array | number[] | null;
+  viewIndicesRef?: ViewIndicesRef;
 }
 
 /** Build GridColumn instances from column definitions. */
@@ -418,7 +421,7 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     onColumnPinningChange = () => {},
     onExpandedChange = () => {},
     getSubRows,
-    viewIndices,
+    viewIndicesRef,
   } = options;
 
   const callbacks: BuildColumnCallbacks = {
@@ -459,6 +462,7 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
 
   // Row model caches
   let cachedRowModel: RowModel<TData> | null = null;
+  let lastViewIndices: Uint32Array | number[] | null = null;
   let cachedCoreRowModel: RowModel<TData> | null = null;
   let cachedExpandedRowModel: RowModel<TData> | null = null;
 
@@ -511,8 +515,10 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
 
     // Row model
     getRowModel: () => {
-      if (!cachedRowModel) {
-        cachedRowModel = buildRowModel(data, viewIndices ?? null, defs);
+      const currentIndices = viewIndicesRef?.current ?? null;
+      if (!cachedRowModel || currentIndices !== lastViewIndices) {
+        lastViewIndices = currentIndices;
+        cachedRowModel = buildRowModel(data, currentIndices, defs);
       }
       return cachedRowModel;
     },
@@ -523,8 +529,12 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
       return cachedCoreRowModel;
     },
     getRow: (index: number) => {
-      const model = buildRowModel(data, viewIndices ?? null, defs);
-      return model.getRow(index);
+      const currentIndices = viewIndicesRef?.current ?? null;
+      if (!cachedRowModel || currentIndices !== lastViewIndices) {
+        lastViewIndices = currentIndices;
+        cachedRowModel = buildRowModel(data, currentIndices, defs);
+      }
+      return cachedRowModel.getRow(index);
     },
 
     // Expanding
