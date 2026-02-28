@@ -48,7 +48,11 @@ export function CanvasComponents() {
         </li>
       </ul>
 
-      <h2 style={{ marginTop: 24, fontSize: 16 }}>Planned (stub, placeholder only)</h2>
+      <h2 style={{ marginTop: 24, fontSize: 16 }}>Planned — interactive (DOM overlay)</h2>
+      <p style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
+        Stub only; will use DOM overlay (e.g. <code>&lt;input type="range"&gt;</code>) when
+        implemented.
+      </p>
       <ul style={{ listStyle: "none", padding: 0 }}>
         <li>
           <Link to="/canvas-progress-bar" style={linkStyle}>
