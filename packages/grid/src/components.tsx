@@ -2,6 +2,7 @@ import type {
   RenderInstruction,
   FlexContainerStyle,
   BoxModelStyle,
+  StackDirection,
   TextStyle,
   BadgeStyle,
   CssFlexDirection,
@@ -247,10 +248,37 @@ function stub(component: string) {
   };
 }
 
-// Layout
-/** Stack: direction "row" | "column" for horizontal/vertical. Single component, no HStack/VStack. */
-export const Stack = stub("Stack");
+/** Props for the Stack canvas component (direction + gap only). */
+export interface StackProps {
+  children?: ReactNode;
+  /** "row" = horizontal, "column" = vertical. @default "row" */
+  direction?: StackDirection;
+  /** Gap between children in px. @default 4 */
+  gap?: number;
+  style?: { direction?: StackDirection; gap?: number };
+}
 
+/** Canvas stack: lays out children in a row or column with gap. */
+export function Stack(props: StackProps): CanvasElement {
+  const resolved: RenderInstruction[] = [];
+  if (props.children != null) {
+    Children.forEach(props.children, (child) => {
+      if (isValidElement(child)) {
+        resolved.push(resolveInstruction(child));
+      }
+    });
+  }
+  const direction = props.direction ?? props.style?.direction ?? "row";
+  const gap = props.gap ?? props.style?.gap ?? 4;
+  return {
+    type: "stack",
+    direction,
+    gap,
+    children: resolved,
+  } as CanvasElement;
+}
+
+// Layout
 // Data display
 export const ProgressBar = stub("ProgressBar");
 export const Sparkline = stub("Sparkline");
