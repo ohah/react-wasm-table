@@ -33,7 +33,8 @@ import type { InternalLayerContext } from "../../renderer/layer";
 import { DEFAULT_LAYERS } from "../../renderer/layer";
 import type { ColumnPinningState } from "../../tanstack-types";
 import { computePinningInfo } from "../../resolve-columns";
-import { buildRegions } from "../../renderer/region";
+import { buildRegions, buildRowRegions, contentToViewportX } from "../../renderer/region";
+import type { ColumnDnDState } from "./use-column-dnd";
 import { InstructionBuilder } from "../../adapter/instruction-builder";
 import {
   readCellRow,
@@ -119,6 +120,12 @@ export interface UseRenderLoopParams {
   layers?: GridLayer[];
   columnPinning?: ColumnPinningState;
   viewIndicesRef?: { current: Uint32Array | number[] | null };
+  /** Ref to column DnD state for drawing ghost + drop indicator. */
+  columnDnDStateRef?: React.RefObject<ColumnDnDState | null>;
+  /** Row pinning state (top/bottom row IDs). */
+  rowPinning?: import("../../tanstack-types").RowPinningState;
+  /** Get row ID for row pinning (display -> data index when reordered). */
+  getRowId?: (row: Record<string, unknown>, index: number) => string;
 }
 
 export function useRenderLoop({
@@ -151,6 +158,9 @@ export function useRenderLoop({
   layers,
   columnPinning,
   viewIndicesRef,
+  columnDnDStateRef,
+  rowPinning,
+  getRowId,
 }: UseRenderLoopParams) {
   const cellRendererRegistry = useMemo(
     () => createCellRendererRegistry(cellRenderers),
@@ -344,46 +354,124 @@ export function useRenderLoop({
 
         const colCount = columns.length;
 
-        // Single WASM call: rebuild view + virtual slice + layout buffer (columnar path)
+        // Row pinning: resolve display order (top / middle / bottom) and get view indices first
+        const hasRowPinning =
+          rowPinning &&
+          getRowId &&
+          ((rowPinning.top?.length ?? 0) > 0 || (rowPinning.bottom?.length ?? 0) > 0);
+
+        let pinnedTop = 0;
+        let pinnedBottom = 0;
+        let reorderedIndices: number[] | null = null;
+        let rowRegionLayout: ReturnType<typeof buildRowRegions> | null = null;
+
+        if (hasRowPinning && engine.rebuildView) {
+          engine.rebuildView();
+        }
+        const viewIndicesFromBridge = bridge.getViewIndices();
+
+        if (hasRowPinning && getRowId) {
+          const topIds = new Set(rowPinning!.top ?? []);
+          const bottomIds = new Set(rowPinning!.bottom ?? []);
+          const top: number[] = [];
+          const middle: number[] = [];
+          const bottom: number[] = [];
+          for (let i = 0; i < viewIndicesFromBridge.length; i++) {
+            const vi = viewIndicesFromBridge[i]!;
+            const rowId = getRowId(data[vi] ?? {}, vi);
+            if (topIds.has(rowId)) top.push(i);
+            else if (bottomIds.has(rowId)) bottom.push(i);
+            else middle.push(i);
+          }
+          // Preserve order within top/bottom by rowPinning order
+          const topOrdered = (rowPinning!.top ?? []).flatMap((id) =>
+            top.filter(
+              (i) =>
+                getRowId(data[viewIndicesFromBridge[i]!] ?? {}, viewIndicesFromBridge[i]!) === id,
+            ),
+          );
+          const bottomOrdered = (rowPinning!.bottom ?? []).flatMap((id) =>
+            bottom.filter(
+              (i) =>
+                getRowId(data[viewIndicesFromBridge[i]!] ?? {}, viewIndicesFromBridge[i]!) === id,
+            ),
+          );
+          pinnedTop = topOrdered.length;
+          pinnedBottom = bottomOrdered.length;
+          const reorderedViewIndices = [...topOrdered, ...middle, ...bottomOrdered];
+          reorderedIndices = reorderedViewIndices.map((vi) => viewIndicesFromBridge[vi] ?? 0);
+        }
+
+        // WASM: rebuild + virtual slice + layout (with optional row pinning)
         const meta = engine.updateViewportColumnar(
           scrollTopRef.current,
           viewport,
           colLayouts,
           containerLayout,
+          hasRowPinning ? pinnedTop : undefined,
+          hasRowPinning ? pinnedBottom : undefined,
+          hasRowPinning ? true : undefined,
         );
         const cellCount = meta[0] ?? 0;
         const visStart = meta[1] ?? 0;
-        const _generation = meta[5] ?? 0; // reserved for future: skip row model rebuild if unchanged
+        const _generation = meta[5] ?? 0;
         const effectiveRowHeight = meta[8] ?? rowHeight;
         const headerCount = colCount;
         const dataCount = cellCount - headerCount;
 
-        // Store visStart for selection clipboard row mapping
         onVisStartComputed(visStart);
 
-        // Zero-copy reads from WASM memory
         const layoutBuf = bridge.getLayoutBuffer();
         const viewIndices = bridge.getViewIndices();
+        // When row pinning is active, use reorderedIndices for data lookup
+        // so that layout buffer row indices map to the correct data rows.
+        const effectiveViewIndices: Uint32Array | number[] = reorderedIndices ?? viewIndices;
         if (viewIndicesRef) {
-          viewIndicesRef.current = viewIndices;
+          viewIndicesRef.current = effectiveViewIndices;
         }
 
-        // Update filtered row count / effective row height → scroll height + clamping
         const filteredCount = viewIndices.length;
+
+        if (hasRowPinning && pinnedTop + pinnedBottom < filteredCount) {
+          const scrollableCount = filteredCount - pinnedTop - pinnedBottom;
+          const topHeight = pinnedTop * effectiveRowHeight;
+          const bottomHeight = pinnedBottom * effectiveRowHeight;
+          const centerHeight = Math.max(0, height - headerHeight - topHeight - bottomHeight);
+          rowRegionLayout = buildRowRegions(
+            width,
+            height,
+            headerHeight,
+            effectiveRowHeight,
+            scrollTopRef.current,
+            pinnedTop,
+            pinnedBottom,
+            filteredCount,
+          );
+          const scrollContentHeight = scrollableCount * effectiveRowHeight;
+          syncScrollBarContentSize(vScrollbarRef.current, scrollContentHeight, "vertical");
+          const maxScrollY = Math.max(0, scrollContentHeight - centerHeight);
+          if (scrollTopRef.current > maxScrollY) {
+            (scrollTopRef as React.MutableRefObject<number>).current = maxScrollY;
+            dirtyRef.current = true;
+          }
+        }
+
+        // Update filtered row count / scroll height when not row pinning
         const rowHeightChanged = prevEffectiveRowHeightRef.current !== effectiveRowHeight;
-        if (viewRowCountRef.current !== filteredCount || rowHeightChanged) {
+        if (!hasRowPinning && (viewRowCountRef.current !== filteredCount || rowHeightChanged)) {
           (viewRowCountRef as React.MutableRefObject<number>).current = filteredCount;
           prevEffectiveRowHeightRef.current = effectiveRowHeight;
           const newContentHeight = filteredCount * effectiveRowHeight + headerHeight;
           syncScrollBarContentSize(vScrollbarRef.current, newContentHeight, "vertical");
-          // Clamp scrollTop if it exceeds the new max.
-          // If clamped, the layout buffer was computed with stale scrollTop —
-          // mark dirty to recompute on the next frame.
           const maxScrollY = Math.max(0, newContentHeight - height);
           if (scrollTopRef.current > maxScrollY) {
             (scrollTopRef as React.MutableRefObject<number>).current = maxScrollY;
             dirtyRef.current = true;
           }
+        }
+        if (hasRowPinning) {
+          (viewRowCountRef as React.MutableRefObject<number>).current = filteredCount;
+          prevEffectiveRowHeightRef.current = effectiveRowHeight;
         }
 
         // Store refs for hit-testing and editor positioning
@@ -446,7 +534,7 @@ export function useRenderLoop({
         if (ctx) {
           const getInstruction = (cellIdx: number) => {
             const col = columns[readCellCol(layoutBuf, cellIdx)];
-            const actualRow = viewIndices[readCellRow(layoutBuf, cellIdx)] ?? 0;
+            const actualRow = effectiveViewIndices[readCellRow(layoutBuf, cellIdx)] ?? 0;
             if (col?.children) {
               const value = data[actualRow]?.[col.id];
               return builder.build(col, value);
@@ -459,7 +547,7 @@ export function useRenderLoop({
             ctx,
             renderer,
             layoutBuf,
-            viewIndices,
+            viewIndices: effectiveViewIndices,
             width,
             height,
             scrollLeft,
@@ -493,35 +581,112 @@ export function useRenderLoop({
           );
           eventManagerRef.current.setRegions(regionLayout);
 
-          for (const region of regionLayout.regions) {
-            ctx.save();
-            const [cx, cy, cw, ch] = region.clipRect;
-            ctx.beginPath();
-            ctx.rect(cx, cy, cw, ch);
-            ctx.clip();
-            if (region.translateX !== 0) ctx.translate(region.translateX, 0);
+          const rowRegions = rowRegionLayout?.regions ?? null;
 
-            for (const layer of effectiveLayers) {
-              if (layer.space === "viewport" && region.translateX !== 0) {
-                // Viewport-space layers need to undo region translate
+          for (const region of regionLayout.regions) {
+            const [cx, cy, cw, ch] = region.clipRect;
+
+            if (rowRegions) {
+              for (const rowRegion of rowRegions) {
+                const [rx, ry, rw, rh] = rowRegion.clipRect;
+                const ix = Math.max(cx, rx);
+                const iy = Math.max(cy, ry);
+                const iw = Math.max(0, Math.min(cx + cw, rx + rw) - ix);
+                const ih = Math.max(0, Math.min(cy + ch, ry + rh) - iy);
+                if (iw <= 0 || ih <= 0) continue;
                 ctx.save();
-                ctx.translate(-region.translateX, 0);
-                try {
-                  layer.draw(layerCtx);
-                } catch (e) {
-                  console.error(`Layer "${layer.name}" error:`, e);
+                ctx.beginPath();
+                ctx.rect(ix, iy, iw, ih);
+                ctx.clip();
+                if (region.translateX !== 0) ctx.translate(region.translateX, 0);
+                if (rowRegion.translateY !== 0) ctx.translate(0, rowRegion.translateY);
+
+                for (const layer of effectiveLayers) {
+                  if (
+                    layer.space === "viewport" &&
+                    (region.translateX !== 0 || rowRegion.translateY !== 0)
+                  ) {
+                    ctx.save();
+                    if (region.translateX !== 0) ctx.translate(-region.translateX, 0);
+                    if (rowRegion.translateY !== 0) ctx.translate(0, -rowRegion.translateY);
+                    try {
+                      layer.draw(layerCtx);
+                    } catch (e) {
+                      console.error(`Layer "${layer.name}" error:`, e);
+                    }
+                    ctx.restore();
+                  } else {
+                    try {
+                      layer.draw(layerCtx);
+                    } catch (e) {
+                      console.error(`Layer "${layer.name}" error:`, e);
+                    }
+                  }
                 }
                 ctx.restore();
-              } else {
-                try {
-                  layer.draw(layerCtx);
-                } catch (e) {
-                  console.error(`Layer "${layer.name}" error:`, e);
+              }
+            } else {
+              ctx.save();
+              ctx.beginPath();
+              ctx.rect(cx, cy, cw, ch);
+              ctx.clip();
+              if (region.translateX !== 0) ctx.translate(region.translateX, 0);
+
+              for (const layer of effectiveLayers) {
+                if (layer.space === "viewport" && region.translateX !== 0) {
+                  ctx.save();
+                  ctx.translate(-region.translateX, 0);
+                  try {
+                    layer.draw(layerCtx);
+                  } catch (e) {
+                    console.error(`Layer "${layer.name}" error:`, e);
+                  }
+                  ctx.restore();
+                } else {
+                  try {
+                    layer.draw(layerCtx);
+                  } catch (e) {
+                    console.error(`Layer "${layer.name}" error:`, e);
+                  }
                 }
               }
+              ctx.restore();
             }
-            ctx.restore();
           }
+        }
+
+        // Column DnD overlay: ghost header + drop indicator (viewport space)
+        if (ctx && columnDnDStateRef?.current?.isDragging) {
+          const dnd = columnDnDStateRef.current;
+          const headerWidth = readCellWidth(layoutBuf, dnd.dragColIndex);
+          const ghostX = dnd.ghostViewportX - headerWidth / 2;
+          ctx.save();
+          ctx.globalAlpha = 0.9;
+          ctx.fillStyle = theme.headerBackground;
+          ctx.strokeStyle = theme.borderColor;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(ghostX, 0, headerWidth, headerHeight, 4);
+          } else {
+            ctx.rect(ghostX, 0, headerWidth, headerHeight);
+          }
+          ctx.fill();
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          // Drop indicator line
+          const dropLeft =
+            dnd.dropIndicatorColIndex >= headerCount
+              ? readCellX(layoutBuf, headerCount - 1) + readCellWidth(layoutBuf, headerCount - 1)
+              : readCellX(layoutBuf, dnd.dropIndicatorColIndex);
+          const viewportDropX = contentToViewportX(dropLeft, regionLayout, scrollLeft, width);
+          ctx.strokeStyle = "#1976d2";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(viewportDropX, 0);
+          ctx.lineTo(viewportDropX, height);
+          ctx.stroke();
+          ctx.restore();
         }
 
         // onAfterDraw callback (viewport space — after all layers)
@@ -587,6 +752,9 @@ export function useRenderLoop({
     onLayoutComputed,
     onVisStartComputed,
     columnPinning,
+    columnDnDStateRef,
+    rowPinning,
+    getRowId,
   ]);
 
   return { invalidate };
