@@ -1,8 +1,21 @@
 // React components
 export { Grid } from "./react/Grid";
+export { Table } from "./react/Table";
+export type { TableProps } from "./react/Table";
 export { Column } from "./react/Column";
 export { ScrollBar } from "./react/ScrollBar";
 export type { ScrollBarProps } from "./react/ScrollBar";
+
+// Table structural components (TanStack-compatible)
+export { Thead, Tbody, Tfoot, Tr, Th, Td } from "./react/table-components";
+export type {
+  TheadProps,
+  TbodyProps,
+  TfootProps,
+  TrProps,
+  ThProps,
+  TdProps,
+} from "./react/table-components";
 
 // Canvas JSX components
 export type {
@@ -38,8 +51,9 @@ export {
   Dropdown,
 } from "./components";
 
-// Resolve instruction
+// Resolve instruction + flexRender
 export { resolveInstruction } from "./resolve-instruction";
+export { flexRender } from "./flex-render";
 
 // Column helper (TanStack-compatible API)
 export { createColumnHelper } from "./column-helper";
@@ -85,6 +99,8 @@ export { buildHeaderGroups } from "./build-header-groups";
 // Grid instance + useGridTable (TanStack-compatible)
 export { useGridTable } from "./use-grid-table";
 export type { UseGridTableOptions } from "./use-grid-table";
+export { useReactTable } from "./use-react-table";
+export type { UseReactTableOptions } from "./use-react-table";
 export { buildGridInstance } from "./grid-instance";
 export type {
   GridInstance,
@@ -94,7 +110,17 @@ export type {
   GridState,
   BuildOptions,
   ViewIndicesRef,
+  // TanStack-compatible aliases
+  TableInstance,
+  TableColumn,
+  TableHeader,
+  TableHeaderGroup,
+  TableState,
 } from "./grid-instance";
+
+// Cell type
+export type { Cell } from "./cell";
+export { buildCell } from "./cell";
 
 // Row model
 export {
@@ -107,6 +133,10 @@ export {
   buildExpandedRowModel,
 } from "./row-model";
 export type { Row, RowModel, RowModelFactory } from "./row-model";
+
+// Parse table children
+export { parseTableChildren } from "./react/parse-table-children";
+export type { ParsedTableStructure, ParsedRow, ParsedCell } from "./react/parse-table-children";
 
 // Hooks
 export { useGrid, useColumnRegistry } from "./react/hooks";
