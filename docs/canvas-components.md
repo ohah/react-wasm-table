@@ -88,7 +88,7 @@ Same extensible pattern as Flex:
 
 ## 4. Stub components
 
-Stack, ProgressBar, Sparkline, etc. are stubs (placeholder instructions). They use the same pattern:
+ProgressBar, Sparkline, etc. are stubs (placeholder instructions). They use the same pattern:
 
 - **`style` prop**: Optional `style?: Record<string, unknown>`. Merged with other props; individual props override `style`. When implemented, each stub can expose a typed style surface like Text/Badge/Flex.
 
