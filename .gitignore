@@ -31,8 +31,9 @@ e2e/blob-report/
 coverage/
 coverage-comment.md
 
-# Reference repos
+# Reference repos (cloned for local lookup only)
 .reference/
+reference/
 
 # Environment
 .env
