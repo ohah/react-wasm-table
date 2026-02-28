@@ -469,13 +469,13 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ### Tier 5 — UX Primitive (렌더링 파이프라인 완성 후, 독립 진행 가능)
 
-| 순서 | 항목                      | 참조 | 상태 | 이유                                                            |
-| ---- | ------------------------- | ---- | ---- | --------------------------------------------------------------- |
-| 12   | Row Pinning               | 6-1  | ❌   | Column Pinning 인프라 재사용. top/bottom clip region 추가       |
-| 13   | Column DnD Reorder        | 6-2  | ❌   | columnOrder state(✅) 위에 drag 시퀀스 추가. 고스트 컬럼 레이어 |
-| 14   | Cell Editing 고도화       | 6-3  | ❌   | EditorManager + DOM overlay 완성. editCell render prop          |
-| 15   | Multi-level Column Header | 6-4  | ❌   | helper.group() + 다단 헤더 레이아웃. 복잡도 높음                |
-| 16   | Context Menu              | 6-5  | ❌   | EventManager contextmenu + hit-test 결과 제공. 난이도 낮음      |
+| 순서 | 항목                      | 참조 | 상태 | 이유                                                                                   |
+| ---- | ------------------------- | ---- | ---- | -------------------------------------------------------------------------------------- |
+| 12   | Row Pinning               | 6-1  | 🔶   | State/API/타입 ✅ (rowPinning, getRowId, setRowPinning). 렌더링(buildRowRegions) TODO  |
+| 13   | Column DnD Reorder        | 6-2  | ✅   | EventManager 헤더 드래그 + useColumnDnD + 고스트/드롭 인디케이터. enableColumnDnD prop |
+| 14   | Cell Editing 고도화       | 6-3  | ❌   | EditorManager + DOM overlay 완성. editCell render prop                                 |
+| 15   | Multi-level Column Header | 6-4  | ❌   | helper.group() + 다단 헤더 레이아웃. 복잡도 높음                                       |
+| 16   | Context Menu              | 6-5  | ❌   | EventManager contextmenu + hit-test 결과 제공. 난이도 낮음                             |
 
 ### 의존성 그래프
 
