@@ -79,6 +79,8 @@ function makeMockCanvas() {
     fillText: mock(() => {}),
     strokeRect: mock(() => {}),
     beginPath: mock(() => {}),
+    rect: mock(() => {}),
+    clip: mock(() => {}),
     moveTo: mock(() => {}),
     lineTo: mock(() => {}),
     stroke: mock(() => {}),
@@ -149,6 +151,7 @@ function defaultParams(overrides?: Partial<Parameters<typeof useRenderLoop>[0]>)
     headerHeight: 40,
     onLayoutComputed: mock(() => {}),
     onVisStartComputed: mock(() => {}),
+    columnPinning: undefined,
     _mockCtx: ctx,
     ...overrides,
   };

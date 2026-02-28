@@ -31,6 +31,9 @@ import { createCellRendererRegistry } from "../../renderer/cell-renderer";
 import type { GridLayer } from "../../renderer/layer";
 import type { InternalLayerContext } from "../../renderer/layer";
 import { DEFAULT_LAYERS } from "../../renderer/layer";
+import type { ColumnPinningState } from "../../tanstack-types";
+import { computePinningInfo } from "../../resolve-columns";
+import { buildRegions } from "../../renderer/region";
 import { InstructionBuilder } from "../../adapter/instruction-builder";
 import {
   readCellRow,
@@ -114,6 +117,7 @@ export interface UseRenderLoopParams {
   onAfterDraw?: (ctx: AfterDrawContext) => void;
   cellRenderers?: CellRenderer[];
   layers?: GridLayer[];
+  columnPinning?: ColumnPinningState;
 }
 
 export function useRenderLoop({
@@ -144,6 +148,7 @@ export function useRenderLoop({
   onAfterDraw,
   cellRenderers,
   layers,
+  columnPinning,
 }: UseRenderLoopParams) {
   const cellRendererRegistry = useMemo(
     () => createCellRendererRegistry(cellRenderers),
@@ -428,7 +433,7 @@ export function useRenderLoop({
           return h;
         });
 
-        // Draw — layer pipeline with space-based auto transform
+        // Draw — region-based pipeline with clip+translate per region
         renderer.clear();
         const ctx = renderer.context;
         const scrollLeft = scrollLeftRef.current;
@@ -441,7 +446,7 @@ export function useRenderLoop({
               const value = data[actualRow]?.[col.id];
               return builder.build(col, value);
             }
-            const text = strTable.get(readCellCol(layoutBuf, cellIdx), actualRow);
+            const text = strTable.get(col?.id ?? "", actualRow);
             return { type: "text" as const, value: text };
           };
 
@@ -471,23 +476,47 @@ export function useRenderLoop({
             _selectionStyle: selectionStyle,
           };
 
-          let inContentSpace = false;
-          for (const layer of effectiveLayers) {
-            if (layer.space === "content" && !inContentSpace && scrollLeft !== 0) {
-              ctx.save();
-              ctx.translate(-scrollLeft, 0);
-              inContentSpace = true;
-            } else if (layer.space === "viewport" && inContentSpace) {
-              ctx.restore();
-              inContentSpace = false;
+          // Build regions (clip-based frozen column rendering)
+          const pinningInfo = computePinningInfo(columns, columnPinning);
+          const regionLayout = buildRegions(
+            width,
+            height,
+            scrollLeft,
+            layoutBuf,
+            colCount,
+            pinningInfo,
+          );
+          eventManagerRef.current.setRegions(regionLayout);
+
+          for (const region of regionLayout.regions) {
+            ctx.save();
+            const [cx, cy, cw, ch] = region.clipRect;
+            ctx.beginPath();
+            ctx.rect(cx, cy, cw, ch);
+            ctx.clip();
+            if (region.translateX !== 0) ctx.translate(region.translateX, 0);
+
+            for (const layer of effectiveLayers) {
+              if (layer.space === "viewport" && region.translateX !== 0) {
+                // Viewport-space layers need to undo region translate
+                ctx.save();
+                ctx.translate(-region.translateX, 0);
+                try {
+                  layer.draw(layerCtx);
+                } catch (e) {
+                  console.error(`Layer "${layer.name}" error:`, e);
+                }
+                ctx.restore();
+              } else {
+                try {
+                  layer.draw(layerCtx);
+                } catch (e) {
+                  console.error(`Layer "${layer.name}" error:`, e);
+                }
+              }
             }
-            try {
-              layer.draw(layerCtx);
-            } catch (e) {
-              console.error(`Layer "${layer.name}" error:`, e);
-            }
+            ctx.restore();
           }
-          if (inContentSpace) ctx.restore();
         }
 
         // onAfterDraw callback (viewport space — after all layers)
@@ -552,6 +581,7 @@ export function useRenderLoop({
     selectionStyle,
     onLayoutComputed,
     onVisStartComputed,
+    columnPinning,
   ]);
 
   return { invalidate };
