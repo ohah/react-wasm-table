@@ -545,11 +545,11 @@ export interface GridProps extends BoxModelProps {
   /** Controlled sorting state (TanStack-compatible). */
   sorting?: import("./tanstack-types").SortingState;
   /** Callback when sorting changes (controlled mode). */
-  onSortingChange?: (sorting: import("./tanstack-types").SortingState) => void;
+  onSortingChange?: (updater: import("./tanstack-types").SortingUpdater) => void;
   /** Controlled column filters state. */
   columnFilters?: import("./tanstack-types").ColumnFiltersState;
   /** Callback when column filters change (controlled mode). */
-  onColumnFiltersChange?: (filters: import("./tanstack-types").ColumnFiltersState) => void;
+  onColumnFiltersChange?: (updater: import("./tanstack-types").ColumnFiltersUpdater) => void;
   /** Controlled global filter string. */
   globalFilter?: string;
   /** Callback when global filter changes (controlled mode). */
