@@ -7,6 +7,7 @@ export {
   badgeCellRenderer,
   stubCellRenderer,
   boxCellRenderer,
+  stackCellRenderer,
   flexCellRenderer,
 } from "./cell-renderer";
 export type { CellRenderer, CellRenderContext } from "./cell-renderer";
