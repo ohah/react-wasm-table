@@ -16,6 +16,7 @@ const sections = [
       { to: "/custom-renderer", label: "Custom Renderer" },
       { to: "/layers", label: "Layer System" },
       { to: "/column-features", label: "Column Features" },
+      { to: "/column-pinning", label: "Column Pinning" },
       { to: "/expanding", label: "Expanding (Tree)" },
     ],
   },

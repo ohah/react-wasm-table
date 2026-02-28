@@ -155,8 +155,8 @@ export function ColumnFeatures() {
       <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
         Demonstrates per-column <strong>ordering</strong>, <strong>visibility</strong>,{" "}
         <strong>sizing</strong> (+ drag resize), <strong>pinning</strong>, and{" "}
-        <strong>filtering</strong> state APIs. Drag a header border to resize columns. Pinning is
-        state-only (rendering TBD).
+        <strong>filtering</strong> state APIs. Drag a header border to resize columns. See the{" "}
+        <strong>Column Pinning</strong> demo for frozen column rendering.
       </p>
 
       {/* ── Ordering ── */}
