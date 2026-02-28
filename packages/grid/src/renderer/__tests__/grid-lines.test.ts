@@ -28,8 +28,8 @@ function computeHeaderLines(
     firstX = Math.min(firstX, layout.x);
   }
   const horizontal: HLine[] = [
-    { y: headerY + 0.25, x1: 0, x2: canvasW },
-    { y: headerY + headerHeight - 0.25, x1: 0, x2: canvasW },
+    { y: headerY + 0.25, x1: firstX, x2: canvasW },
+    { y: headerY + headerHeight - 0.25, x1: firstX, x2: canvasW },
   ];
 
   const vertical: VLine[] = [{ x: firstX + 0.25, y1: headerY, y2: headerY + headerHeight }];
@@ -71,7 +71,7 @@ function computeDataLines(layouts: CellLayout[], canvasW: number): GridLineSpec 
   const horizontal: HLine[] = [];
   for (const edge of rowEdges) {
     const y = edge >= maxY ? edge - 0.5 : edge + 0.5;
-    horizontal.push({ y, x1: 0, x2: canvasW });
+    horizontal.push({ y, x1: firstColX, x2: canvasW });
   }
 
   const vertical: VLine[] = [{ x: firstColX + 0.25, y1: minY, y2: maxY }];
