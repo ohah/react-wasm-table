@@ -4,6 +4,7 @@ import { badgeCellRenderer } from "./cell-renderers/badge";
 import { stubCellRenderer } from "./cell-renderers/stub";
 import { boxCellRenderer } from "./cell-renderers/box";
 import { flexCellRenderer } from "./cell-renderers/flex";
+import { stackCellRenderer } from "./cell-renderers/stack";
 
 // Re-export types for public API
 export type { CellRenderContext, CellRenderer, InstructionLike } from "./cell-renderer-types";
@@ -29,7 +30,7 @@ export class CellRendererRegistry {
 }
 
 /**
- * Create a CellRendererRegistry pre-loaded with the 5 built-in renderers.
+ * Create a CellRendererRegistry pre-loaded with the 6 built-in renderers.
  * Optional `userRenderers` are merged on top — same type overrides built-in.
  */
 export function createCellRendererRegistry(
@@ -41,6 +42,7 @@ export function createCellRendererRegistry(
   registry.register(stubCellRenderer);
   registry.register(boxCellRenderer);
   registry.register(flexCellRenderer);
+  registry.register(stackCellRenderer);
   if (userRenderers) {
     for (const r of userRenderers) {
       registry.register(r);
@@ -55,3 +57,4 @@ export { badgeCellRenderer } from "./cell-renderers/badge";
 export { stubCellRenderer } from "./cell-renderers/stub";
 export { boxCellRenderer } from "./cell-renderers/box";
 export { flexCellRenderer } from "./cell-renderers/flex";
+export { stackCellRenderer } from "./cell-renderers/stack";
