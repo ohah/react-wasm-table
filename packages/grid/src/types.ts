@@ -380,6 +380,20 @@ export interface BoxInstruction extends BoxModelStyle {
   children: RenderInstruction[];
 }
 
+/** Stack direction: row = horizontal, column = vertical. */
+export type StackDirection = "row" | "column";
+
+/** A stack container instruction: lays out children in a row or column with optional gap. */
+export interface StackInstruction {
+  type: "stack";
+  /** @default "row" */
+  direction?: StackDirection;
+  /** Gap between children in px. @default 4 */
+  gap?: number;
+  /** Resolved child instructions. */
+  children: RenderInstruction[];
+}
+
 /** A stub instruction for not-yet-implemented components. */
 export interface StubInstruction {
   type: "stub";
@@ -393,6 +407,7 @@ export type RenderInstruction =
   | BadgeInstruction
   | FlexInstruction
   | BoxInstruction
+  | StackInstruction
   | StubInstruction;
 
 /** Styling for text cells. */
@@ -713,6 +728,9 @@ export interface WasmTableEngine {
 
   // Layout cache
   invalidateLayout(): void;
+
+  // Composite (in-cell) layout
+  computeCompositeLayout?(input: Float32Array): Float32Array;
 
   // Debug logging (only available when WASM built with debug-log feature)
   enableDebugLog?(): void;

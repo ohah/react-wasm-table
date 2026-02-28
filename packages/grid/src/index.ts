@@ -5,7 +5,14 @@ export { ScrollBar } from "./react/ScrollBar";
 export type { ScrollBarProps } from "./react/ScrollBar";
 
 // Canvas JSX components
-export type { TextProps, BadgeProps, FlexProps, BoxProps, StubProps } from "./components";
+export type {
+  TextProps,
+  BadgeProps,
+  FlexProps,
+  BoxProps,
+  StackProps,
+  StubProps,
+} from "./components";
 export {
   Text,
   Badge,
@@ -216,6 +223,8 @@ export type {
   FlexInstruction,
   BoxModelStyle,
   BoxInstruction,
+  StackDirection,
+  StackInstruction,
   StubInstruction,
   RenderInstruction,
   TextStyle,
