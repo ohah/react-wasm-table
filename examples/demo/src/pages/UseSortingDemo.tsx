@@ -124,7 +124,7 @@ export function UseSortingDemo() {
             <Grid
               data={data}
               width={640}
-              height={400}
+              height={520}
               columns={columns}
               sorting={sorting}
               onSortingChange={handleSortingChange}
@@ -154,7 +154,7 @@ export function UseSortingDemo() {
         {`/>`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
         <div
           style={{
             padding: 12,
@@ -177,7 +177,7 @@ export function UseSortingDemo() {
             borderRadius: 4,
             fontSize: 13,
             flex: 1,
-            maxHeight: 200,
+            maxHeight: 320,
             overflowY: "auto",
           }}
         >
@@ -201,7 +201,7 @@ export function UseSortingDemo() {
       </p>
       <section style={{ marginBottom: 16 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
-        <Grid data={data} width={640} height={300} columns={columns} overflowY="scroll" />
+        <Grid data={data} width={640} height={440} columns={columns} overflowY="scroll" />
       </section>
     </>
   );

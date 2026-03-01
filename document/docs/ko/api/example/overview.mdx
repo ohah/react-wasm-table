@@ -1,0 +1,15 @@
+# 개요
+
+이 섹션의 페이지는 **데모 앱**(`examples/demo`)과 동일하며 **`demo`** 워크스페이스 패키지에서 렌더링됩니다. 사이드바에서 각 예제를 열면 데모 앱과 같은 컴포넌트가 표시됩니다.
+
+## 패키지로 사용하기
+
+```ts
+// package.json
+"dependencies": { "demo": "workspace:*" }
+
+// 컴포넌트 또는 MDX에서
+import { Home, Selection, generateEmployees, useContainerSize } from "demo";
+```
+
+모든 데모 페이지와 공용 유틸은 `demo`에서 export 됩니다.

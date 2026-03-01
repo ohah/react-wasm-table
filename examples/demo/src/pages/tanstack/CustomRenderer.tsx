@@ -83,7 +83,7 @@ export function TanStackCustomRenderer() {
         Register custom <code>CellRenderer</code> instances via the <code>cellRenderers</code> prop.
         Built-in types (text, badge, stub, flex) can also be overridden.
       </p>
-      <Table table={table} width={560} height={340}>
+      <Table table={table} width={560} height={480}>
         <Thead>
           {table.getHeaderGroups().map((hg) => (
             <Tr key={hg.id}>
@@ -115,7 +115,7 @@ helper.accessor("salary", {
   ),
 });
 
-<Table table={table} width={560} height={340}>
+<Table table={table} width={560} height={480}>
   <Thead>
     {table.getHeaderGroups().map((hg) => (
       <Tr key={hg.id}>

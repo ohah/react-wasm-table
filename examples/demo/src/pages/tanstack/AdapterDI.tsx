@@ -93,7 +93,7 @@ export function TanStackAdapterDI() {
         <Table
           table={table}
           width={560}
-          height={360}
+          height={500}
           eventManager={useDI ? eventManager : undefined}
           selectionManager={useDI ? selectionManager : undefined}
           editorManager={useDI ? editorManager : undefined}
@@ -138,7 +138,7 @@ const [editorManager] = useState(() => new EditorManager());
 <Table
   table={table}
   width={560}
-  height={340}
+  height={480}
   eventManager={useDI ? eventManager : undefined}
   selectionManager={useDI ? selectionManager : undefined}
   editorManager={useDI ? editorManager : undefined}

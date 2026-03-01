@@ -36,7 +36,15 @@ export function Selection() {
         shouldn't trigger selection.
       </p>
 
-      <div style={{ marginBottom: 16, display: "flex", gap: 24, alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          alignItems: "flex-start",
+        }}
+      >
         <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <input
             type="checkbox"
@@ -66,7 +74,7 @@ export function Selection() {
           <Grid
             data={data}
             width={800}
-            height={340}
+            height={480}
             columns={columns}
             enableSelection={gridEnabled}
             selection={selection}

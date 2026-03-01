@@ -1,0 +1,109 @@
+# Table API
+
+The main table component and column definition types.
+
+## Grid and Table
+
+Two entry points are supported:
+
+- **`Grid`** — Renders a `<canvas>` and drives the full pipeline (adapter, WASM, canvas renderer). Use this for the standard canvas-based table.
+- **`Table`** — Headless table: no canvas, only structure (e.g. for SSR or custom rendering). Accepts the same `data` / `columns`-style props.
+
+All examples below use `Grid` with object-based `columns` and `data`.
+
+## Basic usage
+
+```tsx twoslash
+// @errors: 2686
+import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
+
+type Row = { name: string; age: number };
+const helper = createColumnHelper<Row>();
+const columns = [
+  helper.accessor("name", { header: "Name", size: 200 }),
+  helper.accessor("age", { header: "Age", size: 100 }),
+];
+const data: Row[] = [
+  { name: "Alice", age: 30 },
+  { name: "Bob", age: 25 },
+];
+
+function App() {
+  return <Grid data={data} columns={columns} width={600} height={400} />;
+}
+```
+
+## Grid props
+
+| Prop           | Type                        | Default  | Description                        |
+| -------------- | --------------------------- | -------- | ---------------------------------- |
+| `data`         | `Record<string, unknown>[]` | required | Row data (array of objects)        |
+| `columns`      | `ColumnDef[]`               | required | Column definitions                 |
+| `width`        | `number`                    | required | Canvas width (px)                  |
+| `height`       | `number`                    | required | Canvas height (px)                 |
+| `rowHeight`    | `number`                    | `36`     | Row height (px)                    |
+| `headerHeight` | `number`                    | `40`     | Header row height (px)             |
+| `theme`        | `Partial<Theme>`            | -        | Theme overrides                    |
+| `children`     | `ReactNode`                 | -        | Ignored when `columns` is provided |
+
+## ColumnDef (object-based columns)
+
+| Prop         | Type                                    | Description             |
+| ------------ | --------------------------------------- | ----------------------- |
+| `id`         | `string`                                | Column key              |
+| `width`      | `number`                                | Width (px)              |
+| `minWidth`   | `number`                                | Minimum width           |
+| `maxWidth`   | `number`                                | Maximum width           |
+| `flexGrow`   | `number`                                | Flex grow               |
+| `flexShrink` | `number`                                | Flex shrink             |
+| `header`     | `string`                                | Header label            |
+| `align`      | `"left" \| "center" \| "right"`         | Cell alignment          |
+| `sortable`   | `boolean`                               | Enable header sort      |
+| `editor`     | `"text" \| "number" \| "select"`        | In-cell editor type     |
+| `render`     | `(value: unknown) => RenderInstruction` | Custom cell instruction |
+
+## Custom cell rendering (render prop)
+
+Return a **RenderInstruction** (e.g. `text`, `badge`, `flex`) from the column `render` (or JSX children). The canvas renderer draws accordingly.
+
+```tsx twoslash
+// @errors: 2686 7006 2322
+import { Grid, type ColumnDef } from "@ohah/react-wasm-table";
+
+const columns: ColumnDef[] = [
+  { id: "name", accessorKey: "name", size: 200, header: "Name" },
+  {
+    id: "status",
+    accessorKey: "status",
+    size: 120,
+    header: "Status",
+    cell: (info) => {
+      const value = info.getValue();
+      return {
+        type: "badge",
+        value: String(value),
+        style: {
+          color: value === "active" ? "#065f46" : "#374151",
+          backgroundColor: value === "active" ? "#d1fae5" : "#f3f4f6",
+        },
+      };
+    },
+  },
+];
+
+const data = [
+  { id: 1, name: "Alice", status: "active" },
+  { id: 2, name: "Bob", status: "inactive" },
+];
+
+function App() {
+  return <Grid data={data} columns={columns} width={500} height={400} />;
+}
+```
+
+## Sorting and filtering
+
+- **Sorting**: Set `sortable: true` on columns. Click header to cycle none → asc → desc → none. State is internal (ref) so scroll stays fast.
+- **Filtering**: Use `columnFilters` / `onColumnFiltersChange` (controlled) or `initialState.columnFilters` (uncontrolled). Global filter: `globalFilter` / `onGlobalFilterChange`.
+
+Supported instruction types for cells: `text`, `badge`, `flex`, `box`, `stack`, `sparkline`, and stubs (see [Canvas components](/guide/canvas-components)).

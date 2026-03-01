@@ -115,14 +115,22 @@ export function ExportDemo() {
         sorted/filtered data.
       </p>
 
-      <div style={{ display: "flex", gap: 16, marginBottom: 16, alignItems: "flex-start" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          marginBottom: 16,
+          alignItems: "stretch",
+        }}
+      >
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
             <Grid
               data={data}
               width={560}
-              height={340}
+              height={480}
               columns={columns}
               sorting={sorting}
               onSortingChange={setSorting}
@@ -276,7 +284,7 @@ export function ExportDemo() {
             padding: 12,
             borderRadius: 4,
             fontSize: 12,
-            maxHeight: 300,
+            maxHeight: 440,
             overflowY: "auto",
             whiteSpace: "pre-wrap",
             wordBreak: "break-all",

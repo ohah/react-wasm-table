@@ -190,7 +190,7 @@ export function UseFilteringDemo() {
         <Grid
           data={data}
           width={640}
-          height={400}
+          height={520}
           columns={columns}
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}

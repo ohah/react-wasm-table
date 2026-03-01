@@ -1,0 +1,109 @@
+# Table API
+
+메인 테이블 컴포넌트와 컬럼 정의 타입입니다.
+
+## Grid와 Table
+
+두 가지 진입점이 있습니다.
+
+- **`Grid`** — `<canvas>`를 렌더하고 어댑터·WASM·캔버스 렌더러 전체 파이프라인을 구동합니다. 일반적인 캔버스 기반 테이블에 사용하세요.
+- **`Table`** — 헤드리스 테이블: 캔버스 없이 구조만(SSR 또는 커스텀 렌더링용). 동일한 `data` / `columns` 스타일 props를 받습니다.
+
+아래 예제는 모두 객체 기반 `columns`와 `data`로 `Grid`를 사용합니다.
+
+## 기본 사용
+
+```tsx twoslash
+// @errors: 2686
+import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
+
+type Row = { name: string; age: number };
+const helper = createColumnHelper<Row>();
+const columns = [
+  helper.accessor("name", { header: "Name", size: 200 }),
+  helper.accessor("age", { header: "Age", size: 100 }),
+];
+const data: Row[] = [
+  { name: "Alice", age: 30 },
+  { name: "Bob", age: 25 },
+];
+
+function App() {
+  return <Grid data={data} columns={columns} width={600} height={400} />;
+}
+```
+
+## Grid props
+
+| Prop           | Type                        | 기본값 | 설명                    |
+| -------------- | --------------------------- | ------ | ----------------------- |
+| `data`         | `Record<string, unknown>[]` | 필수   | 행 데이터(객체 배열)    |
+| `columns`      | `ColumnDef[]`               | 필수   | 컬럼 정의               |
+| `width`        | `number`                    | 필수   | 캔버스 너비(px)         |
+| `height`       | `number`                    | 필수   | 캔버스 높이(px)         |
+| `rowHeight`    | `number`                    | `36`   | 행 높이(px)             |
+| `headerHeight` | `number`                    | `40`   | 헤더 행 높이(px)        |
+| `theme`        | `Partial<Theme>`            | -      | 테마 오버라이드         |
+| `children`     | `ReactNode`                 | -      | `columns`가 있으면 무시 |
+
+## ColumnDef (객체 기반 컬럼)
+
+| Prop         | Type                                    | 설명                 |
+| ------------ | --------------------------------------- | -------------------- |
+| `id`         | `string`                                | 컬럼 키              |
+| `width`      | `number`                                | 너비(px)             |
+| `minWidth`   | `number`                                | 최소 너비            |
+| `maxWidth`   | `number`                                | 최대 너비            |
+| `flexGrow`   | `number`                                | flex grow            |
+| `flexShrink` | `number`                                | flex shrink          |
+| `header`     | `string`                                | 헤더 라벨            |
+| `align`      | `"left" \| "center" \| "right"`         | 셀 정렬              |
+| `sortable`   | `boolean`                               | 헤더 정렬 사용       |
+| `editor`     | `"text" \| "number" \| "select"`        | 셀 에디터 타입       |
+| `render`     | `(value: unknown) => RenderInstruction` | 커스텀 셀 인스트럭션 |
+
+## 커스텀 셀 렌더링 (render prop)
+
+컬럼의 `render`(또는 JSX children)에서 **RenderInstruction**(예: `text`, `badge`, `flex`)을 반환하면 캔버스 렌더러가 그에 맞게 그립니다.
+
+```tsx twoslash
+// @errors: 2686 7006 2322
+import { Grid, type ColumnDef } from "@ohah/react-wasm-table";
+
+const columns: ColumnDef[] = [
+  { id: "name", accessorKey: "name", size: 200, header: "Name" },
+  {
+    id: "status",
+    accessorKey: "status",
+    size: 120,
+    header: "Status",
+    cell: (info) => {
+      const value = info.getValue();
+      return {
+        type: "badge",
+        value: String(value),
+        style: {
+          color: value === "active" ? "#065f46" : "#374151",
+          backgroundColor: value === "active" ? "#d1fae5" : "#f3f4f6",
+        },
+      };
+    },
+  },
+];
+
+const data = [
+  { id: 1, name: "Alice", status: "active" },
+  { id: 2, name: "Bob", status: "inactive" },
+];
+
+function App() {
+  return <Grid data={data} columns={columns} width={500} height={400} />;
+}
+```
+
+## 정렬과 필터
+
+- **정렬**: 컬럼에 `sortable: true` 설정. 헤더 클릭으로 none → asc → desc → none 순환. 상태는 내부(ref)라 스크롤이 빠르게 유지됩니다.
+- **필터**: `columnFilters` / `onColumnFiltersChange`(제어) 또는 `initialState.columnFilters`(비제어). 전역 필터: `globalFilter` / `onGlobalFilterChange`.
+
+셀용 지원 인스트럭션 타입: `text`, `badge`, `flex`, `box`, `stack`, `sparkline` 및 스텁. 자세한 내용은 [캔버스 컴포넌트](/ko/guide/canvas-components)를 참고하세요.

@@ -54,7 +54,15 @@ export function TanStackSelection() {
         shouldn't trigger selection.
       </p>
 
-      <div style={{ marginBottom: 16, display: "flex", gap: 24, alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          alignItems: "flex-start",
+        }}
+      >
         <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <input
             type="checkbox"
@@ -84,7 +92,7 @@ export function TanStackSelection() {
           <Table
             table={table}
             width={800}
-            height={340}
+            height={480}
             enableSelection={gridEnabled}
             selection={selection}
             onSelectionChange={setSelection}

@@ -194,7 +194,7 @@ export function ColumnDnDAndRowPinningDemo() {
         <Grid
           data={data}
           width={700}
-          height={380}
+          height={500}
           columns={columnDefs}
           sorting={sorting}
           onSortingChange={setSorting}

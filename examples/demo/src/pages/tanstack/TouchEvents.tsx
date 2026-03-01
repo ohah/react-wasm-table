@@ -123,7 +123,7 @@ export function TanStackTouchEvents() {
         <Table
           table={table}
           width={560}
-          height={340}
+          height={480}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
@@ -152,7 +152,7 @@ export function TanStackTouchEvents() {
         <div
           style={{
             flex: 1,
-            maxHeight: 340,
+            maxHeight: 480,
             overflowY: "auto",
             background: "#1e1e1e",
             color: "#d4d4d4",
@@ -178,7 +178,7 @@ export function TanStackTouchEvents() {
 <Table
   table={table}
   width={560}
-  height={340}
+  height={480}
   onTouchStart={onTouchStart}
   onTouchMove={onTouchMove}
   onTouchEnd={onTouchEnd}

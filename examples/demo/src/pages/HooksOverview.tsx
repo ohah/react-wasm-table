@@ -47,7 +47,7 @@ export function HooksOverview() {
 
       <h2 style={{ marginTop: 32 }}>Demo Pages</h2>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
         <DemoCard
           to="/hooks/sorting"
           title="useSorting"

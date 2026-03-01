@@ -139,7 +139,7 @@ export function TanStackLayer() {
         useReactTable + Table with layers prop (header, data, gridLines, rowHighlight, selection,
         watermark).
       </p>
-      <div style={{ display: "flex", gap: 24 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         <div style={{ minWidth: 180 }}>
           {toggles.map((t) => (
             <label
@@ -160,7 +160,7 @@ export function TanStackLayer() {
         <Table
           table={table}
           width={560}
-          height={400}
+          height={520}
           layers={activeLayers}
           selection={selection}
           onSelectionChange={setSelection}
@@ -198,7 +198,7 @@ export function TanStackLayer() {
   return layers;
 }, [enabledSet]);
 
-<Table table={table} width={560} height={400} layers={activeLayers} selection={selection} onSelectionChange={setSelection}>
+<Table table={table} width={560} height={520} layers={activeLayers} selection={selection} onSelectionChange={setSelection}>
   <Thead>
     {table.getHeaderGroups().map((hg) => (
       <Tr key={hg.id}>

@@ -1,0 +1,5 @@
+[
+  { "type": "file", "name": "getting-started", "label": "Getting Started" },
+  { "type": "file", "name": "architecture", "label": "Architecture" },
+  { "type": "file", "name": "canvas-components", "label": "Canvas Components" }
+]

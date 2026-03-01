@@ -260,14 +260,14 @@ export function EventCallbacks() {
         {`/>`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
             <Grid
               data={data}
               width={560}
-              height={340}
+              height={480}
               columns={columns}
               sorting={sorting}
               onSortingChange={setSorting}
@@ -291,7 +291,7 @@ export function EventCallbacks() {
         <div
           style={{
             flex: 1,
-            maxHeight: 340,
+            maxHeight: 480,
             overflowY: "auto",
             background: "#1e1e1e",
             color: "#d4d4d4",
@@ -344,7 +344,16 @@ export function EventCallbacks() {
         </div>
       </div>
 
-      <div style={{ marginTop: 16, display: "flex", gap: 24, fontSize: 13, color: "#555" }}>
+      <div
+        style={{
+          marginTop: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          fontSize: 13,
+          color: "#555",
+        }}
+      >
         <div>
           <strong>Sorting:</strong>{" "}
           {sorting.length > 0 ? `${sorting[0]!.id} (${sorting[0]!.desc ? "desc" : "asc"})` : "none"}

@@ -111,12 +111,12 @@ export function TanStackHookComposition() {
       <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
         useReactTable + Table. Sorting, selection, event callbacks.
       </p>
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <Table
             table={table}
             width={580}
-            height={450}
+            height={560}
             selection={selection}
             onSelectionChange={setSelection}
             onCellClick={() => logEvent("onCellClick", "cell")}
@@ -180,7 +180,7 @@ export function TanStackHookComposition() {
               background: "#f9f9f9",
               borderRadius: 4,
               fontSize: 12,
-              maxHeight: 200,
+              maxHeight: 320,
               overflowY: "auto",
             }}
           >
@@ -207,7 +207,7 @@ const table = useReactTable({
 <Table
   table={table}
   width={560}
-  height={340}
+  height={480}
   selection={selection}
   onSelectionChange={setSelection}
   onCellClick={() => logEvent("onCellClick", "cell")}

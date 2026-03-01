@@ -5,6 +5,7 @@ const sections = [
   {
     title: "Basic",
     links: [
+      { to: "/benchmark", label: "Benchmark" },
       { to: "/", label: "Home (50k rows)" },
       { to: "/stress-test", label: "Stress Test (1M rows)" },
       { to: "/tanstack-api", label: "TanStack API" },

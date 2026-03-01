@@ -191,14 +191,14 @@ export function ClipboardDemo() {
         </label>
       </div>
 
-      <div style={{ display: "flex", gap: 24 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
             <Grid
               data={data}
               width={560}
-              height={320}
+              height={460}
               columns={columns}
               sorting={sorting}
               onSortingChange={setSorting}

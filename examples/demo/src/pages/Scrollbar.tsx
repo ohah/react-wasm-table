@@ -98,7 +98,7 @@ export function Scrollbar() {
           <Grid
             data={largeData}
             width={550}
-            height={400}
+            height={520}
             overflowY={overflowY}
             columns={smallColumns}
           />
@@ -108,7 +108,7 @@ export function Scrollbar() {
           <CssGrid
             data={largeData}
             width={550}
-            height={400}
+            height={520}
             overflowY={overflowY}
             columns={smallColumns}
           />
@@ -124,14 +124,14 @@ export function Scrollbar() {
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
-          <Grid data={smallData} width={550} height={400} overflowY="auto" columns={smallColumns} />
+          <Grid data={smallData} width={550} height={520} overflowY="auto" columns={smallColumns} />
         </div>
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
           <CssGrid
             data={smallData}
             width={550}
-            height={400}
+            height={520}
             overflowY="auto"
             columns={smallColumns}
           />
@@ -149,7 +149,7 @@ export function Scrollbar() {
           <Grid
             data={smallData}
             width={550}
-            height={400}
+            height={520}
             overflowY="scroll"
             columns={smallColumns}
           />
@@ -159,7 +159,7 @@ export function Scrollbar() {
           <CssGrid
             data={smallData}
             width={550}
-            height={400}
+            height={520}
             overflowY="scroll"
             columns={smallColumns}
           />
@@ -175,7 +175,7 @@ export function Scrollbar() {
           <Grid
             data={largeData}
             width={600}
-            height={400}
+            height={520}
             overflowY={overflowY}
             columns={manyColumns}
           />
@@ -185,7 +185,7 @@ export function Scrollbar() {
           <CssGrid
             data={largeData}
             width={600}
-            height={400}
+            height={520}
             overflowY={overflowY}
             columns={manyColumns}
           />

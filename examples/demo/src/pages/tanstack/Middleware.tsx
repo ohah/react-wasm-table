@@ -241,11 +241,11 @@ export function TanStackMiddleware() {
         {`<Table eventMiddleware={middleware} ...>\n  <Thead>...</Thead>\n  <Tbody>...</Tbody>\n</Table>`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-            <Table table={table} width={560} height={340} eventMiddleware={middleware}>
+            <Table table={table} width={560} height={480} eventMiddleware={middleware}>
               <Thead>
                 {table.getHeaderGroups().map((hg) => (
                   <Tr key={hg.id}>
@@ -277,7 +277,7 @@ export function TanStackMiddleware() {
         <div
           style={{
             flex: 1,
-            maxHeight: 340,
+            maxHeight: 480,
             overflowY: "auto",
             background: "#1e1e1e",
             color: "#d4d4d4",

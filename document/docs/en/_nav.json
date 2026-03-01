@@ -1,0 +1,6 @@
+[
+  { "text": "Guide", "link": "/guide/getting-started", "activeMatch": "^/guide/" },
+  { "text": "Benchmark", "link": "/benchmark", "activeMatch": "^/benchmark" },
+  { "text": "UI", "link": "/guide/canvas-components", "activeMatch": "^/guide/canvas-components" },
+  { "text": "API", "link": "/api/table", "activeMatch": "^/api/" }
+]

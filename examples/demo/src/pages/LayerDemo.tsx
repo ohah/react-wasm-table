@@ -144,7 +144,7 @@ export function LayerDemo() {
         <code>"viewport"</code> for screen coords), and a <code>draw()</code> method.
       </p>
 
-      <div style={{ display: "flex", gap: 24 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         {/* Controls */}
         <div style={{ minWidth: 200 }}>
           <h3 style={{ margin: "0 0 8px", fontSize: 14 }}>Toggle Layers</h3>
@@ -193,7 +193,7 @@ export function LayerDemo() {
           <Grid
             data={data as any}
             width={600}
-            height={400}
+            height={520}
             columns={columns}
             sorting={sorting}
             onSortingChange={setSorting}

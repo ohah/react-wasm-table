@@ -203,7 +203,7 @@ export function TanStackColumnDnDAndRowPinning() {
         <Table
           table={table}
           width={700}
-          height={380}
+          height={500}
           enableColumnDnD
           columnOrder={columnOrder}
           onColumnOrderChange={setColumnOrder}
@@ -265,7 +265,7 @@ const table = useReactTable({
   onRowPinningChange: setRowPinning,
 });
 
-<Table table={table} width={560} height={340} enableColumnDnD rowPinning={rowPinning} getRowId={getRowId}>
+<Table table={table} width={560} height={480} enableColumnDnD rowPinning={rowPinning} getRowId={getRowId}>
   <Thead>
     {table.getHeaderGroups().map((hg) => (
       <Tr key={hg.id}>

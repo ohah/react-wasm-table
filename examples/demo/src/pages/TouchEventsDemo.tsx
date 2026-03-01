@@ -167,14 +167,14 @@ export function TouchEventsDemo() {
         {`/>`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
             <Grid
               data={data}
               width={560}
-              height={340}
+              height={480}
               columns={columns}
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
@@ -188,7 +188,7 @@ export function TouchEventsDemo() {
         <div
           style={{
             flex: 1,
-            maxHeight: 340,
+            maxHeight: 480,
             overflowY: "auto",
             background: "#1e1e1e",
             color: "#d4d4d4",

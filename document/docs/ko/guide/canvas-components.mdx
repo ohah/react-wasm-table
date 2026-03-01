@@ -1,0 +1,105 @@
+# 캔버스 컴포넌트
+
+셀 내용은 **렌더 인스트럭션**으로 표현합니다. 아래 컴포넌트는 **지원됨**(캔버스에 완전히 그려짐); 나머지는 추후 구현 예정 스텁입니다.
+
+## 지원 컴포넌트
+
+| 컴포넌트      | 설명                                               | 주요 props                                                                       |
+| ------------- | -------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Text**      | 한 줄 텍스트                                       | `value`, `style?`, `color?`, `fontWeight?`, `fontSize?`                          |
+| **Badge**     | 배경이 있는 pill/chip                              | `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`                 |
+| **Flex**      | Taffy 호환 flex 컨테이너; 자식 레이아웃 및 그리기  | `children`, `style?`, `flexDirection?`, `gap?`, `alignItems?`, `justifyContent?` |
+| **Box**       | 패딩, 마진, 테두리; 자식은 콘텐츠 영역에 세로 스택 | `children?`, `style?`, `padding?`, `margin?`, `borderWidth?`, `backgroundColor?` |
+| **Stack**     | gap이 있는 행/열 레이아웃                          | `children?`, `direction?` ("row" \| "column"), `gap?`, `style?`                  |
+| **Sparkline** | `data`(number[])로 그리는 인라인 미니 라인 차트    | `data`, `style?`, `color?`, `strokeWidth?`, `variant?` ("line" \| "area")        |
+
+모두 선택적 `style` 객체를 지원하며, 개별 props가 동일 키일 때 `style`보다 우선합니다.
+
+## Text와 Badge
+
+```tsx twoslash
+// @errors: 2686 2657
+import React from "react";
+import { Text, Badge } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <>
+    <Text value="Hello" style={{ color: "#333", fontWeight: "bold" }} />
+    <Badge value="active" style={{ backgroundColor: "#d1fae5", color: "#065f46" }} />
+  </>
+);
+```
+
+## Flex (Taffy 레이아웃)
+
+Flex는 레이아웃 엔진과 동일한 스타일 표면을 사용합니다: `flexDirection`, `gap`, `alignItems`, `justifyContent`, `padding`, `margin`, `borderWidth`, `boxSizing` 등.
+
+```tsx twoslash
+// @errors: 2686
+import React from "react";
+import { Flex, Text, Badge } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <Flex flexDirection="row" gap={8} alignItems="center">
+    <Text value="Name" />
+    <Badge value="New" />
+  </Flex>
+);
+```
+
+개별 props가 `style`을 덮어씁니다:
+
+```tsx twoslash
+// @errors: 2686 2741
+import React from "react";
+import { Flex, Text } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <Flex style={{ flexDirection: "column", gap: 8 }} flexDirection="row" gap={4}>
+    <Text value="결과: flexDirection = 'row', gap = 4" />
+  </Flex>
+);
+```
+
+## Box와 Stack
+
+- **Box**: padding, margin, border; 자식은 콘텐츠 영역에 세로로 쌓임.
+- **Stack**: `gap`이 있는 row/column; 레이아웃 버퍼에서 오는 padding 없음.
+
+```tsx twoslash
+// @errors: 2686 2657
+import React from "react";
+import { Box, Stack, Text } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <>
+    <Box padding={8} borderWidth={1} borderColor="#eee">
+      <Text value="Inside box" />
+    </Box>
+    <Stack direction="row" gap={8}>
+      <Text value="A" />
+      <Text value="B" />
+    </Stack>
+  </>
+);
+```
+
+## Sparkline
+
+숫자 배열로 인라인 미니 차트. 캔버스에 그려집니다.
+
+```tsx twoslash
+// @errors: 2686 2657
+import React from "react";
+import { Sparkline } from "@ohah/react-wasm-table";
+
+const series = [10, 20, 15, 30, 25, 40];
+
+export const Example = () => (
+  <Sparkline data={series} variant="line" color="#2563eb" strokeWidth={2} />
+);
+```
+
+## 스텁 컴포넌트 (예정)
+
+JSX에서 사용 가능하지만 렌더러는 플레이스홀더만 그립니다(예: `[ProgressBar]`): Rating, Icon, Image, Avatar, Tag, Chip, Link, Color, ProgressBar, Input, NumberInput, Select, Checkbox, Switch, DatePicker, Dropdown. 실제 렌더러 추가 시를 위해 `style` 등 props를 받습니다.

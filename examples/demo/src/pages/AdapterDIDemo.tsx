@@ -107,13 +107,13 @@ export function AdapterDIDemo() {
 <Grid data={data} columns={columns} />`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>Grid A</div>
           <Grid
             data={data}
             width={460}
-            height={280}
+            height={520}
             columns={columns}
             {...(useDI ? { eventManager, selectionManager, editorManager } : {})}
           />
@@ -123,7 +123,7 @@ export function AdapterDIDemo() {
           <Grid
             data={data}
             width={460}
-            height={200}
+            height={480}
             columns={columns}
             {...(useDI ? { selectionManager } : {})}
           />

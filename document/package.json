@@ -9,7 +9,9 @@
     "preview": "rspress preview"
   },
   "dependencies": {
+    "@ohah/react-wasm-table": "workspace:*",
     "@rspress/core": "latest",
+    "demo": "workspace:*",
     "react": "latest",
     "react-dom": "latest"
   },

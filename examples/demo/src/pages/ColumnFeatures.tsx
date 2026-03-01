@@ -340,7 +340,7 @@ export function ColumnFeatures() {
         <Grid
           data={data}
           width={600}
-          height={360}
+          height={500}
           columns={columnDefs}
           columnOrder={columnOrder}
           onColumnOrderChange={setColumnOrder}

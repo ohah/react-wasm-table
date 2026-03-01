@@ -14,7 +14,7 @@
     "build": "bun run build:wasm && bun run build:lib",
     "dev:demo": "bun run --filter demo dev",
     "dev:docs": "bun run --filter document dev",
-    "docs:build": "bun run --filter document build",
+    "docs:build": "cp packages/grid/wasm/react_wasm_table_wasm_bg.wasm packages/grid/dist/ 2>/dev/null || true && bun run --filter document build",
     "test": "bun test packages/",
     "test:e2e": "cd e2e && bunx playwright test",
     "test:rust": "cargo test --workspace",

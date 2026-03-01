@@ -1,0 +1,30 @@
+# Benchmark
+
+import { Benchmark } from "demo";
+
+We provide a **side-by-side benchmark** with the same data and column schema so you can compare performance.
+
+## What we compare
+
+|           | react-wasm-table                            | @tanstack/react-table         |
+| --------- | ------------------------------------------- | ----------------------------- |
+| Rendering | Canvas (WASM)                               | DOM + @tanstack/react-virtual |
+| Rows      | Full dataset in memory, virtualized by core | Virtualized rows in DOM       |
+| Same data | ✓ `generateEmployees(N)`                    | ✓ Same                        |
+
+## Metrics
+
+- **Initial render (ms)** — Time from data set to first paint (lower is better).
+- **Scroll FPS** — While scrolling, the demo page shows a global FPS counter; compare smoothness between the two grids.
+
+## Run the benchmark
+
+Choose a row count (10K–1M) and click **벤치마크 실행** to load the same data into both tables and see the measured initial render times.
+
+<Benchmark />
+
+## Why it's fast
+
+- **Canvas** — No DOM nodes per cell; one canvas draws all visible content.
+- **Rust/WASM** — Layout (Taffy), hit-testing, and scroll math run in WebAssembly.
+- **Virtualization** — Only visible rows are laid out and drawn; the rest stay in JS memory.

@@ -1,0 +1,106 @@
+# Canvas components
+
+Cell content is described with **render instructions**. The following components are **supported** (fully drawn on canvas); others are stubs (placeholder) for future use.
+
+## Supported components
+
+| Component     | Description                                                                   | Main props                                                                       |
+| ------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Text**      | Single-line text                                                              | `value`, `style?`, `color?`, `fontWeight?`, `fontSize?`                          |
+| **Badge**     | Pill/chip with background                                                     | `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`                 |
+| **Flex**      | Taffy-compatible flex container; lays out and draws children                  | `children`, `style?`, `flexDirection?`, `gap?`, `alignItems?`, `justifyContent?` |
+| **Box**       | Container: padding, margin, border; children in content rect (vertical stack) | `children?`, `style?`, `padding?`, `margin?`, `borderWidth?`, `backgroundColor?` |
+| **Stack**     | Row or column layout with gap                                                 | `children?`, `direction?` ("row" \| "column"), `gap?`, `style?`                  |
+| **Sparkline** | Inline mini line chart from `data` (number[])                                 | `data`, `style?`, `color?`, `strokeWidth?`, `variant?` ("line" \| "area")        |
+
+All support an optional `style` object; individual props override `style` when both are set.
+
+## Text and Badge
+
+```tsx twoslash
+// @errors: 2686 2657
+import React from "react";
+import { Text, Badge } from "@ohah/react-wasm-table";
+
+// In a column render or as children of Flex/Box:
+export const Example = () => (
+  <>
+    <Text value="Hello" style={{ color: "#333", fontWeight: "bold" }} />
+    <Badge value="active" style={{ backgroundColor: "#d1fae5", color: "#065f46" }} />
+  </>
+);
+```
+
+## Flex (Taffy layout)
+
+Flex accepts the same style surface as the layout engine: `flexDirection`, `gap`, `alignItems`, `justifyContent`, `padding`, `margin`, `borderWidth`, `boxSizing`, etc.
+
+```tsx twoslash
+// @errors: 2686
+import React from "react";
+import { Flex, Text, Badge } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <Flex flexDirection="row" gap={8} alignItems="center">
+    <Text value="Name" />
+    <Badge value="New" />
+  </Flex>
+);
+```
+
+Individual props override `style`:
+
+```tsx twoslash
+// @errors: 2686 2741
+import React from "react";
+import { Flex, Text } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <Flex style={{ flexDirection: "column", gap: 8 }} flexDirection="row" gap={4}>
+    <Text value="Result: flexDirection = 'row', gap = 4" />
+  </Flex>
+);
+```
+
+## Box and Stack
+
+- **Box**: Padding, margin, border; children stacked vertically in the content rect.
+- **Stack**: Row or column with `gap`; no padding from layout buffer.
+
+```tsx twoslash
+// @errors: 2686 2657
+import React from "react";
+import { Box, Stack, Text } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <>
+    <Box padding={8} borderWidth={1} borderColor="#eee">
+      <Text value="Inside box" />
+    </Box>
+    <Stack direction="row" gap={8}>
+      <Text value="A" />
+      <Text value="B" />
+    </Stack>
+  </>
+);
+```
+
+## Sparkline
+
+Inline mini chart from a numeric array. Drawn on canvas.
+
+```tsx twoslash
+// @errors: 2686 2657
+import React from "react";
+import { Sparkline } from "@ohah/react-wasm-table";
+
+const series = [10, 20, 15, 30, 25, 40];
+
+export const Example = () => (
+  <Sparkline data={series} variant="line" color="#2563eb" strokeWidth={2} />
+);
+```
+
+## Stub components (planned)
+
+These are exported and usable in JSX but the renderer only draws a placeholder (e.g. `[ProgressBar]`): Rating, Icon, Image, Avatar, Tag, Chip, Link, Color, ProgressBar, Input, NumberInput, Select, Checkbox, Switch, DatePicker, Dropdown. They accept `style` and other props for when real renderers are added.

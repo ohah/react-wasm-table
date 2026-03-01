@@ -1,0 +1,15 @@
+# Overview
+
+The pages in this section mirror the **demo app** (`examples/demo`) and are rendered from the **`demo`** workspace package. Use the sidebar to open each example; each page shows the same component as in the demo app.
+
+## Use as a package
+
+```ts
+// package.json
+"dependencies": { "demo": "workspace:*" }
+
+// In your component or MDX
+import { Home, Selection, generateEmployees, useContainerSize } from "demo";
+```
+
+All demo pages and shared utils are exported from `demo`.

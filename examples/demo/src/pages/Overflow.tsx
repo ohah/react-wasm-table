@@ -89,7 +89,7 @@ export function Overflow() {
           <Grid
             data={data}
             width={800}
-            height={400}
+            height={520}
             overflowX={overflowXValue}
             overflowY={overflowYValue}
             columns={columns}
@@ -101,7 +101,7 @@ export function Overflow() {
           <CssGrid
             data={data}
             width={800}
-            height={400}
+            height={520}
             overflowX={overflowXValue}
             overflowY={overflowYValue}
             columns={columns}
