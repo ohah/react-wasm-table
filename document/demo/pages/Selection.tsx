@@ -55,7 +55,15 @@ export function Selection() {
         </label>
       </div>
 
-      <pre style={{ background: "var(--demo-code-bg)", color: "var(--demo-code-fg)", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`<Grid enableSelection={${gridEnabled}} ...>\n`}
         {`  helper.accessor("salary", { enableSelection: ${salaryEnabled} })`}
       </pre>

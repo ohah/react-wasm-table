@@ -138,7 +138,13 @@ export function TanStackTdContent() {
         needed for rendering &mdash; the column definition drives the canvas output.
       </p>
       <ul
-        style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 12, paddingLeft: 20, lineHeight: 1.6 }}
+        style={{
+          fontSize: 12,
+          color: "var(--demo-muted-4)",
+          marginBottom: 12,
+          paddingLeft: 20,
+          lineHeight: 1.6,
+        }}
       >
         <li>
           <strong>Name</strong>: bold blue when score &ge; 90 (<code>row.original.score</code>)

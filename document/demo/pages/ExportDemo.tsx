@@ -133,7 +133,9 @@ export function ExportDemo() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
           {/* Format selector */}
           <div>
-            <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 4 }}>Format</div>
+            <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 4 }}>
+              Format
+            </div>
             <div style={{ display: "flex", gap: 8 }}>
               {(["csv", "tsv", "json"] as const).map((f) => (
                 <button

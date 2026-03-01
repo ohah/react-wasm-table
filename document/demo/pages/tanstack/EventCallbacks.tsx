@@ -314,7 +314,9 @@ export function TanStackEventCallbacks() {
               Clear
             </button>
           </div>
-          {log.length === 0 && <div style={{ color: "var(--demo-muted)" }}>Click cells or headers...</div>}
+          {log.length === 0 && (
+            <div style={{ color: "var(--demo-muted)" }}>Click cells or headers...</div>
+          )}
           {log.map((entry) => (
             <div key={entry.id} style={{ marginBottom: 2 }}>
               <span style={{ color: entry.blocked ? "#f44" : "#4ec9b0" }}>
@@ -333,7 +335,15 @@ export function TanStackEventCallbacks() {
         </div>
       </div>
 
-      <div style={{ marginTop: 16, display: "flex", gap: 24, fontSize: 13, color: "var(--demo-muted-2)" }}>
+      <div
+        style={{
+          marginTop: 16,
+          display: "flex",
+          gap: 24,
+          fontSize: 13,
+          color: "var(--demo-muted-2)",
+        }}
+      >
         <div>
           <strong>Sorting:</strong>{" "}
           {sorting.length > 0 ? `${sorting[0]!.id} (${sorting[0]!.desc ? "desc" : "asc"})` : "none"}

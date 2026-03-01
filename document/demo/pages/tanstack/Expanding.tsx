@@ -168,7 +168,12 @@ export function TanStackExpanding() {
 
       {/* Tree table */}
       <div
-        style={{ border: "1px solid var(--demo-border)", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}
+        style={{
+          border: "1px solid var(--demo-border)",
+          borderRadius: 6,
+          overflow: "hidden",
+          marginBottom: 20,
+        }}
       >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -183,7 +188,12 @@ export function TanStackExpanding() {
               <tr
                 key={row.id}
                 style={{
-                  background: row.depth === 0 ? "var(--demo-card-bg)" : row.depth === 1 ? "var(--demo-panel-bg)" : "var(--demo-code-bg)",
+                  background:
+                    row.depth === 0
+                      ? "var(--demo-card-bg)"
+                      : row.depth === 1
+                        ? "var(--demo-panel-bg)"
+                        : "var(--demo-code-bg)",
                 }}
               >
                 <td style={tdStyle}>
@@ -203,7 +213,11 @@ export function TanStackExpanding() {
                         {row.getIsExpanded() ? "▼" : "▶"}
                       </button>
                     ) : (
-                      <span style={{ padding: "0 4px", fontSize: 14, color: "var(--demo-border-2)" }}>•</span>
+                      <span
+                        style={{ padding: "0 4px", fontSize: 14, color: "var(--demo-border-2)" }}
+                      >
+                        •
+                      </span>
                     )}
                     {row.original.name}
                   </span>

@@ -52,7 +52,15 @@ export function Padding() {
         </label>
       </div>
 
-      <pre style={{ background: "var(--demo-code-bg)", color: "var(--demo-code-fg)", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`helper.accessor("name", { size: 180, padding: ${cellPad} })
 helper.accessor("dept", { size: 120, padding: ${cellPad} })
 

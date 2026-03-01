@@ -180,7 +180,9 @@ export function TanStackOnAfterDraw() {
             ))}
           </Tbody>
         </Table>
-        <div style={{ padding: 12, background: "var(--demo-panel-bg)", borderRadius: 4, fontSize: 13 }}>
+        <div
+          style={{ padding: 12, background: "var(--demo-panel-bg)", borderRadius: 4, fontSize: 13 }}
+        >
           <strong>Draw count:</strong> {drawCount}
         </div>
       </div>

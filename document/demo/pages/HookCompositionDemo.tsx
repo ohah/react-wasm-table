@@ -223,13 +223,17 @@ export function HookCompositionDemo() {
                 <div>Total: ${selectionSummary.totalSalary.toLocaleString()}</div>
               </>
             ) : (
-              <span style={{ color: "var(--demo-muted-5)" }}>No selection — click and drag cells</span>
+              <span style={{ color: "var(--demo-muted-5)" }}>
+                No selection — click and drag cells
+              </span>
             )}
           </Panel>
 
           {/* Event log */}
           <Panel title="Event Log" flex>
-            {events.length === 0 && <span style={{ color: "var(--demo-muted-5)" }}>Interact with grid...</span>}
+            {events.length === 0 && (
+              <span style={{ color: "var(--demo-muted-5)" }}>Interact with grid...</span>
+            )}
             {events.map((e) => (
               <div key={e.id} style={{ marginBottom: 1 }}>
                 <span style={{ color: "var(--demo-muted-4)" }}>{e.time}</span>{" "}

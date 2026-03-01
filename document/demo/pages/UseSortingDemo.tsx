@@ -94,7 +94,11 @@ export function UseSortingDemo() {
               <select
                 value={maxColumns}
                 onChange={(e) => setMaxColumns(Number(e.target.value))}
-                style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid var(--demo-border-2)" }}
+                style={{
+                  padding: "2px 8px",
+                  borderRadius: 4,
+                  border: "1px solid var(--demo-border-2)",
+                }}
               >
                 <option value={0}>No limit</option>
                 <option value={1}>Max 1</option>

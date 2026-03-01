@@ -178,7 +178,9 @@ export function OnAfterDrawDemo() {
           <div>
             <code>dataRowCount</code>: total rows
           </div>
-          <hr style={{ margin: "8px 0", border: "none", borderTop: "1px solid var(--demo-border)" }} />
+          <hr
+            style={{ margin: "8px 0", border: "none", borderTop: "1px solid var(--demo-border)" }}
+          />
           <div>
             <strong>Draw count:</strong> {drawCount}
           </div>
