@@ -167,13 +167,12 @@ export function GroupingDemo() {
         </div>
       </div>
 
-      {/* Canvas Grid */}
+      {/* Canvas Grid — shows raw data; grouped model info displayed below */}
       <Grid
-        table={table}
         data={rawData as unknown as Record<string, unknown>[]}
         columns={columns}
         width={800}
-        height={520}
+        height={400}
         overflowY="scroll"
       />
 

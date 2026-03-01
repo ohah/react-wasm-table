@@ -119,10 +119,9 @@ export function FacetedDemo() {
         </span>
       </div>
 
-      {/* Canvas Grid showing the raw data */}
+      {/* Canvas Grid — shows raw data; faceted statistics displayed below */}
       <div style={{ marginBottom: 20 }}>
         <Grid
-          table={table}
           data={rawData as unknown as Record<string, unknown>[]}
           columns={columns}
           width={800}
