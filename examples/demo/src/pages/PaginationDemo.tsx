@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   Grid,
   createColumnHelper,
@@ -111,6 +111,12 @@ export function PaginationDemo() {
   const model = table.getPaginationRowModel();
   const pageCount = table.getPageCount();
 
+  // Extract current page data for canvas Grid (Grid renders all data it receives)
+  const pageData = useMemo(
+    () => model.rows.map((row) => row.original) as unknown as Record<string, unknown>[],
+    [model.rows],
+  );
+
   return (
     <>
       <h1>Pagination Row Model</h1>
@@ -174,14 +180,12 @@ export function PaginationDemo() {
         </div>
       </div>
 
-      {/* Canvas Grid */}
+      {/* Canvas Grid — receives only current page data */}
       <Grid
-        table={table}
-        data={rawData as unknown as Record<string, unknown>[]}
+        data={pageData}
         columns={columns}
         width={800}
         height={Math.min(pagination.pageSize * 36 + 40, 520)}
-        overflowY="scroll"
       />
 
       {/* State display */}
