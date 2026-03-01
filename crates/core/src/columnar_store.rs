@@ -184,7 +184,7 @@ impl ColumnarStore {
     }
 
     /// Set pagination state. Marks view dirty.
-    pub fn set_pagination(&mut self, page_index: Option<u32>, page_size: Option<u32>) {
+    pub const fn set_pagination(&mut self, page_index: Option<u32>, page_size: Option<u32>) {
         self.page_index = page_index;
         self.page_size = page_size;
         self.view_dirty = true;
