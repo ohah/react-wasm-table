@@ -1,12 +1,22 @@
 import { useState, useCallback } from "react";
 import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  flexRender,
   createColumnHelper,
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
+  Text,
+  Badge,
   type PaginationState,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
+import { useContainerSize } from "../../useContainerSize";
 
 // ── Data ──────────────────────────────────────────────────────────
 
@@ -24,15 +34,38 @@ const rawData = generateEmployees(200) as unknown as Employee[];
 const helper = createColumnHelper<Employee>();
 
 const columns = [
-  helper.accessor("id", { header: "#", size: 60, align: "right" }),
-  helper.accessor("name", { header: "Name", size: 180 }),
-  helper.accessor("department", { header: "Department", size: 140 }),
-  helper.accessor("title", { header: "Title", size: 180 }),
-  helper.accessor("salary", { header: "Salary", size: 120, align: "right" }),
+  helper.accessor("id", { header: "#", size: 60, align: "right", padding: [0, 8] }),
+  helper.accessor("name", { header: "Name", size: 180, padding: [0, 8] }),
+  helper.accessor("department", {
+    header: "Department",
+    size: 140,
+    padding: [0, 8],
+    cell: (info) => (
+      <Badge value={info.getValue()} color="#333" backgroundColor="#e0e0e0" borderRadius={4} />
+    ),
+  }),
+  helper.accessor("title", { header: "Title", size: 180, padding: [0, 8] }),
+  helper.accessor("salary", {
+    header: "Salary",
+    size: 120,
+    align: "right",
+    padding: [0, 8],
+    cell: (info) => <Text value={`$${info.getValue().toLocaleString()}`} fontWeight="bold" />,
+  }),
   helper.accessor((row) => (row.isActive ? "Active" : "Inactive"), {
     id: "status",
     header: "Status",
     size: 100,
+    align: "center",
+    padding: [0, 8],
+    cell: (info) => (
+      <Badge
+        value={info.getValue()}
+        color="white"
+        backgroundColor={info.getValue() === "Active" ? "#4caf50" : "#9e9e9e"}
+        borderRadius={4}
+      />
+    ),
   }),
 ];
 
@@ -58,21 +91,6 @@ const sectionStyle: React.CSSProperties = {
   padding: 12,
   background: "#f9f9f9",
   borderRadius: 6,
-};
-
-const thStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  textAlign: "left",
-  borderBottom: "2px solid #ddd",
-  background: "#f5f5f5",
-  fontSize: 13,
-  fontWeight: 600,
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "6px 12px",
-  borderBottom: "1px solid #eee",
-  fontSize: 13,
 };
 
 // ── Component ─────────────────────────────────────────────────────
@@ -101,15 +119,15 @@ export function TanStackPagination() {
 
   const model = table.getPaginationRowModel();
   const pageCount = table.getPageCount();
-
-  const formatSalary = (n: number) => "$" + n.toLocaleString("en-US");
+  const { ref, size } = useContainerSize(Math.min(pagination.pageSize * 36 + 40, 520));
 
   return (
     <>
       <h1>Pagination Row Model</h1>
       <p>
-        Demonstrates <code>getPaginationRowModel</code> with a 200-row dataset. The table shows only
-        the current page while <code>rowCount</code> reflects the total for page calculations.
+        Demonstrates <code>getPaginationRowModel</code> with a 200-row dataset. The canvas grid
+        shows only the current page while <code>rowCount</code> reflects the total for page
+        calculations.
       </p>
 
       {/* Controls */}
@@ -153,9 +171,9 @@ export function TanStackPagination() {
             onChange={(e) => table.setPageSize(Number(e.target.value))}
             style={{ marginLeft: 8, padding: "4px 8px", fontSize: 13, borderRadius: 4 }}
           >
-            {[5, 10, 20, 50].map((size) => (
-              <option key={size} value={size}>
-                Show {size}
+            {[5, 10, 20, 50].map((s) => (
+              <option key={s} value={s}>
+                Show {s}
               </option>
             ))}
           </select>
@@ -166,52 +184,49 @@ export function TanStackPagination() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Canvas Table */}
       <div
-        style={{ border: "1px solid #ddd", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}
+        ref={ref}
+        style={{ width: "100%", height: Math.min(pagination.pageSize * 36 + 40, 520) }}
       >
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th style={{ ...thStyle, width: 60, textAlign: "right" }}>#</th>
-              <th style={{ ...thStyle, width: 180 }}>Name</th>
-              <th style={{ ...thStyle, width: 140 }}>Department</th>
-              <th style={{ ...thStyle, width: 180 }}>Title</th>
-              <th style={{ ...thStyle, width: 120, textAlign: "right" }}>Salary</th>
-              <th style={{ ...thStyle, width: 100 }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {model.rows.map((row) => (
-              <tr key={row.id}>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{row.original.id}</td>
-                <td style={tdStyle}>{row.original.name}</td>
-                <td style={tdStyle}>{row.original.department}</td>
-                <td style={tdStyle}>{row.original.title}</td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>
-                  {formatSalary(row.original.salary)}
-                </td>
-                <td style={tdStyle}>
-                  <span
-                    style={{
-                      padding: "2px 8px",
-                      borderRadius: 10,
-                      fontSize: 11,
-                      background: row.original.isActive ? "#e8f5e9" : "#ffebee",
-                      color: row.original.isActive ? "#2e7d32" : "#c62828",
-                    }}
-                  >
-                    {row.original.isActive ? "Active" : "Inactive"}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {size.width > 0 && (
+          <Table
+            table={table}
+            width={size.width}
+            height={size.height}
+            overflowY="scroll"
+            overflowX="scroll"
+          >
+            <Thead>
+              {table.getHeaderGroups().map((hg) => (
+                <Tr key={hg.id}>
+                  {hg.headers.map((h) => (
+                    <Th key={h.id} colSpan={h.colSpan}>
+                      {h.isPlaceholder
+                        ? null
+                        : flexRender(h.column.columnDef.header, h.getContext())}
+                    </Th>
+                  ))}
+                </Tr>
+              ))}
+            </Thead>
+            <Tbody>
+              {table.getRowModel().rows.map((row) => (
+                <Tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <Td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </Td>
+                  ))}
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        )}
       </div>
 
       {/* State display */}
-      <div style={sectionStyle}>
+      <div style={{ ...sectionStyle, marginTop: 20 }}>
         <strong>Pagination State:</strong>
         <pre style={{ margin: "4px 0 0", fontSize: 12 }}>{JSON.stringify(pagination, null, 2)}</pre>
       </div>

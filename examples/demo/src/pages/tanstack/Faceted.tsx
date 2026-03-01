@@ -1,11 +1,21 @@
 import { useMemo } from "react";
 import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  flexRender,
   createColumnHelper,
   useReactTable,
   getCoreRowModel,
   getFacetedRowModel,
+  Text,
+  Badge,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
+import { useContainerSize } from "../../useContainerSize";
 
 // ── Data ──────────────────────────────────────────────────────────
 
@@ -23,14 +33,43 @@ const rawData = generateEmployees(500) as unknown as Employee[];
 const helper = createColumnHelper<Employee>();
 
 const columns = [
-  helper.accessor("name", { header: "Name", size: 180 }),
-  helper.accessor("department", { header: "Department", size: 140 }),
-  helper.accessor("title", { header: "Title", size: 180 }),
-  helper.accessor("salary", { header: "Salary", size: 120, align: "right" }),
+  helper.accessor("name", { header: "Name", size: 180, padding: [0, 8] }),
+  helper.accessor("department", {
+    header: "Department",
+    size: 140,
+    padding: [0, 8],
+    cell: (info) => (
+      <Badge value={info.getValue()} color="#333" backgroundColor="#e0e0e0" borderRadius={4} />
+    ),
+  }),
+  helper.accessor("title", { header: "Title", size: 180, padding: [0, 8] }),
+  helper.accessor("salary", {
+    header: "Salary",
+    size: 120,
+    align: "right",
+    padding: [0, 8],
+    cell: (info) => (
+      <Text
+        value={`$${info.getValue().toLocaleString()}`}
+        fontWeight="bold"
+        color={info.getValue() > 100000 ? "#2e7d32" : "#333"}
+      />
+    ),
+  }),
   helper.accessor((row) => (row.isActive ? "Active" : "Inactive"), {
     id: "status",
     header: "Status",
     size: 100,
+    align: "center",
+    padding: [0, 8],
+    cell: (info) => (
+      <Badge
+        value={info.getValue()}
+        color="white"
+        backgroundColor={info.getValue() === "Active" ? "#4caf50" : "#9e9e9e"}
+        borderRadius={4}
+      />
+    ),
   }),
 ];
 
@@ -61,6 +100,8 @@ export function TanStackFaceted() {
     state: { sorting: [], columnFilters: [], globalFilter: "" },
   });
 
+  const { ref, size } = useContainerSize(300);
+
   const facetedColumns = ["department", "title", "status", "salary", "name"];
 
   const facetedData = useMemo(() => {
@@ -79,7 +120,7 @@ export function TanStackFaceted() {
       <p>
         Demonstrates <code>getFacetedRowModel</code> which computes per-column statistics: unique
         value counts and min/max for numeric columns. Useful for building filter UIs (dropdowns,
-        range sliders).
+        range sliders). The canvas grid below shows the raw data.
       </p>
 
       <div style={sectionStyle}>
@@ -87,6 +128,44 @@ export function TanStackFaceted() {
           Dataset: <strong>{rawData.length}</strong> employees across{" "}
           <strong>{table.getFacetedUniqueValues("department").size}</strong> departments
         </span>
+      </div>
+
+      {/* Canvas Table showing the raw data */}
+      <div ref={ref} style={{ width: "100%", height: 300, marginBottom: 20 }}>
+        {size.width > 0 && (
+          <Table
+            table={table}
+            width={size.width}
+            height={size.height}
+            overflowY="scroll"
+            overflowX="scroll"
+          >
+            <Thead>
+              {table.getHeaderGroups().map((hg) => (
+                <Tr key={hg.id}>
+                  {hg.headers.map((h) => (
+                    <Th key={h.id} colSpan={h.colSpan}>
+                      {h.isPlaceholder
+                        ? null
+                        : flexRender(h.column.columnDef.header, h.getContext())}
+                    </Th>
+                  ))}
+                </Tr>
+              ))}
+            </Thead>
+            <Tbody>
+              {table.getRowModel().rows.map((row) => (
+                <Tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <Td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </Td>
+                  ))}
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        )}
       </div>
 
       {/* Faceted values per column */}
