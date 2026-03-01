@@ -66,7 +66,7 @@ const ALL_COLUMN_IDS = ["id", "name", "department", "salary", "performanceScore"
 const btnBase: React.CSSProperties = {
   padding: "3px 10px",
   borderRadius: 4,
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   background: "#fff",
   cursor: "pointer",
   fontSize: 12,
@@ -80,7 +80,7 @@ const btnActive: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   marginBottom: 20,
   padding: 12,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 6,
 };
 
@@ -142,7 +142,7 @@ export function TanStackColumnFeatures() {
   const inputStyle: React.CSSProperties = {
     padding: "3px 6px",
     borderRadius: 4,
-    border: "1px solid #ccc",
+    border: "1px solid var(--demo-border-2)",
     fontSize: 12,
     width: 100,
   };
@@ -150,7 +150,7 @@ export function TanStackColumnFeatures() {
   return (
     <>
       <h1>Column Features</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         useReactTable + Table. Order, visibility, sizing, pinning, filtering.
       </p>
 
@@ -314,7 +314,8 @@ const table = useReactTable({
       <pre
         style={{
           marginTop: 16,
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 11,

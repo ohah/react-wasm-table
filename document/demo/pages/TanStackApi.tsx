@@ -273,7 +273,8 @@ export function TanStackApi() {
         <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 14 }}>View Code</summary>
         <pre
           style={{
-            background: "#f5f5f5",
+            background: "var(--demo-code-bg)",
+            color: "var(--demo-code-fg)",
             padding: 12,
             borderRadius: 4,
             fontSize: 12,

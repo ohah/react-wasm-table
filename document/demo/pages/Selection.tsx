@@ -55,7 +55,15 @@ export function Selection() {
         </label>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`<Grid enableSelection={${gridEnabled}} ...>\n`}
         {`  helper.accessor("salary", { enableSelection: ${salaryEnabled} })`}
       </pre>
@@ -78,10 +86,10 @@ export function Selection() {
       <div
         style={{
           padding: 12,
-          background: "#f9f9f9",
+          background: "var(--demo-panel-bg)",
           borderRadius: 4,
           fontSize: 13,
-          color: "#555",
+          color: "var(--demo-muted-2)",
         }}
       >
         <strong>Selection state: </strong>
@@ -90,7 +98,7 @@ export function Selection() {
           : "none"}
       </div>
 
-      <div style={{ marginTop: 24, fontSize: 13, color: "#777", lineHeight: 1.8 }}>
+      <div style={{ marginTop: 24, fontSize: 13, color: "var(--demo-muted-3)", lineHeight: 1.8 }}>
         <p>
           <strong>Grid-level off:</strong> Disables all selection (mouse, keyboard, rendering).
         </p>

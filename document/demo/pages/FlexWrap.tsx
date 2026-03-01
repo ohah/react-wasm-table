@@ -9,7 +9,7 @@ const options: CssFlexWrap[] = ["nowrap", "wrap", "wrap-reverse"];
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
   background: "#fff",
   cursor: "pointer",
@@ -54,14 +54,22 @@ export function FlexWrap() {
         </div>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`<Grid flexWrap="${wrap}" width={500} columns={columns} ...>
   (4 columns × 200px = 800px > 500px container)`}
       </pre>
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
           <Grid data={data} width={500} height={400} flexWrap={wrap} columns={columns} />

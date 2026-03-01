@@ -126,7 +126,7 @@ export function Home() {
       <p>
         Rendering {data.length.toLocaleString()} rows with Canvas + WASM layout
         {sorting.length > 0 && (
-          <span style={{ marginLeft: 8, color: "#666" }}>
+          <span style={{ marginLeft: 8, color: "var(--demo-muted)" }}>
             | Sorted by: {sorting[0]!.id} ({sorting[0]!.desc ? "desc" : "asc"})
           </span>
         )}

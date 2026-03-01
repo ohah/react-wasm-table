@@ -80,7 +80,7 @@ export function TanStackAdapterDI() {
             onClick={clearSelection}
             style={{
               padding: "4px 12px",
-              border: "1px solid #ccc",
+              border: "1px solid var(--demo-border-2)",
               borderRadius: 4,
               cursor: "pointer",
             }}
@@ -122,7 +122,7 @@ export function TanStackAdapterDI() {
         <div
           style={{
             padding: 12,
-            background: "#f9f9f9",
+            background: "var(--demo-panel-bg)",
             borderRadius: 4,
             fontSize: 13,
             minWidth: 220,

@@ -19,7 +19,7 @@ const options: CssJustifyContent[] = [
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
   background: "#fff",
   cursor: "pointer",
@@ -63,14 +63,22 @@ export function JustifyContent() {
         </div>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`<Grid justifyContent="${justify}" width={800} columns={columns} ...>
 // Total column width: 370px < 800px container`}
       </pre>
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
           <Grid data={data} width={800} height={400} justifyContent={justify} columns={columns} />

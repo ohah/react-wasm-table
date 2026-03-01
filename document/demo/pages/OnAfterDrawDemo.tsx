@@ -78,7 +78,7 @@ export function OnAfterDrawDemo() {
                 onClick={() => setMode(m.value)}
                 style={{
                   padding: "4px 12px",
-                  border: "1px solid #ccc",
+                  border: "1px solid var(--demo-border-2)",
                   borderRadius: 4,
                   background: mode === m.value ? "#1976d2" : "#fff",
                   color: mode === m.value ? "#fff" : "#333",
@@ -108,7 +108,8 @@ export function OnAfterDrawDemo() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -138,7 +139,7 @@ export function OnAfterDrawDemo() {
         <div
           style={{
             padding: 12,
-            background: "#f9f9f9",
+            background: "var(--demo-panel-bg)",
             borderRadius: 6,
             border: "1px solid #eee",
             fontSize: 13,
@@ -177,7 +178,9 @@ export function OnAfterDrawDemo() {
           <div>
             <code>dataRowCount</code>: total rows
           </div>
-          <hr style={{ margin: "8px 0", border: "none", borderTop: "1px solid #ddd" }} />
+          <hr
+            style={{ margin: "8px 0", border: "none", borderTop: "1px solid var(--demo-border)" }}
+          />
           <div>
             <strong>Draw count:</strong> {drawCount}
           </div>

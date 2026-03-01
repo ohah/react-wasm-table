@@ -183,13 +183,15 @@ export function LayerDemo() {
                 </span>
               </div>
             ))}
-            {activeLayers.length === 0 && <div style={{ color: "#999" }}>(empty)</div>}
+            {activeLayers.length === 0 && (
+              <div style={{ color: "var(--demo-muted-5)" }}>(empty)</div>
+            )}
           </div>
         </div>
 
         {/* Grid API */}
         <section style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+          <h3 style={{ fontSize: 14, marginBottom: 8, color: "var(--demo-muted)" }}>Grid API</h3>
           <Grid
             data={data as any}
             width={600}
@@ -205,7 +207,8 @@ export function LayerDemo() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,

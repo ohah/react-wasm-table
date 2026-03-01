@@ -238,7 +238,8 @@ export function EventCallbacks() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -306,7 +307,7 @@ export function EventCallbacks() {
               display: "flex",
               justifyContent: "space-between",
               marginBottom: 4,
-              color: "#888",
+              color: "var(--demo-muted-4)",
             }}
           >
             <span>Event Log</span>
@@ -314,7 +315,7 @@ export function EventCallbacks() {
               onClick={() => setLog([])}
               style={{
                 background: "none",
-                border: "1px solid #555",
+                border: "1px solid var(--demo-border-2)",
                 color: "#aaa",
                 borderRadius: 3,
                 padding: "1px 6px",
@@ -325,7 +326,9 @@ export function EventCallbacks() {
               Clear
             </button>
           </div>
-          {log.length === 0 && <div style={{ color: "#666" }}>Click cells or headers...</div>}
+          {log.length === 0 && (
+            <div style={{ color: "var(--demo-muted)" }}>Click cells or headers...</div>
+          )}
           {log.map((entry) => (
             <div key={entry.id} style={{ marginBottom: 2 }}>
               <span style={{ color: entry.blocked ? "#f44" : "#4ec9b0" }}>
@@ -344,7 +347,15 @@ export function EventCallbacks() {
         </div>
       </div>
 
-      <div style={{ marginTop: 16, display: "flex", gap: 24, fontSize: 13, color: "#555" }}>
+      <div
+        style={{
+          marginTop: 16,
+          display: "flex",
+          gap: 24,
+          fontSize: 13,
+          color: "var(--demo-muted-2)",
+        }}
+      >
         <div>
           <strong>Sorting:</strong>{" "}
           {sorting.length > 0 ? `${sorting[0]!.id} (${sorting[0]!.desc ? "desc" : "asc"})` : "none"}

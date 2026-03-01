@@ -21,8 +21,8 @@ const helper = createColumnHelper<SmallRow>();
 const btnStyle: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -114,7 +114,11 @@ export function TanStackUseSelection() {
           <select
             value={copyFormat}
             onChange={(e) => setCopyFormat(e.target.value as "tsv" | "json")}
-            style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid #ccc" }}
+            style={{
+              padding: "2px 8px",
+              borderRadius: 4,
+              border: "1px solid var(--demo-border-2)",
+            }}
           >
             <option value="tsv">TSV</option>
             <option value="json">JSON</option>
@@ -169,19 +173,37 @@ export function TanStackUseSelection() {
       </Table>
 
       <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
-        <div style={{ padding: 12, background: "#f9f9f9", borderRadius: 4, fontSize: 13, flex: 1 }}>
+        <div
+          style={{
+            padding: 12,
+            background: "var(--demo-panel-bg)",
+            borderRadius: 4,
+            fontSize: 13,
+            flex: 1,
+          }}
+        >
           <strong>Selection state:</strong>
           <pre style={{ margin: "4px 0 0", fontSize: 12 }}>
             {selection ? JSON.stringify(selection, null, 2) : "null"}
           </pre>
         </div>
-        <div style={{ padding: 12, background: "#f9f9f9", borderRadius: 4, fontSize: 13, flex: 1 }}>
+        <div
+          style={{
+            padding: 12,
+            background: "var(--demo-panel-bg)",
+            borderRadius: 4,
+            fontSize: 13,
+            flex: 1,
+          }}
+        >
           <strong>Copy log:</strong>
           {copyLog.length === 0 && (
-            <div style={{ color: "#999", marginTop: 4 }}>Select cells and Ctrl/Cmd+C</div>
+            <div style={{ color: "var(--demo-muted-5)", marginTop: 4 }}>
+              Select cells and Ctrl/Cmd+C
+            </div>
           )}
           {copyLog.map((entry, i) => (
-            <div key={i} style={{ color: "#555", marginTop: 2 }}>
+            <div key={i} style={{ color: "var(--demo-muted-2)", marginTop: 2 }}>
               {entry}
             </div>
           ))}

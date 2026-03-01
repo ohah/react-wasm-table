@@ -79,8 +79,8 @@ const ALL_COLUMN_IDS = [
 const btnBase: React.CSSProperties = {
   padding: "3px 8px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)",
   cursor: "pointer",
   fontSize: 11,
 };
@@ -129,12 +129,19 @@ export function TanStackColumnPinning() {
   return (
     <>
       <h1>Column Pinning</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         Pin columns to the <strong>left</strong> or <strong>right</strong> edge. Drag headers to
         reorder columns. Pinned columns stay fixed while scrolling horizontally. The grid uses 7
         columns (930px total) in a 700px viewport to ensure horizontal scrolling.
       </p>
-      <div style={{ marginBottom: 16, padding: 12, background: "#f9f9f9", borderRadius: 6 }}>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: 12,
+          background: "var(--demo-panel-bg)",
+          borderRadius: 6,
+        }}
+      >
         <strong style={{ fontSize: 13 }}>Pin Controls</strong>
         <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
           {ALL_COLUMN_IDS.map((colId) => {
@@ -170,7 +177,7 @@ export function TanStackColumnPinning() {
       </div>
 
       <section style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>TanStack API</h3>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "var(--demo-muted)" }}>TanStack API</h3>
         <Table
           table={table}
           width={700}
@@ -240,7 +247,8 @@ const table = useReactTable({
 </Table>`}</CodeSnippet>
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 11,

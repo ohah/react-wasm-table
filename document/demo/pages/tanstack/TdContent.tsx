@@ -133,12 +133,18 @@ export function TanStackTdContent() {
 
       {/* ── Pattern A: column.cell (cellDef) ── */}
       <h2 style={{ fontSize: 16, marginTop: 24 }}>Pattern A: column.cell callback (cellDef)</h2>
-      <p style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)", marginBottom: 8 }}>
         Cell callbacks receive real <code>row.original</code>. No <code>&lt;Td&gt;</code> children
         needed for rendering &mdash; the column definition drives the canvas output.
       </p>
       <ul
-        style={{ fontSize: 12, color: "#888", marginBottom: 12, paddingLeft: 20, lineHeight: 1.6 }}
+        style={{
+          fontSize: 12,
+          color: "var(--demo-muted-4)",
+          marginBottom: 12,
+          paddingLeft: 20,
+          lineHeight: 1.6,
+        }}
       >
         <li>
           <strong>Name</strong>: bold blue when score &ge; 90 (<code>row.original.score</code>)
@@ -185,7 +191,7 @@ export function TanStackTdContent() {
 
       {/* ── Pattern B: <Td> children via row model ── */}
       <h2 style={{ fontSize: 16, marginTop: 32 }}>Pattern B: &lt;Td&gt; children via row model</h2>
-      <p style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)", marginBottom: 8 }}>
         Columns have <strong>no</strong> <code>cell</code> callback. Instead,{" "}
         <code>&lt;Td&gt;</code> children from the row model map are parsed and drawn on canvas. This
         is the TanStack Table idiom:
