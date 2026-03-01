@@ -263,6 +263,7 @@ export type {
   StackInstruction,
   StubInstruction,
   RenderInstruction,
+  TableCellContent,
   TextStyle,
   BadgeStyle,
   Theme,

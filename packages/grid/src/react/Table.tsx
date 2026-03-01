@@ -1,9 +1,10 @@
-import { useMemo, useRef, useCallback, type ReactNode } from "react";
+import { useMemo, useRef, useCallback } from "react";
 import type { GridInstance } from "../grid-instance";
 import type { RenderInstruction } from "../types";
 import { parseTableChildren } from "./parse-table-children";
 import { resolveInstruction } from "../resolve-instruction";
 import type {
+  TableCellContent,
   Theme,
   BoxModelProps,
   SelectionStyle,
@@ -52,8 +53,8 @@ export interface TableProps extends BoxModelProps {
   overscan?: number;
   /** Theme overrides. */
   theme?: Partial<Theme>;
-  /** Structural children (Thead/Tbody/Tfoot). Currently parsed for validation; rendering uses canvas. */
-  children?: ReactNode;
+  /** Structural children (Thead/Tbody/Tfoot). Content may be ReactNode or RenderInstruction. */
+  children?: TableCellContent;
 
   // Event callbacks
   onCellClick?: (event: GridCellEvent) => void;
