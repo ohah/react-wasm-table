@@ -16,6 +16,10 @@ import type {
   ColumnPinningUpdater,
   ExpandedState,
   ExpandedUpdater,
+  PaginationState,
+  PaginationUpdater,
+  GroupingState,
+  GroupingUpdater,
 } from "../tanstack-types";
 import type { GridState } from "../grid-instance";
 
@@ -1354,6 +1358,184 @@ describe("GridInstance", () => {
       const model = instance.getRowModel();
       expect(model.rows.length).toBe(20);
       expect(model.rows[0]!.original.firstName).toBe("First10");
+    });
+  });
+
+  // ── Pagination ──────────────────────────────────────────────────
+
+  describe("pagination", () => {
+    function createPaginatedInstance(pagination: PaginationState) {
+      let currentPagination = pagination;
+      const columns = [
+        helper.accessor("firstName", { header: "First" }),
+        helper.accessor("age", { header: "Age" }),
+        helper.accessor("status", { header: "Status" }),
+      ];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "", pagination: currentPagination },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        onPaginationChange: (updater: PaginationUpdater) => {
+          currentPagination = typeof updater === "function" ? updater(currentPagination) : updater;
+        },
+      });
+      return { instance, getPagination: () => currentPagination };
+    }
+
+    it("getPaginationRowModel returns paged rows", () => {
+      const { instance } = createPaginatedInstance({ pageIndex: 0, pageSize: 2 });
+      const model = instance.getPaginationRowModel();
+      expect(model.rows).toHaveLength(2);
+      expect(model.rows[0]!.original.firstName).toBe("Alice");
+    });
+
+    it("getPageCount returns correct count", () => {
+      const { instance } = createPaginatedInstance({ pageIndex: 0, pageSize: 2 });
+      expect(instance.getPageCount()).toBe(2); // 4 / 2
+    });
+
+    it("getCanPreviousPage returns false on first page", () => {
+      const { instance } = createPaginatedInstance({ pageIndex: 0, pageSize: 2 });
+      expect(instance.getCanPreviousPage()).toBe(false);
+    });
+
+    it("getCanPreviousPage returns true on second page", () => {
+      const { instance } = createPaginatedInstance({ pageIndex: 1, pageSize: 2 });
+      expect(instance.getCanPreviousPage()).toBe(true);
+    });
+
+    it("getCanNextPage returns true on first page", () => {
+      const { instance } = createPaginatedInstance({ pageIndex: 0, pageSize: 2 });
+      expect(instance.getCanNextPage()).toBe(true);
+    });
+
+    it("getCanNextPage returns false on last page", () => {
+      const { instance } = createPaginatedInstance({ pageIndex: 1, pageSize: 2 });
+      expect(instance.getCanNextPage()).toBe(false);
+    });
+
+    it("setPagination updates state", () => {
+      const { instance, getPagination } = createPaginatedInstance({ pageIndex: 0, pageSize: 2 });
+      instance.setPagination({ pageIndex: 1, pageSize: 2 });
+      expect(getPagination()).toEqual({ pageIndex: 1, pageSize: 2 });
+    });
+
+    it("previousPage decrements pageIndex", () => {
+      const { instance, getPagination } = createPaginatedInstance({ pageIndex: 1, pageSize: 2 });
+      instance.previousPage();
+      expect(getPagination().pageIndex).toBe(0);
+    });
+
+    it("previousPage does nothing on first page", () => {
+      const { instance, getPagination } = createPaginatedInstance({ pageIndex: 0, pageSize: 2 });
+      instance.previousPage();
+      expect(getPagination().pageIndex).toBe(0);
+    });
+
+    it("nextPage increments pageIndex", () => {
+      const { instance, getPagination } = createPaginatedInstance({ pageIndex: 0, pageSize: 2 });
+      instance.nextPage();
+      expect(getPagination().pageIndex).toBe(1);
+    });
+
+    it("nextPage does nothing on last page", () => {
+      const { instance, getPagination } = createPaginatedInstance({ pageIndex: 1, pageSize: 2 });
+      instance.nextPage();
+      expect(getPagination().pageIndex).toBe(1);
+    });
+
+    it("setPageIndex sets pageIndex", () => {
+      const { instance, getPagination } = createPaginatedInstance({ pageIndex: 0, pageSize: 2 });
+      instance.setPageIndex(1);
+      expect(getPagination().pageIndex).toBe(1);
+    });
+
+    it("setPageSize sets pageSize and resets pageIndex to 0", () => {
+      const { instance, getPagination } = createPaginatedInstance({ pageIndex: 1, pageSize: 2 });
+      instance.setPageSize(3);
+      expect(getPagination()).toEqual({ pageIndex: 0, pageSize: 3 });
+    });
+
+    it("resetPagination resets to defaults", () => {
+      const { instance, getPagination } = createPaginatedInstance({ pageIndex: 1, pageSize: 5 });
+      instance.resetPagination();
+      expect(getPagination()).toEqual({ pageIndex: 0, pageSize: 10 });
+    });
+  });
+
+  // ── Grouping ───────────────────────────────────────────────────
+
+  describe("grouping", () => {
+    function createGroupedInstance(grouping: GroupingState) {
+      let currentGrouping = grouping;
+      const columns = [
+        helper.accessor("firstName", { header: "First" }),
+        helper.accessor("age", { header: "Age" }),
+        helper.accessor("status", { header: "Status" }),
+      ];
+      const instance = buildGridInstance({
+        data: sampleData,
+        columns,
+        state: { sorting: [], columnFilters: [], globalFilter: "", grouping: currentGrouping },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        onGroupingChange: (updater: GroupingUpdater) => {
+          currentGrouping = typeof updater === "function" ? updater(currentGrouping) : updater;
+        },
+      });
+      return { instance, getGrouping: () => currentGrouping };
+    }
+
+    it("getGroupedRowModel returns grouped rows", () => {
+      const { instance } = createGroupedInstance(["status"]);
+      const model = instance.getGroupedRowModel();
+      expect(model.rows.length).toBe(3); // active, inactive, pending
+    });
+
+    it("setGrouping updates state", () => {
+      const { instance, getGrouping } = createGroupedInstance([]);
+      instance.setGrouping(["status"]);
+      expect(getGrouping()).toEqual(["status"]);
+    });
+
+    it("resetGrouping clears to empty", () => {
+      const { instance, getGrouping } = createGroupedInstance(["status"]);
+      instance.resetGrouping();
+      expect(getGrouping()).toEqual([]);
+    });
+  });
+
+  // ── Faceted ────────────────────────────────────────────────────
+
+  describe("faceted", () => {
+    it("getFacetedUniqueValues returns unique values for a column", () => {
+      const { instance } = createInstance();
+      const values = instance.getFacetedUniqueValues("status");
+      expect(values.get("active")).toBe(2);
+      expect(values.get("inactive")).toBe(1);
+      expect(values.get("pending")).toBe(1);
+    });
+
+    it("getFacetedUniqueValues returns empty map for unknown column", () => {
+      const { instance } = createInstance();
+      const values = instance.getFacetedUniqueValues("nonexistent");
+      expect(values.size).toBe(0);
+    });
+
+    it("getFacetedMinMaxValues returns min/max for numeric column", () => {
+      const { instance } = createInstance();
+      const result = instance.getFacetedMinMaxValues("age");
+      expect(result).toEqual([25, 35]);
+    });
+
+    it("getFacetedMinMaxValues returns undefined for string column", () => {
+      const { instance } = createInstance();
+      const result = instance.getFacetedMinMaxValues("firstName");
+      expect(result).toBeUndefined();
     });
   });
 });
