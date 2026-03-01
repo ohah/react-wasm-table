@@ -56,6 +56,11 @@ const config: UserConfig = {
         root: "doc_build",
       },
     },
+    resolve: {
+      alias: {
+        "@ohah/react-wasm-table": path.resolve(__dirname, "../packages/grid/src/index.ts"),
+      },
+    },
   },
 };
 
