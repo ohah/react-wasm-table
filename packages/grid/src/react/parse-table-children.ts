@@ -30,22 +30,19 @@ function parseTrChildren(children: ReactNode): ParsedRow[] {
   Children.forEach(children, (child) => {
     if (!isValidElement(child) || child.type !== Tr) return;
     const cells: ParsedCell[] = [];
-    Children.forEach(
-      (child.props as { children?: ReactNode }).children,
-      (cellChild) => {
-        if (!isValidElement(cellChild)) return;
-        if (cellChild.type !== Th && cellChild.type !== Td) return;
-        const cellProps = cellChild.props as {
-          colSpan?: number;
-          children?: ReactNode;
-        };
-        cells.push({
-          colSpan: cellProps.colSpan ?? 1,
-          content: cellProps.children,
-          ...(cellChild.key != null && { key: String(cellChild.key) }),
-        });
-      },
-    );
+    Children.forEach((child.props as { children?: ReactNode }).children, (cellChild) => {
+      if (!isValidElement(cellChild)) return;
+      if (cellChild.type !== Th && cellChild.type !== Td) return;
+      const cellProps = cellChild.props as {
+        colSpan?: number;
+        children?: ReactNode;
+      };
+      cells.push({
+        colSpan: cellProps.colSpan ?? 1,
+        content: cellProps.children,
+        ...(cellChild.key != null && { key: String(cellChild.key) }),
+      });
+    });
     rows.push({
       cells,
       ...(child.key != null && { key: String(child.key) }),

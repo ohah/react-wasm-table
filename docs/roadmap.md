@@ -423,7 +423,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | Row Model Abstraction (1-1)   | Core     | 이후 모든 기능의 토대                                                                                       |
 | Column Feature API (1-2)      | Core     | 기능별 독립 모듈화 기반 (Pinning 렌더링 제외)                                                               |
 | Column Ordering State (2-1)   | State    | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ✅                                                    |
-| Expanding State (2-2)         | State    | getExpandedRowModel ✅, getGroupedRowModel ❌, getPaginationRowModel ❌, getFacetedRowModel ❌               |
+| Expanding State (2-2)         | State    | getExpandedRowModel ✅, getGroupedRowModel ❌, getPaginationRowModel ❌, getFacetedRowModel ❌              |
 | Column Visibility State (2-3) | State    | resolveColumns에서 hidden 컬럼 제외                                                                         |
 | Data Access API (4-1)         | Utility  | exportToCSV/TSV/JSON + ExportOptions. 20 테스트                                                             |
 | Clipboard Utilities (4-2)     | Utility  | copyToClipboard, pasteFromClipboard, buildCSV/buildHTML, parseClipboardText. onCopy/onPaste 연결. 15 테스트 |
@@ -458,12 +458,12 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ### Tier 3 — 유틸리티 ✅ + 잔여
 
-| 순서 | 항목                | 참조     | 상태 | 이유                                                                                                               |
-| ---- | ------------------- | -------- | ---- | ------------------------------------------------------------------------------------------------------------------ |
-| 8    | Clipboard Utilities      | 4-2      | ✅   | copyToClipboard/pasteFromClipboard + buildCSV/buildHTML, parseClipboardText. onPaste 클립보드 읽기 연결. 15 테스트                  |
-| 9    | getGroupedRowModel       | 2-2 잔여 | ❌   | Row Model 인프라 위에 추가. aggregate 함수 등 그룹핑 로직                                                                          |
-| 10   | getPaginationRowModel    | —        | ❌   | 페이지 단위 slice. 가상 스크롤과 양립 가능, 서버사이드 페이지네이션 유스케이스 지원                                                 |
-| 11   | getFacetedRowModel       | —        | ❌   | 컬럼별 고유값/min/max 계산. 필터 UI(드롭다운, 범위 슬라이더) 구축에 필요                                                            |
+| 순서 | 항목                  | 참조     | 상태 | 이유                                                                                                               |
+| ---- | --------------------- | -------- | ---- | ------------------------------------------------------------------------------------------------------------------ |
+| 8    | Clipboard Utilities   | 4-2      | ✅   | copyToClipboard/pasteFromClipboard + buildCSV/buildHTML, parseClipboardText. onPaste 클립보드 읽기 연결. 15 테스트 |
+| 9    | getGroupedRowModel    | 2-2 잔여 | ❌   | Row Model 인프라 위에 추가. aggregate 함수 등 그룹핑 로직                                                          |
+| 10   | getPaginationRowModel | —        | ❌   | 페이지 단위 slice. 가상 스크롤과 양립 가능, 서버사이드 페이지네이션 유스케이스 지원                                |
+| 11   | getFacetedRowModel    | —        | ❌   | 컬럼별 고유값/min/max 계산. 필터 UI(드롭다운, 범위 슬라이더) 구축에 필요                                           |
 
 ### Tier 4 — UX Primitive (렌더링 파이프라인 완성 후)
 
