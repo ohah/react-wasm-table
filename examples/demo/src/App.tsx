@@ -72,6 +72,9 @@ import {
   TanStackTouchEvents,
   TanStackTdContent,
   TanStackExpanding,
+  TanStackPagination,
+  TanStackGrouping,
+  TanStackFaceted,
 } from "./pages/tanstack";
 import { FpsCounter } from "./components/FpsCounter";
 
@@ -112,6 +115,9 @@ export function App() {
           <Route path="/tanstack/touch-events" element={<TanStackTouchEvents />} />
           <Route path="/tanstack/td-content" element={<TanStackTdContent />} />
           <Route path="/tanstack/expanding" element={<TanStackExpanding />} />
+          <Route path="/tanstack/pagination" element={<TanStackPagination />} />
+          <Route path="/tanstack/grouping" element={<TanStackGrouping />} />
+          <Route path="/tanstack/faceted" element={<TanStackFaceted />} />
           {/* Canvas / Flex / Box — TanStack route uses same component (identical demo) */}
           <Route path="/tanstack/canvas-components" element={<CanvasComponents />} />
           <Route path="/tanstack/canvas-text" element={<CanvasText />} />

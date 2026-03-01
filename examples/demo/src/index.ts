@@ -78,4 +78,7 @@ export {
   TanStackTouchEvents,
   TanStackTdContent,
   TanStackExpanding,
+  TanStackPagination,
+  TanStackGrouping,
+  TanStackFaceted,
 } from "./pages/tanstack";
