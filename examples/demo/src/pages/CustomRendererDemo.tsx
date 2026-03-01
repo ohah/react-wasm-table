@@ -255,7 +255,7 @@ const progressRenderer: CellRenderer = {
         <Grid
           data={data as any}
           width={600}
-          height={400}
+          height={520}
           columns={columns}
           sorting={sorting}
           onSortingChange={setSorting}

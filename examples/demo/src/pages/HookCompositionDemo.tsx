@@ -170,14 +170,14 @@ export function HookCompositionDemo() {
         with external state displayed in real-time panels.
       </p>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ flexShrink: 0 }}>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
             <Grid
               data={data}
               width={580}
-              height={450}
+              height={560}
               columns={columns}
               sorting={sorting}
               onSortingChange={handleSortingChange}

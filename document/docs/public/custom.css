@@ -1,4 +1,4 @@
-/* Remove gradient background on home page */
+/* Home: minimal background (no heavy gradient), hero section clearly visible */
 :root,
 :where(html:not(.rp-dark)),
 :where(html.rp-dark) {
@@ -9,4 +9,14 @@
 html.rp-dark {
   --rp-home-background-bg: var(--rp-c-bg, #121212);
   --rp-home-feature-bg: var(--rp-c-bg, #121212);
+}
+
+/* Hero: ensure the section has clear presence (min-height + padding) */
+.rp-home-hero {
+  min-height: 60vh;
+  padding: 4rem 1.5rem 3rem;
+}
+
+.rp-home-feature {
+  padding: 3rem 1.5rem 4rem;
 }

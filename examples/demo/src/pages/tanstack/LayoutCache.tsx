@@ -301,14 +301,14 @@ export function TanStackLayoutCache() {
         {`<Table engineRef={engineRef} flexDirection="${flexDirection}" gap={${gap}} ...>\n  <Thead>...</Thead>\n  <Tbody>...</Tbody>\n</Table>`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
             <Table
               table={table}
               width={560}
-              height={400}
+              height={520}
               engineRef={engineRef}
               flexDirection={flexDirection}
               gap={gap}
@@ -344,7 +344,7 @@ export function TanStackLayoutCache() {
         <div
           style={{
             flex: 1,
-            maxHeight: 400,
+            maxHeight: 520,
             overflowY: "auto",
             background: "#1e1e1e",
             color: "#d4d4d4",

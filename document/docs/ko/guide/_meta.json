@@ -1,0 +1,5 @@
+[
+  { "type": "file", "name": "getting-started", "label": "시작하기" },
+  { "type": "file", "name": "architecture", "label": "아키텍처" },
+  { "type": "file", "name": "canvas-components", "label": "캔버스 컴포넌트" }
+]

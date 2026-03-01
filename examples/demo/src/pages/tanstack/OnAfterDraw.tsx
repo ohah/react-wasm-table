@@ -152,11 +152,11 @@ export function TanStackOnAfterDraw() {
           </div>
         )}
       </div>
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <Table
           table={table}
           width={560}
-          height={380}
+          height={500}
           onAfterDraw={mode !== "none" ? onAfterDraw : undefined}
         >
           <Thead>
@@ -194,7 +194,7 @@ export function TanStackOnAfterDraw() {
   [mode, highlightRow],
 );
 
-<Table table={table} width={560} height={380} onAfterDraw={mode !== "none" ? onAfterDraw : undefined}>
+<Table table={table} width={560} height={500} onAfterDraw={mode !== "none" ? onAfterDraw : undefined}>
   <Thead>
     {table.getHeaderGroups().map((hg) => (
       <Tr key={hg.id}>

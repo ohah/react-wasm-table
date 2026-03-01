@@ -219,7 +219,7 @@ export function TanStackExpanding() {
       </div>
 
       {/* State display */}
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ ...sectionStyle, flex: 1 }}>
           <strong>Expanded State:</strong>
           <pre style={{ margin: "4px 0 0", fontSize: 12 }}>{JSON.stringify(expanded, null, 2)}</pre>

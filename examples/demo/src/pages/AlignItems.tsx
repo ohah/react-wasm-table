@@ -112,7 +112,7 @@ helper.accessor("salary", { size: 100 })
           <Grid
             data={data}
             width={800}
-            height={400}
+            height={520}
             rowHeight={60}
             alignItems={alignItemsValue}
             columns={columns}
@@ -124,7 +124,7 @@ helper.accessor("salary", { size: 100 })
           <CssGrid
             data={data}
             width={800}
-            height={400}
+            height={520}
             rowHeight={60}
             alignItems={alignItemsValue}
             columns={columns}

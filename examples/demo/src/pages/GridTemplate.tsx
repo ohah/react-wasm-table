@@ -119,7 +119,7 @@ export function GridTemplate() {
           <Grid
             data={data}
             width={800}
-            height={400}
+            height={520}
             display="grid"
             gridTemplateColumns={templateCols}
             gridAutoFlow={autoFlow}
@@ -133,7 +133,7 @@ export function GridTemplate() {
           <CssGrid
             data={data}
             width={800}
-            height={400}
+            height={520}
             display="grid"
             gridTemplateColumns={templateCols}
             gridAutoFlow={autoFlow}

@@ -115,7 +115,7 @@ export function CanvasSparkline() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Table (TanStack API)</h2>
-        <Table table={table} width={360} height={240} rowHeight={44}>
+        <Table table={table} width={360} height={500} rowHeight={44}>
           <Thead>
             {table.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>

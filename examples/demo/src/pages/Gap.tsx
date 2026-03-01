@@ -46,12 +46,12 @@ export function Gap() {
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
-          <Grid data={data} width={800} height={400} gap={gapValue} columns={columns} />
+          <Grid data={data} width={800} height={520} gap={gapValue} columns={columns} />
         </div>
         <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid data={data} width={800} height={400} gap={gapValue} columns={columns} />
+          <CssGrid data={data} width={800} height={520} gap={gapValue} columns={columns} />
         </div>
       </div>
     </>

@@ -171,7 +171,7 @@ export function ColumnPinningDemo() {
         <Grid
           data={data}
           width={700}
-          height={400}
+          height={520}
           columns={columnDefs}
           sorting={sorting}
           onSortingChange={setSorting}

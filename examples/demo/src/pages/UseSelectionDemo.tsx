@@ -144,14 +144,14 @@ export function UseSelectionDemo() {
         {`/>`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
             <Grid
               data={data}
               width={560}
-              height={340}
+              height={480}
               columns={columns}
               selection={selection}
               onSelectionChange={setSelection}

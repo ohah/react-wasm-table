@@ -116,18 +116,18 @@ export function OnAfterDrawDemo() {
         }}
       >
         {mode === "none"
-          ? `<Grid data={data} columns={columns} width={640} height={400} />`
-          : `<Grid\n  data={data}\n  columns={columns}\n  width={640}\n  height={400}\n  onAfterDraw={({ ctx, width, height, headerHeight, rowHeight, scrollTop }) => {\n    ${mode === "watermark" ? 'ctx.fillText("DRAFT", width / 2, height / 2);' : mode === "row-highlight" ? `const y = headerHeight + row * rowHeight - scrollTop;\n    ctx.fillRect(0, y, width, rowHeight);` : "ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height);"}\n  }}\n/>`}
+          ? `<Grid data={data} columns={columns} width={640} height={520} />`
+          : `<Grid\n  data={data}\n  columns={columns}\n  width={640}\n  height={520}\n  onAfterDraw={({ ctx, width, height, headerHeight, rowHeight, scrollTop }) => {\n    ${mode === "watermark" ? 'ctx.fillText("DRAFT", width / 2, height / 2);' : mode === "row-highlight" ? `const y = headerHeight + row * rowHeight - scrollTop;\n    ctx.fillRect(0, y, width, rowHeight);` : "ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height);"}\n  }}\n/>`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
             <Grid
               data={data}
               width={640}
-              height={400}
+              height={520}
               columns={columns}
               onAfterDraw={mode !== "none" ? onAfterDraw : undefined}
               overflowY="scroll"

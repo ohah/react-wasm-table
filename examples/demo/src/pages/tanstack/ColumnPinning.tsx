@@ -174,7 +174,7 @@ export function TanStackColumnPinning() {
         <Table
           table={table}
           width={700}
-          height={400}
+          height={520}
           enableColumnDnD
           columnOrder={columnOrder}
           onColumnOrderChange={setColumnOrder}
@@ -216,7 +216,7 @@ const table = useReactTable({
   onSortingChange: setSorting,
 });
 
-<Table table={table} width={640} height={400} enableColumnDnD>
+<Table table={table} width={640} height={520} enableColumnDnD>
   <Thead>
     {table.getHeaderGroups().map((hg) => (
       <Tr key={hg.id}>

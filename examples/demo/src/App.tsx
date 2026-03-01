@@ -16,6 +16,7 @@ import { Position } from "./pages/Position";
 import { GridTemplate } from "./pages/GridTemplate";
 import { Scrollbar } from "./pages/Scrollbar";
 import { Selection } from "./pages/Selection";
+import { Benchmark } from "./pages/Benchmark";
 import { StressTest } from "./pages/StressTest";
 import { EventCallbacks } from "./pages/EventCallbacks";
 import { HooksOverview } from "./pages/HooksOverview";
@@ -81,6 +82,7 @@ export function App() {
       <main style={{ flex: 1, overflow: "auto", padding: 24 }}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/benchmark" element={<Benchmark />} />
           <Route path="/tanstack-api" element={<TanStackApi />} />
           <Route path="/tanstack/column-pinning" element={<TanStackColumnPinning />} />
           <Route path="/tanstack/home" element={<TanStackHome />} />

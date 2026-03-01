@@ -1,0 +1,71 @@
+# Getting Started
+
+Install the package and render a minimal grid in a few lines.
+
+## Installation
+
+import { PackageManagerTabs } from "@rspress/core/theme";
+
+<PackageManagerTabs command="add @ohah/react-wasm-table" />
+
+## Quick Start
+
+Use `createColumnHelper` and the `Grid` component with `data` and `columns`:
+
+```tsx twoslash
+// @errors: 2686
+import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
+
+type Row = { name: string; age: number };
+
+const helper = createColumnHelper<Row>();
+const columns = [
+  helper.accessor("name", { header: "Name", size: 200 }),
+  helper.accessor("age", { header: "Age", size: 100 }),
+];
+
+const data: Row[] = [
+  { name: "Alice", age: 30 },
+  { name: "Bob", age: 25 },
+];
+
+function App() {
+  return <Grid data={data} columns={columns} width={600} height={400} />;
+}
+```
+
+## Object-based columns
+
+You can also define columns as a plain array (no JSX). When you pass `columns`, JSX children are ignored:
+
+```tsx twoslash
+// @errors: 2686 2322
+import { Grid, type ColumnDef } from "@ohah/react-wasm-table";
+
+const columns: ColumnDef[] = [
+  { id: "name", accessorKey: "name", size: 200, header: "Name", enableSorting: true },
+  {
+    id: "price",
+    accessorKey: "price",
+    size: 100,
+    header: "Price",
+    align: "right",
+    enableSorting: true,
+  },
+];
+
+const data = [
+  { id: 1, name: "Alice", price: 100 },
+  { id: 2, name: "Bob", price: 200 },
+];
+
+function App() {
+  return <Grid data={data} columns={columns} width={800} height={600} />;
+}
+```
+
+## Next steps
+
+- [Architecture](/guide/architecture) — how the React headless API, JS adapter, WASM core, and canvas renderer fit together
+- [API Reference](/api/table) — `Grid` and `Table` props
+- [Canvas components](/guide/canvas-components) — Text, Badge, Flex, Box, Stack, Sparkline for cell content

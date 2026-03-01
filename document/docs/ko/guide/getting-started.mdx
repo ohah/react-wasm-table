@@ -1,0 +1,71 @@
+# 시작하기
+
+패키지를 설치하고 몇 줄로 간단한 그리드를 렌더링합니다.
+
+## 설치
+
+import { PackageManagerTabs } from "@rspress/core/theme";
+
+<PackageManagerTabs command="add @ohah/react-wasm-table" />
+
+## 빠른 시작
+
+`createColumnHelper`와 `Grid` 컴포넌트에 `data`, `columns`를 넘깁니다.
+
+```tsx twoslash
+// @errors: 2686
+import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
+
+type Row = { name: string; age: number };
+
+const helper = createColumnHelper<Row>();
+const columns = [
+  helper.accessor("name", { header: "Name", size: 200 }),
+  helper.accessor("age", { header: "Age", size: 100 }),
+];
+
+const data: Row[] = [
+  { name: "Alice", age: 30 },
+  { name: "Bob", age: 25 },
+];
+
+function App() {
+  return <Grid data={data} columns={columns} width={600} height={400} />;
+}
+```
+
+## 객체 기반 컬럼
+
+컬럼을 배열로만 정의할 수도 있습니다. `columns`를 넘기면 JSX 자식은 무시됩니다.
+
+```tsx twoslash
+// @errors: 2686 2322
+import { Grid, type ColumnDef } from "@ohah/react-wasm-table";
+
+const columns: ColumnDef[] = [
+  { id: "name", accessorKey: "name", size: 200, header: "Name", enableSorting: true },
+  {
+    id: "price",
+    accessorKey: "price",
+    size: 100,
+    header: "Price",
+    align: "right",
+    enableSorting: true,
+  },
+];
+
+const data = [
+  { id: 1, name: "Alice", price: 100 },
+  { id: 2, name: "Bob", price: 200 },
+];
+
+function App() {
+  return <Grid data={data} columns={columns} width={800} height={600} />;
+}
+```
+
+## 다음 단계
+
+- [아키텍처](/ko/guide/architecture) — React Headless API, JS 어댑터, WASM 코어, 캔버스 렌더러 구조
+- [API 레퍼런스](/ko/api/table) — Grid, Table props
+- [캔버스 컴포넌트](/ko/guide/canvas-components) — 셀 콘텐츠용 Text, Badge, Flex, Box, Stack, Sparkline

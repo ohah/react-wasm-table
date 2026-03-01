@@ -100,7 +100,7 @@ export function CanvasText() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
-        <Grid data={data} columns={columns} width={380} height={320} rowHeight={40} />
+        <Grid data={data} columns={columns} width={380} height={460} rowHeight={40} />
       </section>
     </>
   );

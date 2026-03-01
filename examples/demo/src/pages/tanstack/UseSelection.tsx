@@ -140,7 +140,7 @@ export function TanStackUseSelection() {
       <Table
         table={table}
         width={560}
-        height={340}
+        height={480}
         selection={selection}
         onSelectionChange={setSelection}
         onBeforeSelectionChange={onBeforeSelectionChange}
@@ -168,7 +168,7 @@ export function TanStackUseSelection() {
         </Tbody>
       </Table>
 
-      <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
         <div style={{ padding: 12, background: "#f9f9f9", borderRadius: 4, fontSize: 13, flex: 1 }}>
           <strong>Selection state:</strong>
           <pre style={{ margin: "4px 0 0", fontSize: 12 }}>
@@ -194,7 +194,7 @@ const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() 
 <Table
   table={table}
   width={560}
-  height={340}
+  height={480}
   selection={selection}
   onSelectionChange={setSelection}
   onBeforeSelectionChange={(next) => guardEnabled && next && next.maxRow > 5 ? false : undefined}

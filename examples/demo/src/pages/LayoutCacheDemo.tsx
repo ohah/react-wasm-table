@@ -245,14 +245,14 @@ export function LayoutCacheDemo() {
         {`<Grid engineRef={engineRef} flexDirection="${flexDirection}" gap={${gap}} ... />`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
             <Grid
               data={data}
               width={560}
-              height={400}
+              height={520}
               columns={columns}
               sorting={sorting}
               onSortingChange={setSorting}
@@ -267,7 +267,7 @@ export function LayoutCacheDemo() {
         <div
           style={{
             flex: 1,
-            maxHeight: 400,
+            maxHeight: 520,
             overflowY: "auto",
             background: "#1e1e1e",
             color: "#d4d4d4",

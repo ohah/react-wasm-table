@@ -245,7 +245,7 @@ export function TanStackColumnFeatures() {
       <Table
         table={table}
         width={600}
-        height={360}
+        height={500}
         columnOrder={columnOrder}
         onColumnOrderChange={setColumnOrder}
       >
@@ -289,7 +289,7 @@ const table = useReactTable({
   onColumnFiltersChange: setColumnFilters,
 });
 
-<Table table={table} width={560} height={340} enableColumnDnD>
+<Table table={table} width={560} height={480} enableColumnDnD>
   <Thead>
     {table.getHeaderGroups().map((hg) => (
       <Tr key={hg.id}>

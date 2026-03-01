@@ -1,0 +1,10 @@
+[
+  { "text": "가이드", "link": "/ko/guide/getting-started", "activeMatch": "^/ko/guide/" },
+  { "text": "벤치마크", "link": "/ko/benchmark", "activeMatch": "^/ko/benchmark" },
+  {
+    "text": "UI",
+    "link": "/ko/guide/canvas-components",
+    "activeMatch": "^/ko/guide/canvas-components"
+  },
+  { "text": "API", "link": "/ko/api/table", "activeMatch": "^/ko/api/" }
+]

@@ -93,6 +93,7 @@ export type {
   ExpandedState,
   ExpandedUpdater,
 } from "./tanstack-types";
+export type { GridColumnDef as ColumnDef } from "./tanstack-types";
 
 // Header grouping (multi-level headers)
 export { buildHeaderGroups } from "./build-header-groups";

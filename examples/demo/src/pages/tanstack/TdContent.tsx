@@ -148,7 +148,7 @@ export function TanStackTdContent() {
         </li>
       </ul>
 
-      <Table table={tableA} width={560} height={200}>
+      <Table table={tableA} width={560} height={480}>
         <Thead>
           {tableA.getHeaderGroups().map((hg) => (
             <Tr key={hg.id}>
@@ -193,7 +193,7 @@ export function TanStackTdContent() {
         <code>&lt;Td&gt;</code>.
       </p>
 
-      <Table table={tableB} width={560} height={200}>
+      <Table table={tableB} width={560} height={480}>
         <Thead>
           {tableB.getHeaderGroups().map((hg) => (
             <Tr key={hg.id}>
@@ -243,7 +243,7 @@ const columns = [
   helper.accessor("score", { header: "Score", size: 100, align: "right" }),
 ];
 
-<Table table={table} width={560} height={200}>
+<Table table={table} width={560} height={480}>
   <Thead>
     {table.getHeaderGroups().map((hg) => (
       <Tr key={hg.id}>

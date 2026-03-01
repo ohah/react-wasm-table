@@ -312,7 +312,7 @@ export function TableApiDemo() {
             borderRadius: 4,
             fontSize: 12,
             overflow: "auto",
-            maxHeight: 400,
+            maxHeight: 520,
           }}
         >
           {codeExample}

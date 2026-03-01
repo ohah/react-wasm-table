@@ -195,7 +195,7 @@ export function TanStackUseFiltering() {
 
       <section style={{ marginBottom: 16 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-        <Table table={table} width={640} height={400} overflowY="scroll">
+        <Table table={table} width={640} height={520} overflowY="scroll">
           <Thead>
             {table.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>

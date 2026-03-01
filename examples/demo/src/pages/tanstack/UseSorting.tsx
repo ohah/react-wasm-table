@@ -148,7 +148,7 @@ export function TanStackUseSorting() {
             <Table
               table={table}
               width={640}
-              height={400}
+              height={520}
               onBeforeSortChange={onBeforeSortChange}
               overflowY="scroll"
             >
@@ -200,7 +200,7 @@ export function TanStackUseSorting() {
         {`>\n  <Thead>...</Thead>\n  <Tbody>...</Tbody>\n</Table>`}
       </pre>
 
-      <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
         <div
           style={{
             padding: 12,
@@ -223,7 +223,7 @@ export function TanStackUseSorting() {
             borderRadius: 4,
             fontSize: 13,
             flex: 1,
-            maxHeight: 200,
+            maxHeight: 320,
             overflowY: "auto",
           }}
         >
@@ -247,7 +247,7 @@ export function TanStackUseSorting() {
       </p>
       <section style={{ marginBottom: 16 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-        <Table table={tableUncontrolled} width={640} height={300} overflowY="scroll">
+        <Table table={tableUncontrolled} width={640} height={440} overflowY="scroll">
           <Thead>
             {tableUncontrolled.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>

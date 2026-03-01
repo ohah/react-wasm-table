@@ -118,11 +118,19 @@ export function TanStackExport() {
         <code>table.getRowModel()</code> for sorted/filtered data.
       </p>
 
-      <div style={{ display: "flex", gap: 16, marginBottom: 16, alignItems: "flex-start" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          marginBottom: 16,
+          alignItems: "stretch",
+        }}
+      >
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-            <Table table={table} width={560} height={340}>
+            <Table table={table} width={560} height={480}>
               <Thead>
                 {table.getHeaderGroups().map((hg) => (
                   <Tr key={hg.id}>
@@ -287,7 +295,7 @@ ${selectedColumns.length > 0 ? `  columns: ${JSON.stringify(selectedColumns)},\n
             padding: 12,
             borderRadius: 4,
             fontSize: 12,
-            maxHeight: 300,
+            maxHeight: 440,
             overflowY: "auto",
             whiteSpace: "pre-wrap",
             wordBreak: "break-all",

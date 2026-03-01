@@ -171,7 +171,7 @@ export function CanvasFlex() {
           data={previewData}
           columns={previewColumns}
           width={440}
-          height={200}
+          height={480}
           rowHeight={120}
         />
       </section>
