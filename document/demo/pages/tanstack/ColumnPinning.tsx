@@ -134,7 +134,14 @@ export function TanStackColumnPinning() {
         reorder columns. Pinned columns stay fixed while scrolling horizontally. The grid uses 7
         columns (930px total) in a 700px viewport to ensure horizontal scrolling.
       </p>
-      <div style={{ marginBottom: 16, padding: 12, background: "var(--demo-panel-bg)", borderRadius: 6 }}>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: 12,
+          background: "var(--demo-panel-bg)",
+          borderRadius: 6,
+        }}
+      >
         <strong style={{ fontSize: 13 }}>Pin Controls</strong>
         <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
           {ALL_COLUMN_IDS.map((colId) => {

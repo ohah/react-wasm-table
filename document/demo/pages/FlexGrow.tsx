@@ -114,7 +114,15 @@ export function FlexGrow() {
         </div>
       </div>
 
-      <pre style={{ background: "var(--demo-code-bg)", color: "var(--demo-code-fg)", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`helper.accessor("name", { size: 150, flexGrow: ${grow1} })
 helper.accessor("dept", { flexGrow: ${grow2}, flexBasis: "${basis}" })
 helper.accessor("salary", { size: 300, flexShrink: ${shrink} })

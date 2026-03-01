@@ -183,7 +183,9 @@ export function LayerDemo() {
                 </span>
               </div>
             ))}
-            {activeLayers.length === 0 && <div style={{ color: "var(--demo-muted-5)" }}>(empty)</div>}
+            {activeLayers.length === 0 && (
+              <div style={{ color: "var(--demo-muted-5)" }}>(empty)</div>
+            )}
           </div>
         </div>
 

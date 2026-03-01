@@ -54,7 +54,15 @@ export function FlexWrap() {
         </div>
       </div>
 
-      <pre style={{ background: "var(--demo-code-bg)", color: "var(--demo-code-fg)", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`<Grid flexWrap="${wrap}" width={500} columns={columns} ...>
   (4 columns × 200px = 800px > 500px container)`}
       </pre>

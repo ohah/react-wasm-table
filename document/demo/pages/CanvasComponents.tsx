@@ -5,7 +5,7 @@ const linkStyle: React.CSSProperties = {
   padding: "8px 12px",
   borderRadius: 4,
   background: "var(--demo-code-bg)",
-          color: "var(--demo-code-fg)",
+  color: "var(--demo-code-fg)",
   color: "#1565c0",
   textDecoration: "none",
   fontSize: 14,

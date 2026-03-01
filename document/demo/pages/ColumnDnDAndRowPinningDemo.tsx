@@ -217,7 +217,7 @@ export function ColumnDnDAndRowPinningDemo() {
           style={{
             margin: 0,
             background: "var(--demo-code-bg)",
-          color: "var(--demo-code-fg)",
+            color: "var(--demo-code-fg)",
             padding: 12,
             borderRadius: 4,
             fontSize: 11,

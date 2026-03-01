@@ -63,7 +63,15 @@ export function JustifyContent() {
         </div>
       </div>
 
-      <pre style={{ background: "var(--demo-code-bg)", color: "var(--demo-code-fg)", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`<Grid justifyContent="${justify}" width={800} columns={columns} ...>
 // Total column width: 370px < 800px container`}
       </pre>

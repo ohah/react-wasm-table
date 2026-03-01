@@ -174,7 +174,11 @@ export function ClipboardDemo() {
           <select
             value={copyFormat}
             onChange={(e) => setCopyFormat(e.target.value as "tsv" | "csv" | "html")}
-            style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid var(--demo-border-2)" }}
+            style={{
+              padding: "4px 8px",
+              borderRadius: 4,
+              border: "1px solid var(--demo-border-2)",
+            }}
           >
             <option value="tsv">TSV</option>
             <option value="csv">CSV</option>
@@ -215,14 +219,16 @@ export function ClipboardDemo() {
             style={{
               padding: 12,
               background: "var(--demo-code-bg)",
-          color: "var(--demo-code-fg)",
+              color: "var(--demo-code-fg)",
               borderRadius: 4,
               fontSize: 13,
             }}
           >
             <strong>Log</strong>
             {log.length === 0 && (
-              <div style={{ color: "var(--demo-muted-5)", marginTop: 6 }}>Copy or paste to see log</div>
+              <div style={{ color: "var(--demo-muted-5)", marginTop: 6 }}>
+                Copy or paste to see log
+              </div>
             )}
             {log.map((entry, i) => (
               <div key={i} style={{ marginTop: 4, color: "#333" }}>

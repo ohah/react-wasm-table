@@ -95,7 +95,15 @@ export function AlignItems() {
         </div>
       </div>
 
-      <pre style={{ background: "var(--demo-code-bg)", color: "var(--demo-code-fg)", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre
+        style={{
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 13,
+        }}
+      >
         {`helper.accessor("name", { size: 180 })
 helper.accessor("dept", { size: 120${alignSelfValue ? `, alignSelf: "${alignSelfValue}"` : ""} })
 helper.accessor("salary", { size: 100 })

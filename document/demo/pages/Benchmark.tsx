@@ -291,10 +291,7 @@ export function Benchmark() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             {ROW_COUNT_OPTIONS.map((opt) => (
-              <DropdownMenuItem
-                key={opt.value}
-                onClick={() => setSelectedCount(opt.value)}
-              >
+              <DropdownMenuItem key={opt.value} onClick={() => setSelectedCount(opt.value)}>
                 {opt.label}
               </DropdownMenuItem>
             ))}
@@ -313,7 +310,11 @@ export function Benchmark() {
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" disabled={isRunning} className="min-w-[140px] justify-between">
+            <Button
+              variant="outline"
+              disabled={isRunning}
+              className="min-w-[140px] justify-between"
+            >
               Libraries ({[enableWasm, enableTanStack].filter(Boolean).length}/2)
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
@@ -443,7 +444,9 @@ function ResultsPanel({ results }: { results: BenchResult[] }) {
             return (
               <tr key={i} style={{ borderBottom: "1px solid var(--demo-border)" }}>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{r.rowCount.toLocaleString()}</td>
-                <td style={{ ...tdStyle, textAlign: "right", color: "var(--demo-muted-4)" }}>{r.dataGenMs}ms</td>
+                <td style={{ ...tdStyle, textAlign: "right", color: "var(--demo-muted-4)" }}>
+                  {r.dataGenMs}ms
+                </td>
                 {hasWasm && (
                   <td style={{ ...tdStyle, textAlign: "right", color: "#2e7d32", fontWeight: 700 }}>
                     {r.wasmMs != null ? `${r.wasmMs}ms` : "—"}
@@ -510,7 +513,15 @@ function Bar({
   const pct = maxMs > 0 ? (ms / maxMs) * 100 : 0;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-      <span style={{ width: 160, fontSize: 12, textAlign: "right", flexShrink: 0, color: "var(--demo-muted-2)" }}>
+      <span
+        style={{
+          width: 160,
+          fontSize: 12,
+          textAlign: "right",
+          flexShrink: 0,
+          color: "var(--demo-muted-2)",
+        }}
+      >
         {label}
       </span>
       <div
@@ -794,11 +805,7 @@ function InteractiveBench({
             color: "var(--demo-dropdown-fg)",
           }}
         />
-        <Button
-          onClick={handleFilter}
-          disabled={isMeasuring || !searchInput.trim()}
-          size="sm"
-        >
+        <Button onClick={handleFilter} disabled={isMeasuring || !searchInput.trim()} size="sm">
           Search
         </Button>
         <Button variant="ghost" onClick={handleReset} disabled={isMeasuring} size="sm">
@@ -832,9 +839,23 @@ function InteractiveBench({
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
         {enableWasm && (
           <section>
-            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600, color: "var(--demo-panel-fg)" }}>react-wasm-table</h3>
+            <h3
+              style={{
+                fontSize: 14,
+                margin: "0 0 8px",
+                fontWeight: 600,
+                color: "var(--demo-panel-fg)",
+              }}
+            >
+              react-wasm-table
+            </h3>
             <div
-              style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden", height }}
+              style={{
+                border: "1px solid var(--demo-border)",
+                borderRadius: 8,
+                overflow: "hidden",
+                height,
+              }}
             >
               <Grid
                 data={data as Record<string, unknown>[]}
@@ -853,7 +874,14 @@ function InteractiveBench({
         )}
         {enableTanStack && (
           <section>
-            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600, color: "var(--demo-panel-fg)" }}>
+            <h3
+              style={{
+                fontSize: 14,
+                margin: "0 0 8px",
+                fontWeight: 600,
+                color: "var(--demo-panel-fg)",
+              }}
+            >
               @tanstack/react-table
             </h3>
             <TanStackVirtualTable
