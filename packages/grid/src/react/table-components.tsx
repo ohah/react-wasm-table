@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { TableCellContent } from "../types";
 
 /**
  * Config-only structural components for TanStack-compatible Table API.
@@ -7,29 +7,31 @@ import type { ReactNode } from "react";
  */
 
 export interface TheadProps {
-  children?: ReactNode;
+  children?: TableCellContent;
 }
 
 export interface TbodyProps {
-  children?: ReactNode;
+  children?: TableCellContent;
 }
 
 export interface TfootProps {
-  children?: ReactNode;
+  children?: TableCellContent;
 }
 
 export interface TrProps {
-  children?: ReactNode;
+  children?: TableCellContent;
 }
 
 export interface ThProps {
   colSpan?: number;
-  children?: ReactNode;
+  /** Header cell content: ReactNode or RenderInstruction (e.g. flexRender return value). */
+  children?: TableCellContent;
 }
 
 export interface TdProps {
   colSpan?: number;
-  children?: ReactNode;
+  /** Cell content: ReactNode or RenderInstruction (e.g. flexRender return value). */
+  children?: TableCellContent;
 }
 
 export function Thead(_props: TheadProps): null {

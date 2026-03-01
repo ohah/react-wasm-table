@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { GridInstance } from "./grid-instance";
 
 // ── CSS value types ──────────────────────────────────────────────────
@@ -435,6 +436,9 @@ export type RenderInstruction =
   | BoxInstruction
   | StackInstruction
   | StubInstruction;
+
+/** Table cell content: ReactNode or RenderInstruction. Use for Td children so flexRender return type is valid. */
+export type TableCellContent = ReactNode | RenderInstruction;
 
 /** Styling for text cells. */
 export interface TextStyle {
