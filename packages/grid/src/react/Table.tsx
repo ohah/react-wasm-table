@@ -128,8 +128,18 @@ const DEFAULT_ROW_HEIGHT = 36;
 const DEFAULT_HEADER_HEIGHT = 40;
 
 export function Table({ table, children, overscan = 5, ...rest }: TableProps) {
-  const { data, columns } = table.options;
+  const { data: rawData, columns } = table.options;
   const state = table.getState();
+
+  // If pagination is active, pass only the current page rows to Grid.
+  // Grid renders all data it receives — it has no internal pagination concept.
+  const data = useMemo(() => {
+    if (state.pagination) {
+      const model = table.getPaginationRowModel();
+      return model.rows.map((r) => r.original) as typeof rawData;
+    }
+    return rawData;
+  }, [rawData, state.pagination, table]);
 
   const effectiveRowHeight = rest.rowHeight ?? DEFAULT_ROW_HEIGHT;
   const effectiveHeaderHeight = rest.headerHeight ?? DEFAULT_HEADER_HEIGHT;
