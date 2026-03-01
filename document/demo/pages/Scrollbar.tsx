@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, type CssOverflow } from "@ohah/react-wasm-table";
 import { generateSmallData, generateEmployees } from "../data";
-import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const smallHelper = createColumnHelper<SmallRow>();
@@ -103,16 +102,6 @@ export function Scrollbar() {
             columns={smallColumns}
           />
         </div>
-        <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid
-            data={largeData}
-            width={550}
-            height={400}
-            overflowY={overflowY}
-            columns={smallColumns}
-          />
-        </div>
       </div>
 
       {/* ── 2. No Scroll (few rows) ────────────────────────── */}
@@ -125,16 +114,6 @@ export function Scrollbar() {
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
           <Grid data={smallData} width={550} height={400} overflowY="auto" columns={smallColumns} />
-        </div>
-        <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid
-            data={smallData}
-            width={550}
-            height={400}
-            overflowY="auto"
-            columns={smallColumns}
-          />
         </div>
       </div>
 
@@ -154,16 +133,6 @@ export function Scrollbar() {
             columns={smallColumns}
           />
         </div>
-        <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid
-            data={smallData}
-            width={550}
-            height={400}
-            overflowY="scroll"
-            columns={smallColumns}
-          />
-        </div>
       </div>
 
       {/* ── 4. Many Columns (wide) ──────────────────────────── */}
@@ -173,16 +142,6 @@ export function Scrollbar() {
         <div>
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
           <Grid
-            data={largeData}
-            width={600}
-            height={400}
-            overflowY={overflowY}
-            columns={manyColumns}
-          />
-        </div>
-        <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid
             data={largeData}
             width={600}
             height={400}
