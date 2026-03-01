@@ -32,6 +32,7 @@ export const BASE_TO_TANSTACK: Record<string, string> = {
   "/canvas-progress-bar": "/tanstack/canvas-progress-bar",
   "/canvas-box": "/tanstack/canvas-box",
   "/canvas-stack": "/tanstack/canvas-stack",
+  "/canvas-sparkline": "/tanstack/canvas-sparkline",
   // Grid / Flex / Box
   "/grid-template": "/tanstack/grid-template",
   "/flex-direction": "/tanstack/flex-direction",

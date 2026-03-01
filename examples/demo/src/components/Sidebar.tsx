@@ -23,6 +23,7 @@ const sections = [
       { to: "/canvas-progress-bar", label: "Canvas: ProgressBar" },
       { to: "/canvas-box", label: "Canvas: Box" },
       { to: "/canvas-stack", label: "Canvas: Stack" },
+      { to: "/canvas-sparkline", label: "Canvas: Sparkline" },
       { to: "/custom-renderer", label: "Custom Renderer" },
       { to: "/layers", label: "Layer System" },
       { to: "/column-features", label: "Column Features" },

@@ -1,4 +1,4 @@
-import type { TextStyle, BadgeStyle } from "../../types";
+import type { TextStyle, BadgeStyle, SparklineStyle } from "../../types";
 import {
   readCellX,
   readCellY,
@@ -102,4 +102,65 @@ export function drawBadgeFromBuffer(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(text, badgeX + badgeWidth / 2, badgeY + badgeHeight / 2);
+}
+
+/** Draw a sparkline (mini line chart) reading layout from a Float32Array buffer. */
+export function drawSparklineFromBuffer(
+  ctx: CanvasRenderingContext2D,
+  buf: Float32Array,
+  cellIdx: number,
+  data: number[],
+  style?: Partial<SparklineStyle>,
+): void {
+  const color = style?.color ?? "#333";
+  const strokeWidth = style?.strokeWidth ?? 1.5;
+  const variant = style?.variant ?? "line";
+
+  const x = readCellX(buf, cellIdx);
+  const y = readCellY(buf, cellIdx);
+  const w = readCellWidth(buf, cellIdx);
+  const h = readCellHeight(buf, cellIdx);
+  const padTop = readCellPaddingTop(buf, cellIdx);
+  const padRight = readCellPaddingRight(buf, cellIdx);
+  const padBottom = readCellPaddingBottom(buf, cellIdx);
+  const padLeft = readCellPaddingLeft(buf, cellIdx);
+
+  const contentLeft = x + padLeft;
+  const contentTop = y + padTop;
+  const contentWidth = w - padLeft - padRight;
+  const contentHeight = h - padTop - padBottom;
+
+  if (data.length < 2 || contentWidth <= 0 || contentHeight <= 0) return;
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const stepX = contentWidth / (data.length - 1);
+
+  const points: { x: number; y: number }[] = data.map((v, i) => ({
+    x: contentLeft + i * stepX,
+    y: contentTop + contentHeight - ((v - min) / range) * contentHeight,
+  }));
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = strokeWidth;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  if (variant === "area") {
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, contentTop + contentHeight);
+    for (const p of points) ctx.lineTo(p.x, p.y);
+    ctx.lineTo(points[points.length - 1].x, contentTop + contentHeight);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.25;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+  ctx.stroke();
 }

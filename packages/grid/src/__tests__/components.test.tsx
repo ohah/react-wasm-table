@@ -1,11 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import React from "react";
-import { Text, Badge, Flex, ProgressBar, Box, Stack } from "../components";
+import { Text, Badge, Sparkline, Flex, ProgressBar, Box, Stack } from "../components";
 import { resolveInstruction } from "../resolve-instruction";
 import type {
   RenderInstruction,
   TextInstruction,
   BadgeInstruction,
+  SparklineInstruction,
   BoxInstruction,
   StackInstruction,
   StubInstruction,
@@ -87,6 +88,49 @@ describe("Canvas components", () => {
         type: "badge",
         value: "x",
         style: { color: "gray", backgroundColor: "blue", borderRadius: 2 },
+      };
+      expect(result).toEqual(expected);
+    });
+  });
+
+  describe("Sparkline", () => {
+    it("returns a SparklineInstruction when called directly", () => {
+      const result = Sparkline({ data: [1, 2, 3], color: "blue" }) as RenderInstruction;
+      const expected: SparklineInstruction = {
+        type: "sparkline",
+        data: [1, 2, 3],
+        style: { color: "blue" },
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("returns a SparklineInstruction via JSX + resolveInstruction", () => {
+      const element = <Sparkline data={[10, 20, 30]} variant="area" />;
+      const result = resolveInstruction(element);
+      const expected: SparklineInstruction = {
+        type: "sparkline",
+        data: [10, 20, 30],
+        style: { variant: "area" },
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("omits style when no style properties given", () => {
+      const result = Sparkline({ data: [1, 2] }) as RenderInstruction;
+      expect(result).toEqual({ type: "sparkline", data: [1, 2] });
+      expect((result as SparklineInstruction).style).toBeUndefined();
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Sparkline({
+        data: [1, 2, 3],
+        style: { color: "gray", strokeWidth: 2 },
+        color: "red",
+      }) as RenderInstruction;
+      const expected: SparklineInstruction = {
+        type: "sparkline",
+        data: [1, 2, 3],
+        style: { color: "red", strokeWidth: 2 },
       };
       expect(result).toEqual(expected);
     });

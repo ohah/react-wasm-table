@@ -335,6 +335,22 @@ export interface BadgeInstruction {
   style?: Partial<BadgeStyle>;
 }
 
+/** Styling for sparkline (inline mini chart). */
+export interface SparklineStyle {
+  color: string;
+  strokeWidth: number;
+  /** "line" = stroke only, "area" = fill under line. @default "line" */
+  variant: "line" | "area";
+}
+
+/** A sparkline instruction: draws a small line chart from a data array. */
+export interface SparklineInstruction {
+  type: "sparkline";
+  /** Data points (y-values); x is evenly spaced. */
+  data: number[];
+  style?: Partial<SparklineStyle>;
+}
+
 /** Flex container style (Taffy-compatible). Same surface as container layout. */
 export interface FlexContainerStyle {
   /** Flex direction. @default "row" */
@@ -414,6 +430,7 @@ export interface StubInstruction {
 export type RenderInstruction =
   | TextInstruction
   | BadgeInstruction
+  | SparklineInstruction
   | FlexInstruction
   | BoxInstruction
   | StackInstruction

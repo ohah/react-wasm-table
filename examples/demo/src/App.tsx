@@ -39,6 +39,7 @@ import { CanvasFlex } from "./pages/CanvasFlex";
 import { CanvasProgressBar } from "./pages/CanvasProgressBar";
 import { CanvasBox } from "./pages/CanvasBox";
 import { CanvasStack } from "./pages/CanvasStack";
+import { CanvasSparkline } from "./pages/CanvasSparkline";
 import { CustomRendererDemo } from "./pages/CustomRendererDemo";
 import { LayerDemo } from "./pages/LayerDemo";
 import { ColumnPinningDemo } from "./pages/ColumnPinningDemo";
@@ -114,6 +115,7 @@ export function App() {
           <Route path="/tanstack/canvas-progress-bar" element={<CanvasProgressBar />} />
           <Route path="/tanstack/canvas-box" element={<CanvasBox />} />
           <Route path="/tanstack/canvas-stack" element={<CanvasStack />} />
+          <Route path="/tanstack/canvas-sparkline" element={<CanvasSparkline />} />
           <Route path="/tanstack/grid-template" element={<GridTemplate />} />
           <Route path="/tanstack/flex-direction" element={<FlexDirection />} />
           <Route path="/tanstack/flex-wrap" element={<FlexWrap />} />
@@ -164,6 +166,7 @@ export function App() {
           <Route path="/canvas-progress-bar" element={<CanvasProgressBar />} />
           <Route path="/canvas-box" element={<CanvasBox />} />
           <Route path="/canvas-stack" element={<CanvasStack />} />
+          <Route path="/canvas-sparkline" element={<CanvasSparkline />} />
           <Route path="/custom-renderer" element={<CustomRendererDemo />} />
           <Route path="/layers" element={<LayerDemo />} />
           <Route path="/column-pinning" element={<ColumnPinningDemo />} />

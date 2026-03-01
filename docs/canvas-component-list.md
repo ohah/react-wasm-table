@@ -8,15 +8,16 @@ Overview of canvas JSX components: **supported** (implemented and drawn on canva
 
 These components have a dedicated cell renderer and are fully drawn on canvas.
 
-| Component | Description                                                                                        | Main props                                                                                                     |
-| --------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Text**  | Single-line text.                                                                                  | `value`, `style?`, `color?`, `fontWeight?`, `fontSize?`                                                        |
-| **Badge** | Pill/chip with background.                                                                         | `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`                                               |
-| **Flex**  | Taffy-compatible flex container; lays out and draws all children (Text, Badge, Stub, nested Flex). | `children`, `style?`, `flexDirection?`, `gap?`, `alignItems?`, `justifyContent?`, …                            |
-| **Box**   | Generic container: padding, margin, border; children drawn in content rect (vertical stack).       | `children?`, `style?`, `padding?`, `margin?`, `borderWidth?`, `borderColor?`, `backgroundColor?`, `boxSizing?` |
-| **Stack** | Row or column layout with gap (no padding from layout buffer).                                     | `children?`, `direction?` ("row" \| "column"), `gap?`, `style?`                                                |
+| Component     | Description                                                                                        | Main props                                                                                                     |
+| ------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Text**      | Single-line text.                                                                                  | `value`, `style?`, `color?`, `fontWeight?`, `fontSize?`                                                        |
+| **Badge**     | Pill/chip with background.                                                                         | `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`                                               |
+| **Flex**      | Taffy-compatible flex container; lays out and draws all children (Text, Badge, Stub, nested Flex). | `children`, `style?`, `flexDirection?`, `gap?`, `alignItems?`, `justifyContent?`, …                            |
+| **Box**       | Generic container: padding, margin, border; children drawn in content rect (vertical stack).       | `children?`, `style?`, `padding?`, `margin?`, `borderWidth?`, `borderColor?`, `backgroundColor?`, `boxSizing?` |
+| **Stack**     | Row or column layout with gap (no padding from layout buffer).                                     | `children?`, `direction?` ("row" \| "column"), `gap?`, `style?`                                                |
+| **Sparkline** | Inline mini line chart from a data array.                                                          | `data` (number[]), `style?`, `color?`, `strokeWidth?`, `variant?` ("line" \| "area")                           |
 
-All five support the same pattern: optional `style` object and individual props (individual overrides `style`). See [Canvas Components](canvas-components.md) for API details.
+All six support the same pattern: optional `style` object and individual props (individual overrides `style`). See [Canvas Components](canvas-components.md) for API details.
 
 ---
 
@@ -32,17 +33,16 @@ _(None — Box and Stack are implemented.)_
 
 Display-only; no DOM overlay. Canvas drawing only.
 
-| Component     | Intended use                   |
-| ------------- | ------------------------------ |
-| **Sparkline** | Inline sparkline.              |
-| **Rating**    | Star or numeric rating.        |
-| **Icon**      | Icon (name or glyph).          |
-| **Image**     | Image (src, alt).              |
-| **Avatar**    | User avatar.                   |
-| **Tag**       | Tag label.                     |
-| **Chip**      | Chip with optional icon/close. |
-| **Link**      | Clickable link (text + href).  |
-| **Color**     | Color swatch.                  |
+| Component  | Intended use                   |
+| ---------- | ------------------------------ |
+| **Rating** | Star or numeric rating.        |
+| **Icon**   | Icon (name or glyph).          |
+| **Image**  | Image (src, alt).              |
+| **Avatar** | User avatar.                   |
+| **Tag**    | Tag label.                     |
+| **Chip**   | Chip with optional icon/close. |
+| **Link**   | Clickable link (text + href).  |
+| **Color**  | Color swatch.                  |
 
 ### Interactive (DOM overlay)
 
