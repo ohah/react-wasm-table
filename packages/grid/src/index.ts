@@ -145,7 +145,14 @@ export {
   getFacetedRowModel,
   buildFacetedValues,
 } from "./row-model";
-export type { Row, RowModel, RowModelFactory, VisibleRange, AggregationFn, FacetedColumnValues } from "./row-model";
+export type {
+  Row,
+  RowModel,
+  RowModelFactory,
+  VisibleRange,
+  AggregationFn,
+  FacetedColumnValues,
+} from "./row-model";
 
 // Parse table children
 export { parseTableChildren } from "./react/parse-table-children";

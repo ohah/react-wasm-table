@@ -25,8 +25,21 @@ import type {
   HeaderContext,
 } from "./tanstack-types";
 import { getLeafColumns } from "./resolve-columns";
-import type { Row, RowModel, RowModelFactory, AggregationFn, FacetedColumnValues } from "./row-model";
-import { buildRowModel, buildVirtualRowModel, buildExpandedRowModel, buildPaginationRowModel, buildGroupedRowModel, buildFacetedValues } from "./row-model";
+import type {
+  Row,
+  RowModel,
+  RowModelFactory,
+  AggregationFn,
+  FacetedColumnValues,
+} from "./row-model";
+import {
+  buildRowModel,
+  buildVirtualRowModel,
+  buildExpandedRowModel,
+  buildPaginationRowModel,
+  buildGroupedRowModel,
+  buildFacetedValues,
+} from "./row-model";
 import type { VisibleRange } from "./row-model";
 import { buildHeaderGroups } from "./build-header-groups";
 

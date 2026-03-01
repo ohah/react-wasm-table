@@ -112,7 +112,10 @@ function simulateHookState(opts: {
     opts.initialColumnSizingInfo ?? DEFAULT_COLUMN_SIZING_INFO;
   let internalPinning: ColumnPinningState = opts.initialColumnPinning ?? { left: [], right: [] };
   let internalExpanded: ExpandedState = opts.initialExpanded ?? {};
-  let internalPagination: PaginationState = opts.initialPagination ?? { pageIndex: 0, pageSize: 10 };
+  let internalPagination: PaginationState = opts.initialPagination ?? {
+    pageIndex: 0,
+    pageSize: 10,
+  };
   let internalGrouping: GroupingState = opts.initialGrouping ?? [];
 
   const sorting = opts.controlledSorting ?? internalSorting;

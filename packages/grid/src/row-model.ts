@@ -1,4 +1,10 @@
-import type { GridColumnDef, ExpandedState, ExpandedUpdater, PaginationState, GroupingState } from "./tanstack-types";
+import type {
+  GridColumnDef,
+  ExpandedState,
+  ExpandedUpdater,
+  PaginationState,
+  GroupingState,
+} from "./tanstack-types";
 import type { GridColumn } from "./grid-instance";
 import type { Cell } from "./cell";
 import { buildCell } from "./cell";
@@ -397,9 +403,15 @@ export function buildPaginationRowModel<TData>(
     get rows(): Row<TData>[] {
       if (!cachedRows) {
         cachedRows = pageIndices.map((originalIndex, viewIndex) =>
-          buildRow(data, originalIndex, viewIndex, columns, modelOptions
-            ? { visibleColumns: modelOptions.visibleColumns, table: modelOptions.table }
-            : undefined),
+          buildRow(
+            data,
+            originalIndex,
+            viewIndex,
+            columns,
+            modelOptions
+              ? { visibleColumns: modelOptions.visibleColumns, table: modelOptions.table }
+              : undefined,
+          ),
         );
       }
       return cachedRows;
@@ -409,9 +421,15 @@ export function buildPaginationRowModel<TData>(
       if (index < 0 || index >= pageIndices.length) {
         throw new RangeError(`Row index ${index} out of range [0, ${pageIndices.length})`);
       }
-      return buildRow(data, pageIndices[index]!, index, columns, modelOptions
-        ? { visibleColumns: modelOptions.visibleColumns, table: modelOptions.table }
-        : undefined);
+      return buildRow(
+        data,
+        pageIndices[index]!,
+        index,
+        columns,
+        modelOptions
+          ? { visibleColumns: modelOptions.visibleColumns, table: modelOptions.table }
+          : undefined,
+      );
     },
   };
 }
@@ -446,17 +464,24 @@ export function buildGroupedRowModel<TData>(
     return buildRowModel(data, indices, columns, modelOptions);
   }
 
-  function buildGroupTree(
-    idxs: number[],
-    groupDepth: number,
-    parentId?: string,
-  ): Row<TData>[] {
+  function buildGroupTree(idxs: number[], groupDepth: number, parentId?: string): Row<TData>[] {
     if (groupDepth >= grouping.length) {
       // Leaf rows
       return idxs.map((origIdx, viewIdx) =>
-        buildRow(data, origIdx, viewIdx, columns, modelOptions
-          ? { visibleColumns: modelOptions.visibleColumns, table: modelOptions.table, depth: groupDepth, parentId }
-          : { depth: groupDepth, parentId }),
+        buildRow(
+          data,
+          origIdx,
+          viewIdx,
+          columns,
+          modelOptions
+            ? {
+                visibleColumns: modelOptions.visibleColumns,
+                table: modelOptions.table,
+                depth: groupDepth,
+                parentId,
+              }
+            : { depth: groupDepth, parentId },
+        ),
       );
     }
 
@@ -516,10 +541,7 @@ export function buildGroupedRowModel<TData>(
     return rows;
   }
 
-  const treeRows = buildGroupTree(
-    Array.from(effectiveIndices),
-    0,
-  );
+  const treeRows = buildGroupTree(Array.from(effectiveIndices), 0);
 
   return {
     rows: treeRows,
