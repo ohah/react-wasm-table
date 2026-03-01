@@ -134,7 +134,7 @@ export function TanStackLayer() {
 
   return (
     <>
-      <h1>TanStack API: Layer System</h1>
+      <h1>Layer System</h1>
       <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
         useReactTable + Table with layers prop (header, data, gridLines, rowHighlight, selection,
         watermark).
@@ -198,7 +198,28 @@ export function TanStackLayer() {
   return layers;
 }, [enabledSet]);
 
-<Table table={table} width={560} height={400} layers={activeLayers} selection={selection} onSelectionChange={setSelection} />`}</CodeSnippet>
+<Table table={table} width={560} height={400} layers={activeLayers} selection={selection} onSelectionChange={setSelection}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>`}</CodeSnippet>
     </>
   );
 }

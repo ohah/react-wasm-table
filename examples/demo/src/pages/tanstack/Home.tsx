@@ -16,7 +16,6 @@ import {
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
 import { useContainerSize } from "../../useContainerSize";
-import { CodeSnippet } from "../../components/CodeSnippet";
 
 type Employee = {
   id: number;
@@ -130,64 +129,56 @@ export function TanStackHome() {
 
   return (
     <>
-      <h1>TanStack API: Home (50k rows)</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <h1>react-wasm-table Demo</h1>
+      <p>
+        Rendering {data.length.toLocaleString()} rows with Canvas + WASM layout
         {sorting.length > 0 && (
-          <span style={{ marginRight: 8, color: "#666" }}>
-            Sorted by: {sorting[0]!.id} ({sorting[0]!.desc ? "desc" : "asc"})
+          <span style={{ marginLeft: 8, color: "#666" }}>
+            | Sorted by: {sorting[0]!.id} ({sorting[0]!.desc ? "desc" : "asc"})
           </span>
         )}
       </p>
-      <div ref={ref} style={{ width: "100%", minHeight: 400 }}>
+      <div ref={ref} style={{ width: "100%", height: 600 }}>
         {size.width > 0 && (
-          <Table table={table} width={size.width} height={Math.min(400, size.height)}>
-            <Thead>
-              {table.getHeaderGroups().map((hg) => (
-                <Tr key={hg.id}>
-                  {hg.headers.map((h) => (
-                    <Th key={h.id} colSpan={h.colSpan}>
-                      {h.isPlaceholder
-                        ? null
-                        : flexRender(h.column.columnDef.header, h.getContext())}
-                    </Th>
+          <>
+            <section style={{ marginBottom: 16 }}>
+              <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
+              <Table
+                table={table}
+                width={size.width}
+                height={size.height}
+                overflowY="scroll"
+                overflowX="scroll"
+              >
+                <Thead>
+                  {table.getHeaderGroups().map((hg) => (
+                    <Tr key={hg.id}>
+                      {hg.headers.map((h) => (
+                        <Th key={h.id} colSpan={h.colSpan}>
+                          {h.isPlaceholder
+                            ? null
+                            : flexRender(h.column.columnDef.header, h.getContext())}
+                        </Th>
+                      ))}
+                    </Tr>
                   ))}
-                </Tr>
-              ))}
-            </Thead>
-            <Tbody>
-              {table.getRowModel().rows.map((row) => (
-                <Tr key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <Td key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </Td>
+                </Thead>
+                <Tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <Tr key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <Td key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </Td>
+                      ))}
+                    </Tr>
                   ))}
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+                </Tbody>
+              </Table>
+            </section>
+          </>
         )}
       </div>
-      <CodeSnippet>{`const table = useReactTable({
-  data,
-  columns,
-  getCoreRowModel: getCoreRowModel(),
-  state: { sorting },
-  onSortingChange: setSorting,
-});
-
-<Table table={table} width={width} height={height}>
-  <Thead>...</Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}</CodeSnippet>
     </>
   );
 }

@@ -64,10 +64,11 @@ export function TanStackAdapterDI() {
 
   return (
     <>
-      <h1>TanStack API: Adapter DI</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
-        useReactTable + Table with eventManager, selectionManager, editorManager injected. Clear
-        selection via external manager.
+      <h1>Adapter DI (Step 0-5)</h1>
+      <p>
+        Inject external <code>EventManager</code>, <code>SelectionManager</code>, and{" "}
+        <code>EditorManager</code> instances via props. Useful for sharing state between multiple
+        grids, testing, or building custom integrations.
       </p>
       <div style={{ display: "flex", gap: 16, marginBottom: 12, alignItems: "center" }}>
         <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
@@ -136,10 +137,33 @@ const [editorManager] = useState(() => new EditorManager());
 
 <Table
   table={table}
+  width={560}
+  height={340}
   eventManager={useDI ? eventManager : undefined}
   selectionManager={useDI ? selectionManager : undefined}
   editorManager={useDI ? editorManager : undefined}
-/>
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
 
 // Clear selection from outside: selectionManager.clear()`}</CodeSnippet>
     </>

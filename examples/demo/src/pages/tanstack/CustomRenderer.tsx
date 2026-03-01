@@ -78,10 +78,10 @@ export function TanStackCustomRenderer() {
 
   return (
     <>
-      <h1>TanStack API: Custom Renderer</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
-        useReactTable + Table. Custom cell renderers via column.cell (React: Badge, Text). Canvas
-        cellRenderers prop also supported on Table.
+      <h1>Custom Cell Renderer</h1>
+      <p>
+        Register custom <code>CellRenderer</code> instances via the <code>cellRenderers</code> prop.
+        Built-in types (text, badge, stub, flex) can also be overridden.
       </p>
       <Table table={table} width={560} height={340}>
         <Thead>
@@ -115,7 +115,28 @@ helper.accessor("salary", {
   ),
 });
 
-<Table table={table} width={560} height={340} />`}</CodeSnippet>
+<Table table={table} width={560} height={340}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>`}</CodeSnippet>
     </>
   );
 }

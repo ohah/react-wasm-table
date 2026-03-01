@@ -86,9 +86,10 @@ export function TanStackUseSelection() {
 
   return (
     <>
-      <h1>TanStack API: useSelection</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
-        useReactTable + Table with selection, onBeforeSelectionChange, onCopy, enableSelection.
+      <h1>useSelection Hook</h1>
+      <p>
+        Demonstrates controlled selection, <code>onBeforeSelectionChange</code> guard, custom{" "}
+        <code>onCopy</code>, and per-column <code>enableSelection</code>.
       </p>
 
       <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
@@ -199,8 +200,26 @@ const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() 
   onBeforeSelectionChange={(next) => guardEnabled && next && next.maxRow > 5 ? false : undefined}
   onCopy={(tsv, range) => { setCopyLog(prev => [...]); return copyFormat === "json" ? JSON.stringify(rows) : tsv; }}
 >
-  <Thead>...</Thead>
-  <Tbody>...</Tbody>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
 </Table>`}</CodeSnippet>
     </>
   );

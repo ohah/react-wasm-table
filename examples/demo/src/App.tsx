@@ -66,6 +66,7 @@ import {
   TanStackOnAfterDraw,
   TanStackTouchEvents,
   TanStackTdContent,
+  TanStackExpanding,
 } from "./pages/tanstack";
 import { FpsCounter } from "./components/FpsCounter";
 
@@ -104,6 +105,28 @@ export function App() {
           <Route path="/tanstack/hooks/after-draw" element={<TanStackOnAfterDraw />} />
           <Route path="/tanstack/touch-events" element={<TanStackTouchEvents />} />
           <Route path="/tanstack/td-content" element={<TanStackTdContent />} />
+          <Route path="/tanstack/expanding" element={<TanStackExpanding />} />
+          {/* Canvas / Flex / Box — TanStack route uses same component (identical demo) */}
+          <Route path="/tanstack/canvas-components" element={<CanvasComponents />} />
+          <Route path="/tanstack/canvas-text" element={<CanvasText />} />
+          <Route path="/tanstack/canvas-badge" element={<CanvasBadge />} />
+          <Route path="/tanstack/canvas-flex" element={<CanvasFlex />} />
+          <Route path="/tanstack/canvas-progress-bar" element={<CanvasProgressBar />} />
+          <Route path="/tanstack/canvas-box" element={<CanvasBox />} />
+          <Route path="/tanstack/canvas-stack" element={<CanvasStack />} />
+          <Route path="/tanstack/grid-template" element={<GridTemplate />} />
+          <Route path="/tanstack/flex-direction" element={<FlexDirection />} />
+          <Route path="/tanstack/flex-wrap" element={<FlexWrap />} />
+          <Route path="/tanstack/gap" element={<Gap />} />
+          <Route path="/tanstack/justify-content" element={<JustifyContent />} />
+          <Route path="/tanstack/align-items" element={<AlignItems />} />
+          <Route path="/tanstack/flex-grow" element={<FlexGrow />} />
+          <Route path="/tanstack/position" element={<Position />} />
+          <Route path="/tanstack/padding" element={<Padding />} />
+          <Route path="/tanstack/margin" element={<Margin />} />
+          <Route path="/tanstack/overflow" element={<Overflow />} />
+          <Route path="/tanstack/scrollbar" element={<Scrollbar />} />
+          <Route path="/tanstack/hooks" element={<HooksOverview />} />
           <Route path="/table-api" element={<TableApiDemo />} />
           <Route path="/flex-direction" element={<FlexDirection />} />
           <Route path="/flex-wrap" element={<FlexWrap />} />

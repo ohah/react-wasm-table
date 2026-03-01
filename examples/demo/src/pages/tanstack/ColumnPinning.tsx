@@ -128,12 +128,14 @@ export function TanStackColumnPinning() {
 
   return (
     <>
-      <h1>TanStack API: Column Pinning</h1>
+      <h1>Column Pinning</h1>
       <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
-        useReactTable + Table. Sorting, column order, pin left/right.
+        Pin columns to the <strong>left</strong> or <strong>right</strong> edge. Drag headers to
+        reorder columns. Pinned columns stay fixed while scrolling horizontally. The grid uses 7
+        columns (930px total) in a 700px viewport to ensure horizontal scrolling.
       </p>
       <div style={{ marginBottom: 16, padding: 12, background: "#f9f9f9", borderRadius: 6 }}>
-        <strong style={{ fontSize: 13 }}>Pin</strong>
+        <strong style={{ fontSize: 13 }}>Pin Controls</strong>
         <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
           {ALL_COLUMN_IDS.map((colId) => {
             const isLeft = columnPinning.left.includes(colId);
@@ -146,13 +148,13 @@ export function TanStackColumnPinning() {
                     style={isLeft ? btnActive : btnBase}
                     onClick={() => togglePin(colId, "left")}
                   >
-                    L
+                    Pin L
                   </button>
                   <button
                     style={isRight ? btnActive : btnBase}
                     onClick={() => togglePin(colId, "right")}
                   >
-                    R
+                    Pin R
                   </button>
                 </div>
               </div>
@@ -166,35 +168,40 @@ export function TanStackColumnPinning() {
           </button>
         </div>
       </div>
-      <Table
-        table={table}
-        width={700}
-        height={400}
-        enableColumnDnD
-        columnOrder={columnOrder}
-        onColumnOrderChange={setColumnOrder}
-      >
-        <Thead>
-          {table.getHeaderGroups().map((hg) => (
-            <Tr key={hg.id}>
-              {hg.headers.map((h) => (
-                <Th key={h.id} colSpan={h.colSpan}>
-                  {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                </Th>
-              ))}
-            </Tr>
-          ))}
-        </Thead>
-        <Tbody>
-          {table.getRowModel().rows.map((row) => (
-            <Tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-              ))}
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
+
+      <section style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>TanStack API</h3>
+        <Table
+          table={table}
+          width={700}
+          height={400}
+          enableColumnDnD
+          columnOrder={columnOrder}
+          onColumnOrderChange={setColumnOrder}
+          overflowY="scroll"
+        >
+          <Thead>
+            {table.getHeaderGroups().map((hg) => (
+              <Tr key={hg.id}>
+                {hg.headers.map((h) => (
+                  <Th key={h.id} colSpan={h.colSpan}>
+                    {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                  </Th>
+                ))}
+              </Tr>
+            ))}
+          </Thead>
+          <Tbody>
+            {table.getRowModel().rows.map((row) => (
+              <Tr key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+                ))}
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </section>
       <CodeSnippet>{`const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
 const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({ left: [], right: [] });
 const [sorting, setSorting] = useState<SortingState>([]);
@@ -209,12 +216,28 @@ const table = useReactTable({
   onSortingChange: setSorting,
 });
 
-<Table
-  table={table}
-  width={640}
-  height={400}
-  enableColumnDnD
-/>`}</CodeSnippet>
+<Table table={table} width={640} height={400} enableColumnDnD>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>`}</CodeSnippet>
       <pre
         style={{
           background: "#f5f5f5",

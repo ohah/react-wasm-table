@@ -19,3 +19,4 @@ export { TanStackAdapterDI } from "./AdapterDI";
 export { TanStackOnAfterDraw } from "./OnAfterDraw";
 export { TanStackTouchEvents } from "./TouchEvents";
 export { TanStackTdContent } from "./TdContent";
+export { TanStackExpanding } from "./Expanding";

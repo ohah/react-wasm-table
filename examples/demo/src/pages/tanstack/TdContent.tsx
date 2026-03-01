@@ -129,7 +129,7 @@ export function TanStackTdContent() {
 
   return (
     <>
-      <h1>TanStack API: Td Content &rarr; Canvas</h1>
+      <h1>Td Content → Canvas</h1>
 
       {/* ── Pattern A: column.cell (cellDef) ── */}
       <h2 style={{ fontSize: 16, marginTop: 24 }}>Pattern A: column.cell callback (cellDef)</h2>
@@ -244,6 +244,17 @@ const columns = [
 ];
 
 <Table table={table} width={560} height={200}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
   <Tbody>
     {table.getRowModel().rows.map((row) => (
       <Tr key={row.id}>
