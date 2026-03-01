@@ -78,7 +78,7 @@ export function UseFilteringDemo() {
   const inputStyle: React.CSSProperties = {
     padding: "4px 8px",
     borderRadius: 4,
-    border: "1px solid #ccc",
+    border: "1px solid var(--demo-border-2)",
     fontSize: 13,
     width: 140,
   };
@@ -93,7 +93,7 @@ export function UseFilteringDemo() {
       </p>
 
       <h2>Column Filters</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         Apply column-level filters with different operators. Filters are combined with AND logic.
       </p>
 
@@ -163,7 +163,7 @@ export function UseFilteringDemo() {
           style={{
             padding: "4px 12px",
             borderRadius: 4,
-            border: "1px solid #ccc",
+            border: "1px solid var(--demo-border-2)",
             background: "#fff",
             cursor: "pointer",
             fontSize: 13,
@@ -175,7 +175,7 @@ export function UseFilteringDemo() {
       </div>
 
       <h2>Global Filter</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         Search across all string columns (case-insensitive, OR logic).
       </p>
       <input
@@ -202,7 +202,8 @@ export function UseFilteringDemo() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -223,7 +224,7 @@ export function UseFilteringDemo() {
       <div
         style={{
           padding: 12,
-          background: "#f9f9f9",
+          background: "var(--demo-panel-bg)",
           borderRadius: 4,
           fontSize: 13,
           marginTop: 16,

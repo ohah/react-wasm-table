@@ -77,7 +77,7 @@ const ALL_COLUMN_IDS = [
 const btnBase: React.CSSProperties = {
   padding: "3px 8px",
   borderRadius: 4,
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   background: "#fff",
   cursor: "pointer",
   fontSize: 11,
@@ -116,7 +116,7 @@ export function ColumnPinningDemo() {
   return (
     <>
       <h1>Column Pinning</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         Pin columns to the <strong>left</strong> or <strong>right</strong> edge. Drag headers to
         reorder columns. Pinned columns stay fixed while scrolling horizontally. The grid uses 7
         columns (930px total) in a 700px viewport to ensure horizontal scrolling.
@@ -127,7 +127,7 @@ export function ColumnPinningDemo() {
         style={{
           marginBottom: 16,
           padding: 12,
-          background: "#f9f9f9",
+          background: "var(--demo-panel-bg)",
           borderRadius: 6,
         }}
       >
@@ -167,7 +167,7 @@ export function ColumnPinningDemo() {
 
       {/* Grid API */}
       <section style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "var(--demo-muted)" }}>Grid API</h3>
         <Grid
           data={data}
           width={700}
@@ -187,7 +187,8 @@ export function ColumnPinningDemo() {
       {/* State display */}
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 11,

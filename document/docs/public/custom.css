@@ -11,6 +11,202 @@ html.rp-dark {
   --rp-home-feature-bg: var(--rp-c-bg, #121212);
 }
 
+/* Hero section main: theme-aware (light vs dark) */
+:root,
+:where(html:not(.rp-dark)) {
+  --hero-bg: #fff;
+  --hero-title-color: #1a1a1a;
+  --hero-desc-color: #4a4a4a;
+  --hero-accent-color: #1976d2;
+}
+
+html.rp-dark {
+  --hero-bg: #1e1e1e;
+  --hero-title-color: #e8e8e8;
+  --hero-desc-color: #b0b0b0;
+  --hero-accent-color: #64b5f6;
+}
+
+/* Apply hero variables when hero is visible */
+.rp-home-hero,
+.rp-home-hero--no-image {
+  background-color: var(--hero-bg) !important;
+}
+.rp-home-hero h1,
+.rp-home-hero--no-image h1,
+.rp-home-hero .rp-home-hero-title {
+  color: var(--hero-title-color) !important;
+}
+.rp-home-hero p,
+.rp-home-hero--no-image p,
+.rp-home-hero .rp-home-hero-description {
+  color: var(--hero-desc-color) !important;
+}
+.rp-home-hero a,
+.rp-home-hero--no-image a {
+  color: var(--hero-accent-color);
+}
+
+/* Home main section (first visible block: Benchmark etc.) — theme-aware */
+:root,
+:where(html:not(.rp-dark)) {
+  --home-main-bg: #fff;
+  --home-main-text: #1a1a1a;
+  --home-main-muted: #555;
+}
+
+html.rp-dark {
+  --home-main-bg: #1a1a1a;
+  --home-main-text: #e8e8e8;
+  --home-main-muted: #b0b0b0;
+}
+
+.rp-home-main {
+  background-color: var(--home-main-bg) !important;
+  color: var(--home-main-text) !important;
+}
+.rp-home-main .rp-home-main-muted {
+  color: var(--home-main-muted);
+}
+
+/* Demo/example code: theme-aware so code blocks and panels are visible in dark mode */
+:root,
+:where(html:not(.rp-dark)) {
+  --demo-code-bg: #f5f5f5;
+  --demo-code-fg: #242424;
+  --demo-panel-bg: #f9f9f9;
+  --demo-panel-fg: #333;
+  --demo-muted: #666;
+  --demo-muted-2: #555;
+  --demo-muted-3: #777;
+  --demo-muted-4: #888;
+  --demo-muted-5: #999;
+  --demo-border: #ddd;
+  --demo-border-2: #ccc;
+  --demo-card-bg: #fff;
+  --demo-code-block-bg: #1e1e1e;
+  --demo-code-block-fg: #d4d4d4;
+  --demo-dropdown-bg: #fff;
+  --demo-dropdown-fg: #333;
+  --demo-dropdown-border: #d0d0d0;
+  --demo-dropdown-panel-bg: #fff;
+  --demo-dropdown-selected-bg: #e8f0fe;
+  --demo-dropdown-selected-fg: #1976d2;
+  --demo-dropdown-hover-bg: #f5f5f5;
+  --phase-info-bg: #e3f2fd;
+  --phase-info-text: #0d47a1;
+  --phase-wasm-bg: #e3f2fd;
+  --phase-wasm-text: #0d47a1;
+  --phase-tanstack-bg: #fff3e0;
+  --phase-tanstack-text: #e65100;
+}
+
+html.rp-dark,
+html.dark {
+  --demo-code-bg: #2d2d2d;
+  --demo-code-fg: #e0e0e0;
+  --demo-panel-bg: #252525;
+  --demo-panel-fg: #e0e0e0;
+  --demo-muted: #b0b0b0;
+  --demo-muted-2: #aaa;
+  --demo-muted-3: #a0a0a0;
+  --demo-muted-4: #999;
+  --demo-muted-5: #888;
+  --demo-border: #444;
+  --demo-border-2: #555;
+  --demo-card-bg: #1e1e1e;
+  --demo-code-block-bg: #1a1a1a;
+  --demo-code-block-fg: #d4d4d4;
+  --demo-dropdown-bg: #2d2d2d;
+  --demo-dropdown-fg: #e0e0e0;
+  --demo-dropdown-border: #555;
+  --demo-dropdown-panel-bg: #252525;
+  --demo-dropdown-selected-bg: #1e3a5f;
+  --demo-dropdown-selected-fg: #64b5f6;
+  --demo-dropdown-hover-bg: #333;
+  --phase-info-bg: #1e3a5f;
+  --phase-info-text: #90caf9;
+  --phase-wasm-bg: #1e3a5f;
+  --phase-wasm-text: #90caf9;
+  --phase-tanstack-bg: #5d4037;
+  --phase-tanstack-text: #ffb74d;
+}
+
+/* Custom dropdown panel: ensure all text uses theme colors */
+.demo-dropdown-panel {
+  color: var(--demo-dropdown-fg) !important;
+}
+.demo-dropdown-panel .demo-dropdown-option {
+  color: var(--demo-dropdown-fg) !important;
+}
+.demo-dropdown-panel .demo-dropdown-option--selected {
+  color: var(--demo-dropdown-selected-fg) !important;
+}
+
+/* Dropdown trigger button */
+.demo-dropdown-trigger {
+  color: var(--demo-dropdown-fg) !important;
+}
+
+/* Force dark theme on dropdown when dark mode (so panel/trigger are never white) */
+html.rp-dark .demo-dropdown-panel,
+html.dark .demo-dropdown-panel {
+  background-color: var(--demo-dropdown-panel-bg) !important;
+  color: var(--demo-dropdown-fg) !important;
+  border-color: var(--demo-dropdown-border) !important;
+}
+html.rp-dark .demo-dropdown-trigger,
+html.dark .demo-dropdown-trigger {
+  background-color: var(--demo-dropdown-bg) !important;
+  color: var(--demo-dropdown-fg) !important;
+  border-color: var(--demo-dropdown-border) !important;
+}
+html.rp-dark .demo-dropdown-option,
+html.dark .demo-dropdown-option {
+  color: var(--demo-dropdown-fg) !important;
+}
+html.rp-dark .demo-dropdown-option--selected,
+html.dark .demo-dropdown-option--selected {
+  background-color: var(--demo-dropdown-selected-bg) !important;
+  color: var(--demo-dropdown-selected-fg) !important;
+}
+
+/* Ghost/secondary buttons (Clear, Reset) — dark background + soft border in dark mode */
+html.rp-dark .demo-ghost-btn,
+html.dark .demo-ghost-btn {
+  background-color: var(--demo-dropdown-bg) !important;
+  color: var(--demo-dropdown-fg) !important;
+  border: 1px solid #3a3a3a !important;
+}
+
+/* Native select & input: theme-aware (demo + doc content) */
+.rp-home-main select,
+.rp-home-main input[type="text"],
+.rp-home-main input[type="number"],
+.rp-home-main input[type="search"],
+.rp-home-main input[type="checkbox"] {
+  background-color: var(--demo-dropdown-bg);
+  color: var(--demo-dropdown-fg);
+  border: 1px solid var(--demo-dropdown-border);
+}
+
+/* Native select option list (where supported by browser) */
+.rp-home-main select option,
+html.rp-dark select option {
+  background-color: var(--demo-dropdown-bg);
+  color: var(--demo-dropdown-fg);
+}
+
+/* Apply to all doc content in dark mode so dropdowns/inputs on any page are readable */
+html.rp-dark select,
+html.rp-dark input[type="text"],
+html.rp-dark input[type="number"],
+html.rp-dark input[type="search"] {
+  background-color: var(--demo-dropdown-bg);
+  color: var(--demo-dropdown-fg);
+  border-color: var(--demo-dropdown-border);
+}
+
 /* Hero + background gradient: hidden (no hero in frontmatter) */
 .rp-home-hero,
 .rp-home-hero--no-image,

@@ -129,7 +129,7 @@ export function StressTest() {
         Same grid as Home, with {data.length.toLocaleString()} rows (50k × 20). Initial data
         generation may take a few seconds.
         {sorting.length > 0 && (
-          <span style={{ marginLeft: 8, color: "#666" }}>
+          <span style={{ marginLeft: 8, color: "var(--demo-muted)" }}>
             | Sorted by: {sorting[0]!.id} ({sorting[0]!.desc ? "desc" : "asc"})
           </span>
         )}

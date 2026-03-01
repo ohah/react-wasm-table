@@ -153,7 +153,7 @@ export function TanStackExport() {
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>Format</div>
+            <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 4 }}>Format</div>
             <div style={{ display: "flex", gap: 8 }}>
               {(["csv", "tsv", "json"] as const).map((f) => (
                 <button
@@ -161,7 +161,7 @@ export function TanStackExport() {
                   onClick={() => setFormat(f)}
                   style={{
                     padding: "4px 12px",
-                    border: "1px solid #ccc",
+                    border: "1px solid var(--demo-border-2)",
                     borderRadius: 4,
                     background: format === f ? "#1976d2" : "#fff",
                     color: format === f ? "#fff" : "#333",
@@ -176,7 +176,7 @@ export function TanStackExport() {
           </div>
 
           <div>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>
+            <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 4 }}>
               Columns{" "}
               {selectedColumns.length > 0 ? `(${selectedColumns.length} selected)` : "(all)"}
             </div>
@@ -259,7 +259,8 @@ export function TanStackExport() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -282,8 +283,8 @@ ${selectedColumns.length > 0 ? `  columns: ${JSON.stringify(selectedColumns)},\n
       {output && (
         <pre
           style={{
-            background: "#1e1e1e",
-            color: "#d4d4d4",
+            background: "var(--demo-code-block-bg)",
+            color: "var(--demo-code-block-fg)",
             padding: 12,
             borderRadius: 4,
             fontSize: 12,

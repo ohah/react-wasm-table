@@ -186,14 +186,14 @@ export function LayoutCacheDemo() {
         </button>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "#666" }}>flex-direction:</span>
+          <span style={{ fontSize: 13, color: "var(--demo-muted)" }}>flex-direction:</span>
           {(["row", "column"] as const).map((dir) => (
             <button
               key={dir}
               onClick={() => setFlexDirection(dir)}
               style={{
                 padding: "3px 10px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--demo-border-2)",
                 borderRadius: 4,
                 background: flexDirection === dir ? "#1976d2" : "#fff",
                 color: flexDirection === dir ? "#fff" : "#333",
@@ -207,14 +207,14 @@ export function LayoutCacheDemo() {
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "#666" }}>gap:</span>
+          <span style={{ fontSize: 13, color: "var(--demo-muted)" }}>gap:</span>
           {[0, 4, 8, 16].map((g) => (
             <button
               key={g}
               onClick={() => setGap(g)}
               style={{
                 padding: "3px 10px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--demo-border-2)",
                 borderRadius: 4,
                 background: gap === g ? "#1976d2" : "#fff",
                 color: gap === g ? "#fff" : "#333",
@@ -231,7 +231,8 @@ export function LayoutCacheDemo() {
       {/* Code snippet */}
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -269,8 +270,8 @@ export function LayoutCacheDemo() {
             flex: 1,
             maxHeight: 400,
             overflowY: "auto",
-            background: "#1e1e1e",
-            color: "#d4d4d4",
+            background: "var(--demo-code-block-bg)",
+            color: "var(--demo-code-block-fg)",
             borderRadius: 4,
             padding: 8,
             fontSize: 12,
@@ -282,7 +283,7 @@ export function LayoutCacheDemo() {
               display: "flex",
               justifyContent: "space-between",
               marginBottom: 4,
-              color: "#888",
+              color: "var(--demo-muted-4)",
             }}
           >
             <span>Cache Log</span>
@@ -290,7 +291,7 @@ export function LayoutCacheDemo() {
               onClick={() => setResults([])}
               style={{
                 background: "none",
-                border: "1px solid #555",
+                border: "1px solid var(--demo-border-2)",
                 color: "#aaa",
                 borderRadius: 3,
                 padding: "1px 6px",
@@ -302,7 +303,7 @@ export function LayoutCacheDemo() {
             </button>
           </div>
           {results.length === 0 && (
-            <div style={{ color: "#666" }}>
+            <div style={{ color: "var(--demo-muted)" }}>
               Click "Benchmark" to compare cached vs uncached performance, or "invalidateLayout()"
               to manually clear the cache.
             </div>
@@ -316,7 +317,7 @@ export function LayoutCacheDemo() {
         </div>
       </div>
 
-      <div style={{ marginTop: 12, fontSize: 13, color: "#555" }}>
+      <div style={{ marginTop: 12, fontSize: 13, color: "var(--demo-muted-2)" }}>
         <strong>How the cache works:</strong>
         <ul style={{ margin: "4px 0", paddingLeft: 20 }}>
           <li>2-slot LRU — one for header height, one for row height (both hit on every frame)</li>

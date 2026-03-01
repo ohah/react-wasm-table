@@ -89,7 +89,7 @@ export function TanStackTouchEvents() {
   return (
     <>
       <h1>Touch Events</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         useReactTable + Table. onTouchStart, onTouchMove, onTouchEnd. Toggle block to
         preventDefault.
       </p>
@@ -154,8 +154,8 @@ export function TanStackTouchEvents() {
             flex: 1,
             maxHeight: 340,
             overflowY: "auto",
-            background: "#1e1e1e",
-            color: "#d4d4d4",
+            background: "var(--demo-code-block-bg)",
+            color: "var(--demo-code-block-fg)",
             padding: 8,
             fontSize: 12,
             fontFamily: "monospace",

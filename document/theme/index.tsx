@@ -20,7 +20,10 @@ const hideHeroCSS = `
 
 function BenchmarkSection() {
   return (
-    <section style={{ maxWidth: 1152, margin: "0 auto", padding: "2rem 1.5rem 0" }}>
+    <section
+      className="rp-home-main"
+      style={{ maxWidth: 1152, margin: "0 auto", padding: "2rem 1.5rem 0" }}
+    >
       <Benchmark />
     </section>
   );

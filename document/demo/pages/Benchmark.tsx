@@ -10,6 +10,16 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { ChevronDown } from "lucide-react";
+import { Button } from "../../src/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+} from "../../src/components/ui/dropdown-menu";
 import { generateEmployees } from "../data";
 import { useContainerSize } from "../useContainerSize";
 
@@ -272,73 +282,74 @@ export function Benchmark() {
           flexWrap: "wrap",
         }}
       >
-        <SelectDropdown
-          value={selectedCount}
-          options={ROW_COUNT_OPTIONS}
-          onChange={setSelectedCount}
-          disabled={disabled}
-          width={90}
-        />
-        <button
-          type="button"
-          onClick={() => run(selectedCount)}
-          disabled={disabled}
-          style={primaryBtnStyle(disabled)}
-        >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" disabled={disabled} className="min-w-[90px] justify-between">
+              {ROW_COUNT_OPTIONS.find((o) => o.value === selectedCount)?.label ?? selectedCount}
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            {ROW_COUNT_OPTIONS.map((opt) => (
+              <DropdownMenuItem
+                key={opt.value}
+                onClick={() => setSelectedCount(opt.value)}
+              >
+                {opt.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button onClick={() => run(selectedCount)} disabled={disabled}>
           Run
-        </button>
-        <button
-          type="button"
-          onClick={runAll}
-          disabled={disabled}
-          style={successBtnStyle(disabled)}
-        >
+        </Button>
+        <Button variant="success" onClick={runAll} disabled={disabled}>
           Run All
-        </button>
+        </Button>
         {results.length > 0 && (
-          <button
-            type="button"
-            onClick={clear}
-            disabled={isRunning}
-            style={ghostBtnStyle(isRunning)}
-          >
+          <Button variant="ghost" onClick={clear} disabled={isRunning}>
             Clear
-          </button>
+          </Button>
         )}
-        <CheckDropdown
-          label="Libraries"
-          disabled={isRunning}
-          items={[
-            {
-              key: "wasm",
-              label: "react-wasm-table",
-              checked: enableWasm,
-              onChange: setEnableWasm,
-            },
-            {
-              key: "ts",
-              label: "@tanstack/react-table",
-              checked: enableTanStack,
-              onChange: setEnableTanStack,
-            },
-          ]}
-        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" disabled={isRunning} className="min-w-[140px] justify-between">
+              Libraries ({[enableWasm, enableTanStack].filter(Boolean).length}/2)
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuLabel>Libraries</DropdownMenuLabel>
+            <DropdownMenuCheckboxItem
+              checked={enableWasm}
+              onCheckedChange={(v: boolean | "indeterminate") => setEnableWasm(v === true)}
+            >
+              react-wasm-table
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={enableTanStack}
+              onCheckedChange={(v: boolean | "indeterminate") => setEnableTanStack(v === true)}
+            >
+              @tanstack/react-table
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {phase === "generating" && (
         <PhaseIndicator
-          bg="#fff3e0"
+          variant="tanstack"
           text={`Generating ${bench.current.count.toLocaleString()} rows…`}
         />
       )}
       {phase === "measure-wasm" && (
-        <PhaseIndicator bg="#e3f2fd" text="Measuring react-wasm-table render…" />
+        <PhaseIndicator variant="wasm" text="Measuring react-wasm-table render…" />
       )}
       {phase === "measure-tanstack" && (
-        <PhaseIndicator bg="#fff3e0" text="Measuring @tanstack/react-table render…" />
+        <PhaseIndicator variant="tanstack" text="Measuring @tanstack/react-table render…" />
       )}
       {queue.length > 0 && (
-        <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
+        <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 8 }}>
           Remaining: {queue.map((c) => (c >= 1000 ? `${c / 1000}K` : String(c))).join(" → ")}
         </div>
       )}
@@ -380,12 +391,19 @@ export function Benchmark() {
 
 // ── Helpers ──
 
-function PhaseIndicator({ bg, text }: { bg: string; text: string }) {
+function PhaseIndicator({
+  variant,
+  text,
+}: {
+  variant: "info" | "wasm" | "tanstack";
+  text: string;
+}) {
   return (
     <div
       style={{
         padding: "10px 16px",
-        backgroundColor: bg,
+        backgroundColor: `var(--phase-${variant}-bg)`,
+        color: `var(--phase-${variant}-text)`,
         borderRadius: 8,
         marginBottom: 16,
         fontSize: 14,
@@ -408,7 +426,7 @@ function ResultsPanel({ results }: { results: BenchResult[] }) {
     <div style={{ marginBottom: 24 }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginBottom: 20 }}>
         <thead>
-          <tr style={{ borderBottom: "2px solid #ddd" }}>
+          <tr style={{ borderBottom: "2px solid var(--demo-border)" }}>
             <th style={thStyle}>Rows</th>
             <th style={{ ...thStyle, textAlign: "right" }}>Data Gen</th>
             {hasWasm && <th style={{ ...thStyle, textAlign: "right" }}>react-wasm-table</th>}
@@ -423,9 +441,9 @@ function ResultsPanel({ results }: { results: BenchResult[] }) {
                 ? (r.tanStackMs / r.wasmMs).toFixed(1)
                 : "—";
             return (
-              <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+              <tr key={i} style={{ borderBottom: "1px solid var(--demo-border)" }}>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{r.rowCount.toLocaleString()}</td>
-                <td style={{ ...tdStyle, textAlign: "right", color: "#888" }}>{r.dataGenMs}ms</td>
+                <td style={{ ...tdStyle, textAlign: "right", color: "var(--demo-muted-4)" }}>{r.dataGenMs}ms</td>
                 {hasWasm && (
                   <td style={{ ...tdStyle, textAlign: "right", color: "#2e7d32", fontWeight: 700 }}>
                     {r.wasmMs != null ? `${r.wasmMs}ms` : "—"}
@@ -464,8 +482,19 @@ function ResultsPanel({ results }: { results: BenchResult[] }) {
   );
 }
 
-const thStyle: React.CSSProperties = { padding: "8px 12px", textAlign: "left", fontSize: 13 };
-const tdStyle: React.CSSProperties = { padding: "8px 12px", fontSize: 13 };
+const thStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  textAlign: "left",
+  fontSize: 13,
+  backgroundColor: "var(--demo-code-bg)",
+  color: "var(--demo-code-fg)",
+};
+const tdStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  fontSize: 13,
+  backgroundColor: "var(--demo-panel-bg)",
+  color: "var(--demo-panel-fg)",
+};
 
 function Bar({
   label,
@@ -481,7 +510,7 @@ function Bar({
   const pct = maxMs > 0 ? (ms / maxMs) * 100 : 0;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-      <span style={{ width: 160, fontSize: 12, textAlign: "right", flexShrink: 0, color: "#555" }}>
+      <span style={{ width: 160, fontSize: 12, textAlign: "right", flexShrink: 0, color: "var(--demo-muted-2)" }}>
         {label}
       </span>
       <div
@@ -743,14 +772,9 @@ function InteractiveBench({
           flexWrap: "wrap",
         }}
       >
-        <button
-          type="button"
-          onClick={handleSort}
-          disabled={isMeasuring}
-          style={actionBtn(isMeasuring)}
-        >
+        <Button onClick={handleSort} disabled={isMeasuring} size="sm">
           Sort by Salary
-        </button>
+        </Button>
         <input
           type="text"
           value={searchInput}
@@ -763,48 +787,35 @@ function InteractiveBench({
           style={{
             padding: "6px 10px",
             fontSize: 13,
-            border: "1px solid #ccc",
+            border: "1px solid var(--demo-border-2)",
             borderRadius: 6,
             width: 200,
+            backgroundColor: "var(--demo-dropdown-bg)",
+            color: "var(--demo-dropdown-fg)",
           }}
         />
-        <button
-          type="button"
+        <Button
           onClick={handleFilter}
           disabled={isMeasuring || !searchInput.trim()}
-          style={actionBtn(isMeasuring || !searchInput.trim())}
+          size="sm"
         >
           Search
-        </button>
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={isMeasuring}
-          style={{
-            padding: "6px 12px",
-            fontSize: 13,
-            color: "#666",
-            backgroundColor: "transparent",
-            border: "1px solid #ccc",
-            borderRadius: 6,
-            cursor: isMeasuring ? "not-allowed" : "pointer",
-            opacity: isMeasuring ? 0.5 : 1,
-          }}
-        >
+        </Button>
+        <Button variant="ghost" onClick={handleReset} disabled={isMeasuring} size="sm">
           Reset
-        </button>
+        </Button>
       </div>
 
       {/* Measuring indicator */}
       {sortPhase !== "idle" && (
         <PhaseIndicator
-          bg="#e3f2fd"
+          variant={sortPhase === "wasm" ? "wasm" : "tanstack"}
           text={`Measuring sort — ${sortPhase === "wasm" ? "react-wasm-table" : "@tanstack/react-table"}…`}
         />
       )}
       {filterPhase !== "idle" && (
         <PhaseIndicator
-          bg="#fff3e0"
+          variant={filterPhase === "wasm" ? "wasm" : "tanstack"}
           text={`Measuring filter — ${filterPhase === "wasm" ? "react-wasm-table" : "@tanstack/react-table"}…`}
         />
       )}
@@ -821,9 +832,9 @@ function InteractiveBench({
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
         {enableWasm && (
           <section>
-            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600 }}>react-wasm-table</h3>
+            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600, color: "var(--demo-panel-fg)" }}>react-wasm-table</h3>
             <div
-              style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", height }}
+              style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden", height }}
             >
               <Grid
                 data={data as Record<string, unknown>[]}
@@ -842,7 +853,7 @@ function InteractiveBench({
         )}
         {enableTanStack && (
           <section>
-            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600 }}>
+            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600, color: "var(--demo-panel-fg)" }}>
               @tanstack/react-table
             </h3>
             <TanStackVirtualTable
@@ -855,285 +866,6 @@ function InteractiveBench({
           </section>
         )}
       </div>
-    </div>
-  );
-}
-
-function actionBtn(isDisabled: boolean): React.CSSProperties {
-  return primaryBtnStyle(isDisabled);
-}
-
-// ── Button styles ──
-
-function primaryBtnStyle(isDisabled: boolean): React.CSSProperties {
-  return {
-    padding: "7px 20px",
-    fontSize: 13,
-    fontWeight: 600,
-    backgroundColor: "#1976d2",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    cursor: isDisabled ? "not-allowed" : "pointer",
-    opacity: isDisabled ? 0.5 : 1,
-  };
-}
-
-function successBtnStyle(isDisabled: boolean): React.CSSProperties {
-  return {
-    padding: "7px 20px",
-    fontSize: 13,
-    fontWeight: 600,
-    backgroundColor: "#2e7d32",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    cursor: isDisabled ? "not-allowed" : "pointer",
-    opacity: isDisabled ? 0.5 : 1,
-  };
-}
-
-function ghostBtnStyle(isDisabled: boolean): React.CSSProperties {
-  return {
-    padding: "7px 20px",
-    fontSize: 13,
-    color: "#666",
-    backgroundColor: "transparent",
-    border: "1px solid #ccc",
-    borderRadius: 8,
-    cursor: isDisabled ? "not-allowed" : "pointer",
-  };
-}
-
-// ── Custom Dropdowns ──
-
-function SelectDropdown({
-  value,
-  options,
-  onChange,
-  disabled,
-  width = 100,
-}: {
-  value: number;
-  options: readonly { readonly value: number; readonly label: string }[];
-  onChange: (v: number) => void;
-  disabled?: boolean;
-  width?: number;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  const label = options.find((o) => o.value === value)?.label ?? String(value);
-
-  return (
-    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
-      <button
-        type="button"
-        onClick={() => {
-          if (!disabled) setOpen(!open);
-        }}
-        disabled={disabled}
-        style={{
-          width,
-          padding: "7px 28px 7px 12px",
-          fontSize: 13,
-          fontWeight: 600,
-          border: "1px solid #d0d0d0",
-          borderRadius: 8,
-          backgroundColor: "#fff",
-          cursor: disabled ? "not-allowed" : "pointer",
-          opacity: disabled ? 0.5 : 1,
-          textAlign: "left",
-          position: "relative",
-        }}
-      >
-        {label}
-        <span
-          style={{
-            position: "absolute",
-            right: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: 11,
-            color: "#888",
-            pointerEvents: "none",
-          }}
-        >
-          ▾
-        </span>
-      </button>
-      {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            left: 0,
-            minWidth: "100%",
-            backgroundColor: "#fff",
-            border: "1px solid #e0e0e0",
-            borderRadius: 8,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-            zIndex: 1000,
-            overflow: "hidden",
-          }}
-        >
-          {options.map((opt) => (
-            <div
-              key={opt.value}
-              onClick={() => {
-                onChange(opt.value);
-                setOpen(false);
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#f5f5f5";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = opt.value === value ? "#e8f0fe" : "";
-              }}
-              style={{
-                padding: "8px 12px",
-                fontSize: 13,
-                cursor: "pointer",
-                backgroundColor: opt.value === value ? "#e8f0fe" : undefined,
-                fontWeight: opt.value === value ? 600 : 400,
-                color: opt.value === value ? "#1976d2" : "#333",
-              }}
-            >
-              {opt.label}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CheckDropdown({
-  items,
-  label,
-  disabled,
-}: {
-  items: { key: string; label: string; checked: boolean; onChange: (v: boolean) => void }[];
-  label: string;
-  disabled?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  const count = items.filter((i) => i.checked).length;
-
-  return (
-    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
-      <button
-        type="button"
-        onClick={() => {
-          if (!disabled) setOpen(!open);
-        }}
-        disabled={disabled}
-        style={{
-          padding: "7px 28px 7px 12px",
-          fontSize: 13,
-          fontWeight: 600,
-          border: "1px solid #d0d0d0",
-          borderRadius: 8,
-          backgroundColor: "#fff",
-          cursor: disabled ? "not-allowed" : "pointer",
-          opacity: disabled ? 0.5 : 1,
-          textAlign: "left",
-          position: "relative",
-        }}
-      >
-        {label} ({count}/{items.length})
-        <span
-          style={{
-            position: "absolute",
-            right: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: 11,
-            color: "#888",
-            pointerEvents: "none",
-          }}
-        >
-          ▾
-        </span>
-      </button>
-      {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            left: 0,
-            minWidth: 240,
-            backgroundColor: "#fff",
-            border: "1px solid #e0e0e0",
-            borderRadius: 8,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-            zIndex: 1000,
-            overflow: "hidden",
-          }}
-        >
-          {items.map((item) => (
-            <div
-              key={item.key}
-              onClick={() => item.onChange(!item.checked)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#f5f5f5";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "";
-              }}
-              style={{
-                padding: "8px 12px",
-                fontSize: 13,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <span
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: 4,
-                  flexShrink: 0,
-                  border: `2px solid ${item.checked ? "#1976d2" : "#ccc"}`,
-                  backgroundColor: item.checked ? "#1976d2" : "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontSize: 11,
-                  lineHeight: 1,
-                  transition: "all 0.15s",
-                }}
-              >
-                {item.checked ? "✓" : ""}
-              </span>
-              <span style={{ fontWeight: item.checked ? 600 : 400 }}>{item.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -1157,7 +889,7 @@ function TimingDisplay({
         marginBottom: 8,
         fontSize: 13,
         padding: "6px 12px",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "var(--demo-code-bg)",
         borderRadius: 6,
       }}
     >
@@ -1210,13 +942,15 @@ function TanStackVirtualTable({
   return (
     <div
       style={{
-        border: "1px solid #e0e0e0",
+        border: "1px solid var(--demo-border)",
         borderRadius: 8,
         overflow: "hidden",
         height,
         width,
         display: "flex",
         flexDirection: "column",
+        backgroundColor: "var(--demo-panel-bg)",
+        color: "var(--demo-panel-fg)",
       }}
     >
       <table
@@ -1227,7 +961,7 @@ function TanStackVirtualTable({
           flexShrink: 0,
         }}
       >
-        <thead style={{ backgroundColor: "#f5f5f5" }}>
+        <thead style={{ backgroundColor: "var(--demo-code-bg)", color: "var(--demo-code-fg)" }}>
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
               {hg.headers.map((h) => (
@@ -1238,9 +972,10 @@ function TanStackVirtualTable({
                     minWidth: (h.column.columnDef.size as number) ?? 100,
                     padding: "8px",
                     textAlign: "left",
-                    borderBottom: "1px solid #e0e0e0",
+                    borderBottom: "1px solid var(--demo-border)",
                     fontSize: 12,
                     fontWeight: 600,
+                    color: "var(--demo-code-fg)",
                   }}
                 >
                   {flexRender(h.column.columnDef.header, h.getContext())}
@@ -1250,7 +985,16 @@ function TanStackVirtualTable({
           ))}
         </thead>
       </table>
-      <div ref={parentRef} style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
+      <div
+        ref={parentRef}
+        style={{
+          flex: 1,
+          overflow: "auto",
+          minHeight: 0,
+          backgroundColor: "var(--demo-panel-bg)",
+          color: "var(--demo-panel-fg)",
+        }}
+      >
         <div
           style={{
             height: rowVirtualizer.getTotalSize(),
@@ -1275,8 +1019,10 @@ function TanStackVirtualTable({
                   height: ROW_HEIGHT,
                   display: "flex",
                   alignItems: "center",
-                  borderBottom: "1px solid #eee",
+                  borderBottom: "1px solid var(--demo-border)",
                   boxSizing: "border-box",
+                  backgroundColor: "var(--demo-panel-bg)",
+                  color: "var(--demo-panel-fg)",
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
@@ -1290,6 +1036,7 @@ function TanStackVirtualTable({
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
+                      color: "var(--demo-panel-fg)",
                     }}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

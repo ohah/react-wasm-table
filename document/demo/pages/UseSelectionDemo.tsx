@@ -100,7 +100,7 @@ export function UseSelectionDemo() {
           <select
             value={copyFormat}
             onChange={(e) => setCopyFormat(e.target.value as "tsv" | "json")}
-            style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid #ccc" }}
+            style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid var(--demo-border-2)" }}
           >
             <option value="tsv">TSV (default)</option>
             <option value="json">JSON</option>
@@ -125,7 +125,8 @@ export function UseSelectionDemo() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -165,7 +166,7 @@ export function UseSelectionDemo() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 13,
               marginBottom: 12,
@@ -180,17 +181,17 @@ export function UseSelectionDemo() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 13,
             }}
           >
             <strong>Copy log:</strong>
             {copyLog.length === 0 && (
-              <div style={{ color: "#999", marginTop: 4 }}>Select cells and press Ctrl/Cmd+C</div>
+              <div style={{ color: "var(--demo-muted-5)", marginTop: 4 }}>Select cells and press Ctrl/Cmd+C</div>
             )}
             {copyLog.map((entry, i) => (
-              <div key={i} style={{ color: "#555", marginTop: 2 }}>
+              <div key={i} style={{ color: "var(--demo-muted-2)", marginTop: 2 }}>
                 {entry}
               </div>
             ))}
@@ -204,7 +205,7 @@ export function UseSelectionDemo() {
 const btnStyle: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   background: "#fff",
   cursor: "pointer",
   fontSize: 13,

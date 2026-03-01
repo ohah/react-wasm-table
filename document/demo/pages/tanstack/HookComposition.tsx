@@ -108,7 +108,7 @@ export function TanStackHookComposition() {
   return (
     <>
       <h1>Hook Composition</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         useReactTable + Table. Sorting, selection, event callbacks.
       </p>
       <div style={{ display: "flex", gap: 16 }}>
@@ -152,7 +152,7 @@ export function TanStackHookComposition() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 13,
               marginBottom: 12,
@@ -166,7 +166,7 @@ export function TanStackHookComposition() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 13,
               marginBottom: 12,
@@ -177,7 +177,7 @@ export function TanStackHookComposition() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 12,
               maxHeight: 200,

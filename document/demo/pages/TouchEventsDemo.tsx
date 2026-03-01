@@ -133,7 +133,7 @@ export function TouchEventsDemo() {
         results. Call <code>event.preventDefault()</code> to cancel internal touch handling (scroll,
         tap-to-click, selection drag).
       </p>
-      <p style={{ fontSize: 13, color: "#888" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted-4)" }}>
         Use Chrome DevTools device emulation or a real touch device to test. Mouse events are shown
         too (tap triggers onCellClick).
       </p>
@@ -150,7 +150,8 @@ export function TouchEventsDemo() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -190,8 +191,8 @@ export function TouchEventsDemo() {
             flex: 1,
             maxHeight: 340,
             overflowY: "auto",
-            background: "#1e1e1e",
-            color: "#d4d4d4",
+            background: "var(--demo-code-block-bg)",
+            color: "var(--demo-code-block-fg)",
             borderRadius: 4,
             padding: 8,
             fontSize: 12,
@@ -203,7 +204,7 @@ export function TouchEventsDemo() {
               display: "flex",
               justifyContent: "space-between",
               marginBottom: 4,
-              color: "#888",
+              color: "var(--demo-muted-4)",
             }}
           >
             <span>Touch Event Log</span>
@@ -211,7 +212,7 @@ export function TouchEventsDemo() {
               onClick={() => setLog([])}
               style={{
                 background: "none",
-                border: "1px solid #555",
+                border: "1px solid var(--demo-border-2)",
                 color: "#aaa",
                 borderRadius: 3,
                 padding: "1px 6px",
@@ -222,7 +223,7 @@ export function TouchEventsDemo() {
               Clear
             </button>
           </div>
-          {log.length === 0 && <div style={{ color: "#666" }}>Touch the grid...</div>}
+          {log.length === 0 && <div style={{ color: "var(--demo-muted)" }}>Touch the grid...</div>}
           {log.map((entry) => (
             <div key={entry.id} style={{ marginBottom: 2 }}>
               <span style={{ color: entry.blocked ? "#f44" : "#4ec9b0" }}>

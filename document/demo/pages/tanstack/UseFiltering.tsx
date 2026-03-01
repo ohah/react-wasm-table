@@ -86,7 +86,7 @@ export function TanStackUseFiltering() {
   const inputStyle: React.CSSProperties = {
     padding: "4px 8px",
     borderRadius: 4,
-    border: "1px solid #ccc",
+    border: "1px solid var(--demo-border-2)",
     fontSize: 13,
     width: 140,
   };
@@ -101,7 +101,7 @@ export function TanStackUseFiltering() {
       </p>
 
       <h2>Column Filters</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         Apply column-level filters with different operators. Filters are combined with AND logic.
       </p>
 
@@ -171,8 +171,8 @@ export function TanStackUseFiltering() {
           style={{
             padding: "4px 12px",
             borderRadius: 4,
-            border: "1px solid #ccc",
-            background: "#fff",
+            border: "1px solid var(--demo-border-2)",
+            background: "var(--demo-card-bg)",
             cursor: "pointer",
             fontSize: 13,
             height: 28,
@@ -183,7 +183,7 @@ export function TanStackUseFiltering() {
       </div>
 
       <h2>Global Filter</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         Search across all string columns (case-insensitive, OR logic).
       </p>
       <input
@@ -221,7 +221,8 @@ export function TanStackUseFiltering() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -240,7 +241,7 @@ export function TanStackUseFiltering() {
       <div
         style={{
           padding: 12,
-          background: "#f9f9f9",
+          background: "var(--demo-panel-bg)",
           borderRadius: 4,
           fontSize: 13,
           marginTop: 16,

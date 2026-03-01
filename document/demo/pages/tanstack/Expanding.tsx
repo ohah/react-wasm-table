@@ -79,8 +79,8 @@ const columns = [
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -95,15 +95,15 @@ const btnActive: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   marginBottom: 20,
   padding: 12,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 6,
 };
 
 const thStyle: React.CSSProperties = {
   padding: "8px 12px",
   textAlign: "left",
-  borderBottom: "2px solid #ddd",
-  background: "#f5f5f5",
+  borderBottom: "2px solid var(--demo-border)",
+  background: "var(--demo-code-bg)",
   fontSize: 13,
   fontWeight: 600,
 };
@@ -160,7 +160,7 @@ export function TanStackExpanding() {
           <button style={btnBase} onClick={() => table.resetExpanded()}>
             Reset
           </button>
-          <span style={{ fontSize: 13, color: "#666", marginLeft: 8 }}>
+          <span style={{ fontSize: 13, color: "var(--demo-muted)", marginLeft: 8 }}>
             Visible rows: <strong>{expandedModel.rowCount}</strong>
           </span>
         </div>
@@ -168,7 +168,7 @@ export function TanStackExpanding() {
 
       {/* Tree table */}
       <div
-        style={{ border: "1px solid #ddd", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}
+        style={{ border: "1px solid var(--demo-border)", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}
       >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -183,7 +183,7 @@ export function TanStackExpanding() {
               <tr
                 key={row.id}
                 style={{
-                  background: row.depth === 0 ? "#fff" : row.depth === 1 ? "#fafafa" : "#f5f5f5",
+                  background: row.depth === 0 ? "var(--demo-card-bg)" : row.depth === 1 ? "var(--demo-panel-bg)" : "var(--demo-code-bg)",
                 }}
               >
                 <td style={tdStyle}>
@@ -203,7 +203,7 @@ export function TanStackExpanding() {
                         {row.getIsExpanded() ? "▼" : "▶"}
                       </button>
                     ) : (
-                      <span style={{ padding: "0 4px", fontSize: 14, color: "#ccc" }}>•</span>
+                      <span style={{ padding: "0 4px", fontSize: 14, color: "var(--demo-border-2)" }}>•</span>
                     )}
                     {row.original.name}
                   </span>
@@ -226,7 +226,7 @@ export function TanStackExpanding() {
         </div>
         <div style={{ ...sectionStyle, flex: 1 }}>
           <strong>Row Model Info:</strong>
-          <div style={{ marginTop: 4, fontSize: 13, color: "#555" }}>
+          <div style={{ marginTop: 4, fontSize: 13, color: "var(--demo-muted-2)" }}>
             <div>Total visible rows: {expandedModel.rowCount}</div>
             <div>Expandable rows: {expandedModel.rows.filter((r) => r.getCanExpand()).length}</div>
             <div>Leaf rows: {expandedModel.rows.filter((r) => !r.getCanExpand()).length}</div>
@@ -238,7 +238,8 @@ export function TanStackExpanding() {
       {/* Code snippet */}
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,

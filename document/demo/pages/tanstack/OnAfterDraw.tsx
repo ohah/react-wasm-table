@@ -125,7 +125,7 @@ export function TanStackOnAfterDraw() {
                 onClick={() => setMode(m.value)}
                 style={{
                   padding: "4px 12px",
-                  border: "1px solid #ccc",
+                  border: "1px solid var(--demo-border-2)",
                   borderRadius: 4,
                   background: mode === m.value ? "#1976d2" : "#fff",
                   color: mode === m.value ? "#fff" : "#333",
@@ -180,7 +180,7 @@ export function TanStackOnAfterDraw() {
             ))}
           </Tbody>
         </Table>
-        <div style={{ padding: 12, background: "#f9f9f9", borderRadius: 4, fontSize: 13 }}>
+        <div style={{ padding: 12, background: "var(--demo-panel-bg)", borderRadius: 4, fontSize: 13 }}>
           <strong>Draw count:</strong> {drawCount}
         </div>
       </div>

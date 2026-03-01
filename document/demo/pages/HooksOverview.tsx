@@ -11,8 +11,8 @@ export function HooksOverview() {
 
       <pre
         style={{
-          background: "#1e1e1e",
-          color: "#d4d4d4",
+          background: "var(--demo-code-block-bg)",
+          color: "var(--demo-code-block-fg)",
           padding: 16,
           borderRadius: 6,
           fontSize: 12,
@@ -81,7 +81,7 @@ export function HooksOverview() {
       </div>
 
       <h2 style={{ marginTop: 32 }}>Design Principles</h2>
-      <ul style={{ fontSize: 14, lineHeight: 1.8, color: "#555" }}>
+      <ul style={{ fontSize: 14, lineHeight: 1.8, color: "var(--demo-muted-2)" }}>
         <li>
           <strong>Headless first</strong> — Logic and state only, UI decisions are yours
         </li>
@@ -124,7 +124,7 @@ function DemoCard({ to, title, description }: { to: string; title: string; descr
       <div style={{ fontWeight: 600, fontSize: 15, color: "#1976d2", marginBottom: 4 }}>
         {title}
       </div>
-      <div style={{ fontSize: 13, color: "#666", lineHeight: 1.5 }}>{description}</div>
+      <div style={{ fontSize: 13, color: "var(--demo-muted)", lineHeight: 1.5 }}>{description}</div>
     </Link>
   );
 }

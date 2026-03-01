@@ -97,7 +97,7 @@ export function CanvasBox() {
         <code>borderWidth</code>, <code>borderColor</code>, <code>backgroundColor</code>. Children
         are drawn in the content rect in a vertical stack.
       </p>
-      <ul style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <ul style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         <li>
           <strong>Box + Text / Box + Badge</strong> — single child with padding and border
         </li>

@@ -9,6 +9,7 @@ const base = "/react-wasm-table/";
 const config: UserConfig = {
   root: path.join(__dirname, "docs"),
   base,
+  globalStyles: path.join(__dirname, "tailwind.css"),
   plugins: [pluginTwoslash(), pluginMermaid(), pluginFileTree()],
   title: "react-wasm-table",
   description: "High-performance React table component powered by Rust/WASM",
@@ -40,7 +41,7 @@ const config: UserConfig = {
       {
         icon: "github",
         mode: "link",
-        content: "https://github.com/anthropics/react-wasm-table",
+        content: "https://github.com/ohah/react-wasm-table",
       },
     ],
   },
@@ -59,6 +60,7 @@ const config: UserConfig = {
     resolve: {
       alias: {
         "@ohah/react-wasm-table": path.resolve(__dirname, "../packages/grid/src/index.ts"),
+        "@": path.resolve(__dirname, "src"),
       },
     },
   },
