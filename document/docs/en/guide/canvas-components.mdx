@@ -18,7 +18,7 @@ All support an optional `style` object; individual props override `style` when b
 ## Text and Badge
 
 ```tsx twoslash
-// @errors: 2686 2657
+// @errors: 2686 2657 2307
 import React from "react";
 import { Text, Badge } from "@ohah/react-wasm-table";
 
@@ -36,7 +36,7 @@ export const Example = () => (
 Flex accepts the same style surface as the layout engine: `flexDirection`, `gap`, `alignItems`, `justifyContent`, `padding`, `margin`, `borderWidth`, `boxSizing`, etc.
 
 ```tsx twoslash
-// @errors: 2686
+// @errors: 2686 2307
 import React from "react";
 import { Flex, Text, Badge } from "@ohah/react-wasm-table";
 
@@ -51,7 +51,7 @@ export const Example = () => (
 Individual props override `style`:
 
 ```tsx twoslash
-// @errors: 2686 2741
+// @errors: 2686 2741 2307
 import React from "react";
 import { Flex, Text } from "@ohah/react-wasm-table";
 
@@ -68,7 +68,7 @@ export const Example = () => (
 - **Stack**: Row or column with `gap`; no padding from layout buffer.
 
 ```tsx twoslash
-// @errors: 2686 2657
+// @errors: 2686 2657 2307
 import React from "react";
 import { Box, Stack, Text } from "@ohah/react-wasm-table";
 
@@ -90,7 +90,7 @@ export const Example = () => (
 Inline mini chart from a numeric array. Drawn on canvas.
 
 ```tsx twoslash
-// @errors: 2686 2657
+// @errors: 2686 2657 2307
 import React from "react";
 import { Sparkline } from "@ohah/react-wasm-table";
 

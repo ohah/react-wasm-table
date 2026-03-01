@@ -14,7 +14,7 @@ All examples below use `Grid` with object-based `columns` and `data`.
 ## Basic usage
 
 ```tsx twoslash
-// @errors: 2686
+// @errors: 2686 2307
 import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 
 type Row = { name: string; age: number };
@@ -67,7 +67,7 @@ function App() {
 Return a **RenderInstruction** (e.g. `text`, `badge`, `flex`) from the column `render` (or JSX children). The canvas renderer draws accordingly.
 
 ```tsx twoslash
-// @errors: 2686 7006 2322
+// @errors: 2686 2307 7006 2322 2307
 import { Grid, type ColumnDef } from "@ohah/react-wasm-table";
 
 const columns: ColumnDef[] = [

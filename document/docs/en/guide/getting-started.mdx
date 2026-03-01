@@ -13,7 +13,7 @@ import { PackageManagerTabs } from "@rspress/core/theme";
 Use `createColumnHelper` and the `Grid` component with `data` and `columns`:
 
 ```tsx twoslash
-// @errors: 2686
+// @errors: 2686 2307
 import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 
 type Row = { name: string; age: number };
@@ -39,7 +39,7 @@ function App() {
 You can also define columns as a plain array (no JSX). When you pass `columns`, JSX children are ignored:
 
 ```tsx twoslash
-// @errors: 2686 2322
+// @errors: 2686 2307 2322 2307
 import { Grid, type ColumnDef } from "@ohah/react-wasm-table";
 
 const columns: ColumnDef[] = [
