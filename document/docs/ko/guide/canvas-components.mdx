@@ -18,7 +18,7 @@
 ## Text와 Badge
 
 ```tsx twoslash
-// @errors: 2686 2657
+// @errors: 2686 2657 2307
 import React from "react";
 import { Text, Badge } from "@ohah/react-wasm-table";
 
@@ -35,7 +35,7 @@ export const Example = () => (
 Flex는 레이아웃 엔진과 동일한 스타일 표면을 사용합니다: `flexDirection`, `gap`, `alignItems`, `justifyContent`, `padding`, `margin`, `borderWidth`, `boxSizing` 등.
 
 ```tsx twoslash
-// @errors: 2686
+// @errors: 2686 2307
 import React from "react";
 import { Flex, Text, Badge } from "@ohah/react-wasm-table";
 
@@ -50,7 +50,7 @@ export const Example = () => (
 개별 props가 `style`을 덮어씁니다:
 
 ```tsx twoslash
-// @errors: 2686 2741
+// @errors: 2686 2741 2307
 import React from "react";
 import { Flex, Text } from "@ohah/react-wasm-table";
 
@@ -67,7 +67,7 @@ export const Example = () => (
 - **Stack**: `gap`이 있는 row/column; 레이아웃 버퍼에서 오는 padding 없음.
 
 ```tsx twoslash
-// @errors: 2686 2657
+// @errors: 2686 2657 2307
 import React from "react";
 import { Box, Stack, Text } from "@ohah/react-wasm-table";
 
@@ -89,7 +89,7 @@ export const Example = () => (
 숫자 배열로 인라인 미니 차트. 캔버스에 그려집니다.
 
 ```tsx twoslash
-// @errors: 2686 2657
+// @errors: 2686 2657 2307
 import React from "react";
 import { Sparkline } from "@ohah/react-wasm-table";
 

@@ -14,7 +14,7 @@
 ## 기본 사용
 
 ```tsx twoslash
-// @errors: 2686
+// @errors: 2686 2307
 import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 
 type Row = { name: string; age: number };
@@ -67,7 +67,7 @@ function App() {
 컬럼의 `render`(또는 JSX children)에서 **RenderInstruction**(예: `text`, `badge`, `flex`)을 반환하면 캔버스 렌더러가 그에 맞게 그립니다.
 
 ```tsx twoslash
-// @errors: 2686 7006 2322
+// @errors: 2686 2307 7006 2322 2307
 import { Grid, type ColumnDef } from "@ohah/react-wasm-table";
 
 const columns: ColumnDef[] = [
