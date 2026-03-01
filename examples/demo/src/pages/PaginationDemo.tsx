@@ -209,10 +209,10 @@ export function PaginationDemo() {
     <>
       <h1>Pagination + Sort + Filter</h1>
       <p>
-        Demonstrates <code>getPaginationRowModel</code> combined with{" "}
-        <code>getSortedRowModel</code> and <code>getFilteredRowModel</code>.
-        All processing (filter → sort → paginate) happens in WASM — full data is loaded once,
-        page transitions only change <code>view_indices</code> without re-ingesting data.
+        Demonstrates <code>getPaginationRowModel</code> combined with <code>getSortedRowModel</code>{" "}
+        and <code>getFilteredRowModel</code>. All processing (filter → sort → paginate) happens in
+        WASM — full data is loaded once, page transitions only change <code>view_indices</code>{" "}
+        without re-ingesting data.
       </p>
 
       {/* Global Search */}
@@ -230,9 +230,7 @@ export function PaginationDemo() {
             }}
           />
           {globalFilter && (
-            <span style={{ fontSize: 12, color: "#666" }}>
-              Matching rows: {totalRows}
-            </span>
+            <span style={{ fontSize: 12, color: "#666" }}>Matching rows: {totalRows}</span>
           )}
         </div>
       </div>
@@ -278,10 +276,7 @@ export function PaginationDemo() {
             </div>
           </div>
 
-          <button
-            style={{ ...btnBase, background: "#f5f5f5", color: "#666" }}
-            onClick={clearAll}
-          >
+          <button style={{ ...btnBase, background: "#f5f5f5", color: "#666" }} onClick={clearAll}>
             Clear All
           </button>
         </div>
@@ -403,7 +398,10 @@ export function PaginationDemo() {
       </div>
 
       {/* Canvas Table */}
-      <div ref={ref} style={{ width: "100%", height: Math.min(pagination.pageSize * 36 + 40, 520) }}>
+      <div
+        ref={ref}
+        style={{ width: "100%", height: Math.min(pagination.pageSize * 36 + 40, 520) }}
+      >
         {size.width > 0 && (
           <Table table={table} width={size.width} height={size.height} overflowY="scroll">
             <Thead>
@@ -446,9 +444,17 @@ export function PaginationDemo() {
       <div style={{ ...sectionStyle, background: "#e8f5e9" }}>
         <strong>How it works (WASM pipeline):</strong>
         <ol style={{ margin: "8px 0 0", paddingLeft: 20, fontSize: 13, lineHeight: 1.8 }}>
-          <li>Full data loaded into WASM columnar store <strong>once</strong></li>
-          <li>Filter → Sort → <strong>Paginate</strong> all happen inside WASM <code>rebuild_view()</code></li>
-          <li>Page changes only update <code>view_indices</code> slice — <strong>no data re-ingestion</strong></li>
+          <li>
+            Full data loaded into WASM columnar store <strong>once</strong>
+          </li>
+          <li>
+            Filter → Sort → <strong>Paginate</strong> all happen inside WASM{" "}
+            <code>rebuild_view()</code>
+          </li>
+          <li>
+            Page changes only update <code>view_indices</code> slice —{" "}
+            <strong>no data re-ingestion</strong>
+          </li>
           <li>Click column headers to sort, use inputs above to filter</li>
         </ol>
       </div>
