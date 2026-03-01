@@ -1,4 +1,4 @@
-import type { GridColumnDef, ExpandedState, ExpandedUpdater } from "./tanstack-types";
+import type { GridColumnDef, ExpandedState, ExpandedUpdater, PaginationState, GroupingState } from "./tanstack-types";
 import type { GridColumn } from "./grid-instance";
 import type { Cell } from "./cell";
 import { buildCell } from "./cell";
@@ -367,6 +367,215 @@ export function buildExpandedRowModel<TData>(
       return flatRows[index]!;
     },
   };
+}
+
+// ── Pagination Row Model ────────────────────────────────────────────
+
+/** Marker factory for the pagination row model. */
+export function getPaginationRowModel<TData>(): RowModelFactory<TData> {
+  return { _type: "pagination" };
+}
+
+/** Build a paginated row model by slicing indices. */
+export function buildPaginationRowModel<TData>(
+  data: TData[],
+  indices: Uint32Array | number[] | null,
+  columns: GridColumnDef<TData, any>[],
+  pagination: PaginationState,
+  modelOptions?: BuildRowModelOptions<TData>,
+): RowModel<TData> {
+  const effectiveIndices = indices ?? Array.from({ length: data.length }, (_, i) => i);
+  const totalCount = effectiveIndices.length;
+  const { pageIndex, pageSize } = pagination;
+  const start = Math.max(0, pageIndex * pageSize);
+  const end = Math.min(start + pageSize, totalCount);
+  const pageIndices = Array.prototype.slice.call(effectiveIndices, start, end) as number[];
+
+  let cachedRows: Row<TData>[] | null = null;
+
+  return {
+    get rows(): Row<TData>[] {
+      if (!cachedRows) {
+        cachedRows = pageIndices.map((originalIndex, viewIndex) =>
+          buildRow(data, originalIndex, viewIndex, columns, modelOptions
+            ? { visibleColumns: modelOptions.visibleColumns, table: modelOptions.table }
+            : undefined),
+        );
+      }
+      return cachedRows;
+    },
+    rowCount: totalCount,
+    getRow(index: number): Row<TData> {
+      if (index < 0 || index >= pageIndices.length) {
+        throw new RangeError(`Row index ${index} out of range [0, ${pageIndices.length})`);
+      }
+      return buildRow(data, pageIndices[index]!, index, columns, modelOptions
+        ? { visibleColumns: modelOptions.visibleColumns, table: modelOptions.table }
+        : undefined);
+    },
+  };
+}
+
+// ── Grouped Row Model ───────────────────────────────────────────────
+
+/** Marker factory for the grouped row model. */
+export function getGroupedRowModel<TData>(): RowModelFactory<TData> {
+  return { _type: "grouped" };
+}
+
+/** Aggregation function: computes a value for a group row's column. */
+export type AggregationFn<TData> = (
+  columnId: string,
+  leafRows: Row<TData>[],
+  childRows: Row<TData>[],
+) => unknown;
+
+/** Build a grouped row model that creates a tree based on grouping column IDs. */
+export function buildGroupedRowModel<TData>(
+  data: TData[],
+  indices: Uint32Array | number[] | null,
+  columns: GridColumnDef<TData, any>[],
+  grouping: GroupingState,
+  aggregationFns?: Record<string, AggregationFn<TData>>,
+  modelOptions?: BuildRowModelOptions<TData>,
+): RowModel<TData> {
+  const effectiveIndices = indices ?? Array.from({ length: data.length }, (_, i) => i);
+  const accessorMap = buildAccessorMap(columns);
+
+  if (grouping.length === 0) {
+    return buildRowModel(data, indices, columns, modelOptions);
+  }
+
+  function buildGroupTree(
+    idxs: number[],
+    groupDepth: number,
+    parentId?: string,
+  ): Row<TData>[] {
+    if (groupDepth >= grouping.length) {
+      // Leaf rows
+      return idxs.map((origIdx, viewIdx) =>
+        buildRow(data, origIdx, viewIdx, columns, modelOptions
+          ? { visibleColumns: modelOptions.visibleColumns, table: modelOptions.table, depth: groupDepth, parentId }
+          : { depth: groupDepth, parentId }),
+      );
+    }
+
+    const columnId = grouping[groupDepth]!;
+    const accessor = accessorMap.get(columnId);
+
+    // Group indices by value
+    const groups = new Map<unknown, number[]>();
+    for (const idx of idxs) {
+      const value = accessor ? accessor(data[idx]!, idx) : undefined;
+      let arr = groups.get(value);
+      if (!arr) {
+        arr = [];
+        groups.set(value, arr);
+      }
+      arr.push(idx);
+    }
+
+    const rows: Row<TData>[] = [];
+    let viewIdx = 0;
+    for (const [groupValue, memberIdxs] of groups) {
+      const groupRowId = `group:${columnId}:${String(groupValue)}${parentId ? `:${parentId}` : ""}`;
+      const subRows = buildGroupTree(memberIdxs, groupDepth + 1, groupRowId);
+      const leafRows = collectLeafRows(subRows);
+      const firstOrigIdx = memberIdxs[0]!;
+
+      // Build a group row with aggregated values
+      const groupRow: Row<TData> = {
+        id: groupRowId,
+        index: viewIdx,
+        original: data[firstOrigIdx]!,
+        getValue(colId: string): unknown {
+          if (colId === columnId) return groupValue;
+          const aggFn = aggregationFns?.[colId];
+          if (aggFn) return aggFn(colId, leafRows, subRows);
+          return undefined;
+        },
+        getAllCellValues(): Record<string, unknown> {
+          const result: Record<string, unknown> = {};
+          for (const [id] of accessorMap) {
+            result[id] = groupRow.getValue(id);
+          }
+          return result;
+        },
+        getVisibleCells: () => [],
+        subRows,
+        depth: groupDepth,
+        parentId,
+        getCanExpand: () => true,
+        getIsExpanded: () => true,
+        toggleExpanded: () => {},
+        getLeafRows: () => leafRows,
+      };
+      rows.push(groupRow);
+      viewIdx++;
+    }
+    return rows;
+  }
+
+  const treeRows = buildGroupTree(
+    Array.from(effectiveIndices),
+    0,
+  );
+
+  return {
+    rows: treeRows,
+    rowCount: treeRows.length,
+    getRow(index: number): Row<TData> {
+      if (index < 0 || index >= treeRows.length) {
+        throw new RangeError(`Row index ${index} out of range [0, ${treeRows.length})`);
+      }
+      return treeRows[index]!;
+    },
+  };
+}
+
+// ── Faceted Row Model ───────────────────────────────────────────────
+
+/** Marker factory for the faceted row model. */
+export function getFacetedRowModel<TData>(): RowModelFactory<TData> {
+  return { _type: "faceted" };
+}
+
+/** Per-column faceted statistics. */
+export interface FacetedColumnValues {
+  uniqueValues: Map<unknown, number>;
+  min?: number;
+  max?: number;
+}
+
+/** Build faceted values (unique counts, min/max) for all columns. */
+export function buildFacetedValues<TData>(
+  data: TData[],
+  indices: Uint32Array | number[] | null,
+  columns: GridColumnDef<TData, any>[],
+): Map<string, FacetedColumnValues> {
+  const effectiveIndices = indices ?? Array.from({ length: data.length }, (_, i) => i);
+  const accessorMap = buildAccessorMap(columns);
+  const result = new Map<string, FacetedColumnValues>();
+
+  for (const [columnId, accessor] of accessorMap) {
+    const uniqueValues = new Map<unknown, number>();
+    let min: number | undefined;
+    let max: number | undefined;
+
+    for (let i = 0; i < effectiveIndices.length; i++) {
+      const origIdx = effectiveIndices[i]!;
+      const value = accessor(data[origIdx]!, origIdx);
+      uniqueValues.set(value, (uniqueValues.get(value) ?? 0) + 1);
+      if (typeof value === "number") {
+        if (min === undefined || value < min) min = value;
+        if (max === undefined || value > max) max = value;
+      }
+    }
+
+    result.set(columnId, { uniqueValues, min, max });
+  }
+
+  return result;
 }
 
 // ── Internal helpers ────────────────────────────────────────────────
