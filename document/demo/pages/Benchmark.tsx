@@ -146,6 +146,7 @@ export function Benchmark() {
   const [queue, setQueue] = useState<number[]>([]);
   const [enableWasm, setEnableWasm] = useState(true);
   const [enableTanStack, setEnableTanStack] = useState(true);
+  const [selectedCount, setSelectedCount] = useState(10_000);
   const { ref: containerRef, size } = useContainerSize(400);
 
   const bench = useRef({
@@ -163,6 +164,7 @@ export function Benchmark() {
   const disabled = isRunning || queue.length > 0;
   const tableWidth = size.width > 0 ? size.width : 800;
   const tableHeight = 400;
+  const autoRunDone = useRef(false);
 
   const run = useCallback(
     (count: number) => {
@@ -221,6 +223,16 @@ export function Benchmark() {
     [finishRun],
   );
 
+  // Auto-run on first mount: PC → 500K, Mobile → 10K
+  useEffect(() => {
+    if (autoRunDone.current) return;
+    autoRunDone.current = true;
+    const isMobile = window.innerWidth < 768;
+    const count = isMobile ? 10_000 : 500_000;
+    setSelectedCount(count);
+    run(count);
+  }, [run]);
+
   useEffect(() => {
     if (queue.length === 0) return;
     if (isRunning) return;
@@ -260,42 +272,26 @@ export function Benchmark() {
           flexWrap: "wrap",
         }}
       >
-        {ROW_COUNT_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => run(opt.value)}
-            disabled={disabled}
-            style={{
-              padding: "6px 16px",
-              fontSize: 13,
-              fontWeight: 600,
-              backgroundColor: "#1976d2",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              cursor: disabled ? "not-allowed" : "pointer",
-              opacity: disabled ? 0.5 : 1,
-            }}
-          >
-            {opt.label}
-          </button>
-        ))}
+        <SelectDropdown
+          value={selectedCount}
+          options={ROW_COUNT_OPTIONS}
+          onChange={setSelectedCount}
+          disabled={disabled}
+          width={90}
+        />
+        <button
+          type="button"
+          onClick={() => run(selectedCount)}
+          disabled={disabled}
+          style={primaryBtnStyle(disabled)}
+        >
+          Run
+        </button>
         <button
           type="button"
           onClick={runAll}
           disabled={disabled}
-          style={{
-            padding: "6px 16px",
-            fontSize: 13,
-            fontWeight: 600,
-            backgroundColor: "#2e7d32",
-            color: "white",
-            border: "none",
-            borderRadius: 6,
-            cursor: disabled ? "not-allowed" : "pointer",
-            opacity: disabled ? 0.5 : 1,
-          }}
+          style={successBtnStyle(disabled)}
         >
           Run All
         </button>
@@ -304,42 +300,29 @@ export function Benchmark() {
             type="button"
             onClick={clear}
             disabled={isRunning}
-            style={{
-              padding: "6px 16px",
-              fontSize: 13,
-              color: "#666",
-              backgroundColor: "transparent",
-              border: "1px solid #ccc",
-              borderRadius: 6,
-              cursor: isRunning ? "not-allowed" : "pointer",
-            }}
+            style={ghostBtnStyle(isRunning)}
           >
             Clear
           </button>
         )}
-      </div>
-
-      <div
-        style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, fontSize: 13 }}
-      >
-        <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={enableWasm}
-            onChange={(e) => setEnableWasm(e.target.checked)}
-            disabled={isRunning}
-          />
-          react-wasm-table
-        </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={enableTanStack}
-            onChange={(e) => setEnableTanStack(e.target.checked)}
-            disabled={isRunning}
-          />
-          @tanstack/react-table
-        </label>
+        <CheckDropdown
+          label="Libraries"
+          disabled={isRunning}
+          items={[
+            {
+              key: "wasm",
+              label: "react-wasm-table",
+              checked: enableWasm,
+              onChange: setEnableWasm,
+            },
+            {
+              key: "ts",
+              label: "@tanstack/react-table",
+              checked: enableTanStack,
+              onChange: setEnableTanStack,
+            },
+          ]}
+        />
       </div>
 
       {phase === "generating" && (
@@ -877,17 +860,282 @@ function InteractiveBench({
 }
 
 function actionBtn(isDisabled: boolean): React.CSSProperties {
+  return primaryBtnStyle(isDisabled);
+}
+
+// ── Button styles ──
+
+function primaryBtnStyle(isDisabled: boolean): React.CSSProperties {
   return {
-    padding: "6px 16px",
+    padding: "7px 20px",
     fontSize: 13,
     fontWeight: 600,
     backgroundColor: "#1976d2",
-    color: "white",
+    color: "#fff",
     border: "none",
-    borderRadius: 6,
+    borderRadius: 8,
     cursor: isDisabled ? "not-allowed" : "pointer",
     opacity: isDisabled ? 0.5 : 1,
   };
+}
+
+function successBtnStyle(isDisabled: boolean): React.CSSProperties {
+  return {
+    padding: "7px 20px",
+    fontSize: 13,
+    fontWeight: 600,
+    backgroundColor: "#2e7d32",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    cursor: isDisabled ? "not-allowed" : "pointer",
+    opacity: isDisabled ? 0.5 : 1,
+  };
+}
+
+function ghostBtnStyle(isDisabled: boolean): React.CSSProperties {
+  return {
+    padding: "7px 20px",
+    fontSize: 13,
+    color: "#666",
+    backgroundColor: "transparent",
+    border: "1px solid #ccc",
+    borderRadius: 8,
+    cursor: isDisabled ? "not-allowed" : "pointer",
+  };
+}
+
+// ── Custom Dropdowns ──
+
+function SelectDropdown({
+  value,
+  options,
+  onChange,
+  disabled,
+  width = 100,
+}: {
+  value: number;
+  options: readonly { readonly value: number; readonly label: string }[];
+  onChange: (v: number) => void;
+  disabled?: boolean;
+  width?: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const label = options.find((o) => o.value === value)?.label ?? String(value);
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        onClick={() => {
+          if (!disabled) setOpen(!open);
+        }}
+        disabled={disabled}
+        style={{
+          width,
+          padding: "7px 28px 7px 12px",
+          fontSize: 13,
+          fontWeight: 600,
+          border: "1px solid #d0d0d0",
+          borderRadius: 8,
+          backgroundColor: "#fff",
+          cursor: disabled ? "not-allowed" : "pointer",
+          opacity: disabled ? 0.5 : 1,
+          textAlign: "left",
+          position: "relative",
+        }}
+      >
+        {label}
+        <span
+          style={{
+            position: "absolute",
+            right: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: 11,
+            color: "#888",
+            pointerEvents: "none",
+          }}
+        >
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            minWidth: "100%",
+            backgroundColor: "#fff",
+            border: "1px solid #e0e0e0",
+            borderRadius: 8,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+            zIndex: 1000,
+            overflow: "hidden",
+          }}
+        >
+          {options.map((opt) => (
+            <div
+              key={opt.value}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#f5f5f5";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = opt.value === value ? "#e8f0fe" : "";
+              }}
+              style={{
+                padding: "8px 12px",
+                fontSize: 13,
+                cursor: "pointer",
+                backgroundColor: opt.value === value ? "#e8f0fe" : undefined,
+                fontWeight: opt.value === value ? 600 : 400,
+                color: opt.value === value ? "#1976d2" : "#333",
+              }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CheckDropdown({
+  items,
+  label,
+  disabled,
+}: {
+  items: { key: string; label: string; checked: boolean; onChange: (v: boolean) => void }[];
+  label: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const count = items.filter((i) => i.checked).length;
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        onClick={() => {
+          if (!disabled) setOpen(!open);
+        }}
+        disabled={disabled}
+        style={{
+          padding: "7px 28px 7px 12px",
+          fontSize: 13,
+          fontWeight: 600,
+          border: "1px solid #d0d0d0",
+          borderRadius: 8,
+          backgroundColor: "#fff",
+          cursor: disabled ? "not-allowed" : "pointer",
+          opacity: disabled ? 0.5 : 1,
+          textAlign: "left",
+          position: "relative",
+        }}
+      >
+        {label} ({count}/{items.length})
+        <span
+          style={{
+            position: "absolute",
+            right: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: 11,
+            color: "#888",
+            pointerEvents: "none",
+          }}
+        >
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            minWidth: 240,
+            backgroundColor: "#fff",
+            border: "1px solid #e0e0e0",
+            borderRadius: 8,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+            zIndex: 1000,
+            overflow: "hidden",
+          }}
+        >
+          {items.map((item) => (
+            <div
+              key={item.key}
+              onClick={() => item.onChange(!item.checked)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#f5f5f5";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "";
+              }}
+              style={{
+                padding: "8px 12px",
+                fontSize: 13,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 4,
+                  flexShrink: 0,
+                  border: `2px solid ${item.checked ? "#1976d2" : "#ccc"}`,
+                  backgroundColor: item.checked ? "#1976d2" : "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontSize: 11,
+                  lineHeight: 1,
+                  transition: "all 0.15s",
+                }}
+              >
+                {item.checked ? "✓" : ""}
+              </span>
+              <span style={{ fontWeight: item.checked ? 600 : 400 }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function TimingDisplay({

@@ -1,30 +1,6 @@
 ---
 pageType: home
-hero:
-  name: react-wasm-table
-  text: 고성능 React 테이블
-  tagline: Rust/WASM 기반
-  image:
-    src: /react-wasm-table/logo.svg
-    alt: react-wasm-table 로고
-  actions:
-    - theme: brand
-      text: 벤치마크
-      link: /benchmark
-    - theme: brand
-      text: 시작하기
-      link: /guide/getting-started
-    - theme: alt
-      text: API 레퍼런스
-      link: /api/table
-    - theme: alt
-      text: 아키텍처
-      link: /guide/architecture
 features:
-  - title: 벤치마크
-    details: 동일 데이터·동일 스키마로 TanStack React Table와 초기 렌더 시간, 스크롤 FPS를 비교합니다. 1K~1M 행을 순차 측정할 수 있습니다.
-    icon: "⚡"
-    link: /benchmark
   - title: Canvas + WASM
     details: 셀당 DOM 없음. 하나의 캔버스가 뷰포트를 그리며, 레이아웃과 히트 테스트는 Rust/WASM에서 실행되어 대량 데이터에서도 부드럽게 스크롤됩니다.
     icon: "🦀"
@@ -42,7 +18,3 @@ features:
     icon: "📋"
     link: /api/table
 ---
-
-import { Benchmark } from "demo";
-
-<Benchmark />
