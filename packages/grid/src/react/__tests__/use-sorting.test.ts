@@ -123,7 +123,7 @@ describe("useSorting (renderHook)", () => {
 
   describe("updater pattern (TanStack-compatible)", () => {
     it("onSortingChange receives resolved SortingState (direct value, not function)", () => {
-      const onSortingChange = mock(() => {});
+      const onSortingChange = mock((_arg: unknown) => {});
       const { result } = renderHook(() =>
         useSorting({ engine, columnRegistry: registry, invalidate, onSortingChange }),
       );

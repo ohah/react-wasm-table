@@ -16,7 +16,7 @@ const helper = createColumnHelper<Person>();
 function build(columns: GridColumnDef<Person, any>[]) {
   const instance = buildGridInstance({
     columns,
-    state: { sorting: [] },
+    state: { sorting: [], columnFilters: [], globalFilter: "" },
     onSortingChange: () => {},
   });
   return buildHeaderGroups(instance.getAllColumns());
@@ -269,7 +269,7 @@ describe("buildHeaderGroups", () => {
         helper.accessor("firstName", { header: "First" }),
         helper.accessor("age", { header: "Age" }),
       ],
-      state: { sorting: [] },
+      state: { sorting: [], columnFilters: [], globalFilter: "" },
       onSortingChange: () => {},
     });
     const tableRef = { id: "test-table" };
@@ -281,7 +281,7 @@ describe("buildHeaderGroups", () => {
   it("includes header self-reference in getContext", () => {
     const instance = buildGridInstance({
       columns: [helper.accessor("firstName", { header: "First" })],
-      state: { sorting: [] },
+      state: { sorting: [], columnFilters: [], globalFilter: "" },
       onSortingChange: () => {},
     });
     const groups = buildHeaderGroups(instance.getAllColumns());
@@ -293,7 +293,7 @@ describe("buildHeaderGroups", () => {
   it("table reference is undefined when not provided", () => {
     const instance = buildGridInstance({
       columns: [helper.accessor("firstName", { header: "First" })],
-      state: { sorting: [] },
+      state: { sorting: [], columnFilters: [], globalFilter: "" },
       onSortingChange: () => {},
     });
     const groups = buildHeaderGroups(instance.getAllColumns());

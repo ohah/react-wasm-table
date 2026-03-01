@@ -504,7 +504,7 @@ export class EventManager {
       "mousemove",
       (e: MouseEvent) => {
         if (e.buttons & 1) return; // skip during drag — handled by window mousemove
-        const { x, y } = toContentCoords(e.clientX, e.clientY);
+        const { contentX: x, contentY: y } = toContentCoords(e.clientX, e.clientY);
         const resizeCol = this.findResizeHandle(x, y);
         handlers.onResizeHover?.(resizeCol !== -1 ? resizeCol : null);
       },

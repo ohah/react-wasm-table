@@ -1,4 +1,4 @@
-import { useMemo, useRef, useCallback } from "react";
+import { useMemo, useRef, useCallback, type ReactNode } from "react";
 import type { GridInstance } from "../grid-instance";
 import type { RenderInstruction } from "../types";
 import { parseTableChildren } from "./parse-table-children";
@@ -166,7 +166,7 @@ export function Table({ table, children, overscan = 5, ...rest }: TableProps) {
   // Parse <Tbody><Tr><Td> children into a content map for canvas rendering
   const parsedBodyContent = useMemo(() => {
     if (!children) return undefined;
-    const parsed = parseTableChildren(children);
+    const parsed = parseTableChildren(children as ReactNode);
     if (!parsed.hasStructure || parsed.bodyRows.length === 0) return undefined;
 
     const map = new Map<string, RenderInstruction>();

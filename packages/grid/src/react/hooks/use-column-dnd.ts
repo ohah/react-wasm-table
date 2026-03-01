@@ -28,7 +28,7 @@ export interface UseColumnDnDParams {
  */
 function reorderColumnOrder(order: string[], fromIndex: number, toIndex: number): string[] {
   const ids = order.slice();
-  const [draggedId] = ids.splice(fromIndex, 1);
+  const [draggedId] = ids.splice(fromIndex, 1) as [string];
   let insertAt = toIndex;
   if (insertAt > fromIndex) insertAt -= 1;
   ids.splice(insertAt, 0, draggedId);

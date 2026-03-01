@@ -40,6 +40,8 @@ const table = useGridTable({
   // 향후 확장:
   getGroupedRowModel: getGroupedRowModel(),
   getExpandedRowModel: getExpandedRowModel(),
+  getPaginationRowModel: getPaginationRowModel(),
+  getFacetedRowModel: getFacetedRowModel(),
 });
 ```
 
@@ -421,7 +423,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | Row Model Abstraction (1-1)   | Core     | 이후 모든 기능의 토대                                                                                       |
 | Column Feature API (1-2)      | Core     | 기능별 독립 모듈화 기반 (Pinning 렌더링 제외)                                                               |
 | Column Ordering State (2-1)   | State    | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ✅                                                    |
-| Expanding State (2-2)         | State    | getExpandedRowModel ✅, getGroupedRowModel ❌                                                               |
+| Expanding State (2-2)         | State    | getExpandedRowModel ✅, getGroupedRowModel ❌, getPaginationRowModel ❌, getFacetedRowModel ❌               |
 | Column Visibility State (2-3) | State    | resolveColumns에서 hidden 컬럼 제외                                                                         |
 | Data Access API (4-1)         | Utility  | exportToCSV/TSV/JSON + ExportOptions. 20 테스트                                                             |
 | Clipboard Utilities (4-2)     | Utility  | copyToClipboard, pasteFromClipboard, buildCSV/buildHTML, parseClipboardText. onCopy/onPaste 연결. 15 테스트 |
@@ -454,30 +456,68 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | 6    | Virtual Canvas Region    | 3-3      | ✅   | clip+translate 기반 3-region 분리. buildRegions + region-aware hit-test. 29 테스트 |
 | 7    | Pinning 렌더링           | 1-2 잔여 | ✅   | resolveColumns pinning reorder + StringTable ID 키 + data re-ingestion. 데모 포함  |
 
-### Tier 3 — 유틸리티 (Tier 2와 독립, 언제든 가능)
+### Tier 3 — 유틸리티 ✅ + 잔여
 
 | 순서 | 항목                | 참조     | 상태 | 이유                                                                                                               |
 | ---- | ------------------- | -------- | ---- | ------------------------------------------------------------------------------------------------------------------ |
-| 8    | Clipboard Utilities | 4-2      | ✅   | copyToClipboard/pasteFromClipboard + buildCSV/buildHTML, parseClipboardText. onPaste 클립보드 읽기 연결. 15 테스트 |
-| 9    | getGroupedRowModel  | 2-2 잔여 | ❌   | Row Model 인프라 위에 추가. 독립적이지만 그룹핑 로직 자체가 복잡 (aggregate 함수 등)                               |
+| 8    | Clipboard Utilities      | 4-2      | ✅   | copyToClipboard/pasteFromClipboard + buildCSV/buildHTML, parseClipboardText. onPaste 클립보드 읽기 연결. 15 테스트                  |
+| 9    | getGroupedRowModel       | 2-2 잔여 | ❌   | Row Model 인프라 위에 추가. aggregate 함수 등 그룹핑 로직                                                                          |
+| 10   | getPaginationRowModel    | —        | ❌   | 페이지 단위 slice. 가상 스크롤과 양립 가능, 서버사이드 페이지네이션 유스케이스 지원                                                 |
+| 11   | getFacetedRowModel       | —        | ❌   | 컬럼별 고유값/min/max 계산. 필터 UI(드롭다운, 범위 슬라이더) 구축에 필요                                                            |
 
-### Tier 4 — 고급 성능 (아키텍처 변경, 기존 기능 안정 후 마지막)
-
-| 순서 | 항목                            | 참조                                             | 상태   | 이유                                                                                                                                                             |
-| ---- | ------------------------------- | ------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 10   | Worker Bridge                   | 5-1                                              | ❌     | SharedArrayBuffer + Worker 통신 구조 전면 변경. 기존 기능 안정 후 opt-in 추가                                                                                    |
-| 11   | Streaming Data                  | 5-2                                              | ❌     | ColumnarStore chunk append + 가상화 데이터 소스. Worker Bridge와 시너지                                                                                          |
-| —    | Variable Row Height / Flex→Rust | [variable-row-height.md](variable-row-height.md) | 계획만 | 고정 행 높이 제거 후, 행 높이 = 셀(Flex) 최대 높이. Flex 레이아웃을 Rust로 옮길 계획(바이너리 ArrayBuffer 포인터만 사용, 전체 행은 배치 처리). 상세는 문서 참고. |
-
-### Tier 5 — UX Primitive (렌더링 파이프라인 완성 후, 독립 진행 가능)
+### Tier 4 — UX Primitive (렌더링 파이프라인 완성 후)
 
 | 순서 | 항목                      | 참조 | 상태 | 이유                                                                                         |
 | ---- | ------------------------- | ---- | ---- | -------------------------------------------------------------------------------------------- |
 | 12   | Row Pinning               | 6-1  | ✅   | State/API/타입 ✅, WASM pinned layout ✅, buildRowRegions clip 렌더링 ✅                     |
 | 13   | Column DnD Reorder        | 6-2  | ✅   | EventManager 헤더 드래그 + useColumnDnD + 고스트/드롭 인디케이터. enableColumnDnD prop       |
-| 14   | Cell Editing 고도화       | 6-3  | ❌   | EditorManager + DOM overlay 완성. editCell render prop                                       |
-| 15   | Multi-level Column Header | 6-4  | ❌   | helper.group() + 다단 헤더 레이아웃. 복잡도 높음                                             |
+| 14   | Multi-level Column Header | 6-4  | ❌   | helper.group() + 다단 헤더 레이아웃. 복잡도 높음                                             |
+| 15   | Cell Editing 고도화       | 6-3  | ❌   | EditorManager + DOM overlay 완성. editCell render prop                                       |
 | 16   | Context Menu              | 6-5  | ✅   | EventManager contextmenu + hit-test. GridProps.onContextMenu, GridContextMenuEvent. 4 테스트 |
+
+### Tier 5 — 고급 성능 (아키텍처 변경, 기존 기능 안정 후 마지막)
+
+| 순서 | 항목                            | 참조                                             | 상태   | 이유                                                                                                                                                             |
+| ---- | ------------------------------- | ------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 17   | Worker Bridge                   | 5-1                                              | ❌     | SharedArrayBuffer + Worker 통신 구조 전면 변경. 기존 기능 안정 후 opt-in 추가                                                                                    |
+| 18   | Streaming Data                  | 5-2                                              | ❌     | ColumnarStore chunk append + 가상화 데이터 소스. Worker Bridge와 시너지                                                                                          |
+| —    | Variable Row Height / Flex→Rust | [variable-row-height.md](variable-row-height.md) | 계획만 | 고정 행 높이 제거 후, 행 높이 = 셀(Flex) 최대 높이. Flex 레이아웃을 Rust로 옮길 계획(바이너리 ArrayBuffer 포인터만 사용, 전체 행은 배치 처리). 상세는 문서 참고. |
+
+### 남은 항목 개발 순서 (개발 속도 최적화 기준)
+
+```
+ 9. getGroupedRowModel ─────┐
+10. getPaginationRowModel ──┼── Row Model 패턴 복제, 동일 인프라 재활용
+11. getFacetedRowModel ─────┘
+         ↓
+14. Multi-level Header ──── header 구조 확정 (Cell Editing 선행 조건)
+         ↓
+15. Cell Editing 고도화 ─── 확정된 header 위에 기존 stub 완성
+         ↓
+17. Worker + Streaming ──── opt-in 레이어, 기존 코드 변경 없음
+         ↓
+ —. Variable Row Height ─── 가장 침습적 변경, 마지막
+```
+
+**순서 근거:**
+
+1. **Row Model 3개 (Grouped → Pagination → Faceted)** — getCoreRowModel/getSortedRowModel/
+   getFilteredRowModel/getExpandedRowModel 4개가 동일 패턴으로 구현 완료. Row/RowModel 타입,
+   buildRow/buildRowModel 빌더, 테스트 구조 모두 복제 가능. 3개를 연속 진행하면 컨텍스트
+   스위칭 없이 같은 코드 영역에서 작업 완료. getPaginationRowModel은 단순 slice라 가장 빠르고,
+   getFacetedRowModel은 고유값/min/max 계산으로 독립적.
+
+2. **Multi-level Column Header → Cell Editing 순서** — header가 단일 행→다단 행으로 바뀌면
+   headerHeight 계산이 달라짐. Cell Editing의 DOM overlay 위치는 cellY + headerHeight 기반이므로,
+   Multi-level Header를 먼저 확정해야 Cell Editing에서 재작업이 없음. 반대 순서면 overlay 위치
+   계산을 재작업해야 함.
+
+3. **Worker Bridge + Streaming Data** — opt-in 설계라 순서가 뒤여도 기존 코드 재작업 0.
+   기능 안정 후 성능 레이어로 추가.
+
+4. **Variable Row Height** — 고정 행 높이 전제를 깨는 작업. virtual scroll, hit-test,
+   row pinning, layout buffer 전부 영향. "먼저 하면 재작업을 줄인다"는 논리가 있지만
+   아직 계획 단계이고 구현 복잡도가 압도적이라 먼저 하면 나머지 전부 지연됨.
 
 ### 의존성 그래프
 
@@ -486,13 +526,12 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 2. Event System 미들웨어 ✅
 3. Layout Cache ✅
 4. Custom Cell Renderer ✅ ──→ 5. Layer System ✅ ──→ 6. Virtual Canvas Region ✅ ──→ 7. Pinning 렌더링 ✅
-9. getGroupedRowModel (독립, 복잡도 높음)
-10. Worker Bridge ──→ 11. Streaming Data (시너지)
-7. Pinning 렌더링 ✅ ──→ 12. Row Pinning
-2. Event System ✅ ──→ 13. Column DnD Reorder
-                   ──→ 14. Cell Editing 고도화
-                   ──→ 16. Context Menu
-15. Multi-level Column Header (독립, 복잡도 높음)
+9. getGroupedRowModel ──→ 10. getPaginationRowModel ──→ 11. getFacetedRowModel (Row Model 패턴 복제, 연속 진행)
+7. Pinning 렌더링 ✅ ──→ 12. Row Pinning ✅
+2. Event System ✅ ──→ 13. Column DnD Reorder ✅
+                   ──→ 16. Context Menu ✅
+14. Multi-level Column Header ──→ 15. Cell Editing 고도화 (header 구조 확정 후)
+17. Worker Bridge ──→ 18. Streaming Data (시너지)
 ```
 
 ---

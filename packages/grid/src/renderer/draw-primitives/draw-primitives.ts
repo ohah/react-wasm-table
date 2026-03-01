@@ -142,6 +142,8 @@ export function drawSparklineFromBuffer(
     y: contentTop + contentHeight - ((v - min) / range) * contentHeight,
   }));
 
+  if (points.length === 0) return;
+
   ctx.strokeStyle = color;
   ctx.lineWidth = strokeWidth;
   ctx.lineJoin = "round";
@@ -149,9 +151,9 @@ export function drawSparklineFromBuffer(
 
   if (variant === "area") {
     ctx.beginPath();
-    ctx.moveTo(points[0].x, contentTop + contentHeight);
+    ctx.moveTo(points[0]!.x, contentTop + contentHeight);
     for (const p of points) ctx.lineTo(p.x, p.y);
-    ctx.lineTo(points[points.length - 1].x, contentTop + contentHeight);
+    ctx.lineTo(points[points.length - 1]!.x, contentTop + contentHeight);
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.globalAlpha = 0.25;
@@ -160,7 +162,7 @@ export function drawSparklineFromBuffer(
   }
 
   ctx.beginPath();
-  ctx.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+  ctx.moveTo(points[0]!.x, points[0]!.y);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i]!.x, points[i]!.y);
   ctx.stroke();
 }
