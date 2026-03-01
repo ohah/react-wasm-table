@@ -41,7 +41,7 @@ const overflowOptions: CssOverflow[] = ["auto", "scroll", "hidden", "visible"];
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
   background: "#fff",
   cursor: "pointer",
@@ -91,7 +91,7 @@ export function Scrollbar() {
       </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
           <Grid
@@ -112,7 +112,7 @@ export function Scrollbar() {
       </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>Canvas (WASM/Taffy)</h3>
           <Grid data={smallData} width={550} height={400} overflowY="auto" columns={smallColumns} />
         </div>
       </div>
@@ -124,7 +124,7 @@ export function Scrollbar() {
       </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>Canvas (WASM/Taffy)</h3>
           <Grid
             data={smallData}
             width={550}
@@ -140,7 +140,7 @@ export function Scrollbar() {
       <p>Wide content with many columns in a narrow viewport.</p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>Canvas (WASM/Taffy)</h3>
           <Grid
             data={largeData}
             width={600}

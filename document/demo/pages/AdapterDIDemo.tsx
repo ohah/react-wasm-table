@@ -75,7 +75,7 @@ export function AdapterDIDemo() {
             onClick={clearSelection}
             style={{
               padding: "4px 12px",
-              border: "1px solid #ccc",
+              border: "1px solid var(--demo-border-2)",
               borderRadius: 4,
               cursor: "pointer",
             }}
@@ -87,7 +87,8 @@ export function AdapterDIDemo() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -109,7 +110,7 @@ export function AdapterDIDemo() {
 
       <div style={{ display: "flex", gap: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>Grid A</div>
+          <div style={{ fontSize: 12, color: "var(--demo-muted-4)", fontWeight: 600 }}>Grid A</div>
           <Grid
             data={data}
             width={460}
@@ -117,7 +118,7 @@ export function AdapterDIDemo() {
             columns={columns}
             {...(useDI ? { eventManager, selectionManager, editorManager } : {})}
           />
-          <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>
+          <div style={{ fontSize: 12, color: "var(--demo-muted-4)", fontWeight: 600 }}>
             Grid B (shared SelectionManager)
           </div>
           <Grid
@@ -141,19 +142,19 @@ export function AdapterDIDemo() {
           <Panel title="Injected Managers">
             <div>
               <code>EventManager</code>:{" "}
-              <span style={{ color: useDI ? "#2e7d32" : "#999" }}>
+              <span style={{ color: useDI ? "#2e7d32" : "var(--demo-muted-5)" }}>
                 {useDI ? "external" : "internal (default)"}
               </span>
             </div>
             <div>
               <code>SelectionManager</code>:{" "}
-              <span style={{ color: useDI ? "#2e7d32" : "#999" }}>
+              <span style={{ color: useDI ? "#2e7d32" : "var(--demo-muted-5)" }}>
                 {useDI ? "external" : "internal (default)"}
               </span>
             </div>
             <div>
               <code>EditorManager</code>:{" "}
-              <span style={{ color: useDI ? "#2e7d32" : "#999" }}>
+              <span style={{ color: useDI ? "#2e7d32" : "var(--demo-muted-5)" }}>
                 {useDI ? "external" : "internal (default)"}
               </span>
             </div>
@@ -165,12 +166,12 @@ export function AdapterDIDemo() {
             </div>
             <div>
               <strong>Dragging:</strong>{" "}
-              <span style={{ color: isDragging ? "#d32f2f" : "#999" }}>
+              <span style={{ color: isDragging ? "#d32f2f" : "var(--demo-muted-5)" }}>
                 {isDragging ? "yes" : "no"}
               </span>
             </div>
             {useDI && (
-              <div style={{ marginTop: 8, color: "#888", fontSize: 12 }}>
+              <div style={{ marginTop: 8, color: "var(--demo-muted-4)", fontSize: 12 }}>
                 Reading directly from SelectionManager instance
               </div>
             )}
@@ -195,7 +196,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
     <div
       style={{
         padding: 12,
-        background: "#f9f9f9",
+        background: "var(--demo-panel-bg)",
         borderRadius: 6,
         border: "1px solid #eee",
         fontSize: 13,

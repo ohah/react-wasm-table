@@ -61,7 +61,7 @@ const ALL_COLUMN_IDS = ["id", "name", "department", "salary", "performanceScore"
 const btnBase: React.CSSProperties = {
   padding: "3px 10px",
   borderRadius: 4,
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   background: "#fff",
   cursor: "pointer",
   fontSize: 12,
@@ -77,7 +77,7 @@ const btnActive: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   marginBottom: 20,
   padding: 12,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 6,
 };
 
@@ -144,7 +144,7 @@ export function ColumnFeatures() {
   const inputStyle: React.CSSProperties = {
     padding: "3px 6px",
     borderRadius: 4,
-    border: "1px solid #ccc",
+    border: "1px solid var(--demo-border-2)",
     fontSize: 12,
     width: 100,
   };
@@ -152,7 +152,7 @@ export function ColumnFeatures() {
   return (
     <>
       <h1>Column Features</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         Demonstrates per-column <strong>ordering</strong>, <strong>visibility</strong>,{" "}
         <strong>sizing</strong> (+ drag resize), <strong>pinning</strong>, and{" "}
         <strong>filtering</strong> state APIs. Drag a header border to resize columns. See the{" "}
@@ -162,7 +162,7 @@ export function ColumnFeatures() {
       {/* ── Ordering ── */}
       <div style={sectionStyle}>
         <strong style={{ fontSize: 13 }}>Column Order</strong>
-        <span style={{ fontSize: 12, color: "#888", marginLeft: 8 }}>
+        <span style={{ fontSize: 12, color: "var(--demo-muted-4)", marginLeft: 8 }}>
           (drag-free reorder via buttons)
         </span>
         <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
@@ -209,7 +209,7 @@ export function ColumnFeatures() {
       {/* ── Visibility ── */}
       <div style={sectionStyle}>
         <strong style={{ fontSize: 13 }}>Visibility</strong>
-        <span style={{ fontSize: 12, color: "#888", marginLeft: 8 }}>
+        <span style={{ fontSize: 12, color: "var(--demo-muted-4)", marginLeft: 8 }}>
           (ID column has enableHiding: false)
         </span>
         <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
@@ -230,7 +230,7 @@ export function ColumnFeatures() {
       {/* ── Sizing ── */}
       <div style={sectionStyle}>
         <strong style={{ fontSize: 13 }}>Sizing Override</strong>
-        <span style={{ fontSize: 12, color: "#888", marginLeft: 8 }}>
+        <span style={{ fontSize: 12, color: "var(--demo-muted-4)", marginLeft: 8 }}>
           (change column widths via state)
         </span>
         <div style={{ display: "flex", gap: 12, marginTop: 8, alignItems: "center" }}>
@@ -336,7 +336,7 @@ export function ColumnFeatures() {
 
       {/* ── Grid API ── */}
       <section style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "var(--demo-muted)" }}>Grid API</h3>
         <Grid
           data={data}
           width={600}
@@ -359,7 +359,8 @@ export function ColumnFeatures() {
       {/* ── State display ── */}
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 11,
@@ -383,7 +384,8 @@ export function ColumnFeatures() {
       {/* ── Code snippet ── */}
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,

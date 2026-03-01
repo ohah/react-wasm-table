@@ -219,7 +219,8 @@ export function CustomRendererDemo() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,
@@ -251,7 +252,7 @@ const progressRenderer: CellRenderer = {
       </pre>
 
       <section style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "var(--demo-muted)" }}>Grid API</h3>
         <Grid
           data={data as any}
           width={600}
@@ -264,7 +265,7 @@ const progressRenderer: CellRenderer = {
         />
       </section>
 
-      <div style={{ marginTop: 12, fontSize: 13, color: "#555" }}>
+      <div style={{ marginTop: 12, fontSize: 13, color: "var(--demo-muted-2)" }}>
         <strong>How it works:</strong> The <code>cellRenderers</code> prop accepts an array of{" "}
         <code>CellRenderer</code> objects. Each has a <code>type</code> string and a{" "}
         <code>draw(instruction, context)</code> method. Custom types are merged with built-ins;

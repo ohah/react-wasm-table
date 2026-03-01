@@ -4,7 +4,8 @@ const linkStyle: React.CSSProperties = {
   display: "block",
   padding: "8px 12px",
   borderRadius: 4,
-  background: "#f5f5f5",
+  background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
   color: "#1565c0",
   textDecoration: "none",
   fontSize: 14,
@@ -54,7 +55,7 @@ export function CanvasComponents() {
       </ul>
 
       <h2 style={{ marginTop: 24, fontSize: 16 }}>Planned — interactive (DOM overlay)</h2>
-      <p style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)", marginBottom: 8 }}>
         Stub only; will use DOM overlay (e.g. <code>&lt;input type="range"&gt;</code>) when
         implemented.
       </p>

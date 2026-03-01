@@ -25,7 +25,7 @@ const gapOptions = [0, 4, 8, 12, 16];
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
   background: "#fff",
   cursor: "pointer",
@@ -164,7 +164,7 @@ export function CanvasFlex() {
         </div>
       </div>
 
-      <h3 style={{ margin: "16px 0 8px", fontSize: 14, color: "#666" }}>Canvas preview</h3>
+      <h3 style={{ margin: "16px 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>Canvas preview</h3>
       <section style={{ marginBottom: 32 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
         <Grid
@@ -178,7 +178,8 @@ export function CanvasFlex() {
 
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 12,

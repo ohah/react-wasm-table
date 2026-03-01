@@ -8,7 +8,7 @@ const positionOptions: CssPosition[] = ["relative", "absolute"];
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
   background: "#fff",
   cursor: "pointer",
@@ -96,7 +96,7 @@ export function Position() {
         </label>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
+      <pre style={{ background: "var(--demo-code-bg)", color: "var(--demo-code-fg)", padding: 12, borderRadius: 4, fontSize: 13 }}>
         {`helper.accessor("name", { size: 180 })
 helper.accessor("dept", { size: 120, position: "${pos}", insetLeft: ${insetLeft}, insetTop: ${insetTop} })
 helper.accessor("salary", { size: 100 })
@@ -106,7 +106,7 @@ helper.accessor("salary", { size: 100 })
 
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
           <Grid data={data} width={800} height={400} columns={columns} />

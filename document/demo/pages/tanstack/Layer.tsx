@@ -135,7 +135,7 @@ export function TanStackLayer() {
   return (
     <>
       <h1>Layer System</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         useReactTable + Table with layers prop (header, data, gridLines, rowHighlight, selection,
         watermark).
       </p>
