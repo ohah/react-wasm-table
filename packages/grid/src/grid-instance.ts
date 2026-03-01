@@ -17,12 +17,16 @@ import type {
   RowPinningUpdater,
   ExpandedState,
   ExpandedUpdater,
+  PaginationState,
+  PaginationUpdater,
+  GroupingState,
+  GroupingUpdater,
   CellContext,
   HeaderContext,
 } from "./tanstack-types";
 import { getLeafColumns } from "./resolve-columns";
-import type { Row, RowModel, RowModelFactory } from "./row-model";
-import { buildRowModel, buildVirtualRowModel, buildExpandedRowModel } from "./row-model";
+import type { Row, RowModel, RowModelFactory, AggregationFn, FacetedColumnValues } from "./row-model";
+import { buildRowModel, buildVirtualRowModel, buildExpandedRowModel, buildPaginationRowModel, buildGroupedRowModel, buildFacetedValues } from "./row-model";
 import type { VisibleRange } from "./row-model";
 import { buildHeaderGroups } from "./build-header-groups";
 
@@ -139,6 +143,8 @@ export interface GridState {
   columnPinning?: ColumnPinningState;
   rowPinning?: RowPinningState;
   expanded?: ExpandedState;
+  pagination?: PaginationState;
+  grouping?: GroupingState;
 }
 
 // ── GridInstance ─────────────────────────────────────────────────────
@@ -231,6 +237,42 @@ export interface GridInstance<TData = unknown> {
   toggleAllRowsExpanded: (expanded?: boolean) => void;
   /** Get the expanded row model (tree flattened by expanded state). */
   getExpandedRowModel: () => RowModel<TData>;
+
+  // Pagination
+  /** Set the pagination state. */
+  setPagination: (updater: PaginationUpdater) => void;
+  /** Reset pagination to initial state. */
+  resetPagination: () => void;
+  /** Get the total page count. */
+  getPageCount: () => number;
+  /** Whether there is a previous page. */
+  getCanPreviousPage: () => boolean;
+  /** Whether there is a next page. */
+  getCanNextPage: () => boolean;
+  /** Go to the previous page. */
+  previousPage: () => void;
+  /** Go to the next page. */
+  nextPage: () => void;
+  /** Go to a specific page index. */
+  setPageIndex: (index: number) => void;
+  /** Set the page size. */
+  setPageSize: (size: number) => void;
+  /** Get the paginated row model. */
+  getPaginationRowModel: () => RowModel<TData>;
+
+  // Grouping
+  /** Set the grouping state. */
+  setGrouping: (updater: GroupingUpdater) => void;
+  /** Reset grouping to empty. */
+  resetGrouping: () => void;
+  /** Get the grouped row model. */
+  getGroupedRowModel: () => RowModel<TData>;
+
+  // Faceted
+  /** Get unique values and counts for a column. */
+  getFacetedUniqueValues: (columnId: string) => Map<unknown, number>;
+  /** Get min/max for a column, or undefined if non-numeric. */
+  getFacetedMinMaxValues: (columnId: string) => [number, number] | undefined;
 }
 
 // ── Callbacks ───────────────────────────────────────────────────────
@@ -244,6 +286,8 @@ interface BuildColumnCallbacks {
   onColumnPinningChange: (updater: ColumnPinningUpdater) => void;
   onRowPinningChange: (updater: RowPinningUpdater) => void;
   onExpandedChange: (updater: ExpandedUpdater) => void;
+  onPaginationChange: (updater: PaginationUpdater) => void;
+  onGroupingChange: (updater: GroupingUpdater) => void;
 }
 
 // ── Builder ─────────────────────────────────────────────────────────
@@ -264,6 +308,9 @@ export interface BuildOptions<TData> {
   onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
   onRowPinningChange?: (updater: RowPinningUpdater) => void;
   onExpandedChange?: (updater: ExpandedUpdater) => void;
+  onPaginationChange?: (updater: PaginationUpdater) => void;
+  onGroupingChange?: (updater: GroupingUpdater) => void;
+  aggregationFns?: Record<string, AggregationFn<TData>>;
   getSubRows?: (row: TData) => TData[] | undefined;
   viewIndicesRef?: ViewIndicesRef;
 }
@@ -448,6 +495,9 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     onColumnPinningChange = () => {},
     onRowPinningChange = () => {},
     onExpandedChange = () => {},
+    onPaginationChange = () => {},
+    onGroupingChange = () => {},
+    aggregationFns,
     getSubRows,
     viewIndicesRef,
   } = options;
@@ -461,6 +511,8 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
     onColumnPinningChange,
     onRowPinningChange,
     onExpandedChange,
+    onPaginationChange,
+    onGroupingChange,
   };
 
   const allColumns = buildGridColumns(defs, state, callbacks);
@@ -504,6 +556,13 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
   let visibleRange: VisibleRange | null = null;
 
   const expanded = state.expanded ?? {};
+  const pagination = state.pagination ?? { pageIndex: 0, pageSize: 10 };
+  const grouping = state.grouping ?? [];
+
+  // Pagination / Grouped / Faceted caches
+  let cachedPaginationRowModel: RowModel<TData> | null = null;
+  let cachedGroupedRowModel: RowModel<TData> | null = null;
+  let cachedFacetedValues: Map<string, FacetedColumnValues> | null = null;
 
   const instance: GridInstance<TData> = {
     getState: () => state,
@@ -678,6 +737,88 @@ export function buildGridInstance<TData>(options: BuildOptions<TData>): GridInst
         }
       }
       return cachedExpandedRowModel;
+    },
+
+    // Pagination
+    setPagination: onPaginationChange,
+    resetPagination: () => onPaginationChange({ pageIndex: 0, pageSize: 10 }),
+    getPageCount: () => {
+      const currentIndices = viewIndicesRef?.current ?? null;
+      const total = currentIndices ? currentIndices.length : data.length;
+      return Math.ceil(total / pagination.pageSize);
+    },
+    getCanPreviousPage: () => pagination.pageIndex > 0,
+    getCanNextPage: () => {
+      const currentIndices = viewIndicesRef?.current ?? null;
+      const total = currentIndices ? currentIndices.length : data.length;
+      return pagination.pageIndex < Math.ceil(total / pagination.pageSize) - 1;
+    },
+    previousPage: () => {
+      if (pagination.pageIndex > 0) {
+        onPaginationChange({ ...pagination, pageIndex: pagination.pageIndex - 1 });
+      }
+    },
+    nextPage: () => {
+      const currentIndices = viewIndicesRef?.current ?? null;
+      const total = currentIndices ? currentIndices.length : data.length;
+      const maxPage = Math.ceil(total / pagination.pageSize) - 1;
+      if (pagination.pageIndex < maxPage) {
+        onPaginationChange({ ...pagination, pageIndex: pagination.pageIndex + 1 });
+      }
+    },
+    setPageIndex: (index: number) => {
+      onPaginationChange({ ...pagination, pageIndex: index });
+    },
+    setPageSize: (size: number) => {
+      onPaginationChange({ ...pagination, pageSize: size, pageIndex: 0 });
+    },
+    getPaginationRowModel: () => {
+      if (!cachedPaginationRowModel) {
+        const currentIndices = viewIndicesRef?.current ?? null;
+        const visibleLeaf = leafColumns.filter((col) => visibility[col.id] !== false);
+        cachedPaginationRowModel = buildPaginationRowModel(data, currentIndices, defs, pagination, {
+          visibleColumns: visibleLeaf,
+          table: instance,
+        });
+      }
+      return cachedPaginationRowModel;
+    },
+
+    // Grouping
+    setGrouping: onGroupingChange,
+    resetGrouping: () => onGroupingChange([]),
+    getGroupedRowModel: () => {
+      if (!cachedGroupedRowModel) {
+        const currentIndices = viewIndicesRef?.current ?? null;
+        cachedGroupedRowModel = buildGroupedRowModel(
+          data,
+          currentIndices,
+          defs,
+          grouping,
+          aggregationFns,
+        );
+      }
+      return cachedGroupedRowModel;
+    },
+
+    // Faceted
+    getFacetedUniqueValues: (columnId: string) => {
+      if (!cachedFacetedValues) {
+        const currentIndices = viewIndicesRef?.current ?? null;
+        cachedFacetedValues = buildFacetedValues(data, currentIndices, defs);
+      }
+      return cachedFacetedValues.get(columnId)?.uniqueValues ?? new Map();
+    },
+    getFacetedMinMaxValues: (columnId: string) => {
+      if (!cachedFacetedValues) {
+        const currentIndices = viewIndicesRef?.current ?? null;
+        cachedFacetedValues = buildFacetedValues(data, currentIndices, defs);
+      }
+      const col = cachedFacetedValues.get(columnId);
+      if (col && col.min !== undefined && col.max !== undefined) {
+        return [col.min, col.max];
+      }
+      return undefined;
     },
   };
 
