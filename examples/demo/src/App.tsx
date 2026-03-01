@@ -45,6 +45,9 @@ import { CustomRendererDemo } from "./pages/CustomRendererDemo";
 import { LayerDemo } from "./pages/LayerDemo";
 import { ColumnPinningDemo } from "./pages/ColumnPinningDemo";
 import { ColumnDnDAndRowPinningDemo } from "./pages/ColumnDnDAndRowPinningDemo";
+import { PaginationDemo } from "./pages/PaginationDemo";
+import { GroupingDemo } from "./pages/GroupingDemo";
+import { FacetedDemo } from "./pages/FacetedDemo";
 import { TableApiDemo } from "./pages/TableApiDemo";
 import {
   TanStackColumnPinning,
@@ -173,6 +176,9 @@ export function App() {
           <Route path="/layers" element={<LayerDemo />} />
           <Route path="/column-pinning" element={<ColumnPinningDemo />} />
           <Route path="/column-dnd-row-pinning" element={<ColumnDnDAndRowPinningDemo />} />
+          <Route path="/pagination" element={<PaginationDemo />} />
+          <Route path="/grouping" element={<GroupingDemo />} />
+          <Route path="/faceted" element={<FacetedDemo />} />
         </Routes>
       </main>
     </div>
