@@ -31,6 +31,9 @@ const sections = [
       { to: "/column-pinning", label: "Column Pinning" },
       { to: "/column-dnd-row-pinning", label: "Column DnD & Row Pinning" },
       { to: "/expanding", label: "Expanding (Tree)" },
+      { to: "/pagination", label: "Pagination" },
+      { to: "/grouping", label: "Grouping" },
+      { to: "/faceted", label: "Faceted Values" },
     ],
   },
   {
