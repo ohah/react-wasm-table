@@ -1,5 +1,12 @@
 import { useMemo } from "react";
-import { createColumnHelper, useGridTable, getFacetedRowModel } from "@ohah/react-wasm-table";
+import {
+  Grid,
+  createColumnHelper,
+  useGridTable,
+  getFacetedRowModel,
+  Text,
+  Badge,
+} from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
 
 // ── Data ──────────────────────────────────────────────────────────
@@ -18,14 +25,43 @@ const rawData = generateEmployees(500) as unknown as Employee[];
 const helper = createColumnHelper<Employee>();
 
 const columns = [
-  helper.accessor("name", { header: "Name", size: 180 }),
-  helper.accessor("department", { header: "Department", size: 140 }),
-  helper.accessor("title", { header: "Title", size: 180 }),
-  helper.accessor("salary", { header: "Salary", size: 120, align: "right" }),
+  helper.accessor("name", { header: "Name", size: 180, padding: [0, 8] }),
+  helper.accessor("department", {
+    header: "Department",
+    size: 140,
+    padding: [0, 8],
+    cell: (info) => (
+      <Badge value={info.getValue()} color="#333" backgroundColor="#e0e0e0" borderRadius={4} />
+    ),
+  }),
+  helper.accessor("title", { header: "Title", size: 180, padding: [0, 8] }),
+  helper.accessor("salary", {
+    header: "Salary",
+    size: 120,
+    align: "right",
+    padding: [0, 8],
+    cell: (info) => (
+      <Text
+        value={`$${info.getValue().toLocaleString()}`}
+        fontWeight="bold"
+        color={info.getValue() > 100000 ? "#2e7d32" : "#333"}
+      />
+    ),
+  }),
   helper.accessor((row) => (row.isActive ? "Active" : "Inactive"), {
     id: "status",
     header: "Status",
     size: 100,
+    align: "center",
+    padding: [0, 8],
+    cell: (info) => (
+      <Badge
+        value={info.getValue()}
+        color="white"
+        backgroundColor={info.getValue() === "Active" ? "#4caf50" : "#9e9e9e"}
+        borderRadius={4}
+      />
+    ),
   }),
 ];
 
@@ -73,7 +109,7 @@ export function FacetedDemo() {
       <p>
         Demonstrates <code>getFacetedRowModel</code> which computes per-column statistics: unique
         value counts and min/max for numeric columns. Useful for building filter UIs (dropdowns,
-        range sliders).
+        range sliders). The canvas grid below shows the raw data.
       </p>
 
       <div style={sectionStyle}>
@@ -81,6 +117,18 @@ export function FacetedDemo() {
           Dataset: <strong>{rawData.length}</strong> employees across{" "}
           <strong>{table.getFacetedUniqueValues("department").size}</strong> departments
         </span>
+      </div>
+
+      {/* Canvas Grid showing the raw data */}
+      <div style={{ marginBottom: 20 }}>
+        <Grid
+          table={table}
+          data={rawData as unknown as Record<string, unknown>[]}
+          columns={columns}
+          width={800}
+          height={300}
+          overflowY="scroll"
+        />
       </div>
 
       {/* Faceted values per column */}
