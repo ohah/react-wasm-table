@@ -228,7 +228,7 @@ export function Benchmark() {
     if (autoRunDone.current) return;
     autoRunDone.current = true;
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    const count = isMobile ? 10_000 : 500_000;
+    const count = isMobile ? 10_000 : 100_000;
     setSelectedCount(count);
     run(count);
   }, [run]);
