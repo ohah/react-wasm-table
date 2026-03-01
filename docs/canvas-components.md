@@ -78,17 +78,18 @@ So `style` and individual props are merged at the component level; the instructi
 
 ---
 
-## 3. Text and Badge
+## 3. Text, Badge, and Sparkline
 
 Same extensible pattern as Flex:
 
-- **`style` prop**: Optional `style` object (`Partial<TextStyle>` / `Partial<BadgeStyle>`). Individual props override `style` when both are set.
+- **`style` prop**: Optional `style` object (`Partial<TextStyle>` / `Partial<BadgeStyle>` / `Partial<SparklineStyle>`). Individual props override `style` when both are set.
 - **Text**: `value`, `style?`, `color?`, `fontWeight?`, `fontSize?`.
 - **Badge**: `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`.
+- **Sparkline**: Inline mini line chart. `data` (number[]), `style?`, `color?`, `strokeWidth?`, `variant?` (`"line"` | `"area"`). Fully drawn on canvas.
 
 ## 4. Stub components
 
-Sparkline, Rating, Icon, etc. are stubs (placeholder instructions). ProgressBar is also a stub but is planned as an **interactive (DOM overlay)** component: canvas-drawn bar for display, plus `<input type="range">` overlay when the cell is edited. Stubs use the same pattern:
+Rating, Icon, ProgressBar, etc. are stubs (placeholder instructions). ProgressBar is planned as an **interactive (DOM overlay)** component: canvas-drawn bar for display, plus `<input type="range">` overlay when the cell is edited. Stubs use the same pattern:
 
 - **`style` prop**: Optional `style?: Record<string, unknown>`. Merged with other props; individual props override `style`. When implemented, each stub can expose a typed style surface like Text/Badge/Flex.
 

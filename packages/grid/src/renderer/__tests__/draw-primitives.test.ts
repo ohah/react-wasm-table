@@ -1,18 +1,30 @@
 import { describe, expect, it, mock } from "bun:test";
-import { measureText, drawTextCellFromBuffer, drawBadgeFromBuffer } from "../draw-primitives";
+import {
+  measureText,
+  drawTextCellFromBuffer,
+  drawBadgeFromBuffer,
+  drawSparklineFromBuffer,
+} from "../draw-primitives";
 
 /** Create a mock CanvasRenderingContext2D with spies. */
 function mockCtx() {
   return {
     font: "",
     fillStyle: "",
+    strokeStyle: "",
+    lineWidth: 0,
+    globalAlpha: 1,
     textBaseline: "",
     textAlign: "",
     measureText: mock((text: string) => ({ width: text.length * 8 })),
     fillText: mock(() => {}),
     beginPath: mock(() => {}),
+    moveTo: mock(() => {}),
+    lineTo: mock(() => {}),
+    stroke: mock(() => {}),
     roundRect: mock(() => {}),
     fill: mock(() => {}),
+    closePath: mock(() => {}),
   } as unknown as CanvasRenderingContext2D;
 }
 
@@ -191,5 +203,57 @@ describe("drawBadgeFromBuffer", () => {
     // Badge should be centered: badgeX = (200 - 44) / 2 = 78
     expect(badgeX).toBe(78);
     expect(badgeW).toBe(44);
+  });
+});
+
+describe("drawSparklineFromBuffer", () => {
+  it("draws a line sparkline with default style", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(10, 20, 200, 36, 0);
+
+    drawSparklineFromBuffer(ctx, buf, 0, [1, 2, 3, 4, 5]);
+
+    expect(ctx.strokeStyle).toBe("#333");
+    expect(ctx.lineWidth).toBe(1.5);
+    expect(ctx.beginPath).toHaveBeenCalled();
+    expect(ctx.moveTo).toHaveBeenCalled();
+    expect(ctx.lineTo).toHaveBeenCalledTimes(4); // 5 points -> 4 lineTo
+    expect(ctx.stroke).toHaveBeenCalled();
+  });
+
+  it("draws an area sparkline (fill + stroke)", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 100, 30, 0);
+
+    drawSparklineFromBuffer(ctx, buf, 0, [10, 20, 15, 25], { variant: "area" });
+
+    expect(ctx.beginPath).toHaveBeenCalled();
+    expect(ctx.fill).toHaveBeenCalled();
+    expect(ctx.stroke).toHaveBeenCalled();
+  });
+
+  it("applies custom style (color, strokeWidth)", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 80, 24, 0);
+
+    drawSparklineFromBuffer(ctx, buf, 0, [1, 2, 3], {
+      color: "#2563eb",
+      strokeWidth: 2,
+    });
+
+    expect(ctx.strokeStyle).toBe("#2563eb");
+    expect(ctx.lineWidth).toBe(2);
+    expect(ctx.stroke).toHaveBeenCalled();
+  });
+
+  it("does nothing when data has fewer than 2 points", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 100, 36, 0);
+
+    drawSparklineFromBuffer(ctx, buf, 0, [1]);
+    drawSparklineFromBuffer(ctx, buf, 0, []);
+
+    expect(ctx.beginPath).not.toHaveBeenCalled();
+    expect(ctx.stroke).not.toHaveBeenCalled();
   });
 });

@@ -210,6 +210,21 @@ describe("CanvasRenderer", () => {
       expect(ctx.roundRect).toHaveBeenCalled();
     });
 
+    it("renders sparkline instructions (drawSparklineFromBuffer path)", () => {
+      renderer.attach(canvas);
+      const buf = buildBuf([[0, 0, 0, 40, 200, 36]]);
+      const getInstruction = (): RenderInstruction => ({
+        type: "sparkline",
+        data: [10, 20, 15, 25, 30],
+      });
+      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry);
+
+      expect(ctx.beginPath).toHaveBeenCalled();
+      expect(ctx.moveTo).toHaveBeenCalled();
+      expect(ctx.lineTo).toHaveBeenCalled();
+      expect(ctx.stroke).toHaveBeenCalled();
+    });
+
     it("renders stub instructions", () => {
       renderer.attach(canvas);
       const buf = buildBuf([[0, 0, 0, 40, 200, 36]]);
