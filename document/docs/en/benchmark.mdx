@@ -2,7 +2,9 @@
 
 import { Benchmark } from "demo";
 
-We **measure each library independently** with the same data and column schema for a fair execution-time comparison.
+<Benchmark />
+
+---
 
 ## What we compare
 
@@ -18,12 +20,6 @@ We **measure each library independently** with the same data and column schema f
 2. Mount **only react-wasm-table** and measure time to first paint.
 3. Unmount, wait 200ms, then mount **only @tanstack/react-table** and measure the same way.
 4. Display results in a comparison table and bar chart.
-
-## Run the benchmark
-
-Click a row-count button (1K–100K) or **Run All** to benchmark every row count sequentially. After measurement, both grids appear side by side so you can also compare scroll performance.
-
-<Benchmark />
 
 ## Why it's fast
 

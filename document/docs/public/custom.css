@@ -1,4 +1,4 @@
-/* Home: minimal background (no heavy gradient), hero section clearly visible */
+/* Home: minimal background */
 :root,
 :where(html:not(.rp-dark)),
 :where(html.rp-dark) {
@@ -11,10 +11,16 @@ html.rp-dark {
   --rp-home-feature-bg: var(--rp-c-bg, #121212);
 }
 
-/* Hero: ensure the section has clear presence (min-height + padding) */
-.rp-home-hero {
-  min-height: 60vh;
-  padding: 4rem 1.5rem 3rem;
+/* Hero + background gradient: hidden (no hero in frontmatter) */
+.rp-home-hero,
+.rp-home-hero--no-image,
+.rp-home-background {
+  display: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
 }
 
 .rp-home-feature {
