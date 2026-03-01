@@ -227,7 +227,7 @@ export function Benchmark() {
   useEffect(() => {
     if (autoRunDone.current) return;
     autoRunDone.current = true;
-    const isMobile = window.innerWidth < 768;
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     const count = isMobile ? 10_000 : 500_000;
     setSelectedCount(count);
     run(count);
