@@ -10,9 +10,13 @@ import {
   createColumnHelper,
   useGridTable,
   getPaginationRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
   Text,
   Badge,
   type PaginationState,
+  type SortingState,
+  type ColumnFiltersState,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
 import { useContainerSize } from "../useContainerSize";
@@ -28,27 +32,39 @@ type Employee = {
   isActive: boolean;
 };
 
-const rawData = generateEmployees(200) as unknown as Employee[];
+const rawData = generateEmployees(500) as unknown as Employee[];
 
 const helper = createColumnHelper<Employee>();
 
 const columns = [
   helper.accessor("id", { header: "#", size: 60, align: "right", padding: [0, 8] }),
-  helper.accessor("name", { header: "Name", size: 180, padding: [0, 8] }),
+  helper.accessor("name", {
+    header: "Name",
+    size: 180,
+    padding: [0, 8],
+    enableSorting: true,
+  }),
   helper.accessor("department", {
     header: "Department",
     size: 140,
     padding: [0, 8],
+    enableSorting: true,
     cell: (info) => (
       <Badge value={info.getValue()} color="#333" backgroundColor="#e0e0e0" borderRadius={4} />
     ),
   }),
-  helper.accessor("title", { header: "Title", size: 180, padding: [0, 8] }),
+  helper.accessor("title", {
+    header: "Title",
+    size: 180,
+    padding: [0, 8],
+    enableSorting: true,
+  }),
   helper.accessor("salary", {
     header: "Salary",
     size: 120,
     align: "right",
     padding: [0, 8],
+    enableSorting: true,
     cell: (info) => <Text value={`$${info.getValue().toLocaleString()}`} fontWeight="bold" />,
   }),
   helper.accessor((row) => (row.isActive ? "Active" : "Inactive"), {
@@ -57,6 +73,7 @@ const columns = [
     size: 100,
     align: "center",
     padding: [0, 8],
+    enableSorting: true,
     cell: (info) => (
       <Badge
         value={info.getValue()}
@@ -86,19 +103,39 @@ const btnDisabled: React.CSSProperties = {
 };
 
 const sectionStyle: React.CSSProperties = {
-  marginBottom: 20,
+  marginBottom: 16,
   padding: 12,
   background: "#f9f9f9",
   borderRadius: 6,
 };
 
+const inputStyle: React.CSSProperties = {
+  padding: "6px 10px",
+  borderRadius: 4,
+  border: "1px solid #ccc",
+  fontSize: 13,
+  width: 200,
+};
+
 // ── Component ─────────────────────────────────────────────────────
 
 export function PaginationDemo() {
+  // Pagination state
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
+
+  // Sorting state
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  // Filter states
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  // Local filter inputs
+  const [deptFilter, setDeptFilter] = useState("");
+  const [minSalary, setMinSalary] = useState("");
 
   const handlePaginationChange = useCallback(
     (updater: PaginationState | ((prev: PaginationState) => PaginationState)) => {
@@ -107,28 +144,184 @@ export function PaginationDemo() {
     [],
   );
 
+  const handleSortingChange = useCallback(
+    (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+      setSorting((prev) => (typeof updater === "function" ? updater(prev) : updater));
+    },
+    [],
+  );
+
+  const handleColumnFiltersChange = useCallback(
+    (updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+      setColumnFilters((prev) => (typeof updater === "function" ? updater(prev) : updater));
+    },
+    [],
+  );
+
+  // Apply department filter
+  const applyDeptFilter = useCallback(() => {
+    setColumnFilters((prev) => {
+      const without = prev.filter((f) => f.id !== "department");
+      if (!deptFilter.trim()) return without;
+      return [...without, { id: "department", value: deptFilter.trim(), op: "contains" as const }];
+    });
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [deptFilter]);
+
+  // Apply salary filter
+  const applySalaryFilter = useCallback(() => {
+    setColumnFilters((prev) => {
+      const without = prev.filter((f) => f.id !== "salary");
+      const val = Number(minSalary);
+      if (!minSalary.trim() || isNaN(val)) return without;
+      return [...without, { id: "salary", value: val, op: "gte" as const }];
+    });
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [minSalary]);
+
+  // Clear all filters
+  const clearAll = useCallback(() => {
+    setGlobalFilter("");
+    setColumnFilters([]);
+    setDeptFilter("");
+    setMinSalary("");
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, []);
+
   const table = useGridTable<Employee>({
     data: rawData,
     columns,
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    state: { sorting: [], columnFilters: [], globalFilter: "", pagination },
+    state: { sorting, columnFilters, globalFilter, pagination },
+    onSortingChange: handleSortingChange,
+    onColumnFiltersChange: handleColumnFiltersChange,
+    onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: handlePaginationChange,
   });
 
-  const model = table.getPaginationRowModel();
   const pageCount = table.getPageCount();
+  const totalRows = table.getRowCount();
   const { ref, size } = useContainerSize(Math.min(pagination.pageSize * 36 + 40, 520));
 
   return (
     <>
-      <h1>Pagination Row Model</h1>
+      <h1>Pagination + Sort + Filter</h1>
       <p>
-        Demonstrates <code>getPaginationRowModel</code> with a 200-row dataset. The canvas grid
-        shows only the current page while <code>rowCount</code> reflects the total for page
-        calculations.
+        Demonstrates <code>getPaginationRowModel</code> combined with{" "}
+        <code>getSortedRowModel</code> and <code>getFilteredRowModel</code>.
+        All processing (filter → sort → paginate) happens in WASM — full data is loaded once,
+        page transitions only change <code>view_indices</code> without re-ingesting data.
       </p>
 
-      {/* Controls */}
+      {/* Global Search */}
+      <div style={sectionStyle}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ fontSize: 13, fontWeight: 600 }}>Global Search:</label>
+          <input
+            style={{ ...inputStyle, width: 280 }}
+            type="text"
+            placeholder="Search across all columns..."
+            value={globalFilter}
+            onChange={(e) => {
+              setGlobalFilter(e.target.value);
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+            }}
+          />
+          {globalFilter && (
+            <span style={{ fontSize: 12, color: "#666" }}>
+              Matching rows: {totalRows}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Column Filters */}
+      <div style={sectionStyle}>
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
+          <div>
+            <label style={{ fontSize: 12, color: "#666", display: "block", marginBottom: 4 }}>
+              Department (contains)
+            </label>
+            <div style={{ display: "flex", gap: 4 }}>
+              <input
+                style={inputStyle}
+                type="text"
+                placeholder="e.g. Engineering"
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applyDeptFilter()}
+              />
+              <button style={btnBase} onClick={applyDeptFilter}>
+                Apply
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 12, color: "#666", display: "block", marginBottom: 4 }}>
+              Min Salary (≥)
+            </label>
+            <div style={{ display: "flex", gap: 4 }}>
+              <input
+                style={{ ...inputStyle, width: 120 }}
+                type="number"
+                placeholder="e.g. 100000"
+                value={minSalary}
+                onChange={(e) => setMinSalary(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applySalaryFilter()}
+              />
+              <button style={btnBase} onClick={applySalaryFilter}>
+                Apply
+              </button>
+            </div>
+          </div>
+
+          <button
+            style={{ ...btnBase, background: "#f5f5f5", color: "#666" }}
+            onClick={clearAll}
+          >
+            Clear All
+          </button>
+        </div>
+
+        {/* Active filters display */}
+        {(columnFilters.length > 0 || globalFilter) && (
+          <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
+            <strong>Active:</strong>{" "}
+            {globalFilter && (
+              <span
+                style={{
+                  display: "inline-block",
+                  background: "#e3f2fd",
+                  padding: "2px 8px",
+                  borderRadius: 10,
+                  marginRight: 4,
+                }}
+              >
+                global: "{globalFilter}"
+              </span>
+            )}
+            {columnFilters.map((f) => (
+              <span
+                key={f.id}
+                style={{
+                  display: "inline-block",
+                  background: "#fff3e0",
+                  padding: "2px 8px",
+                  borderRadius: 10,
+                  marginRight: 4,
+                }}
+              >
+                {f.id} {(f as any).op ?? "eq"} {String(f.value)}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Pagination Controls */}
       <div style={sectionStyle}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <button
@@ -177,12 +370,39 @@ export function PaginationDemo() {
           </select>
 
           <span style={{ fontSize: 12, color: "#999", marginLeft: 8 }}>
-            ({model.rowCount} total rows)
+            ({totalRows} rows{columnFilters.length > 0 || globalFilter ? " after filter" : ""})
           </span>
         </div>
+
+        {/* Sorting indicator */}
+        {sorting.length > 0 && (
+          <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
+            <strong>Sort:</strong>{" "}
+            {sorting.map((s) => (
+              <span
+                key={s.id}
+                style={{
+                  display: "inline-block",
+                  background: "#e8f5e9",
+                  padding: "2px 8px",
+                  borderRadius: 10,
+                  marginRight: 4,
+                }}
+              >
+                {s.id} {s.desc ? "DESC" : "ASC"}
+              </span>
+            ))}
+            <button
+              style={{ ...btnBase, fontSize: 11, padding: "2px 8px", marginLeft: 4 }}
+              onClick={() => setSorting([])}
+            >
+              Clear Sort
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Canvas Table — pagination handled internally by <Table> */}
+      {/* Canvas Table */}
       <div ref={ref} style={{ width: "100%", height: Math.min(pagination.pageSize * 36 + 40, 520) }}>
         {size.width > 0 && (
           <Table table={table} width={size.width} height={size.height} overflowY="scroll">
@@ -216,8 +436,21 @@ export function PaginationDemo() {
 
       {/* State display */}
       <div style={{ ...sectionStyle, marginTop: 20 }}>
-        <strong>Pagination State:</strong>
-        <pre style={{ margin: "4px 0 0", fontSize: 12 }}>{JSON.stringify(pagination, null, 2)}</pre>
+        <strong>Current State:</strong>
+        <pre style={{ margin: "4px 0 0", fontSize: 12 }}>
+          {JSON.stringify({ pagination, sorting, columnFilters, globalFilter }, null, 2)}
+        </pre>
+      </div>
+
+      {/* Tip */}
+      <div style={{ ...sectionStyle, background: "#e8f5e9" }}>
+        <strong>How it works (WASM pipeline):</strong>
+        <ol style={{ margin: "8px 0 0", paddingLeft: 20, fontSize: 13, lineHeight: 1.8 }}>
+          <li>Full data loaded into WASM columnar store <strong>once</strong></li>
+          <li>Filter → Sort → <strong>Paginate</strong> all happen inside WASM <code>rebuild_view()</code></li>
+          <li>Page changes only update <code>view_indices</code> slice — <strong>no data re-ingestion</strong></li>
+          <li>Click column headers to sort, use inputs above to filter</li>
+        </ol>
       </div>
 
       {/* Code snippet */}
@@ -230,34 +463,21 @@ export function PaginationDemo() {
           overflowX: "auto",
         }}
       >
-        {`const [pagination, setPagination] = useState<PaginationState>({
-  pageIndex: 0,
-  pageSize: 10,
-});
-
-const table = useGridTable({
-  data,
+        {`const table = useGridTable({
+  data: rawData,                          // full 500 rows — loaded once
   columns,
+  getSortedRowModel: getSortedRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
-  state: { ..., pagination },
+  state: { sorting, columnFilters, globalFilter, pagination },
+  onSortingChange: setSorting,
+  onColumnFiltersChange: setColumnFilters,
+  onGlobalFilterChange: setGlobalFilter,
   onPaginationChange: setPagination,
 });
 
-// Just pass table to <Table> — pagination is handled internally
-<Table table={table} width={800} height={400}>
-  <Thead>...</Thead>
-  <Tbody>
-    {table.getRowModel().rows.map(row => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map(cell => (
-          <Td key={cell.id}>
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}
+// WASM pipeline: filter → sort → paginate (view_indices only)
+// No JS data slicing — page transitions are O(1) index updates`}
       </pre>
     </>
   );

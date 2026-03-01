@@ -91,6 +91,9 @@ pub struct ColumnarStore {
     row_height: f64,
     viewport_height: f64,
     overscan: usize,
+    page_index: Option<u32>,
+    page_size: Option<u32>,
+    filtered_total: usize,
 }
 
 impl ColumnarStore {
@@ -107,6 +110,9 @@ impl ColumnarStore {
             row_height: 36.0,
             viewport_height: 600.0,
             overscan: 5,
+            page_index: None,
+            page_size: None,
+            filtered_total: 0,
         }
     }
 
@@ -177,6 +183,18 @@ impl ColumnarStore {
         self.view_dirty = true;
     }
 
+    /// Set pagination state. Marks view dirty.
+    pub fn set_pagination(&mut self, page_index: Option<u32>, page_size: Option<u32>) {
+        self.page_index = page_index;
+        self.page_size = page_size;
+        self.view_dirty = true;
+    }
+
+    /// Get the total number of rows after filtering but before pagination.
+    pub const fn filtered_total(&self) -> usize {
+        self.filtered_total
+    }
+
     /// Set scroll configuration.
     pub const fn set_scroll_config(
         &mut self,
@@ -220,6 +238,19 @@ impl ColumnarStore {
             sort_indices_columnar(&mut indices, self, &configs);
             self.sort_configs = configs;
         }
+
+        // 4. Pagination slice
+        self.filtered_total = indices.len();
+        if let (Some(page_index), Some(page_size)) = (self.page_index, self.page_size) {
+            let start = (page_index as usize) * (page_size as usize);
+            let end = start.saturating_add(page_size as usize).min(indices.len());
+            if start < indices.len() {
+                indices = indices[start..end].to_vec();
+            } else {
+                indices.clear();
+            }
+        }
+
         self.view_indices = indices;
     }
 
@@ -1203,6 +1234,128 @@ mod tests {
             }],
         );
         assert_eq!(indices, vec![1, 2, 3]); // Bob, Charlie, Dave
+    }
+
+    // ── Pagination tests ────────────────────────────────────────────
+
+    #[test]
+    fn test_pagination_basic() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 10);
+        store.set_column_float64(0, &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+        store.finalize();
+        store.set_pagination(Some(1), Some(3));
+        store.rebuild_view();
+        assert_eq!(store.view_indices(), &[3, 4, 5]);
+        assert_eq!(store.filtered_total(), 10);
+    }
+
+    #[test]
+    fn test_pagination_first_page() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 10);
+        store.set_column_float64(0, &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+        store.finalize();
+        store.set_pagination(Some(0), Some(3));
+        store.rebuild_view();
+        assert_eq!(store.view_indices(), &[0, 1, 2]);
+    }
+
+    #[test]
+    fn test_pagination_last_page() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 10);
+        store.set_column_float64(0, &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+        store.finalize();
+        store.set_pagination(Some(3), Some(3)); // page 3 → indices 9 (only 1 item)
+        store.rebuild_view();
+        assert_eq!(store.view_indices(), &[9]);
+        assert_eq!(store.filtered_total(), 10);
+    }
+
+    #[test]
+    fn test_pagination_out_of_range() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 10);
+        store.set_column_float64(0, &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+        store.finalize();
+        store.set_pagination(Some(100), Some(3));
+        store.rebuild_view();
+        assert!(store.view_indices().is_empty());
+        assert_eq!(store.filtered_total(), 10);
+    }
+
+    #[test]
+    fn test_pagination_with_filter() {
+        let mut store = make_store_for_filter();
+        // Filter: age >= 28 → Alice(30), Charlie(35), Dave(28) → 3 rows
+        store.set_column_filters(vec![ColumnFilter {
+            column_index: 1,
+            op: FilterOp::Gte,
+            value: FilterValue::Float64(28.0),
+        }]);
+        store.set_pagination(Some(0), Some(2)); // first 2 of 3
+        store.rebuild_view();
+        assert_eq!(store.filtered_total(), 3);
+        assert_eq!(store.view_indices().len(), 2);
+    }
+
+    #[test]
+    fn test_pagination_with_filter_and_sort() {
+        let mut store = make_store_for_filter();
+        // Filter: age >= 28 → Alice(30), Charlie(35), Dave(28)
+        store.set_column_filters(vec![ColumnFilter {
+            column_index: 1,
+            op: FilterOp::Gte,
+            value: FilterValue::Float64(28.0),
+        }]);
+        // Sort ascending → Dave(28)=3, Alice(30)=0, Charlie(35)=2
+        store.set_sort(vec![SortConfig {
+            column_index: 1,
+            direction: SortDirection::Ascending,
+        }]);
+        store.set_pagination(Some(1), Some(2)); // page 1 → only Charlie(35)=2
+        store.rebuild_view();
+        assert_eq!(store.filtered_total(), 3);
+        assert_eq!(store.view_indices(), &[2]);
+    }
+
+    #[test]
+    fn test_pagination_filtered_total_preserved() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 10);
+        store.set_column_float64(0, &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+        store.finalize();
+        store.set_pagination(Some(0), Some(5));
+        store.rebuild_view();
+        assert_eq!(store.filtered_total(), 10);
+        assert_eq!(store.view_indices().len(), 5);
+    }
+
+    #[test]
+    fn test_no_pagination() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 5);
+        store.set_column_float64(0, &[0.0, 1.0, 2.0, 3.0, 4.0]);
+        store.finalize();
+        // No pagination set — all rows returned
+        store.rebuild_view();
+        assert_eq!(store.view_indices(), &[0, 1, 2, 3, 4]);
+        assert_eq!(store.filtered_total(), 5);
+    }
+
+    #[test]
+    fn test_pagination_marks_dirty() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 10);
+        store.set_column_float64(0, &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
+        store.finalize();
+        store.rebuild_view(); // clears dirty
+        assert_eq!(store.view_indices().len(), 10);
+
+        store.set_pagination(Some(0), Some(3));
+        store.rebuild_view();
+        assert_eq!(store.view_indices(), &[0, 1, 2]);
     }
 
     #[test]
