@@ -1,1 +1,6 @@
-export { measureText, drawTextCellFromBuffer, drawBadgeFromBuffer } from "./draw-primitives";
+export {
+  measureText,
+  drawTextCellFromBuffer,
+  drawBadgeFromBuffer,
+  drawSparklineFromBuffer,
+} from "./draw-primitives";

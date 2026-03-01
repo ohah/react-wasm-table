@@ -1,6 +1,7 @@
 import type { CellRenderer, InstructionLike } from "./types";
 import { textCellRenderer } from "./text";
 import { badgeCellRenderer } from "./badge";
+import { sparklineCellRenderer } from "./sparkline";
 import { stubCellRenderer } from "./stub";
 import { boxCellRenderer } from "./box";
 import { flexCellRenderer } from "./flex";
@@ -30,7 +31,7 @@ export class CellRendererRegistry {
 }
 
 /**
- * Create a CellRendererRegistry pre-loaded with the 6 built-in renderers.
+ * Create a CellRendererRegistry pre-loaded with the 7 built-in renderers.
  * Optional `userRenderers` are merged on top — same type overrides built-in.
  */
 export function createCellRendererRegistry(
@@ -39,6 +40,7 @@ export function createCellRendererRegistry(
   const registry = new CellRendererRegistry();
   registry.register(textCellRenderer);
   registry.register(badgeCellRenderer);
+  registry.register(sparklineCellRenderer);
   registry.register(stubCellRenderer);
   registry.register(boxCellRenderer);
   registry.register(flexCellRenderer);
@@ -58,3 +60,4 @@ export { stubCellRenderer } from "./stub";
 export { boxCellRenderer } from "./box";
 export { flexCellRenderer } from "./flex";
 export { stackCellRenderer } from "./stack";
+export { sparklineCellRenderer } from "./sparkline";

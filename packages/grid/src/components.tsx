@@ -5,6 +5,7 @@ import type {
   StackDirection,
   TextStyle,
   BadgeStyle,
+  SparklineStyle,
   CssFlexDirection,
   CssFlexWrap,
   CssAlignItems,
@@ -84,6 +85,37 @@ export function Badge(props: BadgeProps): CanvasElement {
   return {
     type: "badge",
     value: props.value,
+    style: Object.keys(style).length > 0 ? style : undefined,
+  } as CanvasElement;
+}
+
+/** Props for the Sparkline canvas component. */
+export interface SparklineProps {
+  /** Data points (y-values); x is evenly spaced. */
+  data: number[];
+  style?: Partial<SparklineStyle>;
+  color?: string;
+  strokeWidth?: number;
+  /** "line" = stroke only, "area" = fill under line. @default "line" */
+  variant?: "line" | "area";
+}
+
+function pickSparklineStyle(props: SparklineProps): Partial<SparklineStyle> {
+  const { style, color, strokeWidth, variant } = props;
+  return {
+    ...style,
+    ...(color !== undefined && { color }),
+    ...(strokeWidth !== undefined && { strokeWidth }),
+    ...(variant !== undefined && { variant }),
+  };
+}
+
+/** Canvas sparkline component. Draws a mini line chart. Returns a SparklineInstruction. */
+export function Sparkline(props: SparklineProps): CanvasElement {
+  const style = pickSparklineStyle(props);
+  return {
+    type: "sparkline",
+    data: props.data,
     style: Object.keys(style).length > 0 ? style : undefined,
   } as CanvasElement;
 }
@@ -281,7 +313,6 @@ export function Stack(props: StackProps): CanvasElement {
 // Layout
 // Data display
 export const ProgressBar = stub("ProgressBar");
-export const Sparkline = stub("Sparkline");
 export const Rating = stub("Rating");
 export const Icon = stub("Icon");
 export const Image = stub("Image");

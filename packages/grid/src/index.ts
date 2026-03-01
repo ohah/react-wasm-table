@@ -21,6 +21,7 @@ export type {
 export type {
   TextProps,
   BadgeProps,
+  SparklineProps,
   FlexProps,
   BoxProps,
   StackProps,
@@ -188,6 +189,7 @@ export { CanvasRenderer } from "./renderer/canvas";
 export {
   drawTextCellFromBuffer,
   drawBadgeFromBuffer,
+  drawSparklineFromBuffer,
   measureText,
 } from "./renderer/draw-primitives";
 
@@ -212,6 +214,7 @@ export {
   createCellRendererRegistry,
   textCellRenderer,
   badgeCellRenderer,
+  sparklineCellRenderer,
   stubCellRenderer,
   flexCellRenderer,
 } from "./renderer/components";
@@ -250,6 +253,8 @@ export type {
   CellLayout,
   TextInstruction,
   BadgeInstruction,
+  SparklineInstruction,
+  SparklineStyle,
   FlexContainerStyle,
   FlexInstruction,
   BoxModelStyle,
