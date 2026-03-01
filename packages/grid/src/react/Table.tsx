@@ -131,15 +131,8 @@ export function Table({ table, children, overscan = 5, ...rest }: TableProps) {
   const { data: rawData, columns } = table.options;
   const state = table.getState();
 
-  // If pagination is active, pass only the current page rows to Grid.
-  // Grid renders all data it receives — it has no internal pagination concept.
-  const data = useMemo(() => {
-    if (state.pagination) {
-      const model = table.getPaginationRowModel();
-      return model.rows.map((r) => r.original) as typeof rawData;
-    }
-    return rawData;
-  }, [rawData, state.pagination, table]);
+  // Pass full data to Grid — pagination is handled in WASM via view_indices slicing.
+  const data = rawData;
 
   const effectiveRowHeight = rest.rowHeight ?? DEFAULT_ROW_HEIGHT;
   const effectiveHeaderHeight = rest.headerHeight ?? DEFAULT_HEADER_HEIGHT;
@@ -216,6 +209,7 @@ export function Table({ table, children, overscan = 5, ...rest }: TableProps) {
       onColumnPinningChange={(u) => table.setColumnPinning(u)}
       rowPinning={state.rowPinning}
       onRowPinningChange={(u) => table.setRowPinning(u)}
+      pagination={state.pagination}
       table={table}
       _parsedBodyContent={parsedBodyContent}
       _onVisibleRangeChange={onVisibleRangeChange}

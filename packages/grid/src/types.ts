@@ -721,6 +721,9 @@ export interface GridProps extends BoxModelProps {
   /** Optional external EditorManager instance. */
   editorManager?: import("./adapter/editor-manager").EditorManager;
 
+  /** Pagination state (pageIndex + pageSize). When set, WASM slices view_indices per page. */
+  pagination?: import("./tanstack-types").PaginationState;
+
   /** Mutable ref to receive WASM-computed view indices (for GridInstance row model). */
   viewIndicesRef?: { current: Uint32Array | number[] | null };
 
@@ -766,6 +769,7 @@ export interface WasmTableEngine {
   setColumnarFilters(filters: unknown): void;
   setGlobalFilter(query: string | null): void;
   setColumnarScrollConfig(rowHeight: number, viewportHeight: number, overscan: number): void;
+  setPagination(pageIndex: number | undefined, pageSize: number | undefined): void;
   getColumnarViewIndicesInfo(): Uint32Array;
 
   // Layout cache

@@ -126,6 +126,7 @@ export function Grid({
   borderRightWidth,
   borderBottomWidth,
   borderLeftWidth,
+  pagination: paginationProp,
   viewIndicesRef,
   engineRef,
   _parsedBodyContent,
@@ -231,6 +232,17 @@ export function Grid({
     initialGlobalFilter: initialState?.globalFilter,
     invalidate,
   });
+  // Sync pagination state to WASM engine
+  useEffect(() => {
+    if (!engine) return;
+    if (paginationProp) {
+      engine.setPagination(paginationProp.pageIndex, paginationProp.pageSize);
+    } else {
+      engine.setPagination(undefined, undefined);
+    }
+    invalidate();
+  }, [engine, paginationProp?.pageIndex, paginationProp?.pageSize, invalidate]);
+
   const { stringTableRef } = useDataIngestion({
     engine,
     data,

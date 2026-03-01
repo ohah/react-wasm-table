@@ -150,6 +150,12 @@ impl TableEngine {
             .set_global_filter(query.map(|q| GlobalFilter { query: q }));
     }
 
+    /// Set pagination state on the columnar store.
+    #[wasm_bindgen(js_name = setPagination)]
+    pub fn set_pagination(&mut self, page_index: Option<u32>, page_size: Option<u32>) {
+        self.columnar.set_pagination(page_index, page_size);
+    }
+
     /// Set scroll configuration on the columnar store.
     #[wasm_bindgen(js_name = setColumnarScrollConfig)]
     pub fn set_columnar_scroll_config(
@@ -170,7 +176,8 @@ impl TableEngine {
 
     /// Unified hot path: rebuild view + virtual slice + layout buffer.
     /// Returns metadata as Float64Array:
-    /// [cell_count, visible_start, visible_end, total_height, filtered_count, generation, total_count, visible_count, effective_row_height]
+    /// [cell_count, visible_start, visible_end, total_height, filtered_count, generation, total_count, visible_count, effective_row_height, filtered_total]
+    /// filtered_total ([9]) = row count after filter+sort but before pagination.
     /// Optional 5th/6th: pinnedTop, pinnedBottom. Optional 7th: skipRebuild (when true, skip rebuild_view; use after rebuildView() for row pinning).
     #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     #[wasm_bindgen(js_name = updateViewportColumnar)]
@@ -284,6 +291,7 @@ impl TableEngine {
                 total_count as f64,
                 virtual_slice.visible_count as f64,
                 effective_row_height,
+                self.columnar.filtered_total() as f64,
             ])
         } else {
             // Default path: single visible range
@@ -327,6 +335,7 @@ impl TableEngine {
                 total_count as f64,
                 virtual_slice.visible_count as f64,
                 effective_row_height,
+                self.columnar.filtered_total() as f64,
             ])
         }
     }
