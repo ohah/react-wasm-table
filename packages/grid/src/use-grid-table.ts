@@ -17,6 +17,10 @@ import type {
   RowPinningUpdater,
   ExpandedState,
   ExpandedUpdater,
+  PaginationState,
+  PaginationUpdater,
+  GroupingState,
+  GroupingUpdater,
 } from "./tanstack-types";
 import type { GridInstance, GridState, ViewIndicesRef } from "./grid-instance";
 import { buildGridInstance } from "./grid-instance";
@@ -36,7 +40,7 @@ export interface UseGridTableOptions<TData> {
   /** Row data. */
   data: TData[];
   /** Column definitions (TanStack-compatible). */
-  columns: GridColumnDef<TData>[];
+  columns: GridColumnDef<TData, any>[];
 
   // Controlled state
   /** Controlled state (sorting, columnFilters, globalFilter, columnVisibility, columnSizing, columnSizingInfo, columnPinning). */
@@ -59,6 +63,10 @@ export interface UseGridTableOptions<TData> {
   onRowPinningChange?: (updater: RowPinningUpdater) => void;
   /** Callback when expanded state changes (controlled mode). */
   onExpandedChange?: (updater: ExpandedUpdater) => void;
+  /** Callback when pagination changes (controlled mode). */
+  onPaginationChange?: (updater: PaginationUpdater) => void;
+  /** Callback when grouping changes (controlled mode). */
+  onGroupingChange?: (updater: GroupingUpdater) => void;
   /** Initial state (for uncontrolled mode). */
   initialState?: Partial<GridState>;
 
@@ -71,6 +79,12 @@ export interface UseGridTableOptions<TData> {
   getSortedRowModel?: RowModelFactory<TData>;
   getFilteredRowModel?: RowModelFactory<TData>;
   getExpandedRowModel?: RowModelFactory<TData>;
+  getPaginationRowModel?: RowModelFactory<TData>;
+  getGroupedRowModel?: RowModelFactory<TData>;
+  getFacetedRowModel?: RowModelFactory<TData>;
+
+  /** Aggregation functions keyed by column ID (for grouped row model). */
+  aggregationFns?: Record<string, import("./row-model").AggregationFn<TData>>;
 
   /** Mutable ref holding WASM-computed view indices. Grid writes, GridInstance reads lazily. */
   viewIndicesRef?: ViewIndicesRef;
@@ -95,6 +109,9 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     onColumnPinningChange: controlledOnColumnPinningChange,
     onRowPinningChange: controlledOnRowPinningChange,
     onExpandedChange: controlledOnExpandedChange,
+    onPaginationChange: controlledOnPaginationChange,
+    onGroupingChange: controlledOnGroupingChange,
+    aggregationFns,
     getSubRows,
     initialState,
   } = options;
@@ -124,6 +141,12 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
   );
   const [internalExpanded, setInternalExpanded] = useState<ExpandedState>(
     initialState?.expanded ?? {},
+  );
+  const [internalPagination, setInternalPagination] = useState<PaginationState>(
+    initialState?.pagination ?? { pageIndex: 0, pageSize: 10 },
+  );
+  const [internalGrouping, setInternalGrouping] = useState<GroupingState>(
+    initialState?.grouping ?? [],
   );
 
   // Resolve controlled vs uncontrolled — sorting
@@ -251,6 +274,34 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     [expanded, controlledOnExpandedChange],
   );
 
+  // Resolve controlled vs uncontrolled — pagination
+  const pagination = controlledState?.pagination ?? internalPagination;
+  const onPaginationChange = useCallback(
+    (updater: PaginationUpdater) => {
+      if (controlledOnPaginationChange) {
+        controlledOnPaginationChange(updater);
+      } else {
+        const next = typeof updater === "function" ? updater(pagination) : updater;
+        setInternalPagination(next);
+      }
+    },
+    [pagination, controlledOnPaginationChange],
+  );
+
+  // Resolve controlled vs uncontrolled — grouping
+  const grouping = controlledState?.grouping ?? internalGrouping;
+  const onGroupingChange = useCallback(
+    (updater: GroupingUpdater) => {
+      if (controlledOnGroupingChange) {
+        controlledOnGroupingChange(updater);
+      } else {
+        const next = typeof updater === "function" ? updater(grouping) : updater;
+        setInternalGrouping(next);
+      }
+    },
+    [grouping, controlledOnGroupingChange],
+  );
+
   const state: GridState = useMemo(
     () => ({
       sorting,
@@ -262,6 +313,8 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
       columnPinning,
       rowPinning,
       expanded,
+      pagination,
+      grouping,
     }),
     [
       sorting,
@@ -273,6 +326,8 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
       columnPinning,
       rowPinning,
       expanded,
+      pagination,
+      grouping,
     ],
   );
 
@@ -293,6 +348,9 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
       onColumnPinningChange,
       onRowPinningChange,
       onExpandedChange,
+      onPaginationChange,
+      onGroupingChange,
+      aggregationFns,
       getSubRows,
       viewIndicesRef,
     });
@@ -320,6 +378,9 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     onColumnPinningChange,
     onRowPinningChange,
     onExpandedChange,
+    onPaginationChange,
+    onGroupingChange,
+    aggregationFns,
     getSubRows,
   ]);
 
