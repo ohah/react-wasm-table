@@ -124,7 +124,7 @@ describe("useSelection (renderHook)", () => {
     });
 
     it("writes TSV to clipboard", () => {
-      const writeTextMock = mock(() => Promise.resolve());
+      const writeTextMock = mock((_text: string) => Promise.resolve());
       Object.defineProperty(globalThis, "navigator", {
         value: { ...savedNav, clipboard: { writeText: writeTextMock } },
         writable: true,

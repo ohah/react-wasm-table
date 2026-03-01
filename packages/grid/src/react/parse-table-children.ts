@@ -30,15 +30,22 @@ function parseTrChildren(children: ReactNode): ParsedRow[] {
   Children.forEach(children, (child) => {
     if (!isValidElement(child) || child.type !== Tr) return;
     const cells: ParsedCell[] = [];
-    Children.forEach(child.props.children, (cellChild) => {
-      if (!isValidElement(cellChild)) return;
-      if (cellChild.type !== Th && cellChild.type !== Td) return;
-      cells.push({
-        colSpan: cellChild.props.colSpan ?? 1,
-        content: cellChild.props.children,
-        ...(cellChild.key != null && { key: String(cellChild.key) }),
-      });
-    });
+    Children.forEach(
+      (child.props as { children?: ReactNode }).children,
+      (cellChild) => {
+        if (!isValidElement(cellChild)) return;
+        if (cellChild.type !== Th && cellChild.type !== Td) return;
+        const cellProps = cellChild.props as {
+          colSpan?: number;
+          children?: ReactNode;
+        };
+        cells.push({
+          colSpan: cellProps.colSpan ?? 1,
+          content: cellProps.children,
+          ...(cellChild.key != null && { key: String(cellChild.key) }),
+        });
+      },
+    );
     rows.push({
       cells,
       ...(child.key != null && { key: String(child.key) }),
@@ -61,15 +68,16 @@ export function parseTableChildren(children: ReactNode): ParsedTableStructure {
   Children.forEach(children, (child) => {
     if (!isValidElement(child)) return;
 
+    const sectionProps = child.props as { children?: ReactNode };
     if (child.type === Thead) {
       hasStructure = true;
-      headerRows = parseTrChildren(child.props.children);
+      headerRows = parseTrChildren(sectionProps.children);
     } else if (child.type === Tbody) {
       hasStructure = true;
-      bodyRows = parseTrChildren(child.props.children);
+      bodyRows = parseTrChildren(sectionProps.children);
     } else if (child.type === Tfoot) {
       hasStructure = true;
-      footerRows = parseTrChildren(child.props.children);
+      footerRows = parseTrChildren(sectionProps.children);
     }
   });
 

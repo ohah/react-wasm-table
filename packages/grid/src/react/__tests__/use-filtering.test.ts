@@ -179,7 +179,7 @@ describe("useFiltering (renderHook)", () => {
 
   describe("updater pattern (TanStack-compatible)", () => {
     it("onColumnFiltersChange receives resolved ColumnFiltersState", () => {
-      const onChange = mock(() => {});
+      const onChange = mock((_arg: unknown) => {});
       const { result } = renderHook(() =>
         useFiltering({
           engine,

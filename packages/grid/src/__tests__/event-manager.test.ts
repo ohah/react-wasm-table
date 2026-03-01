@@ -3,6 +3,10 @@ import { EventManager } from "../adapter/event-manager";
 import type { CellLayout } from "../types";
 import type { RegionLayout } from "../renderer/region";
 
+interface MockCanvas extends HTMLCanvasElement {
+  _fire: (type: string, event: any) => void;
+}
+
 function makeHeader(col: number, x: number, width: number): CellLayout {
   return { row: 0, col, x, y: 0, width, height: 40, contentAlign: "left" };
 }
@@ -51,7 +55,7 @@ describe("EventManager — findResizeHandle", () => {
 });
 
 describe("EventManager — resize drag sequence", () => {
-  function createCanvas(): HTMLCanvasElement {
+  function createCanvas(): MockCanvas {
     // Minimal mock canvas for attach()
     const listeners: Record<string, ((e: any) => void)[]> = {};
     return {
@@ -65,7 +69,7 @@ describe("EventManager — resize drag sequence", () => {
       _fire: (type: string, event: any) => {
         for (const h of listeners[type] || []) h(event);
       },
-    } as any;
+    } as unknown as MockCanvas;
   }
 
   it("fires onResizeStart, onResizeMove, onResizeEnd on drag sequence", () => {
@@ -124,7 +128,7 @@ describe("EventManager — resize drag sequence", () => {
 });
 
 describe("EventManager — region-aware coordinate conversion", () => {
-  function createCanvas(width = 800): HTMLCanvasElement {
+  function createCanvas(width = 800): MockCanvas {
     const listeners: Record<string, ((e: any) => void)[]> = {};
     return {
       getBoundingClientRect: () => ({ left: 0, top: 0, width, height: 600 }),
@@ -137,7 +141,7 @@ describe("EventManager — region-aware coordinate conversion", () => {
       _fire: (type: string, event: any) => {
         for (const h of listeners[type] || []) h(event);
       },
-    } as any;
+    } as unknown as MockCanvas;
   }
 
   // Build a RegionLayout with left=100, right=100, total=600, canvasW=500

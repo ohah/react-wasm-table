@@ -8,7 +8,7 @@ import {
   createAfterDrawLayer,
 } from "../layer";
 import type { InternalLayerContext } from "../layer";
-import type { Theme } from "../../types";
+import type { AfterDrawContext, Theme } from "../../types";
 
 const defaultTheme: Theme = {
   headerBackground: "#f5f5f5",
@@ -42,6 +42,8 @@ function buildContext(overrides?: Partial<InternalLayerContext>): InternalLayerC
     viewIndices: new Uint32Array(0),
     width: 800,
     height: 600,
+    contentLeft: 0,
+    contentWidth: 800,
     scrollLeft: 0,
     scrollTop: 0,
     headerHeight: 40,
@@ -75,7 +77,7 @@ describe("headerLayer", () => {
     const ctx = buildContext();
     layer.draw(ctx);
 
-    const renderer = ctx.renderer as ReturnType<typeof mockRenderer>;
+    const renderer = ctx.renderer as unknown as ReturnType<typeof mockRenderer>;
     expect(renderer.drawHeaderFromBuffer).toHaveBeenCalledTimes(1);
     expect(renderer.drawHeaderFromBuffer).toHaveBeenCalledWith(
       ctx.layoutBuf,
@@ -100,7 +102,7 @@ describe("dataLayer", () => {
     const ctx = buildContext();
     layer.draw(ctx);
 
-    const renderer = ctx.renderer as ReturnType<typeof mockRenderer>;
+    const renderer = ctx.renderer as unknown as ReturnType<typeof mockRenderer>;
     expect(renderer.drawRowsFromBuffer).toHaveBeenCalledTimes(1);
     expect(renderer.drawRowsFromBuffer).toHaveBeenCalledWith(
       ctx.layoutBuf,
@@ -127,7 +129,7 @@ describe("gridLinesLayer", () => {
     const ctx = buildContext();
     layer.draw(ctx);
 
-    const renderer = ctx.renderer as ReturnType<typeof mockRenderer>;
+    const renderer = ctx.renderer as unknown as ReturnType<typeof mockRenderer>;
     expect(renderer.drawGridLinesFromBuffer).toHaveBeenCalledTimes(1);
     expect(renderer.drawGridLinesFromBuffer).toHaveBeenCalledWith(
       ctx.layoutBuf,
@@ -152,7 +154,7 @@ describe("selectionLayer", () => {
     const ctx = buildContext();
     layer.draw(ctx);
 
-    const renderer = ctx.renderer as ReturnType<typeof mockRenderer>;
+    const renderer = ctx.renderer as unknown as ReturnType<typeof mockRenderer>;
     expect(renderer.drawSelection).toHaveBeenCalledTimes(1);
     expect(renderer.drawSelection).toHaveBeenCalledWith(
       ctx.layoutBuf,
@@ -169,7 +171,7 @@ describe("selectionLayer", () => {
     const ctx = buildContext({ _enableSelection: false });
     layer.draw(ctx);
 
-    const renderer = ctx.renderer as ReturnType<typeof mockRenderer>;
+    const renderer = ctx.renderer as unknown as ReturnType<typeof mockRenderer>;
     expect(renderer.drawSelection).not.toHaveBeenCalled();
   });
 
@@ -178,7 +180,7 @@ describe("selectionLayer", () => {
     const ctx = buildContext({ _selection: null });
     layer.draw(ctx);
 
-    const renderer = ctx.renderer as ReturnType<typeof mockRenderer>;
+    const renderer = ctx.renderer as unknown as ReturnType<typeof mockRenderer>;
     expect(renderer.drawSelection).not.toHaveBeenCalled();
   });
 });
@@ -201,14 +203,14 @@ describe("DEFAULT_LAYERS", () => {
 
 describe("createAfterDrawLayer", () => {
   it("creates a viewport-space layer named afterDraw", () => {
-    const cb = mock(() => {});
+    const cb = mock((_ctx: AfterDrawContext) => {});
     const layer = createAfterDrawLayer(cb);
     expect(layer.name).toBe("afterDraw");
     expect(layer.space).toBe("viewport");
   });
 
   it("passes correct AfterDrawContext to callback", () => {
-    const cb = mock(() => {});
+    const cb = mock((_ctx: AfterDrawContext) => {});
     const layer = createAfterDrawLayer(cb);
     const ctx = buildContext({
       width: 800,

@@ -45,8 +45,8 @@ function parseLCOV(lcovPath: string): {
       const match = line.match(/^FN:(\d+),(.+)$/);
       if (match && currentRecord?.functions) {
         currentRecord.functions.push({
-          line: parseInt(match[1]),
-          name: match[2],
+          line: parseInt(match[1]!),
+          name: match[2]!,
         });
       }
     } else if (line.startsWith("DA:")) {

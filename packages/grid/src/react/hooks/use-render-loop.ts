@@ -545,6 +545,19 @@ export function useRenderLoop({
         const ctx = renderer.context;
         const scrollLeft = scrollLeftRef.current;
 
+        // Build regions (clip-based frozen column rendering)
+        // Computed outside `if (ctx)` so regionLayout is accessible to the DnD overlay below.
+        const pinningInfo = computePinningInfo(columns, columnPinning);
+        const regionLayout = buildRegions(
+          width,
+          height,
+          scrollLeft,
+          layoutBuf,
+          colCount,
+          pinningInfo,
+        );
+        eventManagerRef.current.setRegions(regionLayout);
+
         if (ctx) {
           const getInstruction = (cellIdx: number) => {
             const col = columns[readCellCol(layoutBuf, cellIdx)];
@@ -628,18 +641,6 @@ export function useRenderLoop({
               ? (input: Float32Array) => engine.computeCompositeLayout!(input)
               : undefined,
           };
-
-          // Build regions (clip-based frozen column rendering)
-          const pinningInfo = computePinningInfo(columns, columnPinning);
-          const regionLayout = buildRegions(
-            width,
-            height,
-            scrollLeft,
-            layoutBuf,
-            colCount,
-            pinningInfo,
-          );
-          eventManagerRef.current.setRegions(regionLayout);
 
           const rowRegions = rowRegionLayout?.regions ?? null;
 

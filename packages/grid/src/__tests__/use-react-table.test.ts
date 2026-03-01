@@ -4,12 +4,12 @@ import { useReactTable } from "../use-react-table";
 import { useGridTable } from "../use-grid-table";
 import { getCoreRowModel } from "../row-model";
 import { createColumnHelper } from "../column-helper";
-import type { SortingState, SortingUpdater, ColumnFiltersUpdater } from "../tanstack-types";
+import type { SortingState, SortingUpdater, ColumnFiltersUpdater, GridColumnDef } from "../tanstack-types";
 
 type TestData = { name: string; age: number };
 
 const helper = createColumnHelper<TestData>();
-const columns = [
+const columns: GridColumnDef<TestData, any>[] = [
   helper.accessor("name", { header: "Name" }),
   helper.accessor("age", { header: "Age" }),
 ];
@@ -22,7 +22,7 @@ const data: TestData[] = [
 describe("useReactTable", () => {
   it("should return a GridInstance", () => {
     const { result } = renderHook(() =>
-      useReactTable({
+      useReactTable<TestData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -38,7 +38,7 @@ describe("useReactTable", () => {
 
   it("should provide options on the instance", () => {
     const { result } = renderHook(() =>
-      useReactTable({
+      useReactTable<TestData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -53,7 +53,7 @@ describe("useReactTable", () => {
 
   it("should provide getHeaderGroups", () => {
     const { result } = renderHook(() =>
-      useReactTable({
+      useReactTable<TestData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -70,7 +70,7 @@ describe("useReactTable", () => {
 
   it("should return row model with working getVisibleCells", () => {
     const { result } = renderHook(() =>
-      useReactTable({
+      useReactTable<TestData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -102,12 +102,12 @@ describe("useReactTable", () => {
 
   it("should manage sorting state in uncontrolled mode", () => {
     const { result } = renderHook(() =>
-      useReactTable({
+      useReactTable<TestData>({
         data,
         columns: [
           helper.accessor("name", { header: "Name", enableSorting: true }),
           helper.accessor("age", { header: "Age", enableSorting: true }),
-        ],
+        ] as GridColumnDef<TestData, any>[],
         getCoreRowModel: getCoreRowModel(),
       }),
     );
@@ -121,7 +121,7 @@ describe("useGridTable updater pattern", () => {
   it("forwards SortingUpdater directly to controlled onSortingChange", () => {
     const onSortingChange = mock((_updater: SortingUpdater) => {});
     const { result } = renderHook(() =>
-      useGridTable({
+      useGridTable<TestData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -139,7 +139,7 @@ describe("useGridTable updater pattern", () => {
   it("forwards updater function to controlled onSortingChange", () => {
     const onSortingChange = mock((_updater: SortingUpdater) => {});
     const { result } = renderHook(() =>
-      useGridTable({
+      useGridTable<TestData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -158,7 +158,7 @@ describe("useGridTable updater pattern", () => {
 
   it("resolves updater function in uncontrolled mode", () => {
     const { result } = renderHook(() =>
-      useGridTable({
+      useGridTable<TestData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -177,7 +177,7 @@ describe("useGridTable updater pattern", () => {
   it("forwards ColumnFiltersUpdater directly to controlled onColumnFiltersChange", () => {
     const onColumnFiltersChange = mock((_updater: ColumnFiltersUpdater) => {});
     const { result } = renderHook(() =>
-      useGridTable({
+      useGridTable<TestData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -199,7 +199,7 @@ describe("useGridTable updater pattern", () => {
     };
 
     const { result } = renderHook(() =>
-      useGridTable({
+      useGridTable<TestData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
