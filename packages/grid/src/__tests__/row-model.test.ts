@@ -9,7 +9,14 @@ import {
   getFilteredRowModel,
   getExpandedRowModel,
   buildExpandedRowModel,
+  getPaginationRowModel,
+  buildPaginationRowModel,
+  getGroupedRowModel,
+  buildGroupedRowModel,
+  getFacetedRowModel,
+  buildFacetedValues,
 } from "../row-model";
+import type { AggregationFn } from "../row-model";
 import type { GridColumnDef, ExpandedState, ExpandedUpdater } from "../tanstack-types";
 
 type Person = { name: string; age: number; status: string };
@@ -33,7 +40,7 @@ describe("Row", () => {
     const row = buildRow(data, 2, 0, columns);
     expect(row.id).toBe("2");
     expect(row.index).toBe(0);
-    expect(row.original).toBe(data[2]);
+    expect(row.original).toBe(data[2]!);
   });
 
   it("getValue returns the correct cell value", () => {
@@ -145,6 +152,18 @@ describe("Factory markers", () => {
 
   it("getExpandedRowModel returns expanded marker", () => {
     expect(getExpandedRowModel()._type).toBe("expanded");
+  });
+
+  it("getPaginationRowModel returns pagination marker", () => {
+    expect(getPaginationRowModel()._type).toBe("pagination");
+  });
+
+  it("getGroupedRowModel returns grouped marker", () => {
+    expect(getGroupedRowModel()._type).toBe("grouped");
+  });
+
+  it("getFacetedRowModel returns faceted marker", () => {
+    expect(getFacetedRowModel()._type).toBe("faceted");
   });
 });
 
@@ -423,5 +442,238 @@ describe("buildExpandedRowModel", () => {
     const model = buildExpandedRowModel(treeData, treeColumns, getSubRows, true);
     const indices = model.rows.map((r) => r.index);
     expect(indices).toEqual([0, 1, 2, 3, 4]);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// Pagination
+// ══════════════════════════════════════════════════════════════════════
+
+describe("buildPaginationRowModel", () => {
+  it("returns first page of data", () => {
+    const model = buildPaginationRowModel(data, null, columns, { pageIndex: 0, pageSize: 2 });
+    expect(model.rows).toHaveLength(2);
+    expect(model.rows[0]!.original.name).toBe("Alice");
+    expect(model.rows[1]!.original.name).toBe("Bob");
+  });
+
+  it("returns second page of data", () => {
+    const model = buildPaginationRowModel(data, null, columns, { pageIndex: 1, pageSize: 2 });
+    expect(model.rows).toHaveLength(2);
+    expect(model.rows[0]!.original.name).toBe("Charlie");
+    expect(model.rows[1]!.original.name).toBe("Dave");
+  });
+
+  it("returns partial last page", () => {
+    const model = buildPaginationRowModel(data, null, columns, { pageIndex: 1, pageSize: 3 });
+    expect(model.rows).toHaveLength(1);
+    expect(model.rows[0]!.original.name).toBe("Dave");
+  });
+
+  it("rowCount returns total count (not page count)", () => {
+    const model = buildPaginationRowModel(data, null, columns, { pageIndex: 0, pageSize: 2 });
+    expect(model.rowCount).toBe(4);
+  });
+
+  it("handles pageSize > data.length", () => {
+    const model = buildPaginationRowModel(data, null, columns, { pageIndex: 0, pageSize: 100 });
+    expect(model.rows).toHaveLength(4);
+    expect(model.rowCount).toBe(4);
+  });
+
+  it("handles empty data", () => {
+    const model = buildPaginationRowModel([], null, columns, { pageIndex: 0, pageSize: 10 });
+    expect(model.rows).toHaveLength(0);
+    expect(model.rowCount).toBe(0);
+  });
+
+  it("handles out-of-range pageIndex (returns empty)", () => {
+    const model = buildPaginationRowModel(data, null, columns, { pageIndex: 10, pageSize: 2 });
+    expect(model.rows).toHaveLength(0);
+    expect(model.rowCount).toBe(4);
+  });
+
+  it("applies index indirection", () => {
+    const indices = new Uint32Array([2, 0, 3, 1]); // Charlie, Alice, Dave, Bob
+    const model = buildPaginationRowModel(data, indices, columns, { pageIndex: 1, pageSize: 2 });
+    expect(model.rows).toHaveLength(2);
+    expect(model.rows[0]!.original.name).toBe("Dave");
+    expect(model.rows[1]!.original.name).toBe("Bob");
+  });
+
+  it("getRow works within current page", () => {
+    const model = buildPaginationRowModel(data, null, columns, { pageIndex: 0, pageSize: 2 });
+    const row = model.getRow(1);
+    expect(row.original.name).toBe("Bob");
+  });
+
+  it("getRow throws for out-of-bounds within page", () => {
+    const model = buildPaginationRowModel(data, null, columns, { pageIndex: 0, pageSize: 2 });
+    expect(() => model.getRow(2)).toThrow(RangeError);
+  });
+
+  it("rows have sequential view indices starting at 0", () => {
+    const model = buildPaginationRowModel(data, null, columns, { pageIndex: 1, pageSize: 2 });
+    expect(model.rows[0]!.index).toBe(0);
+    expect(model.rows[1]!.index).toBe(1);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// Grouped
+// ══════════════════════════════════════════════════════════════════════
+
+describe("buildGroupedRowModel", () => {
+  it("groups by single column", () => {
+    const model = buildGroupedRowModel(data, null, columns, ["status"]);
+    // active: Alice, Charlie; inactive: Bob; pending: Dave
+    expect(model.rows).toHaveLength(3);
+    const groupIds = model.rows.map((r) => r.id);
+    expect(groupIds[0]).toContain("group:status:active");
+    expect(groupIds[1]).toContain("group:status:inactive");
+    expect(groupIds[2]).toContain("group:status:pending");
+  });
+
+  it("group rows have subRows containing leaf rows", () => {
+    const model = buildGroupedRowModel(data, null, columns, ["status"]);
+    const activeGroup = model.rows[0]!;
+    expect(activeGroup.subRows).toHaveLength(2);
+    expect(activeGroup.subRows[0]!.original.name).toBe("Alice");
+    expect(activeGroup.subRows[1]!.original.name).toBe("Charlie");
+  });
+
+  it("group row getValue returns group value for grouping column", () => {
+    const model = buildGroupedRowModel(data, null, columns, ["status"]);
+    expect(model.rows[0]!.getValue("status")).toBe("active");
+    expect(model.rows[1]!.getValue("status")).toBe("inactive");
+  });
+
+  it("group row getValue returns undefined for non-grouping column without aggregation", () => {
+    const model = buildGroupedRowModel(data, null, columns, ["status"]);
+    expect(model.rows[0]!.getValue("age")).toBeUndefined();
+  });
+
+  it("group row getValue uses aggregationFn when provided", () => {
+    const aggFns: Record<string, AggregationFn<Person>> = {
+      age: (_colId, leafRows) => {
+        let sum = 0;
+        for (const r of leafRows) sum += r.getValue("age") as number;
+        return sum / leafRows.length;
+      },
+    };
+    const model = buildGroupedRowModel(data, null, columns, ["status"], aggFns);
+    // active group: Alice(30) + Charlie(35) = avg 32.5
+    expect(model.rows[0]!.getValue("age")).toBe(32.5);
+  });
+
+  it("empty grouping returns normal row model", () => {
+    const model = buildGroupedRowModel(data, null, columns, []);
+    expect(model.rowCount).toBe(4);
+    expect(model.rows[0]!.original.name).toBe("Alice");
+  });
+
+  it("applies index indirection", () => {
+    const indices = new Uint32Array([0, 2]); // Alice, Charlie — both active
+    const model = buildGroupedRowModel(data, indices, columns, ["status"]);
+    expect(model.rows).toHaveLength(1); // only active group
+    expect(model.rows[0]!.getValue("status")).toBe("active");
+    expect(model.rows[0]!.subRows).toHaveLength(2);
+  });
+
+  it("multi-level grouping creates nested groups", () => {
+    const extData: Person[] = [
+      { name: "Alice", age: 30, status: "active" },
+      { name: "Bob", age: 25, status: "active" },
+      { name: "Charlie", age: 35, status: "inactive" },
+    ];
+    const model = buildGroupedRowModel(extData, null, columns, ["status", "name"]);
+    // Top level: active, inactive
+    expect(model.rows).toHaveLength(2);
+    // active group has sub-groups by name
+    const activeGroup = model.rows[0]!;
+    expect(activeGroup.subRows).toHaveLength(2); // Alice group, Bob group
+    expect(activeGroup.subRows[0]!.id).toContain("group:name:Alice");
+  });
+
+  it("getRow works by index", () => {
+    const model = buildGroupedRowModel(data, null, columns, ["status"]);
+    const row = model.getRow(0);
+    expect(row.id).toContain("group:status:active");
+  });
+
+  it("getRow throws for out-of-bounds", () => {
+    const model = buildGroupedRowModel(data, null, columns, ["status"]);
+    expect(() => model.getRow(10)).toThrow(RangeError);
+  });
+
+  it("group rows getCanExpand returns true", () => {
+    const model = buildGroupedRowModel(data, null, columns, ["status"]);
+    expect(model.rows[0]!.getCanExpand()).toBe(true);
+  });
+
+  it("getLeafRows returns all leaf rows of a group", () => {
+    const model = buildGroupedRowModel(data, null, columns, ["status"]);
+    const leaves = model.rows[0]!.getLeafRows();
+    expect(leaves).toHaveLength(2);
+    expect(leaves[0]!.original.name).toBe("Alice");
+    expect(leaves[1]!.original.name).toBe("Charlie");
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// Faceted
+// ══════════════════════════════════════════════════════════════════════
+
+describe("buildFacetedValues", () => {
+  it("computes unique values with counts", () => {
+    const result = buildFacetedValues(data, null, columns);
+    const statusFacet = result.get("status")!;
+    expect(statusFacet.uniqueValues.get("active")).toBe(2);
+    expect(statusFacet.uniqueValues.get("inactive")).toBe(1);
+    expect(statusFacet.uniqueValues.get("pending")).toBe(1);
+  });
+
+  it("computes min/max for numeric columns", () => {
+    const result = buildFacetedValues(data, null, columns);
+    const ageFacet = result.get("age")!;
+    expect(ageFacet.min).toBe(25);
+    expect(ageFacet.max).toBe(35);
+  });
+
+  it("min/max is undefined for string columns", () => {
+    const result = buildFacetedValues(data, null, columns);
+    const nameFacet = result.get("name")!;
+    expect(nameFacet.min).toBeUndefined();
+    expect(nameFacet.max).toBeUndefined();
+  });
+
+  it("handles empty data", () => {
+    const result = buildFacetedValues([], null, columns);
+    const nameFacet = result.get("name")!;
+    expect(nameFacet.uniqueValues.size).toBe(0);
+    expect(nameFacet.min).toBeUndefined();
+  });
+
+  it("applies index indirection", () => {
+    const indices = new Uint32Array([0, 2]); // Alice, Charlie — both active
+    const result = buildFacetedValues(data, indices, columns);
+    const statusFacet = result.get("status")!;
+    expect(statusFacet.uniqueValues.size).toBe(1);
+    expect(statusFacet.uniqueValues.get("active")).toBe(2);
+  });
+
+  it("covers all accessor columns", () => {
+    const result = buildFacetedValues(data, null, columns);
+    expect(result.has("name")).toBe(true);
+    expect(result.has("age")).toBe(true);
+    expect(result.has("status")).toBe(true);
+  });
+
+  it("unique values for name column has all names", () => {
+    const result = buildFacetedValues(data, null, columns);
+    const nameFacet = result.get("name")!;
+    expect(nameFacet.uniqueValues.size).toBe(4);
+    expect(nameFacet.uniqueValues.get("Alice")).toBe(1);
+    expect(nameFacet.uniqueValues.get("Bob")).toBe(1);
   });
 });
