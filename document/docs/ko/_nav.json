@@ -1,6 +1,6 @@
 [
-  { "text": "가이드", "link": "/guide/getting-started", "activeMatch": "^/guide/" },
   { "text": "벤치마크", "link": "/benchmark", "activeMatch": "^/benchmark" },
+  { "text": "가이드", "link": "/guide/getting-started", "activeMatch": "^/guide/" },
   { "text": "UI", "link": "/guide/canvas-components", "activeMatch": "^/guide/canvas-components" },
   { "text": "API", "link": "/api/table", "activeMatch": "^/api/" }
 ]

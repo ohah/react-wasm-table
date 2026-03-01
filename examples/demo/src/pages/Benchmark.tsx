@@ -1,11 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Grid, createColumnHelper, Text, Badge, type SortingState } from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper, Text, Badge } from "@ohah/react-wasm-table";
 import {
   createColumnHelper as createTanStackColumnHelper,
   useReactTable,
   getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
   flexRender,
-  type ColumnDef,
+  type SortingState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { generateEmployees } from "../data";
@@ -26,49 +28,35 @@ type Employee = {
 
 const ROW_HEIGHT = 36;
 const ROW_COUNT_OPTIONS = [
-  { value: 500, label: "500" },
   { value: 1_000, label: "1K" },
-  { value: 2_000, label: "2K" },
   { value: 5_000, label: "5K" },
   { value: 10_000, label: "10K" },
+  { value: 50_000, label: "50K" },
+  { value: 100_000, label: "100K" },
+  { value: 500_000, label: "500K" },
+  { value: 1_000_000, label: "1M" },
 ] as const;
 
-// ── react-wasm-table columns (same as StressTest) ──
+const BENCH_SORTING: SortingState = [{ id: "salary", desc: true }];
+
+// ── react-wasm-table columns ──
 const wasmHelper = createColumnHelper<Employee>();
 const wasmColumns = [
-  wasmHelper.accessor("id", {
-    header: "ID",
-    size: 70,
-    enableSorting: true,
-    align: "right",
-    padding: [0, 8],
-  }),
-  wasmHelper.accessor("name", { header: "Name", size: 180, enableSorting: true, padding: [0, 8] }),
-  wasmHelper.accessor("email", {
-    header: "Email",
-    size: 260,
-    enableSorting: true,
-    padding: [0, 8],
-  }),
+  wasmHelper.accessor("id", { header: "ID", size: 70, align: "right", padding: [0, 8] }),
+  wasmHelper.accessor("name", { header: "Name", size: 180, padding: [0, 8] }),
+  wasmHelper.accessor("email", { header: "Email", size: 260, padding: [0, 8] }),
   wasmHelper.accessor("department", {
     header: "Dept",
     size: 130,
-    enableSorting: true,
     padding: [0, 8],
     cell: (info) => (
       <Badge value={info.getValue()} color="#333" backgroundColor="#e0e0e0" borderRadius={4} />
     ),
   }),
-  wasmHelper.accessor("title", {
-    header: "Title",
-    size: 180,
-    enableSorting: true,
-    padding: [0, 8],
-  }),
+  wasmHelper.accessor("title", { header: "Title", size: 180, padding: [0, 8] }),
   wasmHelper.accessor("salary", {
     header: "Salary",
     size: 110,
-    enableSorting: true,
     align: "right",
     padding: [0, 8],
     cell: (info) => (
@@ -79,16 +67,10 @@ const wasmColumns = [
       />
     ),
   }),
-  wasmHelper.accessor("startDate", {
-    header: "Start",
-    size: 110,
-    enableSorting: true,
-    padding: [0, 8],
-  }),
+  wasmHelper.accessor("startDate", { header: "Start", size: 110, padding: [0, 8] }),
   wasmHelper.accessor("isActive", {
     header: "Active",
     size: 80,
-    enableSorting: true,
     align: "center",
     padding: [0, 8],
     cell: (info) => (
@@ -103,7 +85,6 @@ const wasmColumns = [
   wasmHelper.accessor("performanceScore", {
     header: "Score",
     size: 80,
-    enableSorting: true,
     align: "right",
     padding: [0, 8],
     cell: (info) => {
@@ -118,307 +99,856 @@ const wasmColumns = [
       );
     },
   }),
-  wasmHelper.accessor("teamSize", {
-    header: "Team",
-    size: 80,
-    enableSorting: true,
-    align: "right",
-    padding: [0, 8],
-  }),
+  wasmHelper.accessor("teamSize", { header: "Team", size: 80, align: "right", padding: [0, 8] }),
 ];
 
-// ── @tanstack/react-table columns (plain DOM, same schema) ──
-const tanStackHelper = createTanStackColumnHelper<Employee>();
-const tanStackColumns: ColumnDef<Employee, unknown>[] = [
-  tanStackHelper.accessor("id", { header: "ID", cell: (c) => c.getValue(), size: 70 }),
-  tanStackHelper.accessor("name", { header: "Name", cell: (c) => c.getValue(), size: 180 }),
-  tanStackHelper.accessor("email", { header: "Email", cell: (c) => c.getValue(), size: 260 }),
-  tanStackHelper.accessor("department", { header: "Dept", cell: (c) => c.getValue(), size: 130 }),
-  tanStackHelper.accessor("title", { header: "Title", cell: (c) => c.getValue(), size: 180 }),
-  tanStackHelper.accessor("salary", {
+// ── @tanstack/react-table columns ──
+const tsHelper = createTanStackColumnHelper<Employee>();
+const tsColumns = [
+  tsHelper.accessor("id", { header: "ID", cell: (c) => c.getValue(), size: 70 }),
+  tsHelper.accessor("name", { header: "Name", cell: (c) => c.getValue(), size: 180 }),
+  tsHelper.accessor("email", { header: "Email", cell: (c) => c.getValue(), size: 260 }),
+  tsHelper.accessor("department", { header: "Dept", cell: (c) => c.getValue(), size: 130 }),
+  tsHelper.accessor("title", { header: "Title", cell: (c) => c.getValue(), size: 180 }),
+  tsHelper.accessor("salary", {
     header: "Salary",
     cell: (c) => `$${Number(c.getValue()).toLocaleString()}`,
     size: 110,
   }),
-  tanStackHelper.accessor("startDate", { header: "Start", cell: (c) => c.getValue(), size: 110 }),
-  tanStackHelper.accessor("isActive", {
+  tsHelper.accessor("startDate", { header: "Start", cell: (c) => c.getValue(), size: 110 }),
+  tsHelper.accessor("isActive", {
     header: "Active",
     cell: (c) => (c.getValue() ? "Yes" : "No"),
     size: 80,
   }),
-  tanStackHelper.accessor("performanceScore", {
+  tsHelper.accessor("performanceScore", {
     header: "Score",
     cell: (c) => c.getValue() ?? "—",
     size: 80,
   }),
-  tanStackHelper.accessor("teamSize", { header: "Team", cell: (c) => c.getValue(), size: 80 }),
+  tsHelper.accessor("teamSize", { header: "Team", cell: (c) => c.getValue(), size: 80 }),
 ];
+const tsTotalWidth = tsColumns.reduce((s, c) => s + ((c.size as number) || 100), 0);
 
-const totalTanStackWidth = tanStackColumns.reduce((s, c) => s + (c.size as number) || 100, 0);
+type BenchResult = {
+  rowCount: number;
+  dataGenMs: number;
+  wasmMs: number | null;
+  tanStackMs: number | null;
+};
+
+type Phase = "idle" | "generating" | "measure-wasm" | "measure-tanstack" | "done";
 
 export function Benchmark() {
-  const [rowCountOption, setRowCountOption] = useState<(typeof ROW_COUNT_OPTIONS)[number]>(
-    ROW_COUNT_OPTIONS[0],
-  );
+  const [phase, setPhase] = useState<Phase>("idle");
   const [data, setData] = useState<Employee[] | null>(null);
-  const [wasmRenderMs, setWasmRenderMs] = useState<number | null>(null);
-  const [tanStackRenderMs, setTanStackRenderMs] = useState<number | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const wasmMountedRef = useRef(false);
-  const tanStackMountedRef = useRef(false);
-  const benchmarkStartRef = useRef<number>(0);
-  const { ref: containerRef, size } = useContainerSize(520);
+  const [results, setResults] = useState<BenchResult[]>([]);
+  const [queue, setQueue] = useState<number[]>([]);
+  const [enableWasm, setEnableWasm] = useState(true);
+  const [enableTanStack, setEnableTanStack] = useState(true);
+  const { ref: containerRef, size } = useContainerSize(400);
 
-  const count = rowCountOption.value;
+  const bench = useRef({
+    count: 0,
+    dataGenMs: 0,
+    wasmMs: null as number | null,
+    tanStackMs: null as number | null,
+    startTime: 0,
+    timeout: 0,
+    enableWasm: true,
+    enableTanStack: true,
+  });
 
-  const runBenchmark = useCallback(() => {
-    setIsGenerating(true);
-    setData(null);
-    setWasmRenderMs(null);
-    setTanStackRenderMs(null);
-    wasmMountedRef.current = false;
-    tanStackMountedRef.current = false;
+  const isRunning = phase !== "idle" && phase !== "done";
+  const disabled = isRunning || queue.length > 0;
+  const tableWidth = size.width > 0 ? size.width : 800;
+  const tableHeight = 400;
 
-    setTimeout(() => {
-      const generated = generateEmployees(count) as Employee[];
-      benchmarkStartRef.current = performance.now();
-      setData(generated);
-      requestAnimationFrame(() => setIsGenerating(false));
-    }, 0);
-  }, [count]);
+  const run = useCallback(
+    (count: number) => {
+      bench.current.enableWasm = enableWasm;
+      bench.current.enableTanStack = enableTanStack;
+      bench.current.count = count;
+      bench.current.wasmMs = null;
+      bench.current.tanStackMs = null;
+      setPhase("generating");
+      setData(null);
 
-  // WASM Grid: 데이터 반영 후 첫 paint 시점까지 (double rAF) 측정
+      const firstPhase: Phase = enableWasm
+        ? "measure-wasm"
+        : enableTanStack
+          ? "measure-tanstack"
+          : "done";
+
+      bench.current.timeout = window.setTimeout(() => {
+        const t0 = performance.now();
+        const generated = generateEmployees(count) as Employee[];
+        bench.current.dataGenMs = Math.round(performance.now() - t0);
+        bench.current.startTime = performance.now();
+        setData(generated);
+        setPhase(firstPhase);
+      }, 50);
+    },
+    [enableWasm, enableTanStack],
+  );
+
+  const finishRun = useCallback(() => {
+    const { count, dataGenMs, wasmMs, tanStackMs } = bench.current;
+    setResults((prev) => [...prev, { rowCount: count, dataGenMs, wasmMs, tanStackMs }]);
+    setPhase("done");
+  }, []);
+
+  const onWasmDone = useCallback(
+    (ms: number) => {
+      bench.current.wasmMs = ms;
+      if (bench.current.enableTanStack) {
+        bench.current.timeout = window.setTimeout(() => {
+          bench.current.startTime = performance.now();
+          setPhase("measure-tanstack");
+        }, 200);
+      } else {
+        finishRun();
+      }
+    },
+    [finishRun],
+  );
+
+  const onTanStackDone = useCallback(
+    (ms: number) => {
+      bench.current.tanStackMs = ms;
+      finishRun();
+    },
+    [finishRun],
+  );
+
   useEffect(() => {
-    if (!data || wasmMountedRef.current || size.width <= 0) return;
-    const start = benchmarkStartRef.current || performance.now();
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const ms = Math.round(performance.now() - start);
-        wasmMountedRef.current = true;
-        setWasmRenderMs(ms);
-      });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [data, size.width]);
+    if (queue.length === 0) return;
+    if (isRunning) return;
+    const next = queue[0];
+    if (next == null) return;
+    const id = window.setTimeout(() => {
+      setQueue((q) => q.slice(1));
+      run(next);
+    }, 150);
+    return () => clearTimeout(id);
+  }, [queue, isRunning, run]);
 
-  const tableHeight = size.height > 0 ? size.height : 400;
-  const tableWidth = size.width > 0 ? Math.max(size.width, 800) : 800;
+  const runAll = () => {
+    clearTimeout(bench.current.timeout);
+    setResults([]);
+    setData(null);
+    setPhase("idle");
+    setQueue(ROW_COUNT_OPTIONS.map((o) => o.value));
+  };
+
+  const clear = () => {
+    clearTimeout(bench.current.timeout);
+    setQueue([]);
+    setResults([]);
+    setData(null);
+    setPhase("idle");
+  };
 
   return (
     <>
-      <h1 style={{ marginBottom: 8 }}>Benchmark</h1>
-      <p style={{ color: "#555", marginBottom: 24 }}>
-        동일 데이터·동일 컬럼으로 Canvas(WASM) 그리드와 DOM 기반 TanStack React Table + 가상
-        스크롤을 비교합니다. 행 수(500~10K)를 선택한 뒤 &quot;벤치마크 실행&quot;을 누르면 초기 렌더
-        시간이 측정됩니다. 스크롤 시 상단 FPS 카운터로 스크롤 성능을 확인할 수 있습니다.
-      </p>
-
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 16,
-          marginBottom: 24,
+          gap: 8,
+          marginBottom: 16,
           flexWrap: "wrap",
         }}
       >
-        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span>행 수:</span>
-          <select
-            value={rowCountOption.value}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              setRowCountOption(
-                ROW_COUNT_OPTIONS.find((o) => o.value === v) ?? ROW_COUNT_OPTIONS[0]!,
-              );
+        {ROW_COUNT_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => run(opt.value)}
+            disabled={disabled}
+            style={{
+              padding: "6px 16px",
+              fontSize: 13,
+              fontWeight: 600,
+              backgroundColor: "#1976d2",
+              color: "white",
+              border: "none",
+              borderRadius: 6,
+              cursor: disabled ? "not-allowed" : "pointer",
+              opacity: disabled ? 0.5 : 1,
             }}
-            disabled={!!data}
-            style={{ padding: "6px 12px", fontSize: 14 }}
           >
-            {ROW_COUNT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label} rows
-              </option>
-            ))}
-          </select>
-        </label>
+            {opt.label}
+          </button>
+        ))}
         <button
           type="button"
-          onClick={runBenchmark}
-          disabled={isGenerating}
+          onClick={runAll}
+          disabled={disabled}
           style={{
-            padding: "8px 20px",
-            fontSize: 14,
+            padding: "6px 16px",
+            fontSize: 13,
             fontWeight: 600,
-            backgroundColor: "#1976d2",
+            backgroundColor: "#2e7d32",
             color: "white",
             border: "none",
-            borderRadius: 8,
-            cursor: isGenerating ? "not-allowed" : "pointer",
+            borderRadius: 6,
+            cursor: disabled ? "not-allowed" : "pointer",
+            opacity: disabled ? 0.5 : 1,
           }}
         >
-          {isGenerating ? "데이터 생성 중…" : "벤치마크 실행"}
+          Run All
         </button>
-        {data && (
-          <span style={{ fontSize: 14, color: "#666" }}>
-            {data.length.toLocaleString()} rows 로드됨
-          </span>
+        {results.length > 0 && (
+          <button
+            type="button"
+            onClick={clear}
+            disabled={isRunning}
+            style={{
+              padding: "6px 16px",
+              fontSize: 13,
+              color: "#666",
+              backgroundColor: "transparent",
+              border: "1px solid #ccc",
+              borderRadius: 6,
+              cursor: isRunning ? "not-allowed" : "pointer",
+            }}
+          >
+            Clear
+          </button>
         )}
       </div>
 
-      {!data && !isGenerating && (
-        <p style={{ color: "#888" }}>
-          위에서 행 수를 선택하고 &quot;벤치마크 실행&quot;을 눌러주세요.
-        </p>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, fontSize: 13 }}
+      >
+        <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={enableWasm}
+            onChange={(e) => setEnableWasm(e.target.checked)}
+            disabled={isRunning}
+          />
+          react-wasm-table
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={enableTanStack}
+            onChange={(e) => setEnableTanStack(e.target.checked)}
+            disabled={isRunning}
+          />
+          @tanstack/react-table
+        </label>
+      </div>
+
+      {phase === "generating" && (
+        <PhaseIndicator
+          bg="#fff3e0"
+          text={`Generating ${bench.current.count.toLocaleString()} rows…`}
+        />
       )}
-
-      {isGenerating && <p style={{ color: "#666" }}>데이터 생성 중…</p>}
-
-      {/* ref는 항상 DOM에 있는 요소에 붙여야 useContainerSize의 ResizeObserver가 동작함 */}
-      <div ref={containerRef} style={{ width: "100%", minHeight: 400 }}>
-        {data && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 24, alignItems: "stretch" }}>
-            {/* react-wasm-table (Canvas) */}
-            <section>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 8,
-                }}
-              >
-                <h2 style={{ fontSize: 18, margin: 0 }}>react-wasm-table (Canvas + WASM)</h2>
-                {wasmRenderMs != null && (
-                  <span
-                    style={{
-                      padding: "4px 12px",
-                      backgroundColor: "#e8f5e9",
-                      color: "#2e7d32",
-                      borderRadius: 6,
-                      fontWeight: 700,
-                      fontSize: 14,
-                    }}
-                  >
-                    초기 렌더: {wasmRenderMs} ms
-                  </span>
-                )}
-              </div>
-              <div
-                style={{
-                  border: "1px solid #e0e0e0",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  height: tableHeight,
-                  width: "100%",
-                }}
-              >
-                {size.width > 0 && (
-                  <Grid
-                    data={data as Record<string, unknown>[]}
-                    width={tableWidth}
-                    height={tableHeight}
-                    columns={wasmColumns}
-                    sorting={sorting}
-                    onSortingChange={setSorting}
-                    overflowY="scroll"
-                    overflowX="scroll"
-                  />
-                )}
-              </div>
-            </section>
-
-            {/* TanStack React Table (DOM + virtual) */}
-            <section>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 8,
-                }}
-              >
-                <h2 style={{ fontSize: 18, margin: 0 }}>@tanstack/react-table (DOM + virtual)</h2>
-                {tanStackRenderMs != null && (
-                  <span
-                    style={{
-                      padding: "4px 12px",
-                      backgroundColor: "#fff3e0",
-                      color: "#e65100",
-                      borderRadius: 6,
-                      fontWeight: 700,
-                      fontSize: 14,
-                    }}
-                  >
-                    초기 렌더: {tanStackRenderMs} ms
-                  </span>
-                )}
-              </div>
-              {size.width > 0 && (
-                <TanStackTablePanel
-                  data={data}
-                  columns={tanStackColumns}
-                  width={tableWidth}
-                  height={tableHeight}
-                  onRenderMs={setTanStackRenderMs}
-                  mountedRef={tanStackMountedRef}
-                  startTimeRef={benchmarkStartRef}
-                />
-              )}
-            </section>
-          </div>
-        )}
-      </div>
-
-      {data && (wasmRenderMs != null || tanStackRenderMs != null) && (
-        <div
-          style={{
-            marginTop: 24,
-            padding: 16,
-            backgroundColor: "#f5f5f5",
-            borderRadius: 8,
-            fontSize: 14,
-          }}
-        >
-          <strong>측정 요약</strong>
-          <ul style={{ margin: "8px 0 0", paddingLeft: 20 }}>
-            <li>초기 렌더: 마운트 후 첫 프레임까지 소요 시간(ms). 낮을수록 좋음.</li>
-            <li>
-              스크롤 FPS: 페이지 우측 상단 FPS를 보며 각 테이블 영역을 스크롤해 비교할 수 있습니다.
-            </li>
-          </ul>
+      {phase === "measure-wasm" && (
+        <PhaseIndicator bg="#e3f2fd" text="Measuring react-wasm-table render…" />
+      )}
+      {phase === "measure-tanstack" && (
+        <PhaseIndicator bg="#fff3e0" text="Measuring @tanstack/react-table render…" />
+      )}
+      {queue.length > 0 && (
+        <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
+          Remaining: {queue.map((c) => (c >= 1000 ? `${c / 1000}K` : String(c))).join(" → ")}
         </div>
       )}
+
+      {results.length > 0 && <ResultsPanel results={results} />}
+
+      <div ref={containerRef} style={{ width: "100%" }}>
+        {phase === "measure-wasm" && data && size.width > 0 && (
+          <MeasureWasmGrid
+            data={data}
+            width={tableWidth}
+            height={tableHeight}
+            startTime={bench.current.startTime}
+            onComplete={onWasmDone}
+          />
+        )}
+        {phase === "measure-tanstack" && data && size.width > 0 && (
+          <MeasureTanStackGrid
+            data={data}
+            width={tableWidth}
+            height={tableHeight}
+            startTime={bench.current.startTime}
+            onComplete={onTanStackDone}
+          />
+        )}
+        {phase === "done" && data && size.width > 0 && (
+          <InteractiveBench
+            data={data}
+            width={tableWidth}
+            height={tableHeight}
+            enableWasm={bench.current.enableWasm}
+            enableTanStack={bench.current.enableTanStack}
+          />
+        )}
+      </div>
     </>
   );
 }
 
-// ── TanStack table + useVirtualizer (virtualized body) ──
-function TanStackTablePanel({
+// ── Helpers ──
+
+function PhaseIndicator({ bg, text }: { bg: string; text: string }) {
+  return (
+    <div
+      style={{
+        padding: "10px 16px",
+        backgroundColor: bg,
+        borderRadius: 8,
+        marginBottom: 16,
+        fontSize: 14,
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
+function ResultsPanel({ results }: { results: BenchResult[] }) {
+  const allMs = results
+    .flatMap((r) => [r.wasmMs, r.tanStackMs])
+    .filter((v): v is number => v != null);
+  const maxMs = allMs.length > 0 ? Math.max(...allMs) : 1;
+  const hasWasm = results.some((r) => r.wasmMs != null);
+  const hasTs = results.some((r) => r.tanStackMs != null);
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginBottom: 20 }}>
+        <thead>
+          <tr style={{ borderBottom: "2px solid #ddd" }}>
+            <th style={thStyle}>Rows</th>
+            <th style={{ ...thStyle, textAlign: "right" }}>Data Gen</th>
+            {hasWasm && <th style={{ ...thStyle, textAlign: "right" }}>react-wasm-table</th>}
+            {hasTs && <th style={{ ...thStyle, textAlign: "right" }}>@tanstack/react-table</th>}
+            {hasWasm && hasTs && <th style={{ ...thStyle, textAlign: "right" }}>Speedup</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {results.map((r, i) => {
+            const speedup =
+              r.wasmMs != null && r.wasmMs > 0 && r.tanStackMs != null
+                ? (r.tanStackMs / r.wasmMs).toFixed(1)
+                : "—";
+            return (
+              <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                <td style={{ ...tdStyle, fontWeight: 600 }}>{r.rowCount.toLocaleString()}</td>
+                <td style={{ ...tdStyle, textAlign: "right", color: "#888" }}>{r.dataGenMs}ms</td>
+                {hasWasm && (
+                  <td style={{ ...tdStyle, textAlign: "right", color: "#2e7d32", fontWeight: 700 }}>
+                    {r.wasmMs != null ? `${r.wasmMs}ms` : "—"}
+                  </td>
+                )}
+                {hasTs && (
+                  <td style={{ ...tdStyle, textAlign: "right", color: "#e65100", fontWeight: 700 }}>
+                    {r.tanStackMs != null ? `${r.tanStackMs}ms` : "—"}
+                  </td>
+                )}
+                {hasWasm && hasTs && (
+                  <td style={{ ...tdStyle, textAlign: "right", fontWeight: 700 }}>{speedup}x</td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {results.map((r, i) => (
+          <div key={i}>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+              {r.rowCount.toLocaleString()} rows
+            </div>
+            {r.wasmMs != null && (
+              <Bar label="react-wasm-table" ms={r.wasmMs} maxMs={maxMs} color="#2e7d32" />
+            )}
+            {r.tanStackMs != null && (
+              <Bar label="@tanstack/react-table" ms={r.tanStackMs} maxMs={maxMs} color="#e65100" />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const thStyle: React.CSSProperties = { padding: "8px 12px", textAlign: "left", fontSize: 13 };
+const tdStyle: React.CSSProperties = { padding: "8px 12px", fontSize: 13 };
+
+function Bar({
+  label,
+  ms,
+  maxMs,
+  color,
+}: {
+  label: string;
+  ms: number;
+  maxMs: number;
+  color: string;
+}) {
+  const pct = maxMs > 0 ? (ms / maxMs) * 100 : 0;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+      <span style={{ width: 160, fontSize: 12, textAlign: "right", flexShrink: 0, color: "#555" }}>
+        {label}
+      </span>
+      <div
+        style={{
+          flex: 1,
+          backgroundColor: "#e8e8e8",
+          borderRadius: 4,
+          height: 20,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${Math.max(pct, 1)}%`,
+            backgroundColor: color,
+            borderRadius: 4,
+            height: "100%",
+            transition: "width 0.3s ease",
+          }}
+        />
+      </div>
+      <span style={{ width: 70, fontSize: 12, fontWeight: 700, textAlign: "right", flexShrink: 0 }}>
+        {ms}ms
+      </span>
+    </div>
+  );
+}
+
+// ── Render-only measurement ──
+
+function MeasureWasmGrid({
   data,
-  columns,
   width,
   height,
-  onRenderMs,
-  mountedRef,
-  startTimeRef,
+  startTime,
+  onComplete,
 }: {
   data: Employee[];
-  columns: ColumnDef<Employee, unknown>[];
   width: number;
   height: number;
-  onRenderMs: (ms: number) => void;
-  mountedRef: React.MutableRefObject<boolean>;
-  startTimeRef: React.MutableRefObject<number>;
+  startTime: number;
+  onComplete: (ms: number) => void;
+}) {
+  useEffect(() => {
+    let id2 = 0;
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => {
+        onComplete(Math.round(performance.now() - startTime));
+      });
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+    };
+  }, [startTime, onComplete]);
+
+  return (
+    <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", height }}>
+      <Grid
+        data={data as Record<string, unknown>[]}
+        width={width}
+        height={height}
+        columns={wasmColumns}
+        overflowY="scroll"
+        overflowX="scroll"
+      />
+    </div>
+  );
+}
+
+function MeasureTanStackGrid({
+  data,
+  width,
+  height,
+  startTime,
+  onComplete,
+}: {
+  data: Employee[];
+  width: number;
+  height: number;
+  startTime: number;
+  onComplete: (ms: number) => void;
+}) {
+  useEffect(() => {
+    let id2 = 0;
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => {
+        onComplete(Math.round(performance.now() - startTime));
+      });
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+    };
+  }, [startTime, onComplete]);
+
+  return <TanStackVirtualTable data={data} width={width} height={height} />;
+}
+
+// ── Interactive bench (sort / filter with timing) ──
+
+type MeasurePhase = "idle" | "wasm" | "ts";
+
+function InteractiveBench({
+  data,
+  width,
+  height,
+  enableWasm,
+  enableTanStack,
+}: {
+  data: Employee[];
+  width: number;
+  height: number;
+  enableWasm: boolean;
+  enableTanStack: boolean;
+}) {
+  const [wasmSorting, setWasmSorting] = useState<SortingState>([]);
+  const [tsSorting, setTsSorting] = useState<SortingState>([]);
+  const [wasmFilter, setWasmFilter] = useState("");
+  const [tsFilter, setTsFilter] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+
+  const [sortPhase, setSortPhase] = useState<MeasurePhase>("idle");
+  const [filterPhase, setFilterPhase] = useState<MeasurePhase>("idle");
+  const [sortTimes, setSortTimes] = useState<{ wasm: number | null; ts: number | null }>({
+    wasm: null,
+    ts: null,
+  });
+  const [filterTimes, setFilterTimes] = useState<{ wasm: number | null; ts: number | null }>({
+    wasm: null,
+    ts: null,
+  });
+
+  const t0 = useRef(0);
+  const searchRef = useRef("");
+  const isMeasuring = sortPhase !== "idle" || filterPhase !== "idle";
+
+  const handleSort = () => {
+    setSortTimes({ wasm: null, ts: null });
+    setWasmSorting([]);
+    setTsSorting([]);
+    setTimeout(() => {
+      if (enableWasm) {
+        t0.current = performance.now();
+        setWasmSorting(BENCH_SORTING);
+        setSortPhase("wasm");
+      } else if (enableTanStack) {
+        t0.current = performance.now();
+        setTsSorting(BENCH_SORTING);
+        setSortPhase("ts");
+      }
+    }, 100);
+  };
+
+  const handleFilter = () => {
+    const value = searchInput.trim();
+    if (!value) return;
+    searchRef.current = value;
+    setFilterTimes({ wasm: null, ts: null });
+    setWasmFilter("");
+    setTsFilter("");
+    setTimeout(() => {
+      if (enableWasm) {
+        t0.current = performance.now();
+        setWasmFilter(searchRef.current);
+        setFilterPhase("wasm");
+      } else if (enableTanStack) {
+        t0.current = performance.now();
+        setTsFilter(searchRef.current);
+        setFilterPhase("ts");
+      }
+    }, 100);
+  };
+
+  const handleReset = () => {
+    setWasmSorting([]);
+    setTsSorting([]);
+    setWasmFilter("");
+    setTsFilter("");
+    setSearchInput("");
+    setSortTimes({ wasm: null, ts: null });
+    setFilterTimes({ wasm: null, ts: null });
+  };
+
+  // Sort measurement
+  useEffect(() => {
+    if (sortPhase === "idle") return;
+    let id2 = 0;
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => {
+        const ms = Math.round(performance.now() - t0.current);
+        if (sortPhase === "wasm") {
+          setSortTimes((prev) => ({ ...prev, wasm: ms }));
+          if (enableTanStack) {
+            setTimeout(() => {
+              t0.current = performance.now();
+              setTsSorting(BENCH_SORTING);
+              setSortPhase("ts");
+            }, 100);
+          } else {
+            setSortPhase("idle");
+          }
+        } else if (sortPhase === "ts") {
+          setSortTimes((prev) => ({ ...prev, ts: ms }));
+          setSortPhase("idle");
+        }
+      });
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+    };
+  }, [sortPhase, enableTanStack]);
+
+  // Filter measurement
+  useEffect(() => {
+    if (filterPhase === "idle") return;
+    let id2 = 0;
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => {
+        const ms = Math.round(performance.now() - t0.current);
+        if (filterPhase === "wasm") {
+          setFilterTimes((prev) => ({ ...prev, wasm: ms }));
+          if (enableTanStack) {
+            setTimeout(() => {
+              t0.current = performance.now();
+              setTsFilter(searchRef.current);
+              setFilterPhase("ts");
+            }, 100);
+          } else {
+            setFilterPhase("idle");
+          }
+        } else if (filterPhase === "ts") {
+          setFilterTimes((prev) => ({ ...prev, ts: ms }));
+          setFilterPhase("idle");
+        }
+      });
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+    };
+  }, [filterPhase, enableTanStack]);
+
+  const halfWidth = Math.floor(width / 2) - 12;
+  const showBoth = enableWasm && enableTanStack;
+  const cols = showBoth ? 2 : 1;
+  const w = showBoth ? halfWidth : width;
+
+  return (
+    <div>
+      {/* Sort / Filter controls */}
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          marginBottom: 12,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleSort}
+          disabled={isMeasuring}
+          style={actionBtn(isMeasuring)}
+        >
+          Sort by Salary
+        </button>
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleFilter();
+          }}
+          placeholder="Search… (e.g. Engineering)"
+          disabled={isMeasuring}
+          style={{
+            padding: "6px 10px",
+            fontSize: 13,
+            border: "1px solid #ccc",
+            borderRadius: 6,
+            width: 200,
+          }}
+        />
+        <button
+          type="button"
+          onClick={handleFilter}
+          disabled={isMeasuring || !searchInput.trim()}
+          style={actionBtn(isMeasuring || !searchInput.trim())}
+        >
+          Search
+        </button>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={isMeasuring}
+          style={{
+            padding: "6px 12px",
+            fontSize: 13,
+            color: "#666",
+            backgroundColor: "transparent",
+            border: "1px solid #ccc",
+            borderRadius: 6,
+            cursor: isMeasuring ? "not-allowed" : "pointer",
+            opacity: isMeasuring ? 0.5 : 1,
+          }}
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* Measuring indicator */}
+      {sortPhase !== "idle" && (
+        <PhaseIndicator
+          bg="#e3f2fd"
+          text={`Measuring sort — ${sortPhase === "wasm" ? "react-wasm-table" : "@tanstack/react-table"}…`}
+        />
+      )}
+      {filterPhase !== "idle" && (
+        <PhaseIndicator
+          bg="#fff3e0"
+          text={`Measuring filter — ${filterPhase === "wasm" ? "react-wasm-table" : "@tanstack/react-table"}…`}
+        />
+      )}
+
+      {/* Timing results */}
+      {(sortTimes.wasm != null || sortTimes.ts != null) && (
+        <TimingDisplay label="Sort" wasmMs={sortTimes.wasm} tsMs={sortTimes.ts} />
+      )}
+      {(filterTimes.wasm != null || filterTimes.ts != null) && (
+        <TimingDisplay label="Filter" wasmMs={filterTimes.wasm} tsMs={filterTimes.ts} />
+      )}
+
+      {/* Grids */}
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
+        {enableWasm && (
+          <section>
+            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600 }}>react-wasm-table</h3>
+            <div
+              style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", height }}
+            >
+              <Grid
+                data={data as Record<string, unknown>[]}
+                width={w}
+                height={height}
+                columns={wasmColumns}
+                sorting={wasmSorting}
+                onSortingChange={setWasmSorting}
+                globalFilter={wasmFilter}
+                onGlobalFilterChange={setWasmFilter}
+                overflowY="scroll"
+                overflowX="scroll"
+              />
+            </div>
+          </section>
+        )}
+        {enableTanStack && (
+          <section>
+            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600 }}>
+              @tanstack/react-table
+            </h3>
+            <TanStackVirtualTable
+              data={data}
+              width={w}
+              height={height}
+              sorting={tsSorting}
+              globalFilter={tsFilter}
+            />
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function actionBtn(isDisabled: boolean): React.CSSProperties {
+  return {
+    padding: "6px 16px",
+    fontSize: 13,
+    fontWeight: 600,
+    backgroundColor: "#1976d2",
+    color: "white",
+    border: "none",
+    borderRadius: 6,
+    cursor: isDisabled ? "not-allowed" : "pointer",
+    opacity: isDisabled ? 0.5 : 1,
+  };
+}
+
+function TimingDisplay({
+  label,
+  wasmMs,
+  tsMs,
+}: {
+  label: string;
+  wasmMs: number | null;
+  tsMs: number | null;
+}) {
+  const speedup = wasmMs != null && wasmMs > 0 && tsMs != null ? (tsMs / wasmMs).toFixed(1) : null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        marginBottom: 8,
+        fontSize: 13,
+        padding: "6px 12px",
+        backgroundColor: "#f5f5f5",
+        borderRadius: 6,
+      }}
+    >
+      <span style={{ fontWeight: 700, minWidth: 44 }}>{label}</span>
+      {wasmMs != null && (
+        <span style={{ color: "#2e7d32", fontWeight: 600 }}>react-wasm-table: {wasmMs}ms</span>
+      )}
+      {tsMs != null && (
+        <span style={{ color: "#e65100", fontWeight: 600 }}>@tanstack/react-table: {tsMs}ms</span>
+      )}
+      {speedup != null && <span style={{ color: "#1976d2", fontWeight: 700 }}>({speedup}x)</span>}
+    </div>
+  );
+}
+
+// ── TanStack virtual table (supports sorting + filter) ──
+
+function TanStackVirtualTable({
+  data,
+  width,
+  height,
+  sorting = [],
+  globalFilter = "",
+}: {
+  data: Employee[];
+  width: number;
+  height: number;
+  sorting?: SortingState;
+  globalFilter?: string;
 }) {
   const table = useReactTable({
     data,
-    columns,
+    columns: tsColumns,
+    state: { sorting, globalFilter },
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
   const parentRef = useRef<HTMLDivElement>(null);
-
   const rowVirtualizer = useVirtualizer({
     count: table.getRowModel().rows.length,
     getScrollElement: () => parentRef.current,
@@ -426,23 +956,8 @@ function TanStackTablePanel({
     overscan: 10,
   });
 
-  // TanStack: 데이터 반영 후 첫 paint 시점까지 (double rAF) 측정
-  useEffect(() => {
-    if (mountedRef.current) return;
-    const start = startTimeRef.current || performance.now();
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const ms = Math.round(performance.now() - start);
-        mountedRef.current = true;
-        onRenderMs(ms);
-      });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [data, onRenderMs, mountedRef, startTimeRef]);
-
   const rows = table.getRowModel().rows;
   const virtualRows = rowVirtualizer.getVirtualItems();
-  const totalSize = rowVirtualizer.getTotalSize();
 
   return (
     <div
@@ -458,7 +973,7 @@ function TanStackTablePanel({
     >
       <table
         style={{
-          width: totalTanStackWidth,
+          width: tsTotalWidth,
           borderCollapse: "collapse",
           tableLayout: "fixed",
           flexShrink: 0,
@@ -487,23 +1002,17 @@ function TanStackTablePanel({
           ))}
         </thead>
       </table>
-      <div
-        ref={parentRef}
-        style={{
-          flex: 1,
-          overflow: "auto",
-          minHeight: 0,
-        }}
-      >
+      <div ref={parentRef} style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
         <div
           style={{
-            height: totalSize,
-            width: totalTanStackWidth,
+            height: rowVirtualizer.getTotalSize(),
+            width: tsTotalWidth,
             position: "relative",
           }}
         >
           {virtualRows.map((vRow) => {
-            const row = rows[vRow.index]!;
+            const row = rows[vRow.index];
+            if (!row) return null;
             return (
               <div
                 key={row.id}
