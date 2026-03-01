@@ -4,7 +4,12 @@ import { useReactTable } from "../use-react-table";
 import { useGridTable } from "../use-grid-table";
 import { getCoreRowModel } from "../row-model";
 import { createColumnHelper } from "../column-helper";
-import type { SortingState, SortingUpdater, ColumnFiltersUpdater, GridColumnDef } from "../tanstack-types";
+import type {
+  SortingState,
+  SortingUpdater,
+  ColumnFiltersUpdater,
+  GridColumnDef,
+} from "../tanstack-types";
 
 type TestData = { name: string; age: number };
 
