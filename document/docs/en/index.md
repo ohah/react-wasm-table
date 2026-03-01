@@ -22,7 +22,7 @@ hero:
       link: /guide/architecture
 features:
   - title: Benchmark
-    details: Same data, same schema. Compare initial render time and scroll FPS with TanStack React Table. Run 500–10K rows side by side.
+    details: Same data, same schema. Compare initial render time and scroll FPS with TanStack React Table. Run 1K–1M rows sequentially.
     icon: "⚡"
     link: /benchmark
   - title: Canvas + WASM
@@ -42,3 +42,7 @@ features:
     icon: "📋"
     link: /api/table
 ---
+
+import { Benchmark } from "demo";
+
+<Benchmark />

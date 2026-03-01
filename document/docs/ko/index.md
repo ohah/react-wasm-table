@@ -22,7 +22,7 @@ hero:
       link: /guide/architecture
 features:
   - title: 벤치마크
-    details: 동일 데이터·동일 스키마로 TanStack React Table와 초기 렌더 시간, 스크롤 FPS를 비교합니다. 500~10K 행을 나란히 실행할 수 있습니다.
+    details: 동일 데이터·동일 스키마로 TanStack React Table와 초기 렌더 시간, 스크롤 FPS를 비교합니다. 1K~1M 행을 순차 측정할 수 있습니다.
     icon: "⚡"
     link: /benchmark
   - title: Canvas + WASM
@@ -42,3 +42,7 @@ features:
     icon: "📋"
     link: /api/table
 ---
+
+import { Benchmark } from "demo";
+
+<Benchmark />

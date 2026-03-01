@@ -2,7 +2,7 @@
 
 import { Benchmark } from "demo";
 
-We provide a **side-by-side benchmark** with the same data and column schema so you can compare performance.
+We **measure each library independently** with the same data and column schema for a fair execution-time comparison.
 
 ## What we compare
 
@@ -12,14 +12,16 @@ We provide a **side-by-side benchmark** with the same data and column schema so 
 | Rows      | Full dataset in memory, virtualized by core | Virtualized rows in DOM       |
 | Same data | ✓ `generateEmployees(N)`                    | ✓ Same                        |
 
-## Metrics
+## How it works
 
-- **Initial render (ms)** — Time from data set to first paint (lower is better).
-- **Scroll FPS** — While scrolling, the demo page shows a global FPS counter; compare smoothness between the two grids.
+1. Generate the same `generateEmployees(N)` data.
+2. Mount **only react-wasm-table** and measure time to first paint.
+3. Unmount, wait 200ms, then mount **only @tanstack/react-table** and measure the same way.
+4. Display results in a comparison table and bar chart.
 
 ## Run the benchmark
 
-Choose a row count (500–10K) and click **벤치마크 실행** to load the same data into both tables and see the measured initial render times.
+Click a row-count button (1K–100K) or **Run All** to benchmark every row count sequentially. After measurement, both grids appear side by side so you can also compare scroll performance.
 
 <Benchmark />
 
