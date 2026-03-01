@@ -1,6 +1,12 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import {
-  Grid,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  flexRender,
   createColumnHelper,
   useGridTable,
   getPaginationRowModel,
@@ -9,6 +15,7 @@ import {
   type PaginationState,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
+import { useContainerSize } from "../useContainerSize";
 
 // ── Data ──────────────────────────────────────────────────────────
 
@@ -110,12 +117,7 @@ export function PaginationDemo() {
 
   const model = table.getPaginationRowModel();
   const pageCount = table.getPageCount();
-
-  // Extract current page data for canvas Grid (Grid renders all data it receives)
-  const pageData = useMemo(
-    () => model.rows.map((row) => row.original) as unknown as Record<string, unknown>[],
-    [model.rows],
-  );
+  const { ref, size } = useContainerSize(Math.min(pagination.pageSize * 36 + 40, 520));
 
   return (
     <>
@@ -167,9 +169,9 @@ export function PaginationDemo() {
             onChange={(e) => table.setPageSize(Number(e.target.value))}
             style={{ marginLeft: 8, padding: "4px 8px", fontSize: 13, borderRadius: 4 }}
           >
-            {[5, 10, 20, 50].map((size) => (
-              <option key={size} value={size}>
-                Show {size}
+            {[5, 10, 20, 50].map((s) => (
+              <option key={s} value={s}>
+                Show {s}
               </option>
             ))}
           </select>
@@ -180,13 +182,37 @@ export function PaginationDemo() {
         </div>
       </div>
 
-      {/* Canvas Grid — receives only current page data */}
-      <Grid
-        data={pageData}
-        columns={columns}
-        width={800}
-        height={Math.min(pagination.pageSize * 36 + 40, 520)}
-      />
+      {/* Canvas Table — pagination handled internally by <Table> */}
+      <div ref={ref} style={{ width: "100%", height: Math.min(pagination.pageSize * 36 + 40, 520) }}>
+        {size.width > 0 && (
+          <Table table={table} width={size.width} height={size.height} overflowY="scroll">
+            <Thead>
+              {table.getHeaderGroups().map((hg) => (
+                <Tr key={hg.id}>
+                  {hg.headers.map((h) => (
+                    <Th key={h.id} colSpan={h.colSpan}>
+                      {h.isPlaceholder
+                        ? null
+                        : flexRender(h.column.columnDef.header, h.getContext())}
+                    </Th>
+                  ))}
+                </Tr>
+              ))}
+            </Thead>
+            <Tbody>
+              {table.getRowModel().rows.map((row) => (
+                <Tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <Td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </Td>
+                  ))}
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        )}
+      </div>
 
       {/* State display */}
       <div style={{ ...sectionStyle, marginTop: 20 }}>
@@ -217,18 +243,21 @@ const table = useGridTable({
   onPaginationChange: setPagination,
 });
 
-const model = table.getPaginationRowModel();
-// model.rows     → current page rows only
-// model.rowCount → total row count (for page calc)
-
-// Navigation helpers:
-// table.getPageCount()       → total pages
-// table.getCanPreviousPage() → boolean
-// table.getCanNextPage()     → boolean
-// table.previousPage()       → go back
-// table.nextPage()           → go forward
-// table.setPageIndex(n)      → jump to page
-// table.setPageSize(n)       → change page size`}
+// Just pass table to <Table> — pagination is handled internally
+<Table table={table} width={800} height={400}>
+  <Thead>...</Thead>
+  <Tbody>
+    {table.getRowModel().rows.map(row => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map(cell => (
+          <Td key={cell.id}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>`}
       </pre>
     </>
   );
