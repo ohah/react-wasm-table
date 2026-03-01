@@ -11,6 +11,8 @@
   "dependencies": {
     "@ohah/react-wasm-table": "workspace:*",
     "@rspress/core": "latest",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.19",
     "demo": "workspace:*",
     "react": "latest",
     "react-dom": "latest"

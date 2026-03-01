@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, type CssDimension } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number };
 
@@ -129,11 +128,6 @@ helper.accessor("salary", { size: 300, flexShrink: ${shrink} })
             Grid API — Canvas (WASM/Taffy)
           </h3>
           <Grid data={data} width={800} height={520} columns={columns} />
-        </div>
-        <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
-        <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid data={data} width={800} height={520} columns={columns} />
         </div>
       </div>
     </>

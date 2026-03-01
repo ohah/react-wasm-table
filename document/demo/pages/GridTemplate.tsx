@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 import type { CssGridAutoFlow } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
-import { CssGrid } from "../components/CssGrid";
 
 type SmallRow = { name: string; dept: string; salary: number };
 const helper = createColumnHelper<SmallRow>();
@@ -117,20 +116,6 @@ export function GridTemplate() {
             Grid API — Canvas (WASM/Taffy)
           </h3>
           <Grid
-            data={data}
-            width={800}
-            height={400}
-            display="grid"
-            gridTemplateColumns={templateCols}
-            gridAutoFlow={autoFlow}
-            gap={gapValue}
-            columns={columns}
-          />
-        </div>
-        <div style={{ width: 1, background: "#e0e0e0", alignSelf: "stretch", margin: "0 16px" }} />
-        <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>CSS (Browser)</h3>
-          <CssGrid
             data={data}
             width={800}
             height={400}

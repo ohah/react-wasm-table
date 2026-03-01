@@ -26,11 +26,11 @@ type Employee = {
 
 const ROW_HEIGHT = 36;
 const ROW_COUNT_OPTIONS = [
+  { value: 500, label: "500" },
+  { value: 1_000, label: "1K" },
+  { value: 2_000, label: "2K" },
+  { value: 5_000, label: "5K" },
   { value: 10_000, label: "10K" },
-  { value: 50_000, label: "50K" },
-  { value: 100_000, label: "100K" },
-  { value: 500_000, label: "500K" },
-  { value: 1_000_000, label: "1M" },
 ] as const;
 
 // ── react-wasm-table columns (same as StressTest) ──
@@ -43,7 +43,12 @@ const wasmColumns = [
     align: "right",
     padding: [0, 8],
   }),
-  wasmHelper.accessor("name", { header: "Name", size: 180, enableSorting: true, padding: [0, 8] }),
+  wasmHelper.accessor("name", {
+    header: "Name",
+    size: 180,
+    enableSorting: true,
+    padding: [0, 8],
+  }),
   wasmHelper.accessor("email", {
     header: "Email",
     size: 260,
@@ -130,17 +135,41 @@ const wasmColumns = [
 // ── @tanstack/react-table columns (plain DOM, same schema) ──
 const tanStackHelper = createTanStackColumnHelper<Employee>();
 const tanStackColumns: ColumnDef<Employee, unknown>[] = [
-  tanStackHelper.accessor("id", { header: "ID", cell: (c) => c.getValue(), size: 70 }),
-  tanStackHelper.accessor("name", { header: "Name", cell: (c) => c.getValue(), size: 180 }),
-  tanStackHelper.accessor("email", { header: "Email", cell: (c) => c.getValue(), size: 260 }),
-  tanStackHelper.accessor("department", { header: "Dept", cell: (c) => c.getValue(), size: 130 }),
-  tanStackHelper.accessor("title", { header: "Title", cell: (c) => c.getValue(), size: 180 }),
+  tanStackHelper.accessor("id", {
+    header: "ID",
+    cell: (c) => c.getValue(),
+    size: 70,
+  }),
+  tanStackHelper.accessor("name", {
+    header: "Name",
+    cell: (c) => c.getValue(),
+    size: 180,
+  }),
+  tanStackHelper.accessor("email", {
+    header: "Email",
+    cell: (c) => c.getValue(),
+    size: 260,
+  }),
+  tanStackHelper.accessor("department", {
+    header: "Dept",
+    cell: (c) => c.getValue(),
+    size: 130,
+  }),
+  tanStackHelper.accessor("title", {
+    header: "Title",
+    cell: (c) => c.getValue(),
+    size: 180,
+  }),
   tanStackHelper.accessor("salary", {
     header: "Salary",
     cell: (c) => `$${Number(c.getValue()).toLocaleString()}`,
     size: 110,
   }),
-  tanStackHelper.accessor("startDate", { header: "Start", cell: (c) => c.getValue(), size: 110 }),
+  tanStackHelper.accessor("startDate", {
+    header: "Start",
+    cell: (c) => c.getValue(),
+    size: 110,
+  }),
   tanStackHelper.accessor("isActive", {
     header: "Active",
     cell: (c) => (c.getValue() ? "Yes" : "No"),
@@ -151,14 +180,18 @@ const tanStackColumns: ColumnDef<Employee, unknown>[] = [
     cell: (c) => c.getValue() ?? "—",
     size: 80,
   }),
-  tanStackHelper.accessor("teamSize", { header: "Team", cell: (c) => c.getValue(), size: 80 }),
+  tanStackHelper.accessor("teamSize", {
+    header: "Team",
+    cell: (c) => c.getValue(),
+    size: 80,
+  }),
 ];
 
 const totalTanStackWidth = tanStackColumns.reduce((s, c) => s + (c.size as number) || 100, 0);
 
 export function Benchmark() {
   const [rowCountOption, setRowCountOption] = useState<(typeof ROW_COUNT_OPTIONS)[number]>(
-    ROW_COUNT_OPTIONS[1],
+    ROW_COUNT_OPTIONS[0],
   );
   const [data, setData] = useState<Employee[] | null>(null);
   const [wasmRenderMs, setWasmRenderMs] = useState<number | null>(null);
@@ -167,6 +200,7 @@ export function Benchmark() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const wasmMountedRef = useRef(false);
   const tanStackMountedRef = useRef(false);
+  const benchmarkStartRef = useRef<number>(0);
   const { ref: containerRef, size } = useContainerSize(520);
 
   const count = rowCountOption.value;
@@ -179,24 +213,27 @@ export function Benchmark() {
     wasmMountedRef.current = false;
     tanStackMountedRef.current = false;
 
-    const generated = generateEmployees(count) as Employee[];
-    requestAnimationFrame(() => {
+    setTimeout(() => {
+      const generated = generateEmployees(count) as Employee[];
+      benchmarkStartRef.current = performance.now();
       setData(generated);
-      setIsGenerating(false);
-    });
+      requestAnimationFrame(() => setIsGenerating(false));
+    }, 0);
   }, [count]);
 
-  // Measure react-wasm-table first paint
+  // WASM Grid: 데이터 반영 후 첫 paint 시점까지 (double rAF) 측정
   useEffect(() => {
-    if (!data || wasmMountedRef.current) return;
-    const t0 = performance.now();
+    if (!data || wasmMountedRef.current || size.width <= 0) return;
+    const start = benchmarkStartRef.current || performance.now();
     const id = requestAnimationFrame(() => {
-      const ms = performance.now() - t0;
-      wasmMountedRef.current = true;
-      setWasmRenderMs(Math.round(ms));
+      requestAnimationFrame(() => {
+        const ms = Math.round(performance.now() - start);
+        wasmMountedRef.current = true;
+        setWasmRenderMs(ms);
+      });
     });
     return () => cancelAnimationFrame(id);
-  }, [data]);
+  }, [data, size.width]);
 
   const tableHeight = size.height > 0 ? size.height : 400;
   const tableWidth = size.width > 0 ? Math.max(size.width, 800) : 800;
@@ -226,7 +263,7 @@ export function Benchmark() {
             onChange={(e) => {
               const v = Number(e.target.value);
               setRowCountOption(
-                ROW_COUNT_OPTIONS.find((o) => o.value === v) ?? ROW_COUNT_OPTIONS[1]!,
+                ROW_COUNT_OPTIONS.find((o) => o.value === v) ?? ROW_COUNT_OPTIONS[0]!,
               );
             }}
             disabled={!!data}
@@ -273,95 +310,108 @@ export function Benchmark() {
         <p style={{ color: "#666" }}>데이터 생성 중… (수만~수백만 행이라 수 초 걸릴 수 있습니다)</p>
       )}
 
-      {data && size.width > 0 && (
-        <div
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}
-        >
-          {/* react-wasm-table (Canvas) */}
-          <section>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 8,
-              }}
-            >
-              <h2 style={{ fontSize: 18, margin: 0 }}>react-wasm-table (Canvas + WASM)</h2>
-              {wasmRenderMs != null && (
-                <span
-                  style={{
-                    padding: "4px 12px",
-                    backgroundColor: "#e8f5e9",
-                    color: "#2e7d32",
-                    borderRadius: 6,
-                    fontWeight: 700,
-                    fontSize: 14,
-                  }}
-                >
-                  초기 렌더: {wasmRenderMs} ms
-                </span>
-              )}
-            </div>
-            <div
-              ref={containerRef}
-              style={{
-                border: "1px solid #e0e0e0",
-                borderRadius: 8,
-                overflow: "hidden",
-                height: tableHeight,
-              }}
-            >
-              <Grid
-                data={data as Record<string, unknown>[]}
-                width={tableWidth}
-                height={tableHeight}
-                columns={wasmColumns}
-                sorting={sorting}
-                onSortingChange={setSorting}
-                overflowY="scroll"
-                overflowX="scroll"
-              />
-            </div>
-          </section>
+      {/* ref는 항상 DOM에 있는 요소에 붙여야 useContainerSize의 ResizeObserver가 동작함 */}
+      <div ref={containerRef} style={{ width: "100%", minHeight: 400 }}>
+        {data && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 24,
+              alignItems: "start",
+            }}
+          >
+            {/* react-wasm-table (Canvas) */}
+            <section>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                }}
+              >
+                <h2 style={{ fontSize: 18, margin: 0 }}>react-wasm-table (Canvas + WASM)</h2>
+                {wasmRenderMs != null && (
+                  <span
+                    style={{
+                      padding: "4px 12px",
+                      backgroundColor: "#e8f5e9",
+                      color: "#2e7d32",
+                      borderRadius: 6,
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}
+                  >
+                    초기 렌더: {wasmRenderMs} ms
+                  </span>
+                )}
+              </div>
+              <div
+                style={{
+                  border: "1px solid #e0e0e0",
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  height: tableHeight,
+                  width: "100%",
+                }}
+              >
+                {size.width > 0 && (
+                  <Grid
+                    data={data as Record<string, unknown>[]}
+                    width={tableWidth}
+                    height={tableHeight}
+                    columns={wasmColumns}
+                    sorting={sorting}
+                    onSortingChange={setSorting}
+                    overflowY="scroll"
+                    overflowX="scroll"
+                  />
+                )}
+              </div>
+            </section>
 
-          {/* TanStack React Table (DOM + virtual) */}
-          <section>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 8,
-              }}
-            >
-              <h2 style={{ fontSize: 18, margin: 0 }}>@tanstack/react-table (DOM + virtual)</h2>
-              {tanStackRenderMs != null && (
-                <span
-                  style={{
-                    padding: "4px 12px",
-                    backgroundColor: "#fff3e0",
-                    color: "#e65100",
-                    borderRadius: 6,
-                    fontWeight: 700,
-                    fontSize: 14,
-                  }}
-                >
-                  초기 렌더: {tanStackRenderMs} ms
-                </span>
+            {/* TanStack React Table (DOM + virtual) */}
+            <section>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                }}
+              >
+                <h2 style={{ fontSize: 18, margin: 0 }}>@tanstack/react-table (DOM + virtual)</h2>
+                {tanStackRenderMs != null && (
+                  <span
+                    style={{
+                      padding: "4px 12px",
+                      backgroundColor: "#fff3e0",
+                      color: "#e65100",
+                      borderRadius: 6,
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}
+                  >
+                    초기 렌더: {tanStackRenderMs} ms
+                  </span>
+                )}
+              </div>
+              {size.width > 0 && (
+                <TanStackTablePanel
+                  data={data}
+                  columns={tanStackColumns}
+                  width={tableWidth}
+                  height={tableHeight}
+                  onRenderMs={setTanStackRenderMs}
+                  mountedRef={tanStackMountedRef}
+                  startTimeRef={benchmarkStartRef}
+                />
               )}
-            </div>
-            <TanStackTablePanel
-              data={data}
-              columns={tanStackColumns}
-              width={tableWidth}
-              height={tableHeight}
-              onRenderMs={setTanStackRenderMs}
-              mountedRef={tanStackMountedRef}
-            />
-          </section>
-        </div>
-      )}
+            </section>
+          </div>
+        )}
+      </div>
 
       {data && (wasmRenderMs != null || tanStackRenderMs != null) && (
         <div
@@ -394,6 +444,7 @@ function TanStackTablePanel({
   height,
   onRenderMs,
   mountedRef,
+  startTimeRef,
 }: {
   data: Employee[];
   columns: ColumnDef<Employee, unknown>[];
@@ -401,6 +452,7 @@ function TanStackTablePanel({
   height: number;
   onRenderMs: (ms: number) => void;
   mountedRef: React.MutableRefObject<boolean>;
+  startTimeRef: React.MutableRefObject<number>;
 }) {
   const table = useReactTable({
     data,
@@ -416,16 +468,19 @@ function TanStackTablePanel({
     overscan: 10,
   });
 
+  // TanStack: 데이터 반영 후 첫 paint 시점까지 (double rAF) 측정
   useEffect(() => {
     if (mountedRef.current) return;
-    const t0 = performance.now();
+    const start = startTimeRef.current || performance.now();
     const id = requestAnimationFrame(() => {
-      const ms = performance.now() - t0;
-      mountedRef.current = true;
-      onRenderMs(Math.round(ms));
+      requestAnimationFrame(() => {
+        const ms = Math.round(performance.now() - start);
+        mountedRef.current = true;
+        onRenderMs(ms);
+      });
     });
     return () => cancelAnimationFrame(id);
-  }, [data, onRenderMs, mountedRef]);
+  }, [data, onRenderMs, mountedRef, startTimeRef]);
 
   const rows = table.getRowModel().rows;
   const virtualRows = rowVirtualizer.getVirtualItems();
