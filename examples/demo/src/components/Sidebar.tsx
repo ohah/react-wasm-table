@@ -1,4 +1,5 @@
 import { NavLink } from "react-router";
+import { BASE_TO_TANSTACK } from "../tanstack-routes";
 
 const sections = [
   {
@@ -8,27 +9,6 @@ const sections = [
       { to: "/stress-test", label: "Stress Test (1M rows)" },
       { to: "/tanstack-api", label: "TanStack API" },
       { to: "/table-api", label: "Table API (TanStack)" },
-      { to: "/tanstack/home", label: "TanStack: Home" },
-      { to: "/tanstack/selection", label: "TanStack: Selection" },
-      { to: "/tanstack/column-pinning", label: "TanStack: Column Pinning" },
-      { to: "/tanstack/hooks/sorting", label: "TanStack: useSorting" },
-      { to: "/tanstack/hooks/filtering", label: "TanStack: useFiltering" },
-      { to: "/tanstack/hooks/selection", label: "TanStack: useSelection" },
-      { to: "/tanstack/column-dnd-row-pinning", label: "TanStack: Column DnD & Row Pinning" },
-      { to: "/tanstack/column-features", label: "TanStack: Column Features" },
-      { to: "/tanstack/hooks/composition", label: "TanStack: Hook Composition" },
-      { to: "/tanstack/layout-cache", label: "TanStack: Layout Cache" },
-      { to: "/tanstack/event-middleware", label: "TanStack: Event Middleware" },
-      { to: "/tanstack/export", label: "TanStack: Export" },
-      { to: "/tanstack/layers", label: "TanStack: Layers" },
-      { to: "/tanstack/custom-renderer", label: "TanStack: Custom Renderer" },
-      { to: "/tanstack/event-callbacks", label: "TanStack: Event Callbacks" },
-      { to: "/tanstack/clipboard", label: "TanStack: Clipboard" },
-      { to: "/tanstack/stress-test", label: "TanStack: Stress Test (1M)" },
-      { to: "/tanstack/hooks/adapter-di", label: "TanStack: Adapter DI" },
-      { to: "/tanstack/hooks/after-draw", label: "TanStack: onAfterDraw" },
-      { to: "/tanstack/touch-events", label: "TanStack: Touch Events" },
-      { to: "/tanstack/td-content", label: "TanStack: Td Content" },
       { to: "/selection", label: "Selection" },
       { to: "/event-callbacks", label: "Event Callbacks" },
       { to: "/event-middleware", label: "Event Middleware" },
@@ -111,12 +91,44 @@ const activeLinkStyle: React.CSSProperties = {
   fontWeight: 600,
 };
 
+const rowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  padding: "2px 16px 2px 12px",
+  gap: 0,
+  fontSize: 14,
+  minHeight: 32,
+};
+
+const separatorStyle: React.CSSProperties = {
+  color: "#999",
+  margin: "0 4px",
+  pointerEvents: "none",
+  fontSize: 12,
+};
+
+const linkInRowStyle: React.CSSProperties = {
+  padding: "4px 4px",
+  textDecoration: "none",
+  color: "#555",
+  fontSize: 14,
+  borderRadius: 4,
+};
+
+const activeLinkInRowStyle: React.CSSProperties = {
+  ...linkInRowStyle,
+  color: "#1976d2",
+  backgroundColor: "#e3f2fd",
+  fontWeight: 600,
+};
+
 export function Sidebar() {
   return (
     <nav
       style={{
-        width: 220,
-        minWidth: 220,
+        width: 260,
+        minWidth: 260,
         borderRight: "1px solid #e0e0e0",
         padding: "16px 0",
         overflowY: "auto",
@@ -138,16 +150,39 @@ export function Sidebar() {
           >
             {section.title}
           </div>
-          {section.links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.to === "/"}
-              style={({ isActive }) => (isActive ? activeLinkStyle : linkStyle)}
-            >
-              {link.label}
-            </NavLink>
-          ))}
+          {section.links.map((link) => {
+            const tanstackPath = BASE_TO_TANSTACK[link.to];
+            if (tanstackPath) {
+              return (
+                <div key={link.to} style={rowStyle}>
+                  <NavLink
+                    to={link.to}
+                    end={link.to === "/"}
+                    style={({ isActive }) => (isActive ? activeLinkInRowStyle : linkInRowStyle)}
+                  >
+                    {link.label}
+                  </NavLink>
+                  <span style={separatorStyle}>/</span>
+                  <NavLink
+                    to={tanstackPath}
+                    style={({ isActive }) => (isActive ? activeLinkInRowStyle : linkInRowStyle)}
+                  >
+                    TanStack
+                  </NavLink>
+                </div>
+              );
+            }
+            return (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.to === "/"}
+                style={({ isActive }) => (isActive ? activeLinkStyle : linkStyle)}
+              >
+                {link.label}
+              </NavLink>
+            );
+          })}
         </div>
       ))}
     </nav>

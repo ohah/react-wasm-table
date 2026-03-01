@@ -107,7 +107,7 @@ export function TanStackHookComposition() {
 
   return (
     <>
-      <h1>TanStack API: Hook Composition</h1>
+      <h1>Hook Composition</h1>
       <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
         useReactTable + Table. Sorting, selection, event callbacks.
       </p>
@@ -206,13 +206,33 @@ const table = useReactTable({
 
 <Table
   table={table}
+  width={560}
+  height={340}
   selection={selection}
   onSelectionChange={setSelection}
   onCellClick={() => logEvent("onCellClick", "cell")}
   onHeaderClick={() => logEvent("onHeaderClick", "header")}
 >
-  <Thead>...</Thead>
-  <Tbody>...</Tbody>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
 </Table>`}</CodeSnippet>
     </>
   );

@@ -149,7 +149,7 @@ export function TanStackColumnFeatures() {
 
   return (
     <>
-      <h1>TanStack API: Column Features</h1>
+      <h1>Column Features</h1>
       <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
         useReactTable + Table. Order, visibility, sizing, pinning, filtering.
       </p>
@@ -289,7 +289,28 @@ const table = useReactTable({
   onColumnFiltersChange: setColumnFilters,
 });
 
-<Table table={table} enableColumnDnD />`}</CodeSnippet>
+<Table table={table} width={560} height={340} enableColumnDnD>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>`}</CodeSnippet>
       <pre
         style={{
           marginTop: 16,

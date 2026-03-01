@@ -13,7 +13,6 @@ import {
   type ColumnFiltersState,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
-import { CodeSnippet } from "../../components/CodeSnippet";
 
 type Employee = {
   id: number;
@@ -94,9 +93,16 @@ export function TanStackUseFiltering() {
 
   return (
     <>
-      <h1>TanStack API: useFiltering</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
-        useReactTable + Table with columnFilters and globalFilter.
+      <h1>useFiltering Hook</h1>
+      <p>
+        Demonstrates controlled filtering with <code>columnFilters</code> +{" "}
+        <code>onColumnFiltersChange</code> and <code>globalFilter</code> +{" "}
+        <code>onGlobalFilterChange</code>.
+      </p>
+
+      <h2>Column Filters</h2>
+      <p style={{ fontSize: 13, color: "#666" }}>
+        Apply column-level filters with different operators. Filters are combined with AND logic.
       </p>
 
       <div
@@ -118,7 +124,7 @@ export function TanStackUseFiltering() {
           />
         </label>
         <label style={{ fontSize: 13, display: "flex", flexDirection: "column", gap: 4 }}>
-          Department
+          Department (exact)
           <select
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
@@ -176,6 +182,10 @@ export function TanStackUseFiltering() {
         </button>
       </div>
 
+      <h2>Global Filter</h2>
+      <p style={{ fontSize: 13, color: "#666" }}>
+        Search across all string columns (case-insensitive, OR logic).
+      </p>
       <input
         value={globalFilter}
         onChange={(e) => setGlobalFilter(e.target.value)}
@@ -183,43 +193,58 @@ export function TanStackUseFiltering() {
         style={{ ...inputStyle, width: 300, marginBottom: 12 }}
       />
 
-      <Table table={table} width={640} height={400}>
-        <Thead>
-          {table.getHeaderGroups().map((hg) => (
-            <Tr key={hg.id}>
-              {hg.headers.map((h) => (
-                <Th key={h.id} colSpan={h.colSpan}>
-                  {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                </Th>
-              ))}
-            </Tr>
-          ))}
-        </Thead>
-        <Tbody>
-          {table.getRowModel().rows.map((row) => (
-            <Tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-              ))}
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
-      <CodeSnippet>{`const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-const [globalFilter, setGlobalFilter] = useState("");
+      <section style={{ marginBottom: 16 }}>
+        <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
+        <Table table={table} width={640} height={400} overflowY="scroll">
+          <Thead>
+            {table.getHeaderGroups().map((hg) => (
+              <Tr key={hg.id}>
+                {hg.headers.map((h) => (
+                  <Th key={h.id} colSpan={h.colSpan}>
+                    {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                  </Th>
+                ))}
+              </Tr>
+            ))}
+          </Thead>
+          <Tbody>
+            {table.getRowModel().rows.map((row) => (
+              <Tr key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+                ))}
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </section>
 
-const table = useReactTable({
-  data,
-  columns,
-  getCoreRowModel: getCoreRowModel(),
-  state: { columnFilters, globalFilter },
-  onColumnFiltersChange: setColumnFilters,
-  onGlobalFilterChange: setGlobalFilter,
-});
+      <pre
+        style={{
+          background: "#f5f5f5",
+          padding: 12,
+          borderRadius: 4,
+          fontSize: 12,
+          overflowX: "auto",
+          marginTop: 16,
+        }}
+      >
+        {`const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);\n`}
+        {`const [globalFilter, setGlobalFilter] = useState("");\n\n`}
+        {`<Table\n`}
+        {`  table={table}\n`}
+        {`  ...\n`}
+        {`>\n  <Thead>...</Thead>\n  <Tbody>...</Tbody>\n</Table>`}
+      </pre>
 
-<Table table={table} width={640} height={400} />`}</CodeSnippet>
       <div
-        style={{ padding: 12, background: "#f9f9f9", borderRadius: 4, fontSize: 13, marginTop: 16 }}
+        style={{
+          padding: 12,
+          background: "#f9f9f9",
+          borderRadius: 4,
+          fontSize: 13,
+          marginTop: 16,
+        }}
       >
         <strong>Active filters:</strong>{" "}
         {columnFilters.length > 0

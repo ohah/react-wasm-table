@@ -128,13 +128,37 @@ export function TanStackColumnDnDAndRowPinning() {
 
   return (
     <>
-      <h1>TanStack API: Column DnD & Row Pinning</h1>
+      <h1>Column DnD & Row Pinning</h1>
       <p style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>
-        useReactTable + Table. Column drag-to-reorder, row pinning (top/bottom).
+        <strong>Column DnD:</strong> Drag headers to reorder columns. <strong>Row Pinning:</strong>{" "}
+        Pin specific rows to the top or bottom (state API only; rendering to be applied).
       </p>
 
       <div style={sectionStyle}>
-        <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Row Pinning</h2>
+        <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Column DnD Reorder</h2>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#666" }}>
+          Drag a header with the mouse; a ghost follows the cursor and a blue vertical line shows
+          the drop position. Releasing updates the column order.
+        </p>
+        <div style={{ marginBottom: 8, fontSize: 12 }}>
+          <label>
+            <input
+              type="checkbox"
+              checked={columnOrder.length > 0}
+              readOnly
+              style={{ marginRight: 6 }}
+            />
+            enableColumnDnD enabled
+          </label>
+        </div>
+      </div>
+
+      <div style={sectionStyle}>
+        <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Row Pinning (state)</h2>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#666" }}>
+          Pin rows to the top or bottom. Specify row IDs via getRowId and control with rowPinning
+          state.
+        </p>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           {firstRowId && (
             <>
@@ -142,13 +166,13 @@ export function TanStackColumnDnDAndRowPinning() {
                 style={rowPinning.top.includes(firstRowId) ? btnActive : btnBase}
                 onClick={() => toggleRowPin(firstRowId, "top")}
               >
-                First → Pin top
+                First row → Pin to top
               </button>
               <button
                 style={rowPinning.bottom.includes(firstRowId) ? btnActive : btnBase}
                 onClick={() => toggleRowPin(firstRowId, "bottom")}
               >
-                First → Pin bottom
+                First row → Pin to bottom
               </button>
             </>
           )}
@@ -158,13 +182,13 @@ export function TanStackColumnDnDAndRowPinning() {
                 style={rowPinning.top.includes(lastRowId) ? btnActive : btnBase}
                 onClick={() => toggleRowPin(lastRowId, "top")}
               >
-                Last → Pin top
+                Last row → Pin to top
               </button>
               <button
                 style={rowPinning.bottom.includes(lastRowId) ? btnActive : btnBase}
                 onClick={() => toggleRowPin(lastRowId, "bottom")}
               >
-                Last → Pin bottom
+                Last row → Pin to bottom
               </button>
             </>
           )}
@@ -174,38 +198,42 @@ export function TanStackColumnDnDAndRowPinning() {
         </div>
       </div>
 
-      <Table
-        table={table}
-        width={700}
-        height={380}
-        enableColumnDnD
-        columnOrder={columnOrder}
-        onColumnOrderChange={setColumnOrder}
-        getRowId={getRowId}
-        rowPinning={rowPinning}
-        onRowPinningChange={setRowPinning}
-      >
-        <Thead>
-          {table.getHeaderGroups().map((hg) => (
-            <Tr key={hg.id}>
-              {hg.headers.map((h) => (
-                <Th key={h.id} colSpan={h.colSpan}>
-                  {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                </Th>
-              ))}
-            </Tr>
-          ))}
-        </Thead>
-        <Tbody>
-          {table.getRowModel().rows.map((row) => (
-            <Tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-              ))}
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
+      <div style={sectionStyle}>
+        <h2 style={{ margin: "0 0 12px", fontSize: 16 }}>TanStack API</h2>
+        <Table
+          table={table}
+          width={700}
+          height={380}
+          enableColumnDnD
+          columnOrder={columnOrder}
+          onColumnOrderChange={setColumnOrder}
+          getRowId={getRowId}
+          rowPinning={rowPinning}
+          onRowPinningChange={setRowPinning}
+          overflowY="scroll"
+        >
+          <Thead>
+            {table.getHeaderGroups().map((hg) => (
+              <Tr key={hg.id}>
+                {hg.headers.map((h) => (
+                  <Th key={h.id} colSpan={h.colSpan}>
+                    {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                  </Th>
+                ))}
+              </Tr>
+            ))}
+          </Thead>
+          <Tbody>
+            {table.getRowModel().rows.map((row) => (
+              <Tr key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+                ))}
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </div>
 
       <div style={sectionStyle}>
         <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>State</h2>
@@ -237,7 +265,28 @@ const table = useReactTable({
   onRowPinningChange: setRowPinning,
 });
 
-<Table table={table} enableColumnDnD rowPinning={rowPinning} getRowId={getRowId} />`}</CodeSnippet>
+<Table table={table} width={560} height={340} enableColumnDnD rowPinning={rowPinning} getRowId={getRowId}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>`}</CodeSnippet>
     </>
   );
 }

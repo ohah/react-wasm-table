@@ -3,6 +3,7 @@ import {
   Grid,
   createColumnHelper,
   useGridTable,
+  getCoreRowModel,
   copyToClipboard,
   pasteFromClipboard,
   type NormalizedRange,

@@ -109,31 +109,38 @@ export function TanStackOnAfterDraw() {
 
   return (
     <>
-      <h1>TanStack API: onAfterDraw</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
-        useReactTable + Table. onAfterDraw callback for custom canvas overlays (watermark, row
-        highlight, crosshair).
+      <h1>onAfterDraw (Step 0-4)</h1>
+      <p>
+        Draw custom overlays on the canvas after each frame. The callback receives an{" "}
+        <code>AfterDrawContext</code> with the 2D context, dimensions, and scroll offsets. This is
+        the entry point for Phase 3 Layer System.
       </p>
-      <div style={{ display: "flex", gap: 16, marginBottom: 12, alignItems: "center" }}>
-        {modes.map((m) => (
-          <button
-            key={m.value}
-            onClick={() => setMode(m.value)}
-            style={{
-              padding: "4px 12px",
-              border: "1px solid #ccc",
-              borderRadius: 4,
-              background: mode === m.value ? "#1976d2" : "#fff",
-              color: mode === m.value ? "#fff" : "#333",
-              cursor: "pointer",
-            }}
-          >
-            {m.label}
-          </button>
-        ))}
+      <div style={{ display: "flex", gap: 16, marginBottom: 16, alignItems: "center" }}>
+        <div>
+          <strong>Overlay mode:</strong>
+          <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+            {modes.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => setMode(m.value)}
+                style={{
+                  padding: "4px 12px",
+                  border: "1px solid #ccc",
+                  borderRadius: 4,
+                  background: mode === m.value ? "#1976d2" : "#fff",
+                  color: mode === m.value ? "#fff" : "#333",
+                  cursor: "pointer",
+                }}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {mode === "row-highlight" && (
-          <label>
-            Row:{" "}
+          <div>
+            <strong>Row:</strong>
             <input
               type="number"
               value={highlightRow}
@@ -142,7 +149,7 @@ export function TanStackOnAfterDraw() {
               max={data.length - 1}
               style={{ width: 50, marginLeft: 4 }}
             />
-          </label>
+          </div>
         )}
       </div>
       <div style={{ display: "flex", gap: 16 }}>
@@ -187,7 +194,28 @@ export function TanStackOnAfterDraw() {
   [mode, highlightRow],
 );
 
-<Table table={table} width={560} height={380} onAfterDraw={mode !== "none" ? onAfterDraw : undefined} />`}</CodeSnippet>
+<Table table={table} width={560} height={380} onAfterDraw={mode !== "none" ? onAfterDraw : undefined}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>`}</CodeSnippet>
     </>
   );
 }
