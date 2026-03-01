@@ -106,6 +106,22 @@ export interface RowPinningState {
 
 export type RowPinningUpdater = RowPinningState | ((prev: RowPinningState) => RowPinningState);
 
+// ── Pagination state ──────────────────────────────────────────────
+
+export interface PaginationState {
+  pageIndex: number;
+  pageSize: number;
+}
+
+export type PaginationUpdater = PaginationState | ((prev: PaginationState) => PaginationState);
+
+// ── Grouping state ────────────────────────────────────────────────
+
+/** Column IDs to group by (order = nesting depth). */
+export type GroupingState = string[];
+
+export type GroupingUpdater = GroupingState | ((prev: GroupingState) => GroupingState);
+
 // ── Expanded state ─────────────────────────────────────────────────
 
 /** true = all expanded, Record<string, boolean> = per-row. */
@@ -257,7 +273,7 @@ export interface AccessorKeyColumnDef<TData, TValue = unknown> extends ColumnDef
   TValue
 > {
   id?: string;
-  accessorKey: keyof TData & string;
+  accessorKey: (string & {}) | (keyof TData & string);
   accessorFn?: never;
   columns?: never;
 }
