@@ -92,6 +92,10 @@ export type {
   RowPinningUpdater,
   ExpandedState,
   ExpandedUpdater,
+  PaginationState,
+  PaginationUpdater,
+  GroupingState,
+  GroupingUpdater,
 } from "./tanstack-types";
 export type { GridColumnDef as ColumnDef } from "./tanstack-types";
 
@@ -134,8 +138,14 @@ export {
   getFilteredRowModel,
   getExpandedRowModel,
   buildExpandedRowModel,
+  getPaginationRowModel,
+  buildPaginationRowModel,
+  getGroupedRowModel,
+  buildGroupedRowModel,
+  getFacetedRowModel,
+  buildFacetedValues,
 } from "./row-model";
-export type { Row, RowModel, RowModelFactory, VisibleRange } from "./row-model";
+export type { Row, RowModel, RowModelFactory, VisibleRange, AggregationFn, FacetedColumnValues } from "./row-model";
 
 // Parse table children
 export { parseTableChildren } from "./react/parse-table-children";
