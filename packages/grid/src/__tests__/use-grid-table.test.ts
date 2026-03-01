@@ -35,6 +35,10 @@ import type {
   ColumnPinningUpdater,
   ExpandedState,
   ExpandedUpdater,
+  PaginationState,
+  PaginationUpdater,
+  GroupingState,
+  GroupingUpdater,
   GridColumnDef,
 } from "../tanstack-types";
 import type { GridState } from "../grid-instance";
@@ -91,6 +95,12 @@ function simulateHookState(opts: {
   controlledExpanded?: ExpandedState;
   initialExpanded?: ExpandedState;
   onExpandedChange?: (updater: ExpandedUpdater) => void;
+  controlledPagination?: PaginationState;
+  initialPagination?: PaginationState;
+  onPaginationChange?: (updater: PaginationUpdater) => void;
+  controlledGrouping?: GroupingState;
+  initialGrouping?: GroupingState;
+  onGroupingChange?: (updater: GroupingUpdater) => void;
   getSubRows?: (row: Person) => Person[] | undefined;
 }) {
   let internalSorting: SortingState = opts.initialSorting ?? [];
@@ -102,6 +112,8 @@ function simulateHookState(opts: {
     opts.initialColumnSizingInfo ?? DEFAULT_COLUMN_SIZING_INFO;
   let internalPinning: ColumnPinningState = opts.initialColumnPinning ?? { left: [], right: [] };
   let internalExpanded: ExpandedState = opts.initialExpanded ?? {};
+  let internalPagination: PaginationState = opts.initialPagination ?? { pageIndex: 0, pageSize: 10 };
+  let internalGrouping: GroupingState = opts.initialGrouping ?? [];
 
   const sorting = opts.controlledSorting ?? internalSorting;
   const columnFilters = opts.controlledColumnFilters ?? internalColumnFilters;
@@ -111,6 +123,8 @@ function simulateHookState(opts: {
   const columnSizingInfo = opts.controlledColumnSizingInfo ?? internalSizingInfo;
   const columnPinning = opts.controlledColumnPinning ?? internalPinning;
   const expanded = opts.controlledExpanded ?? internalExpanded;
+  const pagination = opts.controlledPagination ?? internalPagination;
+  const grouping = opts.controlledGrouping ?? internalGrouping;
 
   const onSortingChange = (updater: SortingUpdater) => {
     const next = typeof updater === "function" ? updater(sorting) : updater;
@@ -183,6 +197,24 @@ function simulateHookState(opts: {
     }
   };
 
+  const onPaginationChange = (updater: PaginationUpdater) => {
+    const next = typeof updater === "function" ? updater(pagination) : updater;
+    if (opts.onPaginationChange) {
+      opts.onPaginationChange(next);
+    } else {
+      internalPagination = next;
+    }
+  };
+
+  const onGroupingChange = (updater: GroupingUpdater) => {
+    const next = typeof updater === "function" ? updater(grouping) : updater;
+    if (opts.onGroupingChange) {
+      opts.onGroupingChange(next);
+    } else {
+      internalGrouping = next;
+    }
+  };
+
   const state: GridState = {
     sorting,
     columnFilters,
@@ -192,6 +224,8 @@ function simulateHookState(opts: {
     columnSizingInfo,
     columnPinning,
     expanded,
+    pagination,
+    grouping,
   };
 
   return {
@@ -207,6 +241,8 @@ function simulateHookState(opts: {
       onColumnSizingInfoChange,
       onColumnPinningChange,
       onExpandedChange,
+      onPaginationChange,
+      onGroupingChange,
       getSubRows: opts.getSubRows,
     }),
     getSorting: () => opts.controlledSorting ?? internalSorting,
@@ -217,6 +253,8 @@ function simulateHookState(opts: {
     getSizingInfo: () => opts.controlledColumnSizingInfo ?? internalSizingInfo,
     getPinning: () => opts.controlledColumnPinning ?? internalPinning,
     getExpanded: () => opts.controlledExpanded ?? internalExpanded,
+    getPagination: () => opts.controlledPagination ?? internalPagination,
+    getGrouping: () => opts.controlledGrouping ?? internalGrouping,
   };
 }
 
@@ -304,7 +342,7 @@ describe("useGridTable state logic", () => {
 
   describe("SortingUpdater function evaluation", () => {
     it("evaluates function updater with current state", () => {
-      let captured: SortingState | undefined;
+      let captured: SortingUpdater | undefined;
       simulateHookState({
         controlledSorting: [{ id: "age", desc: false }],
         onSortingChange: (v) => {
@@ -455,7 +493,7 @@ describe("useGridTable state logic", () => {
 
   describe("ColumnFiltersUpdater function evaluation", () => {
     it("evaluates function updater with current state", () => {
-      let captured: ColumnFiltersState | undefined;
+      let captured: ColumnFiltersUpdater | undefined;
       simulateHookState({
         controlledColumnFilters: [{ id: "name", value: "A" }],
         onColumnFiltersChange: (v) => {
@@ -518,7 +556,7 @@ describe("useGridTable state logic", () => {
     });
 
     it("calls onColumnVisibilityChange on toggleVisibility", () => {
-      let captured: ColumnVisibilityState | undefined;
+      let captured: ColumnVisibilityUpdater | undefined;
       const { instance } = simulateHookState({
         controlledColumnVisibility: {},
         onColumnVisibilityChange: (u) => {
@@ -702,7 +740,7 @@ describe("useGridTable state logic", () => {
     });
 
     it("calls onColumnPinningChange on pin", () => {
-      let captured: ColumnPinningState | undefined;
+      let captured: ColumnPinningUpdater | undefined;
       const { instance } = simulateHookState({
         controlledColumnPinning: { left: [], right: [] },
         onColumnPinningChange: (u) => {
@@ -893,6 +931,134 @@ describe("useGridTable state logic", () => {
       const model = instance.getExpandedRowModel();
       expect(model.rowCount).toBe(3); // Alice + Bob (expanded) + Charlie
       expect(model.rows.map((r) => r.original.name)).toEqual(["Alice", "Bob", "Charlie"]);
+    });
+  });
+
+  // ── Pagination state tests ──────────────────────────────────────
+
+  describe("pagination state — uncontrolled", () => {
+    it("defaults to pageIndex 0, pageSize 10", () => {
+      const { instance } = simulateHookState({});
+      expect(instance.getState().pagination).toEqual({ pageIndex: 0, pageSize: 10 });
+    });
+
+    it("uses initialPagination", () => {
+      const { instance } = simulateHookState({
+        initialPagination: { pageIndex: 1, pageSize: 5 },
+      });
+      expect(instance.getState().pagination).toEqual({ pageIndex: 1, pageSize: 5 });
+    });
+
+    it("setPagination updates internal state", () => {
+      const { instance, getPagination } = simulateHookState({});
+      instance.setPagination({ pageIndex: 2, pageSize: 20 });
+      expect(getPagination()).toEqual({ pageIndex: 2, pageSize: 20 });
+    });
+
+    it("resetPagination resets to defaults", () => {
+      const { instance, getPagination } = simulateHookState({
+        initialPagination: { pageIndex: 3, pageSize: 50 },
+      });
+      instance.resetPagination();
+      expect(getPagination()).toEqual({ pageIndex: 0, pageSize: 10 });
+    });
+  });
+
+  describe("pagination state — controlled", () => {
+    it("uses controlledPagination over initial", () => {
+      const { instance } = simulateHookState({
+        controlledPagination: { pageIndex: 2, pageSize: 5 },
+        initialPagination: { pageIndex: 0, pageSize: 10 },
+      });
+      expect(instance.getState().pagination).toEqual({ pageIndex: 2, pageSize: 5 });
+    });
+
+    it("calls onPaginationChange on setPagination", () => {
+      let captured: PaginationUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledPagination: { pageIndex: 0, pageSize: 10 },
+        onPaginationChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.setPagination({ pageIndex: 1, pageSize: 10 });
+      expect(captured).toEqual({ pageIndex: 1, pageSize: 10 });
+    });
+
+    it("calls onPaginationChange on resetPagination", () => {
+      let captured: PaginationUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledPagination: { pageIndex: 3, pageSize: 50 },
+        onPaginationChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.resetPagination();
+      expect(captured).toEqual({ pageIndex: 0, pageSize: 10 });
+    });
+  });
+
+  // ── Grouping state tests ───────────────────────────────────────
+
+  describe("grouping state — uncontrolled", () => {
+    it("defaults to empty grouping", () => {
+      const { instance } = simulateHookState({});
+      expect(instance.getState().grouping).toEqual([]);
+    });
+
+    it("uses initialGrouping", () => {
+      const { instance } = simulateHookState({
+        initialGrouping: ["status"],
+      });
+      expect(instance.getState().grouping).toEqual(["status"]);
+    });
+
+    it("setGrouping updates internal state", () => {
+      const { instance, getGrouping } = simulateHookState({});
+      instance.setGrouping(["status"]);
+      expect(getGrouping()).toEqual(["status"]);
+    });
+
+    it("resetGrouping clears to empty", () => {
+      const { instance, getGrouping } = simulateHookState({
+        initialGrouping: ["status"],
+      });
+      instance.resetGrouping();
+      expect(getGrouping()).toEqual([]);
+    });
+  });
+
+  describe("grouping state — controlled", () => {
+    it("uses controlledGrouping over initial", () => {
+      const { instance } = simulateHookState({
+        controlledGrouping: ["age"],
+        initialGrouping: ["status"],
+      });
+      expect(instance.getState().grouping).toEqual(["age"]);
+    });
+
+    it("calls onGroupingChange on setGrouping", () => {
+      let captured: GroupingUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledGrouping: [],
+        onGroupingChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.setGrouping(["status"]);
+      expect(captured).toEqual(["status"]);
+    });
+
+    it("calls onGroupingChange on resetGrouping", () => {
+      let captured: GroupingUpdater | undefined;
+      const { instance } = simulateHookState({
+        controlledGrouping: ["status"],
+        onGroupingChange: (u) => {
+          captured = u;
+        },
+      });
+      instance.resetGrouping();
+      expect(captured).toEqual([]);
     });
   });
 });
