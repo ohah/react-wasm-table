@@ -20,3 +20,6 @@ export { TanStackOnAfterDraw } from "./OnAfterDraw";
 export { TanStackTouchEvents } from "./TouchEvents";
 export { TanStackTdContent } from "./TdContent";
 export { TanStackExpanding } from "./Expanding";
+export { TanStackPagination } from "./Pagination";
+export { TanStackGrouping } from "./Grouping";
+export { TanStackFaceted } from "./Faceted";
