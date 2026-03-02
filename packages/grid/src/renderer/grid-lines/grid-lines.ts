@@ -50,9 +50,7 @@ export function computeHeaderLinesFromBuffer(
   }
 
   // Horizontal lines: top boundary, each internal row boundary, bottom boundary
-  const horizontal: HLine[] = [
-    { y: headerY + 0.25, x1: firstX, x2: canvasW },
-  ];
+  const horizontal: HLine[] = [{ y: headerY + 0.25, x1: firstX, x2: canvasW }];
   const perRowHeight = headerHeight / rowCount;
   for (let r = 1; r < rowCount; r++) {
     horizontal.push({ y: headerY + r * perRowHeight + 0.5, x1: firstX, x2: canvasW });
