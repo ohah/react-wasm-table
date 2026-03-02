@@ -274,6 +274,16 @@ export interface GridTouchEvent extends GridEventBase {
 
 // ── Cell coordinates & layout ──────────────────────────────────────────
 
+/** Check whether a unified row index refers to a header row. */
+export function isHeaderRow(row: number, headerRowCount: number): boolean {
+  return row < headerRowCount;
+}
+
+/** Convert a unified row index to a 0-based data row index. */
+export function toDataRow(row: number, headerRowCount: number): number {
+  return row - headerRowCount;
+}
+
 /** Identifies a cell by row and column index. */
 export interface CellCoord {
   row: number;

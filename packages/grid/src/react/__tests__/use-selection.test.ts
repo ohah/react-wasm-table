@@ -142,8 +142,9 @@ describe("useSelection (renderHook)", () => {
       const params = defaultParams({ getStringTable: () => st });
       const { result } = renderHook(() => useSelection(params));
 
-      act(() => result.current.handleCellMouseDown({ row: 0, col: 0 }, false));
-      act(() => result.current.handleCellMouseMove({ row: 1, col: 1 }));
+      // Unified indexing: data rows start at 1 (header=0)
+      act(() => result.current.handleCellMouseDown({ row: 1, col: 0 }, false));
+      act(() => result.current.handleCellMouseMove({ row: 2, col: 1 }));
       act(() => result.current.handleCellMouseUp());
 
       act(() =>

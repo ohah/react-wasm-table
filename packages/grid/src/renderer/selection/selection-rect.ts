@@ -17,13 +17,12 @@ export interface SelectionRect {
 
 /**
  * Compute the bounding rectangle for a cell selection from the layout buffer.
- * Scans data cells (headerCount..totalCount) and, when matched, also includes
- * header cells whose column falls within the selection range.
- * Returns null if no visible data cells fall within the selection.
+ * Scans all cells (headers + data) using the unified row index written by WASM
+ * (header=0, data=1+). Returns null if no visible cells fall within the selection.
  */
 export function computeSelectionRect(
   buf: Float32Array,
-  headerCount: number,
+  _headerCount: number,
   totalCount: number,
   selection: NormalizedRange,
 ): SelectionRect | null {
@@ -33,8 +32,7 @@ export function computeSelectionRect(
   let maxY = -Infinity;
   let found = false;
 
-  // Scan data cells (row + column match)
-  for (let i = headerCount; i < totalCount; i++) {
+  for (let i = 0; i < totalCount; i++) {
     const row = readCellRow(buf, i);
     const col = readCellCol(buf, i);
     if (row < selection.minRow || row > selection.maxRow) continue;
@@ -53,22 +51,5 @@ export function computeSelectionRect(
   }
 
   if (!found) return null;
-
-  // Include header cells whose column falls within the selection range
-  for (let i = 0; i < headerCount; i++) {
-    const col = readCellCol(buf, i);
-    if (col < selection.minCol || col > selection.maxCol) continue;
-
-    const cx = readCellX(buf, i);
-    const cy = readCellY(buf, i);
-    const cw = readCellWidth(buf, i);
-    const ch = readCellHeight(buf, i);
-
-    minX = Math.min(minX, cx);
-    minY = Math.min(minY, cy);
-    maxX = Math.max(maxX, cx + cw);
-    maxY = Math.max(maxY, cy + ch);
-  }
-
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }

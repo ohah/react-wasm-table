@@ -57,8 +57,8 @@ describe("useEditing (renderHook)", () => {
 
   it("opens editor on double-click when column has editor", () => {
     const buf = makeLayoutBuf([
-      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header
-      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data
+      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header (unified row=0)
+      { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data (unified row=1)
     ]);
     const { result } = setup(
       [{ id: "name", width: 100, editor: "text" }],
@@ -66,14 +66,14 @@ describe("useEditing (renderHook)", () => {
       buf,
     );
 
-    act(() => result.current.handleCellDoubleClick({ row: 0, col: 0 }));
+    act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
     expect(result.current.editorManagerRef.current.isEditing).toBe(true);
   });
 
   it("does not open editor for columns without editor prop", () => {
     const buf = makeLayoutBuf([
       { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
-      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
     ]);
     const { result } = setup(
       [{ id: "name", width: 100 }], // no editor
@@ -81,7 +81,7 @@ describe("useEditing (renderHook)", () => {
       buf,
     );
 
-    act(() => result.current.handleCellDoubleClick({ row: 0, col: 0 }));
+    act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
     expect(result.current.editorManagerRef.current.isEditing).toBe(false);
   });
 
@@ -92,14 +92,14 @@ describe("useEditing (renderHook)", () => {
       undefined, // no buffer
     );
 
-    act(() => result.current.handleCellDoubleClick({ row: 0, col: 0 }));
+    act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
     expect(result.current.editorManagerRef.current.isEditing).toBe(false);
   });
 
   it("does not open editor when row data is missing", () => {
     const buf = makeLayoutBuf([
       { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
-      { row: 5, col: 0, x: 0, y: 40, w: 100, h: 36 }, // row 5 doesn't exist in data
+      { row: 6, col: 0, x: 0, y: 40, w: 100, h: 36 }, // unified row 6 → data row 5, doesn't exist
     ]);
     const { result } = setup(
       [{ id: "name", width: 100, editor: "text" }],
@@ -107,7 +107,7 @@ describe("useEditing (renderHook)", () => {
       buf,
     );
 
-    act(() => result.current.handleCellDoubleClick({ row: 5, col: 0 }));
+    act(() => result.current.handleCellDoubleClick({ row: 6, col: 0 }));
     expect(result.current.editorManagerRef.current.isEditing).toBe(false);
   });
 
@@ -169,13 +169,13 @@ describe("useEditing (renderHook)", () => {
 
   it("clears selection when editor opens", () => {
     const buf = makeLayoutBuf([
-      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
-      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header (unified row=0)
+      { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data (unified row=1)
     ]);
     const registry = new ColumnRegistry();
     registry.setAll([{ id: "name", width: 100, editor: "text" }] as any);
     const sm = new SelectionManager();
-    sm.start(0, 0);
+    sm.start(1, 0);
     sm.finish();
     expect(sm.hasSelection).toBe(true);
 
@@ -192,7 +192,7 @@ describe("useEditing (renderHook)", () => {
       }),
     );
 
-    act(() => result.current.handleCellDoubleClick({ row: 0, col: 0 }));
+    act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
     expect(sm.hasSelection).toBe(false);
   });
 });

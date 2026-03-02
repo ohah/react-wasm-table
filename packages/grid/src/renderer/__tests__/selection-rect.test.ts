@@ -24,58 +24,56 @@ function buildBuffer(
 }
 
 describe("computeSelectionRect", () => {
-  it("computes bounding rect for a single selected cell", () => {
-    // 2 header cells + 2 data cells
+  it("computes bounding rect for a single selected data cell", () => {
+    // 2 header cells (row=0) + 2 data cells (row=1)
     const buf = buildBuffer([
       { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header
       { row: 0, col: 1, x: 100, y: 0, w: 100, h: 40 }, // header
-      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data
-      { row: 0, col: 1, x: 100, y: 40, w: 100, h: 36 }, // data
+      { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data row 0
+      { row: 1, col: 1, x: 100, y: 40, w: 100, h: 36 }, // data row 0
     ]);
 
     const result = computeSelectionRect(buf, 2, 4, {
-      minRow: 0,
-      maxRow: 0,
+      minRow: 1,
+      maxRow: 1,
       minCol: 0,
       maxCol: 0,
     });
-    // Header col 0 (y:0 h:40) is included → y starts at 0, height covers header+data
-    expect(result).toEqual({ x: 0, y: 0, width: 100, height: 76 });
+    expect(result).toEqual({ x: 0, y: 40, width: 100, height: 36 });
   });
 
   it("computes bounding rect for a multi-cell range", () => {
     const buf = buildBuffer([
       { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header
       { row: 0, col: 1, x: 100, y: 0, w: 100, h: 40 }, // header
-      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data r0c0
-      { row: 0, col: 1, x: 100, y: 40, w: 100, h: 36 }, // data r0c1
-      { row: 1, col: 0, x: 0, y: 76, w: 100, h: 36 }, // data r1c0
-      { row: 1, col: 1, x: 100, y: 76, w: 100, h: 36 }, // data r1c1
+      { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data r0c0
+      { row: 1, col: 1, x: 100, y: 40, w: 100, h: 36 }, // data r0c1
+      { row: 2, col: 0, x: 0, y: 76, w: 100, h: 36 }, // data r1c0
+      { row: 2, col: 1, x: 100, y: 76, w: 100, h: 36 }, // data r1c1
     ]);
 
     const result = computeSelectionRect(buf, 2, 6, {
-      minRow: 0,
-      maxRow: 1,
+      minRow: 1,
+      maxRow: 2,
       minCol: 0,
       maxCol: 1,
     });
-    // Both header cols included → y starts at 0, height covers header+data
-    expect(result).toEqual({ x: 0, y: 0, width: 200, height: 112 });
+    expect(result).toEqual({ x: 0, y: 40, width: 200, height: 72 });
   });
 
   it("ignores cells outside the selection range", () => {
     const buf = buildBuffer([
       { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header
-      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data r0c0
-      { row: 0, col: 1, x: 100, y: 40, w: 100, h: 36 }, // data r0c1
-      { row: 1, col: 0, x: 0, y: 76, w: 100, h: 36 }, // data r1c0
-      { row: 1, col: 1, x: 100, y: 76, w: 100, h: 36 }, // data r1c1
+      { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data r0c0
+      { row: 1, col: 1, x: 100, y: 40, w: 100, h: 36 }, // data r0c1
+      { row: 2, col: 0, x: 0, y: 76, w: 100, h: 36 }, // data r1c0
+      { row: 2, col: 1, x: 100, y: 76, w: 100, h: 36 }, // data r1c1
     ]);
 
-    // Select only r1c1
+    // Select only r1c1 (unified row 2)
     const result = computeSelectionRect(buf, 1, 5, {
-      minRow: 1,
-      maxRow: 1,
+      minRow: 2,
+      maxRow: 2,
       minCol: 1,
       maxCol: 1,
     });
@@ -85,7 +83,7 @@ describe("computeSelectionRect", () => {
   it("returns null when no visible cells in selection", () => {
     const buf = buildBuffer([
       { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header
-      { row: 0, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data r0c0
+      { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data r0c0
     ]);
 
     // Select row 5 which doesn't exist in the buffer
@@ -98,14 +96,15 @@ describe("computeSelectionRect", () => {
     expect(result).toBeNull();
   });
 
-  it("returns null when buffer has only headers", () => {
+  it("returns null when buffer has only headers and selection targets data", () => {
     const buf = buildBuffer([
       { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header
     ]);
 
+    // Select data row 1 (unified) — no data cells in buffer
     const result = computeSelectionRect(buf, 1, 1, {
-      minRow: 0,
-      maxRow: 0,
+      minRow: 1,
+      maxRow: 1,
       minCol: 0,
       maxCol: 0,
     });
@@ -117,19 +116,77 @@ describe("computeSelectionRect", () => {
       { row: 0, col: 0, x: 0, y: 0, w: 80, h: 40 }, // header
       { row: 0, col: 1, x: 80, y: 0, w: 120, h: 40 }, // header
       { row: 0, col: 2, x: 200, y: 0, w: 100, h: 40 }, // header
-      { row: 0, col: 0, x: 0, y: 40, w: 80, h: 36 }, // data
-      { row: 0, col: 1, x: 80, y: 40, w: 120, h: 36 }, // data
-      { row: 0, col: 2, x: 200, y: 40, w: 100, h: 36 }, // data
+      { row: 1, col: 0, x: 0, y: 40, w: 80, h: 36 }, // data
+      { row: 1, col: 1, x: 80, y: 40, w: 120, h: 36 }, // data
+      { row: 1, col: 2, x: 200, y: 40, w: 100, h: 36 }, // data
     ]);
 
-    // Select only col 1..2
+    // Select only col 1..2 of data row 1
+    const result = computeSelectionRect(buf, 3, 6, {
+      minRow: 1,
+      maxRow: 1,
+      minCol: 1,
+      maxCol: 2,
+    });
+    expect(result).toEqual({ x: 80, y: 40, width: 220, height: 36 });
+  });
+
+  // ── Header cell selection tests (unified row=0) ────────────────────
+
+  it("selects a single header cell (row=0)", () => {
+    const buf = buildBuffer([
+      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header
+      { row: 0, col: 1, x: 100, y: 0, w: 100, h: 40 }, // header
+      { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data
+      { row: 1, col: 1, x: 100, y: 40, w: 100, h: 36 }, // data
+    ]);
+
+    const result = computeSelectionRect(buf, 2, 4, {
+      minRow: 0,
+      maxRow: 0,
+      minCol: 0,
+      maxCol: 0,
+    });
+    expect(result).toEqual({ x: 0, y: 0, width: 100, height: 40 });
+  });
+
+  it("selects multiple header cells", () => {
+    const buf = buildBuffer([
+      { row: 0, col: 0, x: 0, y: 0, w: 80, h: 40 }, // header
+      { row: 0, col: 1, x: 80, y: 0, w: 120, h: 40 }, // header
+      { row: 0, col: 2, x: 200, y: 0, w: 100, h: 40 }, // header
+      { row: 1, col: 0, x: 0, y: 40, w: 80, h: 36 }, // data
+      { row: 1, col: 1, x: 80, y: 40, w: 120, h: 36 }, // data
+      { row: 1, col: 2, x: 200, y: 40, w: 100, h: 36 }, // data
+    ]);
+
     const result = computeSelectionRect(buf, 3, 6, {
       minRow: 0,
       maxRow: 0,
       minCol: 1,
       maxCol: 2,
     });
-    // Header col 1 (x:80 h:40) and col 2 (x:200 h:40) included → y starts at 0
-    expect(result).toEqual({ x: 80, y: 0, width: 220, height: 76 });
+    expect(result).toEqual({ x: 80, y: 0, width: 220, height: 40 });
+  });
+
+  it("selects from header through data rows", () => {
+    const buf = buildBuffer([
+      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 }, // header
+      { row: 0, col: 1, x: 100, y: 0, w: 100, h: 40 }, // header
+      { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 }, // data r0c0
+      { row: 1, col: 1, x: 100, y: 40, w: 100, h: 36 }, // data r0c1
+      { row: 2, col: 0, x: 0, y: 76, w: 100, h: 36 }, // data r1c0
+      { row: 2, col: 1, x: 100, y: 76, w: 100, h: 36 }, // data r1c1
+    ]);
+
+    // Selection from header row (0) through data row 2, col 0 only
+    const result = computeSelectionRect(buf, 2, 6, {
+      minRow: 0,
+      maxRow: 2,
+      minCol: 0,
+      maxCol: 0,
+    });
+    // header col0 (y:0,h:40) + data r0c0 (y:40,h:36) + data r1c0 (y:76,h:36)
+    expect(result).toEqual({ x: 0, y: 0, width: 100, height: 112 });
   });
 });

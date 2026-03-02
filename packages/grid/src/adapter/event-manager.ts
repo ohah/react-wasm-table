@@ -223,6 +223,8 @@ export class EventManager {
         ? this.toContentX(this.lastViewportPos.x, cw)
         : this.lastViewportPos.x + this.scrollLeft;
     const y = this.lastViewportPos.y;
+    const headerHit = findCell(x, y, this.headerLayouts);
+    if (headerHit) return headerHit;
     return findCell(x, y, this.rowLayouts) ?? findNearestCell(x, y, this.rowLayouts);
   }
 
@@ -374,6 +376,12 @@ export class EventManager {
         this.mouseDragActive = false;
         this.lastViewportPos = null;
 
+        // Header cell selection (when DnD handler not provided)
+        if (headerHit) {
+          handlers.onCellMouseDown?.(headerHit, e.shiftKey, e, coords);
+          return;
+        }
+
         const rowHit = findCell(x, y, this.rowLayouts);
         if (rowHit) {
           handlers.onCellMouseDown?.(rowHit, e.shiftKey, e, coords);
@@ -430,15 +438,20 @@ export class EventManager {
           if (handlers.onCanvasEvent("mousemove", e, hitTest, coords) === false) return;
         }
 
-        // Exact hit-test for cell under cursor
-        const rowHit = findCell(x, y, this.rowLayouts);
-        if (rowHit) {
-          handlers.onCellMouseMove?.(rowHit, e, coords);
+        // Exact hit-test for cell under cursor (check headers first, then data)
+        const headerHitMove = findCell(x, y, this.headerLayouts);
+        if (headerHitMove) {
+          handlers.onCellMouseMove?.(headerHitMove, e, coords);
         } else {
-          // Mouse is outside cells — use nearest cell for drag extend
-          const nearest = findNearestCell(x, y, this.rowLayouts);
-          if (nearest) {
-            handlers.onCellMouseMove?.(nearest, e, coords);
+          const rowHit = findCell(x, y, this.rowLayouts);
+          if (rowHit) {
+            handlers.onCellMouseMove?.(rowHit, e, coords);
+          } else {
+            // Mouse is outside cells — use nearest cell for drag extend
+            const nearest = findNearestCell(x, y, this.rowLayouts);
+            if (nearest) {
+              handlers.onCellMouseMove?.(nearest, e, coords);
+            }
           }
         }
 
@@ -588,7 +601,8 @@ export class EventManager {
             if (Math.sqrt(dx * dx + dy * dy) < TAP_THRESHOLD) {
               this.touchState.isSelectionDrag = true;
               const lpc = touchToCoords(this.touchState.lastX, this.touchState.lastY);
-              const hit = findCell(lpc.contentX, lpc.contentY, this.rowLayouts);
+              const hdrHit = findCell(lpc.contentX, lpc.contentY, this.headerLayouts);
+              const hit = hdrHit ?? findCell(lpc.contentX, lpc.contentY, this.rowLayouts);
               if (hit) {
                 const native = syntheticMouse(
                   this.touchState.lastX,
@@ -628,7 +642,9 @@ export class EventManager {
           const viewportY = touch.clientY - rect.top;
           this.lastViewportPos = { x: viewportX, y: viewportY };
 
-          const hit =
+          const hdrHitDrag = findCell(coords.contentX, coords.contentY, this.headerLayouts);
+          const hit: CellCoord | null =
+            hdrHitDrag ??
             findCell(coords.contentX, coords.contentY, this.rowLayouts) ??
             findNearestCell(coords.contentX, coords.contentY, this.rowLayouts);
           if (hit) {
@@ -732,6 +748,10 @@ export class EventManager {
             if (headerHit) {
               const native = syntheticMouse(ts.startX, ts.startY);
               handlers.onHeaderClick?.(headerHit.col, native, tapCoords);
+              // Also fire cell selection for header tap
+              const nativeDown = syntheticMouse(ts.startX, ts.startY, "mousedown");
+              handlers.onCellMouseDown?.(headerHit, false, nativeDown, tapCoords);
+              handlers.onCellMouseUp?.();
             } else {
               const rowHit = findCell(x, y, this.rowLayouts);
               if (rowHit) {

@@ -431,6 +431,7 @@ export function useRenderLoop({
         const effectiveRowHeight = meta[8] ?? rowHeight;
         const headerCount = colCount;
         const dataCount = cellCount - headerCount;
+        const headerRowCount = 1;
 
         onVisStartComputed(visStart);
 
@@ -566,7 +567,7 @@ export function useRenderLoop({
         if (ctx) {
           const getInstruction = (cellIdx: number) => {
             const col = columns[readCellCol(layoutBuf, cellIdx)];
-            const actualRow = effectiveViewIndices[readCellRow(layoutBuf, cellIdx)] ?? 0;
+            const actualRow = effectiveViewIndices[readCellRow(layoutBuf, cellIdx) - headerRowCount] ?? 0;
 
             // 1. Td JSX content from Table children (highest priority)
             if (parsedBodyContent) {
@@ -615,7 +616,7 @@ export function useRenderLoop({
             borderConfigMap = new Map<number, CellBorderConfig>();
             for (let i = headerCount; i < cellCount; i++) {
               const col = columns[readCellCol(layoutBuf, i)];
-              const actualRow = effectiveViewIndices[readCellRow(layoutBuf, i)] ?? 0;
+              const actualRow = effectiveViewIndices[readCellRow(layoutBuf, i) - headerRowCount] ?? 0;
 
               // Table path: cell-level style from parsedBorderStyles
               const key = `${String(actualRow)}:${col?.id ?? ""}`;
@@ -675,6 +676,7 @@ export function useRenderLoop({
               ? (input: Float32Array) => engine.computeCompositeLayout!(input)
               : undefined,
             _borderConfigMap: borderConfigMap,
+            _headerRowCount: headerRowCount,
           };
 
           const rowRegions = rowRegionLayout?.regions ?? null;
