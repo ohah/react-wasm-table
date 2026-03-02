@@ -1,17 +1,17 @@
-import { useState, useMemo, useCallback } from "react";
 import {
-	Table,
-	useReactTable,
+	createColumnHelper,
 	flexRender,
 	getCoreRowModel,
-	Thead,
-	Tbody,
-	Tr,
-	Th,
-	Td,
-	createColumnHelper,
+	Table,
 	type TableMeta,
+	Tbody,
+	Td,
+	Th,
+	Thead,
+	Tr,
+	useReactTable,
 } from "@ohah/react-wasm-table";
+import { useCallback, useMemo, useState } from "react";
 
 interface Person {
 	name: string;
@@ -203,6 +203,7 @@ export function TanStackEditing() {
 						Edit Log ({editLog.length}){" "}
 						{editLog.length > 0 && (
 							<button
+								type="button"
 								onClick={clearLog}
 								style={{ fontSize: 12, marginLeft: 8 }}
 							>
@@ -224,8 +225,8 @@ export function TanStackEditing() {
 						{editLog.length === 0 ? (
 							<span style={{ color: "#999" }}>No edits yet</span>
 						) : (
-							editLog.map((log, i) => (
-								<div key={i}>
+							editLog.map((log) => (
+								<div key={log.timestamp}>
 									[{new Date(log.timestamp).toLocaleTimeString()}] row[
 									{log.rowIndex}].
 									{log.columnId} = {JSON.stringify(log.value)}

@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import { Grid, Column, type TableMeta } from "@ohah/react-wasm-table";
+import { Column, Grid, type TableMeta } from "@ohah/react-wasm-table";
+import { useCallback, useMemo, useState } from "react";
 
 interface Person {
 	name: string;
@@ -134,6 +134,7 @@ export function EditingDemo() {
 						Edit Log ({editLog.length}){" "}
 						{editLog.length > 0 && (
 							<button
+								type="button"
 								onClick={clearLog}
 								style={{ fontSize: 12, marginLeft: 8 }}
 							>
@@ -155,8 +156,8 @@ export function EditingDemo() {
 						{editLog.length === 0 ? (
 							<span style={{ color: "#999" }}>No edits yet</span>
 						) : (
-							editLog.map((log, i) => (
-								<div key={i}>
+							editLog.map((log) => (
+								<div key={log.timestamp}>
 									[{new Date(log.timestamp).toLocaleTimeString()}] row[
 									{log.rowIndex}].
 									{log.columnId} = {JSON.stringify(log.value)}
