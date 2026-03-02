@@ -30,564 +30,607 @@ const DEFAULT_HEADER_HEIGHT = 40;
  * Initializes WASM internally — no external WasmProvider needed.
  */
 export function Grid({
-  data,
-  width,
-  height,
-  rowHeight = DEFAULT_ROW_HEIGHT,
-  headerHeight = DEFAULT_HEADER_HEIGHT,
-  theme: themeOverrides,
-  columns: columnsProp,
-  children,
-  // TanStack-compatible sorting
-  sorting: sortingProp,
-  onSortingChange: onSortingChangeProp,
-  // TanStack-compatible filtering
-  columnFilters: columnFiltersProp,
-  onColumnFiltersChange: onColumnFiltersChangeProp,
-  globalFilter: globalFilterProp,
-  onGlobalFilterChange: onGlobalFilterChangeProp,
-  // Column features
-  columnOrder: columnOrderProp,
-  onColumnOrderChange: onColumnOrderChangeProp,
-  columnVisibility: columnVisibilityProp,
-  onColumnVisibilityChange: _onColumnVisibilityChangeProp,
-  columnSizing: columnSizingProp,
-  onColumnSizingChange: onColumnSizingChangeProp,
-  columnPinning: columnPinningProp,
-  onColumnPinningChange: _onColumnPinningChangeProp,
-  enableColumnDnD: enableColumnDnDProp = false,
-  rowPinning: rowPinningProp,
-  onRowPinningChange: onRowPinningChangeProp,
-  getRowId: getRowIdProp,
-  // Event callbacks (enriched events)
-  onCellClick: onCellClickProp,
-  onCellDoubleClick: onCellDoubleClickProp,
-  onHeaderClick: onHeaderClickProp,
-  onKeyDown: onKeyDownProp,
-  onCellMouseDown: onCellMouseDownProp,
-  onCellMouseMove: onCellMouseMoveProp,
-  onCellMouseUp: onCellMouseUpProp,
-  onScroll: onScrollProp,
-  onCanvasEvent: onCanvasEventProp,
-  onContextMenu: onContextMenuProp,
-  onTouchStart: onTouchStartProp,
-  onTouchMove: onTouchMoveProp,
-  onTouchEnd: onTouchEndProp,
-  eventMiddleware: eventMiddlewareProp,
-  cellRenderers: cellRenderersProp,
-  layers: layersProp,
-  onBeforeSortChange,
-  onBeforeSelectionChange,
-  // Selection (controlled/uncontrolled)
-  enableSelection: enableSelectionProp = true,
-  selection: selectionProp,
-  onSelectionChange: onSelectionChangeProp,
-  selectionStyle,
-  onCopy: onCopyProp,
-  onPaste: onPasteProp,
-  // After-draw callback (Step 0-4)
-  onAfterDraw,
-  // Adapter DI (Step 0-5)
-  eventManager: eventManagerProp,
-  selectionManager: selectionManagerProp,
-  editorManager: editorManagerProp,
-  table: tableProp,
-  initialState,
-  // Container flex props
-  display,
-  flexDirection,
-  flexWrap,
-  gap,
-  rowGap,
-  columnGap,
-  alignItems,
-  alignContent,
-  justifyContent,
-  overflowX,
-  overflowY,
-  scrollbarWidth,
-  // Grid container props
-  gridTemplateRows,
-  gridTemplateColumns,
-  gridAutoRows,
-  gridAutoColumns,
-  gridAutoFlow,
-  justifyItems,
-  // Box model props
-  padding,
-  paddingTop,
-  paddingRight,
-  paddingBottom,
-  paddingLeft,
-  margin,
-  marginTop,
-  marginRight,
-  marginBottom,
-  marginLeft,
-  borderWidth,
-  borderTopWidth,
-  borderRightWidth,
-  borderBottomWidth,
-  borderLeftWidth,
-  pagination: paginationProp,
-  viewIndicesRef,
-  engineRef,
-  _parsedBodyContent,
-  _parsedBorderStyles,
-  _onVisibleRangeChange,
+	data,
+	width,
+	height,
+	rowHeight = DEFAULT_ROW_HEIGHT,
+	headerHeight = DEFAULT_HEADER_HEIGHT,
+	theme: themeOverrides,
+	columns: columnsProp,
+	children,
+	// TanStack-compatible sorting
+	sorting: sortingProp,
+	onSortingChange: onSortingChangeProp,
+	// TanStack-compatible filtering
+	columnFilters: columnFiltersProp,
+	onColumnFiltersChange: onColumnFiltersChangeProp,
+	globalFilter: globalFilterProp,
+	onGlobalFilterChange: onGlobalFilterChangeProp,
+	// Column features
+	columnOrder: columnOrderProp,
+	onColumnOrderChange: onColumnOrderChangeProp,
+	columnVisibility: columnVisibilityProp,
+	onColumnVisibilityChange: _onColumnVisibilityChangeProp,
+	columnSizing: columnSizingProp,
+	onColumnSizingChange: onColumnSizingChangeProp,
+	columnPinning: columnPinningProp,
+	onColumnPinningChange: _onColumnPinningChangeProp,
+	enableColumnDnD: enableColumnDnDProp = false,
+	rowPinning: rowPinningProp,
+	onRowPinningChange: onRowPinningChangeProp,
+	getRowId: getRowIdProp,
+	// Event callbacks (enriched events)
+	onCellClick: onCellClickProp,
+	onCellDoubleClick: onCellDoubleClickProp,
+	onHeaderClick: onHeaderClickProp,
+	onKeyDown: onKeyDownProp,
+	onCellMouseDown: onCellMouseDownProp,
+	onCellMouseMove: onCellMouseMoveProp,
+	onCellMouseUp: onCellMouseUpProp,
+	onScroll: onScrollProp,
+	onCanvasEvent: onCanvasEventProp,
+	onContextMenu: onContextMenuProp,
+	onTouchStart: onTouchStartProp,
+	onTouchMove: onTouchMoveProp,
+	onTouchEnd: onTouchEndProp,
+	eventMiddleware: eventMiddlewareProp,
+	cellRenderers: cellRenderersProp,
+	layers: layersProp,
+	onBeforeSortChange,
+	onBeforeSelectionChange,
+	// Selection (controlled/uncontrolled)
+	enableSelection: enableSelectionProp = true,
+	selection: selectionProp,
+	onSelectionChange: onSelectionChangeProp,
+	selectionStyle,
+	onCopy: onCopyProp,
+	onPaste: onPasteProp,
+	// After-draw callback (Step 0-4)
+	onAfterDraw,
+	// Adapter DI (Step 0-5)
+	eventManager: eventManagerProp,
+	selectionManager: selectionManagerProp,
+	editorManager: editorManagerProp,
+	meta: metaProp,
+	editTrigger: editTriggerProp,
+	table: tableProp,
+	initialState,
+	// Container flex props
+	display,
+	flexDirection,
+	flexWrap,
+	gap,
+	rowGap,
+	columnGap,
+	alignItems,
+	alignContent,
+	justifyContent,
+	overflowX,
+	overflowY,
+	scrollbarWidth,
+	// Grid container props
+	gridTemplateRows,
+	gridTemplateColumns,
+	gridAutoRows,
+	gridAutoColumns,
+	gridAutoFlow,
+	justifyItems,
+	// Box model props
+	padding,
+	paddingTop,
+	paddingRight,
+	paddingBottom,
+	paddingLeft,
+	margin,
+	marginTop,
+	marginRight,
+	marginBottom,
+	marginLeft,
+	borderWidth,
+	borderTopWidth,
+	borderRightWidth,
+	borderBottomWidth,
+	borderLeftWidth,
+	pagination: paginationProp,
+	viewIndicesRef,
+	engineRef,
+	_parsedBodyContent,
+	_parsedBorderStyles,
+	_onVisibleRangeChange,
 }: GridProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const vScrollbarRef = useRef<HTMLDivElement>(null);
-  const hScrollbarRef = useRef<HTMLDivElement>(null);
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const editorRef = useRef<HTMLDivElement>(null);
+	const vScrollbarRef = useRef<HTMLDivElement>(null);
+	const hScrollbarRef = useRef<HTMLDivElement>(null);
 
-  // Filtered row count (updated from render loop when viewIndices changes)
-  const viewRowCountRef = useRef(data.length);
-  // Reset when data changes
-  useEffect(() => {
-    viewRowCountRef.current = data.length;
-  }, [data.length]);
+	// Filtered row count (updated from render loop when viewIndices changes)
+	const viewRowCountRef = useRef(data.length);
+	// Reset when data changes
+	useEffect(() => {
+		viewRowCountRef.current = data.length;
+	}, [data.length]);
 
-  const columnRegistry = useMemo(() => new ColumnRegistry(), []);
-  const { engine, memoryBridgeRef } = useWasmEngine({ engineRef });
+	const columnRegistry = useMemo(() => new ColumnRegistry(), []);
+	const { engine, memoryBridgeRef } = useWasmEngine({ engineRef });
 
-  const theme: Theme = useMemo(() => ({ ...DEFAULT_THEME, ...themeOverrides }), [themeOverrides]);
+	const theme: Theme = useMemo(
+		() => ({ ...DEFAULT_THEME, ...themeOverrides }),
+		[themeOverrides],
+	);
 
-  // Sync columns prop → ColumnRegistry (TanStack GridColumnDef[])
-  // Note: data is passed for type inference but not used in resolveColumns body,
-  // so it's excluded from deps to avoid unnecessary re-resolution on data change.
-  useEffect(() => {
-    if (!columnsProp) return;
-    const resolved = resolveColumns(columnsProp, data, {
-      columnOrder: columnOrderProp,
-      columnVisibility: columnVisibilityProp,
-      columnSizing: columnSizingProp,
-      columnPinning: columnPinningProp,
-    });
-    columnRegistry.setAll(resolved);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    columnsProp,
-    columnRegistry,
-    columnOrderProp,
-    columnVisibilityProp,
-    columnSizingProp,
-    columnPinningProp,
-  ]);
+	// Sync columns prop → ColumnRegistry (TanStack GridColumnDef[])
+	// Note: data is passed for type inference but not used in resolveColumns body,
+	// so it's excluded from deps to avoid unnecessary re-resolution on data change.
+	useEffect(() => {
+		if (!columnsProp) return;
+		const resolved = resolveColumns(columnsProp, data, {
+			columnOrder: columnOrderProp,
+			columnVisibility: columnVisibilityProp,
+			columnSizing: columnSizingProp,
+			columnPinning: columnPinningProp,
+		});
+		columnRegistry.setAll(resolved);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		columnsProp,
+		columnRegistry,
+		columnOrderProp,
+		columnVisibilityProp,
+		columnSizingProp,
+		columnPinningProp,
+	]);
 
-  // Build multi-level header groups from column definitions or table instance.
-  // If a table prop is provided, use its header groups directly.
-  // Otherwise build from columnsProp using buildGridColumns + buildHeaderGroups.
-  const headerGroups: GridHeaderGroup[] = useMemo(() => {
-    if (tableProp) {
-      return tableProp.getHeaderGroups();
-    }
-    if (!columnsProp) return [];
-    const noopCallbacks = {
-      onSortingChange: () => {},
-      onColumnFiltersChange: () => {},
-      onColumnVisibilityChange: () => {},
-      onColumnSizingChange: () => {},
-      onColumnSizingInfoChange: () => {},
-      onColumnPinningChange: () => {},
-      onRowPinningChange: () => {},
-      onExpandedChange: () => {},
-      onPaginationChange: () => {},
-      onGroupingChange: () => {},
-    };
-    const state = {
-      sorting: [],
-      columnFilters: [],
-      globalFilter: "",
-      columnVisibility: columnVisibilityProp,
-      columnSizing: columnSizingProp,
-      columnPinning: columnPinningProp,
-    };
-    const allColumns = buildGridColumns(columnsProp, state, noopCallbacks);
-    return buildHeaderGroups(allColumns);
-  }, [columnsProp, tableProp, columnVisibilityProp, columnSizingProp, columnPinningProp]);
+	// Build multi-level header groups from column definitions or table instance.
+	// If a table prop is provided, use its header groups directly.
+	// Otherwise build from columnsProp using buildGridColumns + buildHeaderGroups.
+	const headerGroups: GridHeaderGroup[] = useMemo(() => {
+		if (tableProp) {
+			return tableProp.getHeaderGroups();
+		}
+		if (!columnsProp) return [];
+		const noopCallbacks = {
+			onSortingChange: () => {},
+			onColumnFiltersChange: () => {},
+			onColumnVisibilityChange: () => {},
+			onColumnSizingChange: () => {},
+			onColumnSizingInfoChange: () => {},
+			onColumnPinningChange: () => {},
+			onRowPinningChange: () => {},
+			onExpandedChange: () => {},
+			onPaginationChange: () => {},
+			onGroupingChange: () => {},
+		};
+		const state = {
+			sorting: [],
+			columnFilters: [],
+			globalFilter: "",
+			columnVisibility: columnVisibilityProp,
+			columnSizing: columnSizingProp,
+			columnPinning: columnPinningProp,
+		};
+		const allColumns = buildGridColumns(columnsProp, state, noopCallbacks);
+		return buildHeaderGroups(allColumns);
+	}, [
+		columnsProp,
+		tableProp,
+		columnVisibilityProp,
+		columnSizingProp,
+		columnPinningProp,
+	]);
 
-  const headerRowCount = headerGroups.length || 1;
-  const totalHeaderHeight = headerRowCount * headerHeight;
+	const headerRowCount = headerGroups.length || 1;
+	const totalHeaderHeight = headerRowCount * headerHeight;
 
-  // Shared mutable refs
-  const layoutBufRef = useRef<Float32Array | null>(null);
-  const headerCountRef = useRef(0);
-  const totalCellCountRef = useRef(0);
-  const visStartRef = useRef(0);
+	// Shared mutable refs
+	const layoutBufRef = useRef<Float32Array | null>(null);
+	const headerCountRef = useRef(0);
+	const totalCellCountRef = useRef(0);
+	const visStartRef = useRef(0);
 
-  // invalidateRef bridge: stable callback delegates to useRenderLoop's invalidate (wired below).
-  // Other hooks calling invalidate() before useRenderLoop mounts will no-op safely.
-  // Once useRenderLoop mounts (line below), the bridge is wired and all calls flow through.
-  const invalidateRef = useRef<() => void>(() => {});
-  const invalidate = useCallback(() => invalidateRef.current(), []);
+	// invalidateRef bridge: stable callback delegates to useRenderLoop's invalidate (wired below).
+	// Other hooks calling invalidate() before useRenderLoop mounts will no-op safely.
+	// Once useRenderLoop mounts (line below), the bridge is wired and all calls flow through.
+	const invalidateRef = useRef<() => void>(() => {});
+	const invalidate = useCallback(() => invalidateRef.current(), []);
 
-  // Adapter DI: prefer external prop, lazy-create fallback only when needed
-  const fallbackEventManagerRef = useRef<EventManager | null>(null);
-  const eventManagerRef = useRef<EventManager>(null!);
-  if (eventManagerProp) {
-    eventManagerRef.current = eventManagerProp;
-  } else {
-    if (!fallbackEventManagerRef.current) fallbackEventManagerRef.current = new EventManager();
-    eventManagerRef.current = fallbackEventManagerRef.current;
-  }
-  const {
-    scrollTopRef,
-    scrollLeftRef,
-    handleWheel,
-    handleDragEdge,
-    stopAutoScroll,
-    handleVScrollChange,
-    handleHScrollChange,
-  } = useGridScroll({
-    data,
-    viewRowCountRef,
-    rowHeight,
-    height,
-    headerHeight: totalHeaderHeight,
-    width,
-    columnRegistry,
-    invalidate,
-  });
+	// Adapter DI: prefer external prop, lazy-create fallback only when needed
+	const fallbackEventManagerRef = useRef<EventManager | null>(null);
+	const eventManagerRef = useRef<EventManager>(null!);
+	if (eventManagerProp) {
+		eventManagerRef.current = eventManagerProp;
+	} else {
+		if (!fallbackEventManagerRef.current)
+			fallbackEventManagerRef.current = new EventManager();
+		eventManagerRef.current = fallbackEventManagerRef.current;
+	}
+	const {
+		scrollTopRef,
+		scrollLeftRef,
+		handleWheel,
+		handleDragEdge,
+		stopAutoScroll,
+		handleVScrollChange,
+		handleHScrollChange,
+	} = useGridScroll({
+		data,
+		viewRowCountRef,
+		rowHeight,
+		height,
+		headerHeight: totalHeaderHeight,
+		width,
+		columnRegistry,
+		invalidate,
+	});
 
-  // Hook composition
-  const { sorting, handleHeaderClick } = useSorting({
-    engine,
-    columnRegistry,
-    sortingProp,
-    onSortingChange: onSortingChangeProp,
-    onBeforeSortChange,
-    initialSorting: initialState?.sorting,
-    invalidate,
-  });
-  useFiltering({
-    engine,
-    columnRegistry,
-    columnFiltersProp,
-    globalFilterProp,
-    onColumnFiltersChange: onColumnFiltersChangeProp,
-    onGlobalFilterChange: onGlobalFilterChangeProp,
-    initialColumnFilters: initialState?.columnFilters,
-    initialGlobalFilter: initialState?.globalFilter,
-    invalidate,
-  });
-  // Sync pagination state to WASM engine
-  useEffect(() => {
-    if (!engine) return;
-    if (paginationProp) {
-      engine.setPagination(paginationProp.pageIndex, paginationProp.pageSize);
-    } else {
-      engine.setPagination(undefined, undefined);
-    }
-    invalidate();
-  }, [engine, paginationProp?.pageIndex, paginationProp?.pageSize, invalidate]);
+	// Hook composition
+	const { sorting, handleHeaderClick } = useSorting({
+		engine,
+		columnRegistry,
+		sortingProp,
+		onSortingChange: onSortingChangeProp,
+		onBeforeSortChange,
+		initialSorting: initialState?.sorting,
+		invalidate,
+	});
+	useFiltering({
+		engine,
+		columnRegistry,
+		columnFiltersProp,
+		globalFilterProp,
+		onColumnFiltersChange: onColumnFiltersChangeProp,
+		onGlobalFilterChange: onGlobalFilterChangeProp,
+		initialColumnFilters: initialState?.columnFilters,
+		initialGlobalFilter: initialState?.globalFilter,
+		invalidate,
+	});
+	// Sync pagination state to WASM engine
+	useEffect(() => {
+		if (!engine) return;
+		if (paginationProp) {
+			engine.setPagination(paginationProp.pageIndex, paginationProp.pageSize);
+		} else {
+			engine.setPagination(undefined, undefined);
+		}
+		invalidate();
+	}, [engine, paginationProp?.pageIndex, paginationProp?.pageSize, invalidate]);
 
-  const { stringTableRef } = useDataIngestion({
-    engine,
-    data,
-    columnRegistry,
-    rowHeight,
-    height,
-    headerHeight: totalHeaderHeight,
-    invalidate,
-  });
-  const getMemoryBridge = useCallback(() => memoryBridgeRef.current, []);
-  const getStringTable = useCallback(() => stringTableRef.current, []);
+	const { stringTableRef } = useDataIngestion({
+		engine,
+		data,
+		columnRegistry,
+		rowHeight,
+		height,
+		headerHeight: totalHeaderHeight,
+		invalidate,
+	});
+	const getMemoryBridge = useCallback(() => memoryBridgeRef.current, []);
+	const getStringTable = useCallback(() => stringTableRef.current, []);
 
-  const {
-    selectionManagerRef,
-    handleCellMouseDown,
-    handleCellMouseMove,
-    handleCellMouseUp,
-    handleKeyDown,
-  } = useSelection({
-    canvasRef,
-    enableSelection: enableSelectionProp,
-    selectionProp,
-    onSelectionChange: onSelectionChangeProp,
-    onBeforeSelectionChange,
-    onCopy: onCopyProp,
-    onPaste: onPasteProp,
-    columnRegistry,
-    invalidate,
-    getMemoryBridge,
-    getStringTable,
-    selectionManager: selectionManagerProp,
-  });
-  const { editorManagerRef, handleCellDoubleClick } = useEditing({
-    editorRef,
-    columnRegistry,
-    data,
-    selectionManagerRef,
-    getLayoutBuf: () => layoutBufRef.current,
-    getHeaderCount: () => headerCountRef.current,
-    getTotalCellCount: () => totalCellCountRef.current,
-    editorManager: editorManagerProp,
-  });
+	const {
+		selectionManagerRef,
+		handleCellMouseDown,
+		handleCellMouseMove,
+		handleCellMouseUp,
+		handleKeyDown,
+	} = useSelection({
+		canvasRef,
+		enableSelection: enableSelectionProp,
+		selectionProp,
+		onSelectionChange: onSelectionChangeProp,
+		onBeforeSelectionChange,
+		onCopy: onCopyProp,
+		onPaste: onPasteProp,
+		columnRegistry,
+		invalidate,
+		getMemoryBridge,
+		getStringTable,
+		selectionManager: selectionManagerProp,
+	});
+	const {
+		editorManagerRef,
+		handleCellDoubleClick,
+		handleCellClick,
+		isCellEditable,
+	} = useEditing({
+		editorRef,
+		columnRegistry,
+		data,
+		selectionManagerRef,
+		getLayoutBuf: () => layoutBufRef.current,
+		getHeaderCount: () => headerCountRef.current,
+		getTotalCellCount: () => totalCellCountRef.current,
+		editorManager: editorManagerProp,
+		meta: metaProp,
+		headerRowCount,
+		editTrigger: editTriggerProp,
+	});
 
-  // Mark dirty when columns change
-  useEffect(() => {
-    return columnRegistry.onChange(() => {
-      invalidate();
-    });
-  }, [columnRegistry, invalidate]);
+	// Mark dirty when columns change
+	useEffect(() => {
+		return columnRegistry.onChange(() => {
+			invalidate();
+		});
+	}, [columnRegistry, invalidate]);
 
-  const { handleResizeStart, handleResizeMove, handleResizeEnd, handleResizeHover } =
-    useColumnResize({
-      canvasRef,
-      columnRegistry,
-      columnSizingProp,
-      onColumnSizingChangeProp,
-      invalidate,
-    });
+	const {
+		handleResizeStart,
+		handleResizeMove,
+		handleResizeEnd,
+		handleResizeHover,
+	} = useColumnResize({
+		canvasRef,
+		columnRegistry,
+		columnSizingProp,
+		onColumnSizingChangeProp,
+		invalidate,
+	});
 
-  const columnsForDnD = columnRegistry.getAll();
-  const { dndStateRef, handleHeaderMouseDown, handleColumnDnDMove, handleColumnDnDEnd } =
-    useColumnDnD({
-      enableColumnDnD: enableColumnDnDProp,
-      columnOrder: columnOrderProp,
-      columns: columnsForDnD,
-      onColumnOrderChange: onColumnOrderChangeProp,
-      eventManagerRef,
-      invalidate,
-    });
+	const columnsForDnD = columnRegistry.getAll();
+	const {
+		dndStateRef,
+		handleHeaderMouseDown,
+		handleColumnDnDMove,
+		handleColumnDnDEnd,
+	} = useColumnDnD({
+		enableColumnDnD: enableColumnDnDProp,
+		columnOrder: columnOrderProp,
+		columns: columnsForDnD,
+		onColumnOrderChange: onColumnOrderChangeProp,
+		eventManagerRef,
+		invalidate,
+	});
 
-  useEventAttachment({
-    canvasRef,
-    eventManagerRef,
-    editorManagerRef,
-    table: tableProp,
-    handlers: {
-      handleHeaderClick,
-      handleCellDoubleClick,
-      handleCellMouseDown,
-      handleCellMouseMove,
-      handleCellMouseUp,
-      handleDragEdge,
-      handleWheel,
-      handleKeyDown,
-      stopAutoScroll,
-      handleResizeStart,
-      handleResizeMove,
-      handleResizeEnd,
-      handleResizeHover,
-      handleHeaderMouseDown: enableColumnDnDProp ? handleHeaderMouseDown : undefined,
-      handleColumnDnDMove: enableColumnDnDProp ? handleColumnDnDMove : undefined,
-      handleColumnDnDEnd: enableColumnDnDProp ? handleColumnDnDEnd : undefined,
-    },
-    onCellClick: onCellClickProp,
-    onCellDoubleClick: onCellDoubleClickProp,
-    onHeaderClick: onHeaderClickProp,
-    onKeyDown: onKeyDownProp,
-    onCellMouseDown: onCellMouseDownProp,
-    onCellMouseMove: onCellMouseMoveProp,
-    onCellMouseUp: onCellMouseUpProp,
-    onScroll: onScrollProp,
-    onCanvasEvent: onCanvasEventProp,
-    onContextMenu: onContextMenuProp,
-    onTouchStart: onTouchStartProp,
-    onTouchMove: onTouchMoveProp,
-    onTouchEnd: onTouchEndProp,
-    eventMiddleware: eventMiddlewareProp,
-    rowHeight,
-    headerHeight: totalHeaderHeight,
-    height,
-  });
+	useEventAttachment({
+		canvasRef,
+		eventManagerRef,
+		editorManagerRef,
+		table: tableProp,
+		handlers: {
+			handleHeaderClick,
+			handleCellDoubleClick,
+			handleCellClick,
+			handleCellMouseDown,
+			handleCellMouseMove,
+			handleCellMouseUp,
+			handleDragEdge,
+			handleWheel,
+			handleKeyDown,
+			stopAutoScroll,
+			handleResizeStart,
+			handleResizeMove,
+			handleResizeEnd,
+			handleResizeHover,
+			handleHeaderMouseDown: enableColumnDnDProp
+				? handleHeaderMouseDown
+				: undefined,
+			handleColumnDnDMove: enableColumnDnDProp
+				? handleColumnDnDMove
+				: undefined,
+			handleColumnDnDEnd: enableColumnDnDProp ? handleColumnDnDEnd : undefined,
+			isCellEditable,
+		},
+		onCellClick: onCellClickProp,
+		onCellDoubleClick: onCellDoubleClickProp,
+		onHeaderClick: onHeaderClickProp,
+		onKeyDown: onKeyDownProp,
+		onCellMouseDown: onCellMouseDownProp,
+		onCellMouseMove: onCellMouseMoveProp,
+		onCellMouseUp: onCellMouseUpProp,
+		onScroll: onScrollProp,
+		onCanvasEvent: onCanvasEventProp,
+		onContextMenu: onContextMenuProp,
+		onTouchStart: onTouchStartProp,
+		onTouchMove: onTouchMoveProp,
+		onTouchEnd: onTouchEndProp,
+		eventMiddleware: eventMiddlewareProp,
+		rowHeight,
+		headerHeight: totalHeaderHeight,
+		height,
+	});
 
-  const containerProps = useMemo(
-    () => ({
-      display,
-      flexDirection,
-      flexWrap,
-      gap,
-      rowGap,
-      columnGap,
-      alignItems,
-      alignContent,
-      justifyContent,
-      overflowX,
-      overflowY,
-      scrollbarWidth,
-      padding,
-      paddingTop,
-      paddingRight,
-      paddingBottom,
-      paddingLeft,
-      margin,
-      marginTop,
-      marginRight,
-      marginBottom,
-      marginLeft,
-      borderWidth,
-      borderTopWidth,
-      borderRightWidth,
-      borderBottomWidth,
-      borderLeftWidth,
-      gridTemplateRows,
-      gridTemplateColumns,
-      gridAutoRows,
-      gridAutoColumns,
-      gridAutoFlow,
-      justifyItems,
-    }),
-    [
-      display,
-      flexDirection,
-      flexWrap,
-      gap,
-      rowGap,
-      columnGap,
-      alignItems,
-      alignContent,
-      justifyContent,
-      overflowX,
-      overflowY,
-      scrollbarWidth,
-      padding,
-      paddingTop,
-      paddingRight,
-      paddingBottom,
-      paddingLeft,
-      margin,
-      marginTop,
-      marginRight,
-      marginBottom,
-      marginLeft,
-      borderWidth,
-      borderTopWidth,
-      borderRightWidth,
-      borderBottomWidth,
-      borderLeftWidth,
-      gridTemplateRows,
-      gridTemplateColumns,
-      gridAutoRows,
-      gridAutoColumns,
-      gridAutoFlow,
-      justifyItems,
-    ],
-  );
+	const containerProps = useMemo(
+		() => ({
+			display,
+			flexDirection,
+			flexWrap,
+			gap,
+			rowGap,
+			columnGap,
+			alignItems,
+			alignContent,
+			justifyContent,
+			overflowX,
+			overflowY,
+			scrollbarWidth,
+			padding,
+			paddingTop,
+			paddingRight,
+			paddingBottom,
+			paddingLeft,
+			margin,
+			marginTop,
+			marginRight,
+			marginBottom,
+			marginLeft,
+			borderWidth,
+			borderTopWidth,
+			borderRightWidth,
+			borderBottomWidth,
+			borderLeftWidth,
+			gridTemplateRows,
+			gridTemplateColumns,
+			gridAutoRows,
+			gridAutoColumns,
+			gridAutoFlow,
+			justifyItems,
+		}),
+		[
+			display,
+			flexDirection,
+			flexWrap,
+			gap,
+			rowGap,
+			columnGap,
+			alignItems,
+			alignContent,
+			justifyContent,
+			overflowX,
+			overflowY,
+			scrollbarWidth,
+			padding,
+			paddingTop,
+			paddingRight,
+			paddingBottom,
+			paddingLeft,
+			margin,
+			marginTop,
+			marginRight,
+			marginBottom,
+			marginLeft,
+			borderWidth,
+			borderTopWidth,
+			borderRightWidth,
+			borderBottomWidth,
+			borderLeftWidth,
+			gridTemplateRows,
+			gridTemplateColumns,
+			gridAutoRows,
+			gridAutoColumns,
+			gridAutoFlow,
+			justifyItems,
+		],
+	);
 
-  const onLayoutComputed = useCallback((buf: Float32Array, hc: number, tc: number) => {
-    layoutBufRef.current = buf;
-    headerCountRef.current = hc;
-    totalCellCountRef.current = tc;
-  }, []);
+	const onLayoutComputed = useCallback(
+		(buf: Float32Array, hc: number, tc: number) => {
+			layoutBufRef.current = buf;
+			headerCountRef.current = hc;
+			totalCellCountRef.current = tc;
+		},
+		[],
+	);
 
-  const onVisStartComputed = useCallback((vs: number) => {
-    visStartRef.current = vs;
-  }, []);
+	const onVisStartComputed = useCallback((vs: number) => {
+		visStartRef.current = vs;
+	}, []);
 
-  const { invalidate: renderInvalidate } = useRenderLoop({
-    engine,
-    memoryBridgeRef,
-    canvasRef,
-    columnRegistry,
-    data,
-    stringTableRef,
-    theme,
-    sorting,
-    enableSelection: enableSelectionProp,
-    selectionStyle,
-    selectionManagerRef,
-    eventManagerRef,
-    scrollTopRef,
-    scrollLeftRef,
-    vScrollbarRef,
-    hScrollbarRef,
-    containerProps,
-    viewRowCountRef,
-    width,
-    height,
-    rowHeight,
-    headerHeight: totalHeaderHeight,
-    onLayoutComputed,
-    onVisStartComputed,
-    onAfterDraw,
-    cellRenderers: cellRenderersProp,
-    layers: layersProp,
-    columnPinning: columnPinningProp,
-    viewIndicesRef,
-    headerGroups,
-    enableColumnDnD: enableColumnDnDProp,
-    columnDnDStateRef: dndStateRef,
-    rowPinning: rowPinningProp,
-    getRowId: getRowIdProp,
-    parsedBodyContent: _parsedBodyContent,
-    parsedBorderStyles: _parsedBorderStyles,
-    onVisibleRangeChange: _onVisibleRangeChange,
-  });
-  // Wire the bridge: all hooks using `invalidate` now delegate to useRenderLoop's internal dirtyRef
-  invalidateRef.current = renderInvalidate;
+	const { invalidate: renderInvalidate } = useRenderLoop({
+		engine,
+		memoryBridgeRef,
+		canvasRef,
+		columnRegistry,
+		data,
+		stringTableRef,
+		theme,
+		sorting,
+		enableSelection: enableSelectionProp,
+		selectionStyle,
+		selectionManagerRef,
+		eventManagerRef,
+		scrollTopRef,
+		scrollLeftRef,
+		vScrollbarRef,
+		hScrollbarRef,
+		containerProps,
+		viewRowCountRef,
+		width,
+		height,
+		rowHeight,
+		headerHeight: totalHeaderHeight,
+		onLayoutComputed,
+		onVisStartComputed,
+		onAfterDraw,
+		cellRenderers: cellRenderersProp,
+		layers: layersProp,
+		columnPinning: columnPinningProp,
+		viewIndicesRef,
+		headerGroups,
+		enableColumnDnD: enableColumnDnDProp,
+		columnDnDStateRef: dndStateRef,
+		rowPinning: rowPinningProp,
+		getRowId: getRowIdProp,
+		parsedBodyContent: _parsedBodyContent,
+		parsedBorderStyles: _parsedBorderStyles,
+		onVisibleRangeChange: _onVisibleRangeChange,
+	});
+	// Wire the bridge: all hooks using `invalidate` now delegate to useRenderLoop's internal dirtyRef
+	invalidateRef.current = renderInvalidate;
 
-  // Scrollbar visibility
-  const totalContentHeight = data.length * rowHeight + totalHeaderHeight;
-  const needsVerticalScroll = totalContentHeight > height;
+	// Scrollbar visibility
+	const totalContentHeight = data.length * rowHeight + totalHeaderHeight;
+	const needsVerticalScroll = totalContentHeight > height;
 
-  const columns = columnRegistry.getAll();
-  const totalContentWidth = columns.reduce(
-    (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
-    0,
-  );
-  const needsHorizontalScroll = totalContentWidth > width;
+	const columns = columnRegistry.getAll();
+	const totalContentWidth = columns.reduce(
+		(sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
+		0,
+	);
+	const needsHorizontalScroll = totalContentWidth > width;
 
-  const showVerticalScrollbar =
-    overflowY === "scroll" ||
-    (overflowY === "auto" && needsVerticalScroll) ||
-    (overflowY === undefined && needsVerticalScroll);
+	const showVerticalScrollbar =
+		overflowY === "scroll" ||
+		(overflowY === "auto" && needsVerticalScroll) ||
+		(overflowY === undefined && needsVerticalScroll);
 
-  const showHorizontalScrollbar =
-    overflowX === "scroll" ||
-    (overflowX === "auto" && needsHorizontalScroll) ||
-    (overflowX === undefined && needsHorizontalScroll);
+	const showHorizontalScrollbar =
+		overflowX === "scroll" ||
+		(overflowX === "auto" && needsHorizontalScroll) ||
+		(overflowX === undefined && needsHorizontalScroll);
 
-  return (
-    <GridContext.Provider value={{ columnRegistry }}>
-      <div
-        style={{
-          position: "relative",
-          width,
-          height,
-          overflow: "hidden",
-        }}
-      >
-        <canvas
-          ref={canvasRef}
-          data-grid-canvas
-          style={{ display: "block", touchAction: "none", width, height }}
-        />
-        <div
-          ref={editorRef}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            pointerEvents: "none",
-          }}
-        />
-        {showVerticalScrollbar && (
-          <ScrollBar
-            ref={vScrollbarRef}
-            orientation="vertical"
-            contentSize={totalContentHeight}
-            viewportSize={height}
-            onScrollChange={handleVScrollChange}
-            style={showHorizontalScrollbar ? { height: `calc(100% - 17px)` } : undefined}
-          />
-        )}
-        {showHorizontalScrollbar && (
-          <ScrollBar
-            ref={hScrollbarRef}
-            orientation="horizontal"
-            contentSize={totalContentWidth}
-            viewportSize={width}
-            onScrollChange={handleHScrollChange}
-            style={showVerticalScrollbar ? { width: `calc(100% - 17px)` } : undefined}
-          />
-        )}
-        {!columnsProp && children}
-      </div>
-    </GridContext.Provider>
-  );
+	return (
+		<GridContext.Provider value={{ columnRegistry }}>
+			<div
+				style={{
+					position: "relative",
+					width,
+					height,
+					overflow: "hidden",
+				}}
+			>
+				<canvas
+					ref={canvasRef}
+					data-grid-canvas
+					style={{ display: "block", touchAction: "none", width, height }}
+				/>
+				<div
+					ref={editorRef}
+					style={{
+						position: "absolute",
+						top: 0,
+						left: 0,
+						width: "100%",
+						height: "100%",
+						pointerEvents: "none",
+					}}
+				/>
+				{showVerticalScrollbar && (
+					<ScrollBar
+						ref={vScrollbarRef}
+						orientation="vertical"
+						contentSize={totalContentHeight}
+						viewportSize={height}
+						onScrollChange={handleVScrollChange}
+						style={
+							showHorizontalScrollbar
+								? { height: `calc(100% - 17px)` }
+								: undefined
+						}
+					/>
+				)}
+				{showHorizontalScrollbar && (
+					<ScrollBar
+						ref={hScrollbarRef}
+						orientation="horizontal"
+						contentSize={totalContentWidth}
+						viewportSize={width}
+						onScrollChange={handleHScrollChange}
+						style={
+							showVerticalScrollbar ? { width: `calc(100% - 17px)` } : undefined
+						}
+					/>
+				)}
+				{!columnsProp && children}
+			</div>
+		</GridContext.Provider>
+	);
 }
