@@ -97,6 +97,14 @@ export interface TableProps extends BoxModelProps {
   /** When to open the cell editor: "click" (single) or "dblclick" (double). @default "dblclick" */
   editTrigger?: "click" | "dblclick";
 
+  // Streaming (infinite scroll)
+  /** Total row count. When set, enables streaming mode. */
+  totalCount?: number;
+  /** Called when the viewport approaches unloaded rows. */
+  onFetchMore?: (startIndex: number, count: number) => void;
+  /** Number of rows to fetch ahead of the visible area. @default 100 */
+  fetchAhead?: number;
+
   // Adapter DI
   eventManager?: EventManager;
   selectionManager?: SelectionManager;

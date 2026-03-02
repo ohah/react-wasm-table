@@ -77,6 +77,7 @@ import {
   TanStackTdContent,
   TanStackExpanding,
   TanStackEditing,
+  TanStackStreaming,
 } from "./pages/tanstack";
 import { FpsCounter } from "./components/FpsCounter";
 
@@ -118,6 +119,7 @@ export function App() {
           <Route path="/tanstack/td-content" element={<TanStackTdContent />} />
           <Route path="/tanstack/expanding" element={<TanStackExpanding />} />
           <Route path="/tanstack/editing" element={<TanStackEditing />} />
+          <Route path="/tanstack/streaming" element={<TanStackStreaming />} />
           {/* Canvas / Flex / Box — TanStack route uses same component (identical demo) */}
           <Route path="/tanstack/canvas-components" element={<CanvasComponents />} />
           <Route path="/tanstack/canvas-text" element={<CanvasText />} />

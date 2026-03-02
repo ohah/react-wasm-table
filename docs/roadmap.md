@@ -406,6 +406,7 @@ const handleFetchMore = useCallback((startIndex: number, count: number) => {
 - **String intern table 병합**: WASM 측에서 기존 intern table에 새 문자열 병합 + ID 리매핑
 - **useDataIngestion 분기**: data 성장 → append 경로, 컬럼 변경/축소 → 전체 재적재
 - **columnTypes 캐싱**: 최초 ingest 시 결정된 타입을 재사용 (all-null batch의 타입 오분류 방지)
+- **데모**: Grid API (`StreamingDemo.tsx`) + TanStack API (`tanstack/Streaming.tsx`) — 동일 스트리밍 시나리오를 두 API로 비교
 - Phase 3: incremental index patch, intern GC, random access, sparse data
 
 ### 5-3. Layout Cache
