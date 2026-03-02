@@ -16,7 +16,7 @@
 | DOM overlay (editorRef)          | ✅   | absolute positioned div, input에 pointerEvents: auto         |
 | EventManager 더블클릭            | ✅   | hit-test → onCellDoubleClick 발화                            |
 | 클릭/드래그 시 에디터 커밋       | ✅   | onCanvasEvent("mousedown")에서 commit() 호출                 |
-| Column.editor prop               | ✅   | `"text" \| "number" \| "select"` (select 미구현)             |
+| Column.editor prop               | ✅   | `"text" \| "number" \| "select"` (built-in React 에디터)     |
 | editorManager DI                 | ✅   | GridProps.editorManager로 외부 주입 가능 (테스트용)          |
 | meta.updateData 파이프라인       | ✅   | EditorManager.onCommit → use-editing → meta.updateData       |
 | Tab/Shift+Tab 네비게이션         | ✅   | EditorManager.onNavigate → 다음/이전 editable 셀 자동 이동   |
