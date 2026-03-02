@@ -833,6 +833,18 @@ export interface WasmTableEngine {
   ingestStringColumn(colIdx: number, uniqueStrings: string[], ids: Uint32Array): void;
   finalizeColumnar(): void;
 
+  // Streaming append (Phase 2) — incremental data ingestion
+  beginAppendColumnar?(newRowCount: number): void;
+  appendFloat64Column?(colIdx: number, offset: number, values: Float64Array): void;
+  appendBoolColumn?(colIdx: number, offset: number, values: Float64Array): void;
+  appendStringColumn?(
+    colIdx: number,
+    offset: number,
+    uniqueStrings: string[],
+    ids: Uint32Array,
+  ): void;
+  finalizeAppendColumnar?(): void;
+
   // Hot path — single WASM call per frame
   rebuildView?: () => void;
   updateViewportColumnar(

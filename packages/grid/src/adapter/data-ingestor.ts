@@ -82,12 +82,13 @@ export function buildStringColumn(
 /**
  * Full ingestion orchestrator: classify → build typed arrays → push to WASM engine.
  * Bypasses serde for numeric and boolean columns.
+ * Returns the classified column types for caching.
  */
 export function ingestData(
   engine: WasmTableEngine,
   data: Record<string, unknown>[],
   columnIds: string[],
-): void {
+): ColumnDataType[] {
   const types = classifyColumns(data, columnIds);
   const colCount = columnIds.length;
   const rowCount = data.length;
@@ -116,4 +117,49 @@ export function ingestData(
   }
 
   engine.finalizeColumnar();
+  return types;
+}
+
+/**
+ * Incremental append: only process rows from startIndex onward.
+ * Uses cached columnTypes from the initial ingest to avoid misclassification
+ * on all-null batches.
+ */
+export function appendData(
+  engine: WasmTableEngine,
+  data: Record<string, unknown>[],
+  columnIds: string[],
+  startIndex: number,
+  columnTypes: ColumnDataType[],
+): void {
+  const newCount = data.length - startIndex;
+  if (newCount <= 0) return;
+  if (!engine.beginAppendColumnar) return;
+
+  const newRows = data.slice(startIndex);
+
+  engine.beginAppendColumnar(newCount);
+
+  for (let i = 0; i < columnIds.length; i++) {
+    const colId = columnIds[i]!;
+    switch (columnTypes[i]) {
+      case "float64": {
+        const values = buildFloat64Column(newRows, colId);
+        engine.appendFloat64Column!(i, startIndex, values);
+        break;
+      }
+      case "bool": {
+        const values = buildBoolColumn(newRows, colId);
+        engine.appendBoolColumn!(i, startIndex, values);
+        break;
+      }
+      case "string": {
+        const [unique, ids] = buildStringColumn(newRows, colId);
+        engine.appendStringColumn!(i, startIndex, unique, ids);
+        break;
+      }
+    }
+  }
+
+  engine.finalizeAppendColumnar!();
 }

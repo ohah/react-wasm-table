@@ -97,6 +97,47 @@ impl TableEngine {
         self.columnar.finalize();
     }
 
+    // ── Incremental append (streaming Phase 2) ────────────────────────
+
+    /// Begin appending rows (does not clear existing data).
+    #[wasm_bindgen(js_name = beginAppendColumnar)]
+    pub fn begin_append_columnar(&mut self, new_row_count: usize) {
+        self.columnar.begin_append(new_row_count);
+    }
+
+    /// Append Float64 values starting at offset.
+    #[wasm_bindgen(js_name = appendFloat64Column)]
+    pub fn append_float64_column(&mut self, col_idx: usize, offset: usize, values: &[f64]) {
+        self.columnar.append_column_float64(col_idx, offset, values);
+    }
+
+    /// Append Bool values (as f64) starting at offset.
+    #[wasm_bindgen(js_name = appendBoolColumn)]
+    pub fn append_bool_column(&mut self, col_idx: usize, offset: usize, values: &[f64]) {
+        self.columnar.append_column_bool(col_idx, offset, values);
+    }
+
+    /// Append String column with intern table merge.
+    #[wasm_bindgen(js_name = appendStringColumn)]
+    pub fn append_string_column(
+        &mut self,
+        col_idx: usize,
+        offset: usize,
+        unique_strings: JsValue,
+        ids: &[u32],
+    ) -> Result<(), JsError> {
+        let unique: Vec<String> = serde_wasm_bindgen::from_value(unique_strings)?;
+        self.columnar
+            .append_column_strings(col_idx, offset, &unique, ids);
+        Ok(())
+    }
+
+    /// Finalize append (marks view dirty).
+    #[wasm_bindgen(js_name = finalizeAppendColumnar)]
+    pub fn finalize_append_columnar(&mut self) {
+        self.columnar.finalize_append();
+    }
+
     // ── Hot path ──────────────────────────────────────────────────────
 
     /// Set sort configuration on the columnar store.
