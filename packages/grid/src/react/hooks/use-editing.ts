@@ -1,17 +1,17 @@
-import { useRef, useEffect, useCallback } from "react";
-import type { CellCoord, CellLayout, TableMeta } from "../../types";
+import { useCallback, useEffect, useRef } from "react";
 import type { ColumnRegistry } from "../../adapter/column-registry";
-import type { SelectionManager } from "../../adapter/selection-manager";
 import { EditorManager } from "../../adapter/editor-manager";
 import {
-	readCellRow,
+	readCellAlign,
 	readCellCol,
+	readCellHeight,
+	readCellRow,
+	readCellWidth,
 	readCellX,
 	readCellY,
-	readCellWidth,
-	readCellHeight,
-	readCellAlign,
 } from "../../adapter/layout-reader";
+import type { SelectionManager } from "../../adapter/selection-manager";
+import type { CellCoord, CellLayout, TableMeta } from "../../types";
 
 export interface UseEditingParams {
 	editorRef: React.RefObject<HTMLDivElement | null>;

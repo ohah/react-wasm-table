@@ -1,6 +1,5 @@
 import { describe, expect, it, mock } from "bun:test";
 import { renderHook } from "@testing-library/react";
-import { useEventAttachment } from "../hooks/use-event-attachment";
 import { EditorManager } from "../../adapter/editor-manager";
 import type { EventCoords } from "../../adapter/event-manager";
 import type {
@@ -8,6 +7,7 @@ import type {
 	GridHeaderEvent,
 	GridKeyboardEvent,
 } from "../../types";
+import { useEventAttachment } from "../hooks/use-event-attachment";
 
 /** Minimal EventManager mock that records attach/detach calls. */
 function makeMockEventManager() {
