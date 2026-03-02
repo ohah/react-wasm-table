@@ -592,7 +592,7 @@ export interface ColumnProps extends BoxModelProps {
   /** Custom editor render function. Takes precedence over `editor` when both are set. */
   editCell?: (props: CellEditRenderProps) => React.ReactNode;
   /** Editor options (e.g. dropdown options for select editor). */
-  editorOptions?: { options: { label: string; value: unknown }[] };
+  editorOptions?: Record<string, unknown>;
   /** Original TanStack cell definition (string or function). Resolved with real row data in render loop. */
   cellDef?: string | ((info: any) => unknown);
   /** Reference to the original column definition (for CellContext.column.columnDef). */

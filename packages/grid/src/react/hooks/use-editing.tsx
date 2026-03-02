@@ -28,7 +28,7 @@ interface EditorState {
   editorType: string;
   currentValue: unknown;
   editCell?: (props: CellEditRenderProps) => React.ReactNode;
-  editorOptions?: { options: { label: string; value: unknown }[] };
+  editorOptions?: Record<string, unknown>;
   initialChar: string | null;
 }
 
@@ -157,6 +157,9 @@ export function useEditing({
   const openEditorAtRef = useRef(openEditorAt);
   openEditorAtRef.current = openEditorAt;
 
+  // pendingOpen: coord stored here will be opened once the layout buffer updates
+  const pendingOpenRef = useRef<CellCoord | null>(null);
+
   // Wire onStateChange to sync React state
   useEffect(() => {
     const em = editorManagerRef.current;
@@ -231,14 +234,10 @@ export function useEditing({
       const dataRowIndex = target.row - hrc;
       const scrollFn = scrollToRowRef.current;
       if (scrollFn) {
+        // Store target and scroll — the editor will open once the layout buffer
+        // is recomputed (flushPendingOpen is called from onLayoutComputed).
+        pendingOpenRef.current = target;
         scrollFn(dataRowIndex);
-        // Render loop runs on rAF and updates layout buffer.
-        // Wait two frames: first for render loop to process, second to read updated buffer.
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            openEditorAtRef.current(target);
-          });
-        });
       } else {
         openEditorAtRef.current(target);
       }
@@ -306,6 +305,15 @@ export function useEditing({
     [isCellEditable, openEditorAt, selectionManagerRef],
   );
 
+  /** Called when the layout buffer is recomputed. Opens the pending editor if any. */
+  const flushPendingOpen = useCallback(() => {
+    const target = pendingOpenRef.current;
+    if (target) {
+      pendingOpenRef.current = null;
+      openEditorAt(target);
+    }
+  }, [openEditorAt]);
+
   // Build editor portal
   let editorPortal: React.ReactNode = null;
   if (editorState && editorRef.current) {
@@ -325,7 +333,7 @@ export function useEditing({
         layout,
         initialChar,
       });
-    } else if (editorType === "select" && editorOptions?.options) {
+    } else if (editorType === "select" && Array.isArray(editorOptions?.options)) {
       editorElement = (
         <SelectEditor
           value={currentValue}
@@ -333,7 +341,7 @@ export function useEditing({
           onCancel={cancelCb}
           onCommitAndNavigate={commitAndNavCb}
           layout={layout}
-          options={editorOptions.options}
+          options={editorOptions.options as { label: string; value: unknown }[]}
         />
       );
     } else if (editorType === "number") {
@@ -370,6 +378,7 @@ export function useEditing({
     isCellEditable,
     editorPortal,
     handleTypingKeyDown,
+    flushPendingOpen,
   };
 }
 

@@ -1,12 +1,7 @@
 import { describe, expect, it, mock, beforeEach } from "bun:test";
 import { render, fireEvent } from "@testing-library/react";
 import type { CellLayout } from "../../types";
-import {
-  TextEditor,
-  NumberEditor,
-  SelectEditor,
-  editorStyle,
-} from "../editors/built-in-editors";
+import { TextEditor, NumberEditor, SelectEditor, editorStyle } from "../editors/built-in-editors";
 
 const layout: CellLayout = {
   row: 1,
@@ -17,8 +12,6 @@ const layout: CellLayout = {
   height: 36,
   contentAlign: "left",
 };
-
-function noop() {}
 
 describe("editorStyle", () => {
   it("maps layout to CSS properties", () => {
