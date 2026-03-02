@@ -292,6 +292,7 @@ export type {
   Theme,
   ColumnProps,
   GridProps,
+  TableMeta,
   WasmTableEngine,
   // Event types
   GridEventBase,

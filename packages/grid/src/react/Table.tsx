@@ -6,6 +6,7 @@ import { resolveInstruction } from "../resolve-instruction";
 import type { CellBorderStyleProps } from "./table-components";
 import type {
   TableCellContent,
+  TableMeta,
   Theme,
   BoxModelProps,
   SelectionStyle,
@@ -90,6 +91,11 @@ export interface TableProps extends BoxModelProps {
 
   // Column DnD
   enableColumnDnD?: boolean;
+
+  /** TanStack-compatible meta object. Use meta.updateData to commit cell edits. */
+  meta?: TableMeta;
+  /** When to open the cell editor: "click" (single) or "dblclick" (double). @default "dblclick" */
+  editTrigger?: "click" | "dblclick";
 
   // Adapter DI
   eventManager?: EventManager;
