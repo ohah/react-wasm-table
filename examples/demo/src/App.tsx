@@ -52,6 +52,7 @@ import { TableApiDemo } from "./pages/TableApiDemo";
 import { BorderStyleDemo } from "./pages/BorderStyleDemo";
 import { EditingDemo } from "./pages/EditingDemo";
 import { GroupedColumnsDemo } from "./pages/GroupedColumnsDemo";
+import { StreamingDemo } from "./pages/StreamingDemo";
 import {
   TanStackColumnPinning,
   TanStackHome,
@@ -187,6 +188,7 @@ export function App() {
           <Route path="/border-style" element={<BorderStyleDemo />} />
           <Route path="/editing" element={<EditingDemo />} />
           <Route path="/grouped-columns" element={<GroupedColumnsDemo />} />
+          <Route path="/streaming" element={<StreamingDemo />} />
           <Route path="/tanstack/grouped-columns" element={<GroupedColumnsDemo />} />
         </Routes>
       </main>

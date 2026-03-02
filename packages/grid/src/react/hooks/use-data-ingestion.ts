@@ -27,6 +27,7 @@ export function useDataIngestion({
 }: UseDataIngestionParams) {
   const stringTableRef = useRef(new StringTable());
   const prevColumnKeyRef = useRef("");
+  const prevDataLenRef = useRef(0);
 
   useEffect(() => {
     if (!engine) return;
@@ -38,7 +39,14 @@ export function useDataIngestion({
       prevColumnKeyRef.current = columnIds.join("\0");
       ingestData(engine, data, columnIds);
       engine.setColumnarScrollConfig(rowHeight, height - headerHeight, OVERSCAN);
-      stringTableRef.current.populate(data, columnIds);
+
+      // Streaming optimization: use append for incremental data growth
+      if (prevDataLenRef.current > 0 && data.length > prevDataLenRef.current) {
+        stringTableRef.current.append(data, columnIds, prevDataLenRef.current);
+      } else {
+        stringTableRef.current.populate(data, columnIds);
+      }
+      prevDataLenRef.current = data.length;
       invalidate();
     };
 
