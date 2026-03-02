@@ -21,3 +21,4 @@ export { TanStackTouchEvents } from "./TouchEvents";
 export { TanStackTdContent } from "./TdContent";
 export { TanStackExpanding } from "./Expanding";
 export { TanStackEditing } from "./Editing";
+export { TanStackStreaming } from "./Streaming";

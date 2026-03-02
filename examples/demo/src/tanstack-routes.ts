@@ -25,6 +25,7 @@ export const BASE_TO_TANSTACK: Record<string, string> = {
   "/layers": "/tanstack/layers",
   "/expanding": "/tanstack/expanding",
   "/editing": "/tanstack/editing",
+  "/streaming": "/tanstack/streaming",
   // Canvas
   "/canvas-components": "/tanstack/canvas-components",
   "/canvas-text": "/tanstack/canvas-text",
