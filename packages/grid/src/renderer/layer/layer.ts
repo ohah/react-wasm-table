@@ -5,6 +5,7 @@ import type {
   NormalizedRange,
   SelectionStyle,
   RenderInstruction,
+  CellBorderConfig,
 } from "../../types";
 import type { CanvasRenderer } from "../canvas";
 import type { CellRendererRegistry } from "../components";
@@ -57,6 +58,7 @@ export interface InternalLayerContext extends LayerContext {
   _selection: NormalizedRange | null;
   _selectionStyle?: SelectionStyle;
   _computeChildLayout?: (input: Float32Array) => Float32Array;
+  _borderConfigMap?: Map<number, CellBorderConfig>;
 }
 
 // ── Built-in layer factories ────────────────────────────────────────────
@@ -107,6 +109,7 @@ export function gridLinesLayer(): GridLayer {
     name: "gridLines",
     space: "content",
     draw(context: LayerContext) {
+      const ctx = context as InternalLayerContext;
       context.renderer.drawGridLinesFromBuffer(
         context.layoutBuf,
         context.headerCount,
@@ -114,6 +117,7 @@ export function gridLinesLayer(): GridLayer {
         context.theme,
         context.headerHeight,
         context.rowHeight,
+        ctx._borderConfigMap,
       );
     },
   };
