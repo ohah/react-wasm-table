@@ -99,6 +99,26 @@ export function useGridScroll({
     [invalidate],
   );
 
+  /** Scroll so that the given data row (0-based) is visible in the viewport. */
+  const scrollToRow = useCallback(
+    (dataRowIndex: number) => {
+      const cellTop = dataRowIndex * rowHeight;
+      const cellBottom = cellTop + rowHeight;
+      const viewportHeight = height - headerHeight;
+      const maxScrollY = Math.max(0, viewRowCountRef.current * rowHeight - viewportHeight);
+      const scrollTop = scrollTopRef.current;
+
+      if (cellTop < scrollTop) {
+        scrollTopRef.current = Math.max(0, Math.min(maxScrollY, cellTop));
+        invalidate();
+      } else if (cellBottom > scrollTop + viewportHeight) {
+        scrollTopRef.current = Math.max(0, Math.min(maxScrollY, cellBottom - viewportHeight));
+        invalidate();
+      }
+    },
+    [rowHeight, height, headerHeight, viewRowCountRef, invalidate],
+  );
+
   return {
     scrollTopRef,
     scrollLeftRef,
@@ -107,5 +127,6 @@ export function useGridScroll({
     stopAutoScroll,
     handleVScrollChange,
     handleHScrollChange,
+    scrollToRow,
   };
 }

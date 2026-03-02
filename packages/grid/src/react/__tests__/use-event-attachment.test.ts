@@ -266,12 +266,10 @@ describe("useEventAttachment (renderHook)", () => {
       expect(handlers.stopAutoScroll).toHaveBeenCalledTimes(1);
     });
 
-    it("mouseDown commits active editor via onCanvasEvent", () => {
+    it("mouseDown cancels active editor via onCanvasEvent", () => {
       const em = makeMockEventManager();
       const handlers = makeMockHandlers();
       const editorManager = new EditorManager();
-      const container = document.createElement("div");
-      editorManager.setContainer(container);
       editorManager.open(
         { row: 0, col: 0 },
         {
@@ -317,8 +315,6 @@ describe("useEventAttachment (renderHook)", () => {
       const em = makeMockEventManager();
       const handlers = makeMockHandlers();
       const editorManager = new EditorManager();
-      const container = document.createElement("div");
-      editorManager.setContainer(container);
       editorManager.open(
         { row: 0, col: 0 },
         {

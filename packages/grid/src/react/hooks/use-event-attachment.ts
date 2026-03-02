@@ -53,6 +53,7 @@ export interface UseEventAttachmentParams {
     handleColumnDnDMove?: (viewportX: number, contentX: number) => void;
     handleColumnDnDEnd?: () => void;
     isCellEditable?: (coord: CellCoord) => boolean;
+    handleTypingKeyDown?: (e: KeyboardEvent) => void;
   };
   onCellClick?: (event: GridCellEvent) => void;
   onCellDoubleClick?: (event: GridCellEvent) => void;
@@ -113,6 +114,7 @@ export function useEventAttachment({
   const onTouchEndRef = useRef(onTouchEnd);
   const middlewareRef = useRef(eventMiddleware);
   const isCellEditableRef = useRef(handlers.isCellEditable);
+  const handleTypingKeyDownRef = useRef(handlers.handleTypingKeyDown);
   onCellClickRef.current = onCellClick;
   onCellDoubleClickRef.current = onCellDoubleClick;
   onHeaderClickRef.current = onHeaderClick;
@@ -128,6 +130,7 @@ export function useEventAttachment({
   onTouchEndRef.current = onTouchEnd;
   middlewareRef.current = eventMiddleware;
   isCellEditableRef.current = handlers.isCellEditable;
+  handleTypingKeyDownRef.current = handlers.handleTypingKeyDown;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -206,9 +209,14 @@ export function useEventAttachment({
             onKeyDownRef.current?.(event);
             if (event.defaultPrevented) return;
             handlers.handleKeyDown(e);
+            handleTypingKeyDownRef.current?.(e);
           });
         },
         onScroll: (deltaY, deltaX, native) => {
+          // Cancel editor on scroll (Step 3 #2)
+          if (editorManagerRef.current.isEditing) {
+            editorManagerRef.current.cancel();
+          }
           const event = createGridScrollEvent(deltaY, deltaX, native);
           dispatch("scroll", event, () => {
             onScrollRef.current?.(event);
@@ -235,11 +243,11 @@ export function useEventAttachment({
         onColumnDnDMove: handlers.handleColumnDnDMove,
         onColumnDnDEnd: handlers.handleColumnDnDEnd,
         onCanvasEvent: (type, native, hitTest, coords) => {
-          // Commit active editor on any mousedown on the canvas
+          // Cancel active editor on any mousedown on the canvas
           // (covers empty area, header DnD zone, resize handle — all paths
           // that don't route through onCellMouseDown).
           if (type === "mousedown" && editorManagerRef.current.isEditing) {
-            editorManagerRef.current.commit();
+            editorManagerRef.current.cancel();
           }
           const event = createGridCanvasEvent(type, native, hitTest, coords);
           dispatch("canvasEvent", event, () => {
