@@ -241,6 +241,8 @@ impl TableEngine {
         let total_count = self.columnar.row_count;
         let col_count = columns.len();
 
+        let header_row_count: usize = 1;
+
         if pinned_top > 0 || pinned_bottom > 0 {
             // Row pinning path: three segments (top, middle visible, bottom)
             let scroll_state = react_wasm_table_core::virtual_scroll::ScrollState {
@@ -274,6 +276,7 @@ impl TableEngine {
                 scroll_top: scroll_top as f32,
                 total_rows: filtered_count,
                 middle_range,
+                header_row_count,
             };
             self.layout_cell_count = self.layout.compute_into_buffer_row_pinned(
                 &columns,
@@ -323,6 +326,7 @@ impl TableEngine {
                 &container,
                 virtual_slice.start_index..virtual_slice.end_index,
                 &mut self.layout_buf,
+                header_row_count,
             );
 
             Ok(vec![

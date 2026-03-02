@@ -129,7 +129,8 @@ describe("parseClipboardText", () => {
 describe("copyToClipboard", () => {
   it("returns TSV by default", () => {
     const table = makeTable();
-    const out = copyToClipboard(table, { minRow: 0, maxRow: 1, minCol: 0, maxCol: 2 });
+    // Unified indexing: data rows start at 1 (header=0)
+    const out = copyToClipboard(table, { minRow: 1, maxRow: 2, minCol: 0, maxCol: 2 });
     expect(out).toBe("Alice\t30\tactive\nBob\t25\tinactive");
   });
 
@@ -137,7 +138,7 @@ describe("copyToClipboard", () => {
     const table = makeTable();
     const out = copyToClipboard(
       table,
-      { minRow: 0, maxRow: 0, minCol: 0, maxCol: 2 },
+      { minRow: 1, maxRow: 1, minCol: 0, maxCol: 2 },
       { format: "csv" },
     );
     expect(out).toBe("Alice,30,active");
@@ -147,7 +148,7 @@ describe("copyToClipboard", () => {
     const table = makeTable();
     const out = copyToClipboard(
       table,
-      { minRow: 0, maxRow: 0, minCol: 0, maxCol: 1 },
+      { minRow: 1, maxRow: 1, minCol: 0, maxCol: 1 },
       { format: "html" },
     );
     expect(out).toContain("<table>");
@@ -159,7 +160,7 @@ describe("copyToClipboard", () => {
     const table = makeTable();
     const out = copyToClipboard(
       table,
-      { minRow: 0, maxRow: 0, minCol: 0, maxCol: 2 },
+      { minRow: 1, maxRow: 1, minCol: 0, maxCol: 2 },
       { includeHeaders: true },
     );
     expect(out).toContain("Name");

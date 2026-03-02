@@ -76,10 +76,15 @@ export function copyToClipboard<TData>(
   const format = options?.format ?? "tsv";
   const includeHeaders = options?.includeHeaders ?? false;
 
+  const headerRowCount = 1;
   const getText = (row: number, col: number): string => {
+    if (row < headerRowCount) {
+      const colDef = columns[col];
+      return typeof colDef?.columnDef?.header === "string" ? colDef.columnDef.header : colDef?.id ?? "";
+    }
     const colDef = columns[col];
     const id = colDef?.id ?? "";
-    const raw = table.getRow(row).getValue(id);
+    const raw = table.getRow(row - headerRowCount).getValue(id);
     return String(raw ?? "");
   };
 

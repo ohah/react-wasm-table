@@ -53,6 +53,9 @@ export function useEditing({
 
   const handleCellDoubleClick = useCallback(
     (coord: CellCoord) => {
+      const headerRowCount = 1;
+      if (coord.row < headerRowCount) return; // header cells are not editable
+
       const columns = columnRegistry.getAll();
       const col = columns[coord.col];
       if (!col?.editor) return;
@@ -80,7 +83,7 @@ export function useEditing({
       }
       if (!layout) return;
 
-      const rowData = data[coord.row];
+      const rowData = data[coord.row - headerRowCount];
       if (!rowData) return;
       const currentValue = rowData[col.id];
 

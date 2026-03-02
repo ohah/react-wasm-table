@@ -130,8 +130,12 @@ export function useSelection({
         const viewIndices = getMemoryBridge()?.getViewIndices();
         const strTable = getStringTable();
         const columns = columnRegistry.getAll();
+        const headerRowCount = 1;
         const getText = (viewRow: number, col: number) => {
-          const actualRow = viewIndices?.[viewRow] ?? viewRow;
+          if (viewRow < headerRowCount) {
+            return columns[col]?.header ?? columns[col]?.id ?? "";
+          }
+          const actualRow = viewIndices?.[viewRow - headerRowCount] ?? viewRow - headerRowCount;
           return strTable.get(columns[col]?.id ?? "", actualRow);
         };
         const tsv = buildTSV(norm, getText);

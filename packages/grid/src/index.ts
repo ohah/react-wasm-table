@@ -331,4 +331,4 @@ export type {
   CellBorderSide,
   CellBorderConfig,
 } from "./types";
-export { DEFAULT_THEME } from "./types";
+export { DEFAULT_THEME, isHeaderRow, toDataRow } from "./types";

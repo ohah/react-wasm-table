@@ -59,6 +59,7 @@ export interface InternalLayerContext extends LayerContext {
   _selectionStyle?: SelectionStyle;
   _computeChildLayout?: (input: Float32Array) => Float32Array;
   _borderConfigMap?: Map<number, CellBorderConfig>;
+  _headerRowCount: number;
 }
 
 // ── Built-in layer factories ────────────────────────────────────────────
