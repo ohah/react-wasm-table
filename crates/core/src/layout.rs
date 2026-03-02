@@ -1887,7 +1887,14 @@ mod tests {
         let total_cells = col_count + 3 * col_count; // 2 header + 6 data = 8
         let mut buf = vec![0.0_f32; layout_buffer::buf_len(total_cells)];
         let header_row_count = 1;
-        let count = engine.compute_into_buffer(&columns, &viewport, &container, 0..3, &mut buf, header_row_count);
+        let count = engine.compute_into_buffer(
+            &columns,
+            &viewport,
+            &container,
+            0..3,
+            &mut buf,
+            header_row_count,
+        );
         assert_eq!(count, total_cells);
 
         // Verify header cells match
@@ -1902,7 +1909,10 @@ mod tests {
         // Verify data cells match (row is offset by header_row_count in unified indexing)
         for (i, r) in rows.iter().enumerate() {
             let base = (col_count + i) * layout_buffer::LAYOUT_STRIDE;
-            assert!((buf[base + layout_buffer::FIELD_ROW] - (r.row + header_row_count) as f32).abs() < 0.1);
+            assert!(
+                (buf[base + layout_buffer::FIELD_ROW] - (r.row + header_row_count) as f32).abs()
+                    < 0.1
+            );
             assert!((buf[base + layout_buffer::FIELD_COL] - r.col as f32).abs() < 0.1);
             assert!((buf[base + layout_buffer::FIELD_X] - r.x).abs() < 0.1);
             assert!((buf[base + layout_buffer::FIELD_Y] - r.y).abs() < 0.1);
@@ -1920,8 +1930,14 @@ mod tests {
 
         let total_cells = 1 + 10; // 1 header + 10 data
         let mut buf = vec![0.0_f32; layout_buffer::buf_len(total_cells)];
-        let count =
-            engine.compute_into_buffer(&columns, &viewport, &default_container(), 5..15, &mut buf, 1);
+        let count = engine.compute_into_buffer(
+            &columns,
+            &viewport,
+            &default_container(),
+            5..15,
+            &mut buf,
+            1,
+        );
         assert_eq!(count, total_cells);
 
         // Header scrolls with content: y = -scroll_top = -360
@@ -1943,8 +1959,14 @@ mod tests {
         let viewport = make_viewport();
 
         let mut buf = vec![0.0_f32; layout_buffer::buf_len(1)]; // just header
-        let count =
-            engine.compute_into_buffer(&columns, &viewport, &default_container(), 0..0, &mut buf, 1);
+        let count = engine.compute_into_buffer(
+            &columns,
+            &viewport,
+            &default_container(),
+            0..0,
+            &mut buf,
+            1,
+        );
         assert_eq!(count, 1); // header only
     }
 
@@ -3112,8 +3134,14 @@ mod tests {
         let columns: Vec<ColumnLayout> = vec![];
         let viewport = make_viewport();
         let mut buf = vec![0.0_f32; 64];
-        let count =
-            engine.compute_into_buffer(&columns, &viewport, &default_container(), 0..5, &mut buf, 1);
+        let count = engine.compute_into_buffer(
+            &columns,
+            &viewport,
+            &default_container(),
+            0..5,
+            &mut buf,
+            1,
+        );
         assert_eq!(count, 0);
     }
 
@@ -3141,8 +3169,14 @@ mod tests {
 
         let total_cells = 2 + 3 * 2; // 2 headers + 3 rows × 2 cols = 8
         let mut buf = vec![0.0_f32; layout_buffer::buf_len(total_cells)];
-        let count =
-            engine.compute_into_buffer(&columns, &viewport, &default_container(), 0..3, &mut buf, 1);
+        let count = engine.compute_into_buffer(
+            &columns,
+            &viewport,
+            &default_container(),
+            0..3,
+            &mut buf,
+            1,
+        );
         assert_eq!(count, total_cells);
 
         // Header cells

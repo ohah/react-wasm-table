@@ -633,8 +633,8 @@ describe("EventManager", () => {
 
     it("works with multiple headers at different positions", () => {
       const headerLayouts = [
-        makeLayout(0, 0, 0, 0, 150, 40),   // handle zone [125, 145)
-        makeLayout(0, 1, 150, 0, 200, 40),  // handle zone [325, 345)
+        makeLayout(0, 0, 0, 0, 150, 40), // handle zone [125, 145)
+        makeLayout(0, 1, 150, 0, 200, 40), // handle zone [325, 345)
       ];
       em.setLayouts(headerLayouts, []);
       expect(em.findDragHandle(130, 20)).toBe(0);
@@ -689,10 +689,7 @@ describe("EventManager", () => {
       const onCellMouseDown = mock(() => {});
       const onCellMouseMove = mock(() => {});
       const onColumnDnDMove = mock(() => {});
-      const headerLayouts = [
-        makeLayout(0, 0, 0, 0, 200, 40),
-        makeLayout(0, 1, 200, 0, 200, 40),
-      ];
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40), makeLayout(0, 1, 200, 0, 200, 40)];
       em.setLayouts(headerLayouts, []);
       em.attach(canvas, { onHeaderMouseDown, onCellMouseDown, onCellMouseMove, onColumnDnDMove });
 
