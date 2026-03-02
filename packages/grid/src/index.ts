@@ -15,6 +15,7 @@ export type {
   TrProps,
   ThProps,
   TdProps,
+  CellBorderStyleProps,
 } from "./react/table-components";
 
 // Canvas JSX components
@@ -157,6 +158,9 @@ export type {
 // Parse table children
 export { parseTableChildren } from "./react/parse-table-children";
 export type { ParsedTableStructure, ParsedRow, ParsedCell } from "./react/parse-table-children";
+
+// Border utilities
+export { parseBorderShorthand, resolveCellBorder } from "./react/border-utils";
 
 // Hooks
 export { useGrid, useColumnRegistry } from "./react/hooks";
@@ -323,5 +327,8 @@ export type {
   CssGridLine,
   BoxModelProps,
   AfterDrawContext,
+  CssBorderStyle,
+  CellBorderSide,
+  CellBorderConfig,
 } from "./types";
 export { DEFAULT_THEME } from "./types";
