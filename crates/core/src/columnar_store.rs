@@ -163,6 +163,73 @@ impl ColumnarStore {
         self.view_dirty = true;
     }
 
+    // ── Incremental append (streaming Phase 2) ───────────────────────
+
+    /// Prepare for appending `new_rows` rows. Does NOT reset existing data.
+    /// Pre-extends all column Vecs and updates row_count.
+    pub fn begin_append(&mut self, new_rows: usize) {
+        let new_count = self.row_count + new_rows;
+
+        for col in &mut self.data {
+            match col {
+                ColumnData::Float64(v) | ColumnData::Bool(v) => {
+                    v.resize(new_count, f64::NAN);
+                }
+                ColumnData::Strings { ids, .. } => {
+                    ids.resize(new_count, 0);
+                }
+            }
+        }
+
+        self.row_count = new_count;
+        self.generation += 1;
+    }
+
+    /// Append Float64 values starting at `offset`.
+    pub fn append_column_float64(&mut self, col_idx: usize, offset: usize, values: &[f64]) {
+        if let Some(ColumnData::Float64(v)) = self.data.get_mut(col_idx) {
+            let end = (offset + values.len()).min(v.len());
+            v[offset..end].copy_from_slice(&values[..end - offset]);
+        }
+    }
+
+    /// Append Bool values (as f64) starting at `offset`.
+    pub fn append_column_bool(&mut self, col_idx: usize, offset: usize, values: &[f64]) {
+        if let Some(ColumnData::Bool(v)) = self.data.get_mut(col_idx) {
+            let end = (offset + values.len()).min(v.len());
+            v[offset..end].copy_from_slice(&values[..end - offset]);
+        }
+    }
+
+    /// Append string column: merge new unique strings into existing intern table,
+    /// remap IDs, and write starting at `offset`.
+    pub fn append_column_strings(
+        &mut self,
+        col_idx: usize,
+        offset: usize,
+        new_unique: &[String],
+        new_ids: &[u32],
+    ) {
+        if let Some(ColumnData::Strings { ids, intern }) = self.data.get_mut(col_idx) {
+            // Build local-ID → global-ID mapping
+            let mut id_map: Vec<u32> = Vec::with_capacity(new_unique.len());
+            for s in new_unique {
+                id_map.push(intern.intern(s));
+            }
+
+            // Remap and write
+            let end = (offset + new_ids.len()).min(ids.len());
+            for (i, &local_id) in new_ids[..end - offset].iter().enumerate() {
+                ids[offset + i] = id_map[local_id as usize];
+            }
+        }
+    }
+
+    /// Finalize append. Marks view dirty so rebuild_view() runs on next access.
+    pub fn finalize_append(&mut self) {
+        self.view_dirty = true;
+    }
+
     // ── View management ───────────────────────────────────────────────
 
     /// Set sort configuration. Marks view dirty.
@@ -1396,5 +1463,200 @@ mod tests {
             }],
         );
         assert_eq!(indices3, vec![0]); // Alice
+    }
+
+    // ── Incremental append tests (streaming Phase 2) ─────────────────
+
+    #[test]
+    fn begin_append_preserves_existing_data() {
+        let mut store = ColumnarStore::new();
+        store.init(2, 2);
+        store.set_column_float64(0, &[10.0, 20.0]);
+        let unique = vec!["".to_string(), "Alice".to_string(), "Bob".to_string()];
+        store.set_column_strings(1, &unique, &[1, 2]);
+        store.finalize();
+
+        store.begin_append(2);
+
+        // Existing data preserved
+        if let ColumnData::Float64(v) = &store.data[0] {
+            assert_eq!(v.len(), 4);
+            assert!((v[0] - 10.0).abs() < f64::EPSILON);
+            assert!((v[1] - 20.0).abs() < f64::EPSILON);
+            assert!(v[2].is_nan()); // new slots filled with NaN
+            assert!(v[3].is_nan());
+        } else {
+            panic!("expected Float64");
+        }
+
+        if let ColumnData::Strings { ids, intern } = &store.data[1] {
+            assert_eq!(ids.len(), 4);
+            assert_eq!(intern.resolve(ids[0]), "Alice");
+            assert_eq!(intern.resolve(ids[1]), "Bob");
+            assert_eq!(ids[2], 0); // new slots filled with 0
+            assert_eq!(ids[3], 0);
+        } else {
+            panic!("expected Strings");
+        }
+
+        assert_eq!(store.row_count, 4);
+    }
+
+    #[test]
+    fn append_float64_writes_at_offset() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 2);
+        store.set_column_float64(0, &[10.0, 20.0]);
+        store.finalize();
+
+        store.begin_append(3);
+        store.append_column_float64(0, 2, &[30.0, 40.0, 50.0]);
+
+        if let ColumnData::Float64(v) = &store.data[0] {
+            assert_eq!(v, &[10.0, 20.0, 30.0, 40.0, 50.0]);
+        } else {
+            panic!("expected Float64");
+        }
+    }
+
+    #[test]
+    fn append_bool_writes_at_offset() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 2);
+        store.set_column_bool(0, &[1.0, 0.0]);
+        store.finalize();
+
+        store.begin_append(2);
+        store.append_column_bool(0, 2, &[0.0, 1.0]);
+
+        if let ColumnData::Bool(v) = &store.data[0] {
+            assert_eq!(v, &[1.0, 0.0, 0.0, 1.0]);
+        } else {
+            panic!("expected Bool");
+        }
+    }
+
+    #[test]
+    fn append_strings_merges_intern() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 2);
+        let unique = vec!["".to_string(), "Alice".to_string(), "Bob".to_string()];
+        store.set_column_strings(0, &unique, &[1, 2]);
+        store.finalize();
+
+        store.begin_append(2);
+        // New batch: "" (null), "Bob" (existing), "Charlie" (new)
+        let new_unique = vec!["".to_string(), "Bob".to_string(), "Charlie".to_string()];
+        let new_ids: Vec<u32> = vec![2, 1]; // Charlie, Bob
+        store.append_column_strings(0, 2, &new_unique, &new_ids);
+
+        if let ColumnData::Strings { ids, intern } = &store.data[0] {
+            // Existing strings reused
+            assert_eq!(intern.resolve(ids[0]), "Alice");
+            assert_eq!(intern.resolve(ids[1]), "Bob");
+            // New strings appended
+            assert_eq!(intern.resolve(ids[2]), "Charlie");
+            assert_eq!(intern.resolve(ids[3]), "Bob"); // reused existing ID
+        } else {
+            panic!("expected Strings");
+        }
+    }
+
+    #[test]
+    fn append_strings_remaps_ids() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 1);
+        // Initial: "" (0), "Alpha" (1)
+        let unique = vec!["".to_string(), "Alpha".to_string()];
+        store.set_column_strings(0, &unique, &[1]);
+        store.finalize();
+
+        store.begin_append(2);
+        // New batch has different local ordering: "" (0), "Beta" (1), "Alpha" (2)
+        let new_unique = vec!["".to_string(), "Beta".to_string(), "Alpha".to_string()];
+        let new_ids: Vec<u32> = vec![1, 2]; // Beta, Alpha (local IDs)
+        store.append_column_strings(0, 1, &new_unique, &new_ids);
+
+        if let ColumnData::Strings { ids, intern } = &store.data[0] {
+            assert_eq!(intern.resolve(ids[0]), "Alpha");
+            assert_eq!(intern.resolve(ids[1]), "Beta");
+            assert_eq!(intern.resolve(ids[2]), "Alpha"); // Alpha reused global ID
+                                                         // Verify Alpha has same ID in both positions
+            assert_eq!(ids[0], ids[2]);
+        } else {
+            panic!("expected Strings");
+        }
+    }
+
+    #[test]
+    fn append_then_sort() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 2);
+        store.set_column_float64(0, &[30.0, 10.0]);
+        store.finalize();
+
+        store.begin_append(2);
+        store.append_column_float64(0, 2, &[20.0, 5.0]);
+        store.finalize_append();
+
+        store.set_sort(vec![SortConfig {
+            column_index: 0,
+            direction: SortDirection::Ascending,
+        }]);
+        store.rebuild_view();
+
+        // 5.0(3), 10.0(1), 20.0(2), 30.0(0)
+        assert_eq!(store.view_indices(), &[3, 1, 2, 0]);
+    }
+
+    #[test]
+    fn append_then_filter() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 2);
+        store.set_column_float64(0, &[30.0, 10.0]);
+        store.finalize();
+
+        store.begin_append(2);
+        store.append_column_float64(0, 2, &[20.0, 5.0]);
+        store.finalize_append();
+
+        store.set_column_filters(vec![ColumnFilter {
+            column_index: 0,
+            op: FilterOp::Gte,
+            value: FilterValue::Float64(20.0),
+        }]);
+        store.rebuild_view();
+
+        // 30.0(0), 20.0(2)
+        assert_eq!(store.view_indices(), &[0, 2]);
+    }
+
+    #[test]
+    fn append_increments_generation() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 2);
+        store.set_column_float64(0, &[1.0, 2.0]);
+        store.finalize();
+
+        let gen_before = store.generation;
+        store.begin_append(1);
+        assert_eq!(store.generation, gen_before + 1);
+    }
+
+    #[test]
+    fn finalize_append_marks_dirty() {
+        let mut store = ColumnarStore::new();
+        store.init(1, 2);
+        store.set_column_float64(0, &[1.0, 2.0]);
+        store.finalize();
+        store.rebuild_view(); // clears dirty
+
+        store.begin_append(1);
+        store.append_column_float64(0, 2, &[3.0]);
+        store.finalize_append();
+
+        // view_dirty should be true, so rebuild_view should process
+        store.rebuild_view();
+        assert_eq!(store.view_indices(), &[0, 1, 2]);
     }
 }

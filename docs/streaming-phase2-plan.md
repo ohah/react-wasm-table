@@ -1,5 +1,7 @@
 # Streaming Data Phase 2 — WASM Incremental Append 구현 계획
 
+> **상태: ✅ 구현 완료**
+>
 > **목표:** 매 data append마다 전체 데이터를 WASM에 재적재하는 O(n×columns) 병목 제거.
 > 새로 추가된 행만 WASM에 전달하여 O(delta×columns)로 개선.
 >
@@ -30,11 +32,11 @@ rebuild_view()                         ← 전체 indices 재생성 (O(n))
 
 **성능 영향:**
 
-| 누적 행 수 | columns=10 | 현재 비용 (전체 재적재) | Phase 2 목표 (append) |
-|-----------|-----------|----------------------|---------------------|
-| 1,000     | 10        | ~10,000 iter + 10 Vec copy | ~2,000 iter + 10 Vec extend |
-| 10,000    | 10        | ~100,000 iter + 10 Vec copy | ~2,000 iter + 10 Vec extend |
-| 100,000   | 10        | ~1,000,000 iter + 10 Vec copy | ~2,000 iter + 10 Vec extend |
+| 누적 행 수 | columns=10 | 현재 비용 (전체 재적재)       | Phase 2 목표 (append)       |
+| ---------- | ---------- | ----------------------------- | --------------------------- |
+| 1,000      | 10         | ~10,000 iter + 10 Vec copy    | ~2,000 iter + 10 Vec extend |
+| 10,000     | 10         | ~100,000 iter + 10 Vec copy   | ~2,000 iter + 10 Vec extend |
+| 100,000    | 10         | ~1,000,000 iter + 10 Vec copy | ~2,000 iter + 10 Vec extend |
 
 ---
 
@@ -46,11 +48,12 @@ rebuild_view()                         ← 전체 indices 재생성 (O(n))
 - **data.length 증가 (streaming append)**: 새 `appendColumnar` 경로
 
 TS에서 `prevDataLenRef`로 판단:
+
 ```typescript
 if (prevDataLen > 0 && data.length > prevDataLen && columnsUnchanged) {
-  appendData(engine, data, columnIds, prevDataLen);  // 증분
+  appendData(engine, data, columnIds, prevDataLen); // 증분
 } else {
-  ingestData(engine, data, columnIds);                // 전체
+  ingestData(engine, data, columnIds); // 전체
 }
 ```
 
@@ -59,18 +62,21 @@ if (prevDataLen > 0 && data.length > prevDataLen && columnsUnchanged) {
 String 컬럼이 가장 복잡한 부분. 두 가지 선택지:
 
 **Option A: WASM 측 병합 (선택)**
+
 - TS는 새 행만 대상으로 `buildStringColumn()` 호출 → `[unique, ids]` 생성
 - WASM의 `append_string_column()`이 새 unique strings를 기존 intern table에 병합
 - 이미 존재하는 문자열은 기존 ID 재사용 (intern() 함수가 자동 처리)
 - 새 행의 ids는 WASM에서 리매핑 (TS측 로컬 ID → 글로벌 intern ID)
 
 **Option B: TS 측 글로벌 intern table 관리 (기각)**
+
 - TS가 글로벌 intern lookup을 유지하면 WASM과 동기화 문제 발생
 - TS/WASM 양측에 중복 상태 → 복잡도 증가
 
 ### 3. rebuild_view는 여전히 필요
 
 Append 후에도 정렬/필터 인덱스는 **전체 재계산** 필요:
+
 - 새 행이 정렬 순서 어디에 위치하는지 결정 불가 (incremental sort 불가)
 - 새 행이 필터를 통과하는지 평가 필요
 - `rebuild_view()`는 이미 `view_dirty` 플래그로 lazy 실행
@@ -158,6 +164,7 @@ impl ColumnarStore {
 ```
 
 **테스트 (columnar_store 기존 테스트 파일에 추가):**
+
 - `begin_append`이 기존 데이터 보존하고 Vec 확장
 - `append_column_float64`이 offset부터 값 기록
 - `append_column_strings`가 intern table 병합 + ID 리매핑
@@ -282,9 +289,10 @@ import { ingestData, appendData } from "../../adapter/data-ingestor";
 ingestData(engine, data, columnIds);
 
 // 변경:
-const isAppend = prevDataLenRef.current > 0
-  && data.length > prevDataLenRef.current
-  && columnIds.join("\0") === prevColumnKeyRef.current;
+const isAppend =
+  prevDataLenRef.current > 0 &&
+  data.length > prevDataLenRef.current &&
+  columnIds.join("\0") === prevColumnKeyRef.current;
 
 if (isAppend) {
   appendData(engine, data, columnIds, prevDataLenRef.current);
@@ -309,13 +317,13 @@ cd packages/grid && bun run build
 
 ## 변경 파일 목록
 
-| 파일 | 유형 | 변경 내용 |
-|------|------|----------|
-| `crates/core/src/columnar_store.rs` | 수정 | begin_append, append_column_*, finalize_append 메서드 |
-| `crates/wasm/src/lib.rs` | 수정 | WASM 바인딩 5개 추가 |
-| `packages/grid/src/types.ts` | 수정 | WasmTableEngine에 append 메서드 타입 추가 |
-| `packages/grid/src/adapter/data-ingestor.ts` | 수정 | appendData() 함수 추가 |
-| `packages/grid/src/react/hooks/use-data-ingestion.ts` | 수정 | append/ingest 분기 로직 |
+| 파일                                                  | 유형 | 변경 내용                                              |
+| ----------------------------------------------------- | ---- | ------------------------------------------------------ |
+| `crates/core/src/columnar_store.rs`                   | 수정 | begin*append, append_column*\*, finalize_append 메서드 |
+| `crates/wasm/src/lib.rs`                              | 수정 | WASM 바인딩 5개 추가                                   |
+| `packages/grid/src/types.ts`                          | 수정 | WasmTableEngine에 append 메서드 타입 추가              |
+| `packages/grid/src/adapter/data-ingestor.ts`          | 수정 | appendData() 함수 추가                                 |
+| `packages/grid/src/react/hooks/use-data-ingestion.ts` | 수정 | append/ingest 분기 로직                                |
 
 ---
 
@@ -323,35 +331,35 @@ cd packages/grid && bun run build
 
 ### Rust 테스트 (`crates/core/src/columnar_store.rs`)
 
-| 테스트 | 검증 내용 |
-|--------|----------|
-| `append_preserves_existing_float64` | begin_append 후 기존 Float64 데이터 유지 |
-| `append_preserves_existing_strings` | begin_append 후 기존 String 데이터 + intern table 유지 |
-| `append_float64_column_writes_at_offset` | offset 위치에 새 값 기록 |
-| `append_bool_column_writes_at_offset` | Bool 컬럼 append |
-| `append_string_column_merges_intern` | 기존 문자열 ID 재사용, 새 문자열 추가 |
-| `append_string_remap_ids` | 로컬 ID → 글로벌 ID 리매핑 정확성 |
-| `append_then_filter` | append 후 filter 정상 동작 |
-| `append_then_sort` | append 후 sort 정상 동작 |
-| `append_increments_generation` | generation 카운터 증가 확인 |
-| `append_marks_view_dirty` | finalize_append 후 view_dirty 확인 |
+| 테스트                                   | 검증 내용                                              |
+| ---------------------------------------- | ------------------------------------------------------ |
+| `append_preserves_existing_float64`      | begin_append 후 기존 Float64 데이터 유지               |
+| `append_preserves_existing_strings`      | begin_append 후 기존 String 데이터 + intern table 유지 |
+| `append_float64_column_writes_at_offset` | offset 위치에 새 값 기록                               |
+| `append_bool_column_writes_at_offset`    | Bool 컬럼 append                                       |
+| `append_string_column_merges_intern`     | 기존 문자열 ID 재사용, 새 문자열 추가                  |
+| `append_string_remap_ids`                | 로컬 ID → 글로벌 ID 리매핑 정확성                      |
+| `append_then_filter`                     | append 후 filter 정상 동작                             |
+| `append_then_sort`                       | append 후 sort 정상 동작                               |
+| `append_increments_generation`           | generation 카운터 증가 확인                            |
+| `append_marks_view_dirty`                | finalize_append 후 view_dirty 확인                     |
 
 ### TS 테스트 (`packages/grid/src/adapter/__tests__/data-ingestor.test.ts`)
 
-| 테스트 | 검증 내용 |
-|--------|----------|
-| `appendData processes only new rows` | startIndex 이후만 typed array 생성 |
-| `appendData calls beginAppendColumnar with correct count` | newCount 정확성 |
-| `appendData handles string columns` | unique + ids 생성 및 전달 |
-| `appendData no-op when startIndex >= data.length` | 빈 append 방어 |
+| 테스트                                                    | 검증 내용                          |
+| --------------------------------------------------------- | ---------------------------------- |
+| `appendData processes only new rows`                      | startIndex 이후만 typed array 생성 |
+| `appendData calls beginAppendColumnar with correct count` | newCount 정확성                    |
+| `appendData handles string columns`                       | unique + ids 생성 및 전달          |
+| `appendData no-op when startIndex >= data.length`         | 빈 append 방어                     |
 
 ### 통합 테스트 (`packages/grid/src/react/__tests__/use-data-ingestion.test.ts`)
 
-| 테스트 | 검증 내용 |
-|--------|----------|
-| `uses appendData when data grows` | prevDataLen < data.length일 때 append 경로 |
-| `uses ingestData when columns change` | 컬럼 변경 시 전체 재적재 |
-| `uses ingestData when data shrinks` | data 축소 시 전체 재적재 |
+| 테스트                                | 검증 내용                                  |
+| ------------------------------------- | ------------------------------------------ |
+| `uses appendData when data grows`     | prevDataLen < data.length일 때 append 경로 |
+| `uses ingestData when columns change` | 컬럼 변경 시 전체 재적재                   |
+| `uses ingestData when data shrinks`   | data 축소 시 전체 재적재                   |
 
 ---
 
@@ -362,8 +370,8 @@ cd packages/grid && bun run build
 현재: `buildFloat64Column(allData, colId)` — 전체 배열 순회
 개선: `buildFloat64Column(newRows, colId)` — 새 행만 순회
 
-| 시나리오 | 현재 | Phase 2 | 개선 |
-|---------|------|---------|------|
+| 시나리오                       | 현재                               | Phase 2                        | 개선                        |
+| ------------------------------ | ---------------------------------- | ------------------------------ | --------------------------- |
 | 50K rows + 200 append, 10 cols | 500K iter + 10 Float64Array(50200) | 2K iter + 10 Float64Array(200) | **250x iter, ~250x 메모리** |
 
 ### WASM 측 (Vec 복사)
@@ -371,8 +379,8 @@ cd packages/grid && bun run build
 현재: `values.to_vec()` — 전체 배열 복사
 개선: `v[offset..end].copy_from_slice()` — 새 부분만 기록
 
-| 시나리오 | 현재 copy | Phase 2 copy | 개선 |
-|---------|----------|-------------|------|
+| 시나리오                       | 현재 copy             | Phase 2 copy         | 개선     |
+| ------------------------------ | --------------------- | -------------------- | -------- |
 | 50K rows + 200 append, 10 cols | 10 × 50200 × 8B = 4MB | 10 × 200 × 8B = 16KB | **250x** |
 
 ### rebuild_view (변경 없음)

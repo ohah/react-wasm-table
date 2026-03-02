@@ -5,6 +5,7 @@ import {
   buildBoolColumn,
   buildStringColumn,
   ingestData,
+  appendData,
 } from "../data-ingestor";
 
 const sampleData = [
@@ -132,5 +133,78 @@ describe("ingestData", () => {
     // isActive (bool) = 1 bool call
     expect(engine.ingestBoolColumn).toHaveBeenCalledTimes(1);
     expect(engine.finalizeColumnar).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns classified column types", () => {
+    const engine = {
+      initColumnar: mock(() => {}),
+      ingestFloat64Column: mock(() => {}),
+      ingestBoolColumn: mock(() => {}),
+      ingestStringColumn: mock(() => {}),
+      finalizeColumnar: mock(() => {}),
+    };
+
+    const types = ingestData(engine as any, sampleData, ["id", "name", "isActive"]);
+    expect(types).toEqual(["float64", "string", "bool"]);
+  });
+});
+
+describe("appendData", () => {
+  it("calls engine methods in correct order", () => {
+    const engine = {
+      beginAppendColumnar: mock(() => {}),
+      appendFloat64Column: mock(() => {}),
+      appendBoolColumn: mock(() => {}),
+      appendStringColumn: mock(() => {}),
+      finalizeAppendColumnar: mock(() => {}),
+    };
+
+    const data = [
+      ...sampleData,
+      { id: 4, name: "Dave", salary: 80000, isActive: false, score: 77 },
+      { id: 5, name: "Eve", salary: 90000, isActive: true, score: 95 },
+    ] as Record<string, unknown>[];
+
+    appendData(engine as any, data, ["id", "name", "salary", "isActive", "score"], 3, [
+      "float64",
+      "string",
+      "float64",
+      "bool",
+      "float64",
+    ]);
+
+    expect(engine.beginAppendColumnar).toHaveBeenCalledWith(2);
+    // id, salary, score → 3 float64 appends
+    expect(engine.appendFloat64Column).toHaveBeenCalledTimes(3);
+    // name → 1 string append
+    expect(engine.appendStringColumn).toHaveBeenCalledTimes(1);
+    // isActive → 1 bool append
+    expect(engine.appendBoolColumn).toHaveBeenCalledTimes(1);
+    expect(engine.finalizeAppendColumnar).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes correct newCount to beginAppendColumnar", () => {
+    const engine = {
+      beginAppendColumnar: mock(() => {}),
+      appendFloat64Column: mock(() => {}),
+      finalizeAppendColumnar: mock(() => {}),
+    };
+
+    const data = [{ x: 1 }, { x: 2 }, { x: 3 }, { x: 4 }, { x: 5 }] as Record<string, unknown>[];
+
+    appendData(engine as any, data, ["x"], 2, ["float64"]);
+
+    expect(engine.beginAppendColumnar).toHaveBeenCalledWith(3); // 5 - 2 = 3
+  });
+
+  it("no-op when startIndex >= data.length", () => {
+    const engine = {
+      beginAppendColumnar: mock(() => {}),
+      finalizeAppendColumnar: mock(() => {}),
+    };
+
+    appendData(engine as any, sampleData, ["id"], 10, ["float64"]);
+
+    expect(engine.beginAppendColumnar).not.toHaveBeenCalled();
   });
 });

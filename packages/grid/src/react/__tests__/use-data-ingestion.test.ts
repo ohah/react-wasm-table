@@ -11,6 +11,12 @@ function makeEngine() {
     ingestBoolColumn: mock(() => {}),
     finalizeColumnar: mock(() => {}),
     setColumnarScrollConfig: mock(() => {}),
+    // Streaming append (Phase 2)
+    beginAppendColumnar: mock(() => {}),
+    appendFloat64Column: mock(() => {}),
+    appendBoolColumn: mock(() => {}),
+    appendStringColumn: mock(() => {}),
+    finalizeAppendColumnar: mock(() => {}),
   } as any;
 }
 
@@ -133,7 +139,7 @@ describe("useDataIngestion (renderHook)", () => {
     expect(result.current.stringTableRef.current.get("name", 0)).toBe("Alice");
   });
 
-  it("re-ingests when data changes", () => {
+  it("uses append path when data grows (Phase 2)", () => {
     const engine = makeEngine();
     const registry = makeRegistry([{ id: "name", width: 200 }]);
     const invalidate = mock(() => {});
@@ -153,10 +159,41 @@ describe("useDataIngestion (renderHook)", () => {
 
     expect(engine.initColumnar).toHaveBeenCalledTimes(1);
 
+    // Data grows — should use append path, NOT full reingest
     data = [{ name: "Alice" }, { name: "Bob" }] as Record<string, unknown>[];
     rerender();
 
+    expect(engine.initColumnar).toHaveBeenCalledTimes(1); // NOT called again
+    expect(engine.beginAppendColumnar).toHaveBeenCalledWith(1); // 1 new row
+    expect(engine.finalizeAppendColumnar).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses full reingest when data shrinks", () => {
+    const engine = makeEngine();
+    const registry = makeRegistry([{ id: "name", width: 200 }]);
+    const invalidate = mock(() => {});
+    let data = [{ name: "Alice" }, { name: "Bob" }] as Record<string, unknown>[];
+
+    const { rerender } = renderHook(() =>
+      useDataIngestion({
+        engine,
+        data,
+        columnRegistry: registry,
+        rowHeight: 36,
+        height: 600,
+        headerHeight: 40,
+        invalidate,
+      }),
+    );
+
+    expect(engine.initColumnar).toHaveBeenCalledTimes(1);
+
+    // Data shrinks — should use full reingest
+    data = [{ name: "Alice" }] as Record<string, unknown>[];
+    rerender();
+
     expect(engine.initColumnar).toHaveBeenCalledTimes(2);
+    expect(engine.beginAppendColumnar).not.toHaveBeenCalled();
   });
 
   describe("column reorder (pinning)", () => {

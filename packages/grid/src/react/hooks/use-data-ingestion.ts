@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import type { WasmTableEngine } from "../../types";
 import type { ColumnRegistry } from "../../adapter/column-registry";
 import { StringTable } from "../../adapter/string-table";
-import { ingestData } from "../../adapter/data-ingestor";
+import { ingestData, appendData, type ColumnDataType } from "../../adapter/data-ingestor";
 
 const OVERSCAN = 5;
 
@@ -28,6 +28,7 @@ export function useDataIngestion({
   const stringTableRef = useRef(new StringTable());
   const prevColumnKeyRef = useRef("");
   const prevDataLenRef = useRef(0);
+  const prevColumnTypesRef = useRef<ColumnDataType[]>([]);
 
   useEffect(() => {
     if (!engine) return;
@@ -36,17 +37,25 @@ export function useDataIngestion({
     const ingest = (columns: ReturnType<ColumnRegistry["getAll"]>) => {
       if (columns.length === 0) return;
       const columnIds = columns.map((c) => c.id);
-      prevColumnKeyRef.current = columnIds.join("\0");
-      ingestData(engine, data, columnIds);
-      engine.setColumnarScrollConfig(rowHeight, height - headerHeight, OVERSCAN);
+      const columnKey = columnIds.join("\0");
 
-      // Streaming optimization: use append for incremental data growth
-      if (prevDataLenRef.current > 0 && data.length > prevDataLenRef.current) {
+      // Streaming Phase 2: append path when only data grows (same columns)
+      const isAppend =
+        prevDataLenRef.current > 0 &&
+        data.length > prevDataLenRef.current &&
+        columnKey === prevColumnKeyRef.current;
+
+      if (isAppend) {
+        appendData(engine, data, columnIds, prevDataLenRef.current, prevColumnTypesRef.current);
         stringTableRef.current.append(data, columnIds, prevDataLenRef.current);
       } else {
+        prevColumnTypesRef.current = ingestData(engine, data, columnIds);
         stringTableRef.current.populate(data, columnIds);
       }
+
+      prevColumnKeyRef.current = columnKey;
       prevDataLenRef.current = data.length;
+      engine.setColumnarScrollConfig(rowHeight, height - headerHeight, OVERSCAN);
       invalidate();
     };
 

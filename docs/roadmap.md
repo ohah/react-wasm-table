@@ -398,12 +398,14 @@ const handleFetchMore = useCallback((startIndex: number, count: number) => {
 - Render loop: visible range 기반 fetch 트리거 (`checkAndFetch`)
 - 10 use-streaming 테스트, 4 string-table append 테스트 (전체 1184 JS 테스트)
 
-**Phase 2 (후속 — 미구현):** → [상세 계획](streaming-phase2-plan.md)
+**Phase 2 ✅ (WASM Incremental Append):** → [상세 계획](streaming-phase2-plan.md)
 
-- **WASM incremental append**: ColumnarStore에 `begin_append` + `append_column_*` + `finalize_append` 추가
+- **Rust**: ColumnarStore `begin_append` + `append_column_float64/bool/strings` + `finalize_append` (9 테스트)
+- **WASM 바인딩**: `beginAppendColumnar`, `appendFloat64Column`, `appendBoolColumn`, `appendStringColumn`, `finalizeAppendColumnar`
 - **TS appendData()**: 새 행만 TypedArray 생성 → WASM append (O(delta) vs O(n))
 - **String intern table 병합**: WASM 측에서 기존 intern table에 새 문자열 병합 + ID 리매핑
 - **useDataIngestion 분기**: data 성장 → append 경로, 컬럼 변경/축소 → 전체 재적재
+- **columnTypes 캐싱**: 최초 ingest 시 결정된 타입을 재사용 (all-null batch의 타입 오분류 방지)
 - Phase 3: incremental index patch, intern GC, random access, sparse data
 
 ### 5-3. Layout Cache
@@ -459,7 +461,8 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | getFacetedRowModel (11)        | Row Model | 컬럼별 faceted values (unique/min/max). FacetedDemo                                                                                                                                                                                                                       |
 | Multi-level Column Header (14) | Render    | drawMultiLevelHeader, per-row hit-test, parent group 정렬/리사이즈 제외, selection leaf-only 보정. 데모 포함                                                                                                                                                              |
 | Cell Editing (15)              | UX        | EditorManager 순수 상태 관리자 + React createPortal 렌더링. editCell render prop (커스텀 에디터), built-in TextEditor/NumberEditor/SelectEditor, type-to-edit (initialChar), 스크롤 cancel, editorStyle 크기 제한. meta.updateData, editTrigger, Tab/Shift+Tab. 데모 포함 |
-| Streaming Data Phase 1 (18)    | Perf      | totalCount/onFetchMore/fetchAhead props, useStreaming 훅 (16ms 디바운싱+중복방지), effectiveTotalRows 기반 scrollbar, StringTable.append(), useDataIngestion 증분 경로. 타이밍 측정 데모. 14 테스트 |
+| Streaming Data Phase 1 (18)    | Perf      | totalCount/onFetchMore/fetchAhead props, useStreaming 훅 (16ms 디바운싱+중복방지), effectiveTotalRows 기반 scrollbar, StringTable.append(), useDataIngestion 증분 경로. 타이밍 측정 데모. 14 테스트                                                                       |
+| Streaming Data Phase 2 (18)    | Perf      | WASM incremental append: begin*append + append_column*\* + finalize_append. TS appendData() O(delta). String intern 병합 + ID 리매핑. useDataIngestion append/ingest 분기. columnTypes 캐싱. 9 Rust + 5 TS 테스트                                                         |
 
 ---
 
@@ -503,11 +506,11 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ### Tier 5 — 고급 성능 (아키텍처 변경, 기존 기능 안정 후 마지막)
 
-| 순서 | 항목                            | 참조                                             | 상태       | 이유                                                                                                                                                             |
-| ---- | ------------------------------- | ------------------------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 17   | Worker Bridge                   | 5-1                                              | ❌         | SharedArrayBuffer + Worker 통신 구조 전면 변경. 기존 기능 안정 후 opt-in 추가                                                                                    |
-| 18   | Streaming Data                  | 5-2, [Phase 2 계획](streaming-phase2-plan.md)    | Phase 1 ✅ | Phase 1: Infinite scroll (TS-only). Phase 2: WASM incremental append ([계획 문서](streaming-phase2-plan.md))                                                     |
-| —    | Variable Row Height / Flex→Rust | [variable-row-height.md](variable-row-height.md) | 계획만     | 고정 행 높이 제거 후, 행 높이 = 셀(Flex) 최대 높이. Flex 레이아웃을 Rust로 옮길 계획(바이너리 ArrayBuffer 포인터만 사용, 전체 행은 배치 처리). 상세는 문서 참고. |
+| 순서 | 항목                            | 참조                                             | 상태                  | 이유                                                                                                                                                             |
+| ---- | ------------------------------- | ------------------------------------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 17   | Worker Bridge                   | 5-1                                              | ❌                    | SharedArrayBuffer + Worker 통신 구조 전면 변경. 기존 기능 안정 후 opt-in 추가                                                                                    |
+| 18   | Streaming Data                  | 5-2, [Phase 2 계획](streaming-phase2-plan.md)    | Phase 1 ✅ Phase 2 ✅ | Phase 1: Infinite scroll (TS-only). Phase 2: WASM incremental append ([계획 문서](streaming-phase2-plan.md))                                                     |
+| —    | Variable Row Height / Flex→Rust | [variable-row-height.md](variable-row-height.md) | 계획만                | 고정 행 높이 제거 후, 행 높이 = 셀(Flex) 최대 높이. Flex 레이아웃을 Rust로 옮길 계획(바이너리 ArrayBuffer 포인터만 사용, 전체 행은 배치 처리). 상세는 문서 참고. |
 
 ### 남은 항목 개발 순서 (개발 속도 최적화 기준)
 
@@ -522,7 +525,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
          ↓
 18. Streaming Data Phase 1 ✅ ── Infinite scroll (TS-only, WASM 변경 없음)
          ↓
-18. Streaming Data Phase 2 ── WASM incremental append (O(delta) 최적화)
+18. Streaming Data Phase 2 ✅ ── WASM incremental append (O(delta) 최적화)
 17. Worker Bridge ──────────── opt-in 레이어
          ↓
  —. Variable Row Height ─── 가장 침습적 변경, 마지막
@@ -560,7 +563,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 2. Event System ✅ ──→ 13. Column DnD Reorder ✅
                    ──→ 16. Context Menu ✅
 14. Multi-level Column Header ✅ ──→ 15. Cell Editing 고도화 ✅
-18. Streaming Data Phase 1 ✅ ──→ 18. Streaming Data Phase 2 (WASM incremental append)
+18. Streaming Data Phase 1 ✅ ──→ 18. Streaming Data Phase 2 ✅
 17. Worker Bridge (독립)
 ```
 
