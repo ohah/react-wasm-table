@@ -12,7 +12,13 @@ import {
   computeDataLinesFromBuffer,
   type GridLineSpec,
 } from "../grid-lines";
-import { readCellRow, readCellX, readCellY, readCellWidth, readCellHeight } from "../../adapter/layout-reader";
+import {
+  readCellRow,
+  readCellX,
+  readCellY,
+  readCellWidth,
+  readCellHeight,
+} from "../../adapter/layout-reader";
 import { computeSelectionRect } from "../selection";
 
 /**
