@@ -418,26 +418,26 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ## 완료 항목
 
-| 항목                           | 카테고리  | 비고                                                                                                         |
-| ------------------------------ | --------- | ------------------------------------------------------------------------------------------------------------ |
-| Row Model Abstraction (1-1)    | Core      | 이후 모든 기능의 토대                                                                                        |
-| Column Feature API (1-2)       | Core      | 기능별 독립 모듈화 기반 (Pinning 렌더링 제외)                                                                |
-| Column Ordering State (2-1)    | State     | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ✅                                                     |
-| Expanding State (2-2)          | State     | getExpandedRowModel ✅, getGroupedRowModel ✅, getPaginationRowModel ✅, getFacetedRowModel ✅               |
-| Column Visibility State (2-3)  | State     | resolveColumns에서 hidden 컬럼 제외                                                                          |
-| Data Access API (4-1)          | Utility   | exportToCSV/TSV/JSON + ExportOptions. 20 테스트                                                              |
-| Clipboard Utilities (4-2)      | Utility   | copyToClipboard, pasteFromClipboard, buildCSV/buildHTML, parseClipboardText. onCopy/onPaste 연결. 15 테스트  |
-| Event System 미들웨어 (1-3)    | Core      | composeMiddleware + GridProps.eventMiddleware. 8 테스트                                                      |
-| Layout Cache (5-3)             | Perf      | 2-slot LRU Rust 캐시 + invalidateLayout() API. 6 테스트                                                      |
-| Custom Cell Renderer (3-1)     | Render    | CellRendererRegistry + built-in 4개 + GridProps.cellRenderers. 25 테스트                                     |
-| Layer System (3-2)             | Render    | GridLayer pipeline + space-based transform + 4 built-in factories. 15 테스트                                 |
-| Virtual Canvas Region (3-3)    | Render    | clip-based 3-region + buildRegions + region-aware hit-test. 29 테스트                                        |
-| Pinning 렌더링 (1-2 잔여)      | Render    | resolveColumns reorder + StringTable ID 키 + data re-ingestion. 데모 포함                                    |
-| Context Menu (6-5)             | UX        | EventManager contextmenu, GridProps.onContextMenu, GridContextMenuEvent, 미들웨어 "contextMenu". 4 테스트    |
-| getGroupedRowModel (9)         | Row Model | buildGroupedRowModel, groupingKeys, aggregate. GroupingDemo                                                  |
-| getPaginationRowModel (10)     | Row Model | buildPaginationRowModel, pageIndex/pageSize. PaginationDemo                                                  |
-| getFacetedRowModel (11)        | Row Model | 컬럼별 faceted values (unique/min/max). FacetedDemo                                                          |
-| Multi-level Column Header (14) | Render    | drawMultiLevelHeader, per-row hit-test, parent group 정렬/리사이즈 제외, selection leaf-only 보정. 데모 포함 |
+| 항목                           | 카테고리  | 비고                                                                                                                                           |
+| ------------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Row Model Abstraction (1-1)    | Core      | 이후 모든 기능의 토대                                                                                                                          |
+| Column Feature API (1-2)       | Core      | 기능별 독립 모듈화 기반 (Pinning 렌더링 제외)                                                                                                  |
+| Column Ordering State (2-1)    | State     | Ordering ✅, Visibility ✅, Pinning State ✅ / 렌더링 ✅                                                                                       |
+| Expanding State (2-2)          | State     | getExpandedRowModel ✅, getGroupedRowModel ✅, getPaginationRowModel ✅, getFacetedRowModel ✅                                                 |
+| Column Visibility State (2-3)  | State     | resolveColumns에서 hidden 컬럼 제외                                                                                                            |
+| Data Access API (4-1)          | Utility   | exportToCSV/TSV/JSON + ExportOptions. 20 테스트                                                                                                |
+| Clipboard Utilities (4-2)      | Utility   | copyToClipboard, pasteFromClipboard, buildCSV/buildHTML, parseClipboardText. onCopy/onPaste 연결. 15 테스트                                    |
+| Event System 미들웨어 (1-3)    | Core      | composeMiddleware + GridProps.eventMiddleware. 8 테스트                                                                                        |
+| Layout Cache (5-3)             | Perf      | 2-slot LRU Rust 캐시 + invalidateLayout() API. 6 테스트                                                                                        |
+| Custom Cell Renderer (3-1)     | Render    | CellRendererRegistry + built-in 4개 + GridProps.cellRenderers. 25 테스트                                                                       |
+| Layer System (3-2)             | Render    | GridLayer pipeline + space-based transform + 4 built-in factories. 15 테스트                                                                   |
+| Virtual Canvas Region (3-3)    | Render    | clip-based 3-region + buildRegions + region-aware hit-test. 29 테스트                                                                          |
+| Pinning 렌더링 (1-2 잔여)      | Render    | resolveColumns reorder + StringTable ID 키 + data re-ingestion. 데모 포함                                                                      |
+| Context Menu (6-5)             | UX        | EventManager contextmenu, GridProps.onContextMenu, GridContextMenuEvent, 미들웨어 "contextMenu". 4 테스트                                      |
+| getGroupedRowModel (9)         | Row Model | buildGroupedRowModel, groupingKeys, aggregate. GroupingDemo                                                                                    |
+| getPaginationRowModel (10)     | Row Model | buildPaginationRowModel, pageIndex/pageSize. PaginationDemo                                                                                    |
+| getFacetedRowModel (11)        | Row Model | 컬럼별 faceted values (unique/min/max). FacetedDemo                                                                                            |
+| Multi-level Column Header (14) | Render    | drawMultiLevelHeader, per-row hit-test, parent group 정렬/리사이즈 제외, selection leaf-only 보정. 데모 포함                                   |
 | Cell Editing (15)              | UX        | EditorManager DOM overlay, meta.updateData 파이프라인, editTrigger click/dblclick, Tab/Shift+Tab, text cursor, onCanvasEvent commit. 데모 포함 |
 
 ---
@@ -472,13 +472,13 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 
 ### Tier 4 — UX Primitive (렌더링 파이프라인 완성 후)
 
-| 순서 | 항목                      | 참조 | 상태 | 이유                                                                                         |
-| ---- | ------------------------- | ---- | ---- | -------------------------------------------------------------------------------------------- |
-| 12   | Row Pinning               | 6-1  | ✅   | State/API/타입 ✅, WASM pinned layout ✅, buildRowRegions clip 렌더링 ✅                     |
-| 13   | Column DnD Reorder        | 6-2  | ✅   | EventManager 헤더 드래그 + useColumnDnD + 고스트/드롭 인디케이터. enableColumnDnD prop       |
-| 14   | Multi-level Column Header | 6-4  | ✅   | helper.group() + 다단 헤더 캔버스 렌더링. TS에서 leaf buffer 기반 group header 위치 계산     |
+| 순서 | 항목                      | 참조 | 상태 | 이유                                                                                           |
+| ---- | ------------------------- | ---- | ---- | ---------------------------------------------------------------------------------------------- |
+| 12   | Row Pinning               | 6-1  | ✅   | State/API/타입 ✅, WASM pinned layout ✅, buildRowRegions clip 렌더링 ✅                       |
+| 13   | Column DnD Reorder        | 6-2  | ✅   | EventManager 헤더 드래그 + useColumnDnD + 고스트/드롭 인디케이터. enableColumnDnD prop         |
+| 14   | Multi-level Column Header | 6-4  | ✅   | helper.group() + 다단 헤더 캔버스 렌더링. TS에서 leaf buffer 기반 group header 위치 계산       |
 | 15   | Cell Editing 고도화       | 6-3  | ✅   | EditorManager DOM overlay, meta.updateData, editTrigger, Tab navigation, text cursor. 7 테스트 |
-| 16   | Context Menu              | 6-5  | ✅   | EventManager contextmenu + hit-test. GridProps.onContextMenu, GridContextMenuEvent. 4 테스트 |
+| 16   | Context Menu              | 6-5  | ✅   | EventManager contextmenu + hit-test. GridProps.onContextMenu, GridContextMenuEvent. 4 테스트   |
 
 ### Tier 5 — 고급 성능 (아키텍처 변경, 기존 기능 안정 후 마지막)
 
