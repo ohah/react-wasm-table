@@ -3,6 +3,7 @@ import type {
   RenderInstruction,
   BoxModelProps,
   CssDimension,
+  CssBorderStyle,
   CssAlignItems,
   CssPosition,
   CssRect,
@@ -265,6 +266,10 @@ export interface ColumnDefBase<TData, TValue = unknown> {
   borderRightWidth?: BoxModelProps["borderRightWidth"];
   borderBottomWidth?: BoxModelProps["borderBottomWidth"];
   borderLeftWidth?: BoxModelProps["borderLeftWidth"];
+  /** Border color (overrides theme.borderColor for this column). */
+  borderColor?: string;
+  /** Border style. @default "solid" */
+  borderStyle?: CssBorderStyle;
 }
 
 /** Column defined by an accessor key (property name). */

@@ -101,6 +101,29 @@ export type CssJustifyContent =
   | "space-evenly"
   | "space-around";
 
+// ── Border style types ──────────────────────────────────────────────
+
+/** CSS border-style values supported by the grid. */
+export type CssBorderStyle = "solid" | "none";
+
+/** A single border side configuration. */
+export interface CellBorderSide {
+  /** Border width in pixels. 0 = no border. */
+  width: number;
+  /** Border style. */
+  style: CssBorderStyle;
+  /** Border color (CSS color string). */
+  color: string;
+}
+
+/** Per-cell border configuration (each side optional). */
+export interface CellBorderConfig {
+  top?: CellBorderSide;
+  right?: CellBorderSide;
+  bottom?: CellBorderSide;
+  left?: CellBorderSide;
+}
+
 // ── Box model props ─────────────────────────────────────────────────
 
 /** Common box model properties shared by Grid (container) and Column (child). */
@@ -139,6 +162,10 @@ export interface BoxModelProps {
   boxSizing?: CssBoxSizing;
   /** Aspect ratio (width / height). */
   aspectRatio?: number;
+  /** Border color (CSS color string, overrides theme.borderColor for this element). */
+  borderColor?: string;
+  /** Border style. @default "solid" */
+  borderStyle?: CssBorderStyle;
 }
 
 // ── Grid event types ───────────────────────────────────────────────────
@@ -463,6 +490,10 @@ export interface Theme {
   cellBackground: string;
   cellColor: string;
   borderColor: string;
+  /** Default grid line width in pixels. @default 0.5 */
+  borderWidth: number;
+  /** Default grid line style. @default "solid" */
+  borderStyle: CssBorderStyle;
   selectedBackground: string;
   fontFamily: string;
   fontSize: number;
@@ -476,6 +507,8 @@ export const DEFAULT_THEME: Theme = {
   cellBackground: "#fff",
   cellColor: "#333",
   borderColor: "#000",
+  borderWidth: 0.5,
+  borderStyle: "solid",
   selectedBackground: "#e3f2fd",
   fontFamily: "system-ui, sans-serif",
   fontSize: 13,
@@ -735,6 +768,8 @@ export interface GridProps extends BoxModelProps {
 
   /** Parsed body content from Table children (Td JSX → RenderInstruction map). @internal */
   _parsedBodyContent?: Map<string, RenderInstruction>;
+  /** Parsed border styles from Table children (keyed by "rowId:columnId"). @internal */
+  _parsedBorderStyles?: Map<string, import("./react/table-components").CellBorderStyleProps>;
   /** Callback to notify Table of visible row range changes from render loop. @internal */
   _onVisibleRangeChange?: (visStart: number, visibleRowCount: number) => void;
 }
