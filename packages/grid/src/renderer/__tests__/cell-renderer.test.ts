@@ -21,6 +21,8 @@ const defaultTheme: Theme = {
   cellColor: "#333",
   fontSize: 13,
   borderColor: "#e0e0e0",
+  borderWidth: 0.5,
+  borderStyle: "solid",
   selectedBackground: "#1976d2",
   fontFamily: "system-ui, sans-serif",
 };
