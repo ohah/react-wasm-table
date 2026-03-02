@@ -585,6 +585,14 @@ export interface ColumnProps extends BoxModelProps {
   columnDefRef?: any;
 }
 
+// ── Table meta ─────────────────────────────────────────────────────────
+
+/** TanStack-compatible meta object passed to Grid for custom callbacks. */
+export interface TableMeta {
+  updateData?: (rowIndex: number, columnId: string, value: unknown) => void;
+  [key: string]: unknown;
+}
+
 // ── Grid props ─────────────────────────────────────────────────────────
 
 /** Props for the <Grid> component (flex/grid container). */
@@ -644,6 +652,10 @@ export interface GridProps extends BoxModelProps {
   onRowPinningChange?: (updater: import("./tanstack-types").RowPinningUpdater) => void;
   /** Get unique row ID for row pinning. Default: (_, i) => String(i) */
   getRowId?: (row: Record<string, unknown>, index: number) => string;
+  /** TanStack-compatible meta object. Use meta.updateData to commit cell edits. */
+  meta?: TableMeta;
+  /** When to open the cell editor: "click" (single) or "dblclick" (double). @default "dblclick" */
+  editTrigger?: "click" | "dblclick";
 
   // Selection state management (controlled/uncontrolled)
   /** Controlled selection state. undefined = uncontrolled, null = no selection. */
