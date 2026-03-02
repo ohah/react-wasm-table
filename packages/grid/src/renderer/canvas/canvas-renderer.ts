@@ -1,4 +1,10 @@
-import type { NormalizedRange, RenderInstruction, SelectionStyle, Theme } from "../../types";
+import type {
+  NormalizedRange,
+  RenderInstruction,
+  SelectionStyle,
+  Theme,
+  CellBorderConfig,
+} from "../../types";
 import type { CellRendererRegistry } from "../components";
 import { drawTextCellFromBuffer } from "../draw-primitives";
 import {
@@ -6,7 +12,7 @@ import {
   computeDataLinesFromBuffer,
   type GridLineSpec,
 } from "../grid-lines";
-import { readCellRow, readCellX, readCellY, readCellWidth } from "../../adapter/layout-reader";
+import { readCellRow, readCellX, readCellY, readCellWidth, readCellHeight } from "../../adapter/layout-reader";
 import { computeSelectionRect } from "../selection";
 
 /**
@@ -167,6 +173,7 @@ export class CanvasRenderer {
 
   /**
    * Draw grid lines from a layout buffer.
+   * When borderConfigMap is provided, per-cell border rendering is used for data cells.
    */
   drawGridLinesFromBuffer(
     buf: Float32Array,
@@ -175,22 +182,24 @@ export class CanvasRenderer {
     theme: Theme,
     headerHeight: number,
     rowHeight: number,
+    borderConfigMap?: Map<number, CellBorderConfig>,
   ): void {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || totalCount === 0) return;
 
+    // Skip all grid lines if theme border style is "none" and no per-cell overrides
+    if (theme.borderStyle === "none" && !borderConfigMap) return;
+
     // Use max content right edge from actual cells for grid line extents.
-    // Region clipping handles pinned column coverage; no need for canvasWidth floor.
     let contentRight = 0;
     for (let i = 0; i < totalCount; i++) {
       contentRight = Math.max(contentRight, readCellX(buf, i) + readCellWidth(buf, i));
     }
 
-    ctx.strokeStyle = theme.borderColor;
-    ctx.lineWidth = 0.5;
-
-    // Header grid lines
-    if (headerCount > 0) {
+    // Header grid lines — always use uniform style (theme defaults)
+    if (headerCount > 0 && theme.borderStyle !== "none") {
+      ctx.strokeStyle = theme.borderColor;
+      ctx.lineWidth = theme.borderWidth;
       this.strokeLines(
         ctx,
         computeHeaderLinesFromBuffer(buf, headerCount, contentRight, headerHeight),
@@ -199,10 +208,84 @@ export class CanvasRenderer {
 
     // Data area grid lines
     if (totalCount > headerCount) {
-      this.strokeLines(
-        ctx,
-        computeDataLinesFromBuffer(buf, headerCount, totalCount, contentRight, rowHeight),
-      );
+      if (borderConfigMap && borderConfigMap.size > 0) {
+        // Per-cell border rendering path
+        this.drawPerCellBorders(ctx, buf, headerCount, totalCount, theme, borderConfigMap);
+      } else if (theme.borderStyle !== "none") {
+        // Fast path: uniform grid lines
+        ctx.strokeStyle = theme.borderColor;
+        ctx.lineWidth = theme.borderWidth;
+        this.strokeLines(
+          ctx,
+          computeDataLinesFromBuffer(buf, headerCount, totalCount, contentRight, rowHeight),
+        );
+      }
+    }
+  }
+
+  /**
+   * Draw per-cell borders using fillRect for each border side.
+   * Cells without a config entry use theme defaults.
+   */
+  private drawPerCellBorders(
+    ctx: CanvasRenderingContext2D,
+    buf: Float32Array,
+    headerCount: number,
+    totalCount: number,
+    theme: Theme,
+    borderConfigMap: Map<number, CellBorderConfig>,
+  ): void {
+    const defaultWidth = theme.borderWidth;
+    const defaultColor = theme.borderColor;
+    const defaultStyle = theme.borderStyle;
+
+    for (let i = headerCount; i < totalCount; i++) {
+      const x = readCellX(buf, i);
+      const y = readCellY(buf, i);
+      const w = readCellWidth(buf, i);
+      const h = readCellHeight(buf, i);
+
+      const config = borderConfigMap.get(i);
+
+      // Top border
+      const top = config?.top;
+      const topWidth = top ? top.width : defaultWidth;
+      const topStyle = top ? top.style : defaultStyle;
+      const topColor = top ? top.color : defaultColor;
+      if (topStyle !== "none" && topWidth > 0) {
+        ctx.fillStyle = topColor;
+        ctx.fillRect(x, y, w, topWidth);
+      }
+
+      // Right border
+      const right = config?.right;
+      const rightWidth = right ? right.width : defaultWidth;
+      const rightStyle = right ? right.style : defaultStyle;
+      const rightColor = right ? right.color : defaultColor;
+      if (rightStyle !== "none" && rightWidth > 0) {
+        ctx.fillStyle = rightColor;
+        ctx.fillRect(x + w - rightWidth, y, rightWidth, h);
+      }
+
+      // Bottom border
+      const bottom = config?.bottom;
+      const bottomWidth = bottom ? bottom.width : defaultWidth;
+      const bottomStyle = bottom ? bottom.style : defaultStyle;
+      const bottomColor = bottom ? bottom.color : defaultColor;
+      if (bottomStyle !== "none" && bottomWidth > 0) {
+        ctx.fillStyle = bottomColor;
+        ctx.fillRect(x, y + h - bottomWidth, w, bottomWidth);
+      }
+
+      // Left border
+      const left = config?.left;
+      const leftWidth = left ? left.width : defaultWidth;
+      const leftStyle = left ? left.style : defaultStyle;
+      const leftColor = left ? left.color : defaultColor;
+      if (leftStyle !== "none" && leftWidth > 0) {
+        ctx.fillStyle = leftColor;
+        ctx.fillRect(x, y, leftWidth, h);
+      }
     }
   }
 
