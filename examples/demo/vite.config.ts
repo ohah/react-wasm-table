@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 12313,
+    host: true,
   },
   resolve: {
     conditions: ["development"],
