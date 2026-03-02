@@ -79,6 +79,7 @@ export class CanvasRenderer {
     headers: string[],
     theme: Theme,
     headerHeight: number,
+    enableColumnDnD?: boolean,
   ): void {
     const ctx = this.ctx;
     if (!ctx || count === 0) return;
@@ -106,6 +107,36 @@ export class CanvasRenderer {
         fontWeight: "bold",
         fontSize: theme.headerFontSize,
       });
+    }
+
+    // Draw drag handle grip dots (2 columns × 3 rows = 6 dots)
+    if (enableColumnDnD) {
+      const dotR = 1.5;
+      const gapX = 5;
+      const gapY = 4;
+      const HANDLE_ZONE = 20;
+      const RESIZE_ZONE = 5;
+
+      ctx.save();
+      ctx.fillStyle = theme.headerColor;
+      ctx.globalAlpha = 0.35;
+      for (let i = 0; i < count; i++) {
+        const cellIdx = start + i;
+        const cx = readCellX(buf, cellIdx);
+        const cy = readCellY(buf, cellIdx);
+        const cw = readCellWidth(buf, cellIdx);
+        const centerX = cx + cw - RESIZE_ZONE - HANDLE_ZONE / 2;
+        const centerY = cy + headerHeight / 2;
+
+        for (let r = -1; r <= 1; r++) {
+          for (let c = 0; c < 2; c++) {
+            ctx.beginPath();
+            ctx.arc(centerX + (c - 0.5) * gapX, centerY + r * gapY, dotR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+      ctx.restore();
     }
   }
 

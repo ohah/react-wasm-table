@@ -122,6 +122,8 @@ export interface UseRenderLoopParams {
   layers?: GridLayer[];
   columnPinning?: ColumnPinningState;
   viewIndicesRef?: { current: Uint32Array | number[] | null };
+  /** Whether column DnD reorder is enabled (controls grip icon rendering). */
+  enableColumnDnD?: boolean;
   /** Ref to column DnD state for drawing ghost + drop indicator. */
   columnDnDStateRef?: React.RefObject<ColumnDnDState | null>;
   /** Row pinning state (top/bottom row IDs). */
@@ -166,6 +168,7 @@ export function useRenderLoop({
   layers,
   columnPinning,
   viewIndicesRef,
+  enableColumnDnD,
   columnDnDStateRef,
   rowPinning,
   getRowId,
@@ -677,6 +680,7 @@ export function useRenderLoop({
               : undefined,
             _borderConfigMap: borderConfigMap,
             _headerRowCount: headerRowCount,
+            _enableColumnDnD: enableColumnDnD ?? false,
           };
 
           const rowRegions = rowRegionLayout?.regions ?? null;

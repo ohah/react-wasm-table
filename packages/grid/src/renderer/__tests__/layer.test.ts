@@ -63,6 +63,7 @@ function buildContext(overrides?: Partial<InternalLayerContext>): InternalLayerC
     _enableSelection: true,
     _selection: { minRow: 0, maxRow: 2, minCol: 0, maxCol: 1 },
     _selectionStyle: undefined,
+    _enableColumnDnD: false,
     ...overrides,
   };
 }
@@ -88,6 +89,7 @@ describe("headerLayer", () => {
       ctx._headersWithSort,
       ctx.theme,
       ctx.headerHeight,
+      false,
     );
   });
 });
