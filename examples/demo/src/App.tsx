@@ -49,6 +49,7 @@ import { PaginationDemo } from "./pages/PaginationDemo";
 import { GroupingDemo } from "./pages/GroupingDemo";
 import { FacetedDemo } from "./pages/FacetedDemo";
 import { TableApiDemo } from "./pages/TableApiDemo";
+import { BorderStyleDemo } from "./pages/BorderStyleDemo";
 import {
   TanStackColumnPinning,
   TanStackHome,
@@ -179,6 +180,7 @@ export function App() {
           <Route path="/pagination" element={<PaginationDemo />} />
           <Route path="/grouping" element={<GroupingDemo />} />
           <Route path="/faceted" element={<FacetedDemo />} />
+          <Route path="/border-style" element={<BorderStyleDemo />} />
         </Routes>
       </main>
     </div>

@@ -76,6 +76,7 @@ const sections = [
       { to: "/margin", label: "margin" },
       { to: "/overflow", label: "overflow" },
       { to: "/scrollbar", label: "scrollbar" },
+      { to: "/border-style", label: "Border Style" },
     ],
   },
 ];
