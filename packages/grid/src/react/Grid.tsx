@@ -241,6 +241,7 @@ export function Grid({
     stopAutoScroll,
     handleVScrollChange,
     handleHScrollChange,
+    scrollToRow,
   } = useGridScroll({
     data,
     viewRowCountRef,
@@ -316,7 +317,14 @@ export function Grid({
     getStringTable,
     selectionManager: selectionManagerProp,
   });
-  const { editorManagerRef, handleCellDoubleClick, handleCellClick, isCellEditable } = useEditing({
+  const {
+    editorManagerRef,
+    handleCellDoubleClick,
+    handleCellClick,
+    isCellEditable,
+    editorPortal,
+    handleTypingKeyDown,
+  } = useEditing({
     editorRef,
     columnRegistry,
     data,
@@ -328,6 +336,8 @@ export function Grid({
     meta: metaProp,
     headerRowCount,
     editTrigger: editTriggerProp,
+    invalidate,
+    scrollToRow,
   });
 
   // Mark dirty when columns change
@@ -381,6 +391,7 @@ export function Grid({
       handleColumnDnDMove: enableColumnDnDProp ? handleColumnDnDMove : undefined,
       handleColumnDnDEnd: enableColumnDnDProp ? handleColumnDnDEnd : undefined,
       isCellEditable,
+      handleTypingKeyDown,
     },
     onCellClick: onCellClickProp,
     onCellDoubleClick: onCellDoubleClickProp,
@@ -593,6 +604,7 @@ export function Grid({
             style={showVerticalScrollbar ? { width: `calc(100% - 17px)` } : undefined}
           />
         )}
+        {editorPortal}
         {!columnsProp && children}
       </div>
     </GridContext.Provider>

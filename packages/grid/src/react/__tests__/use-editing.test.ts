@@ -32,7 +32,7 @@ function makeLayoutBuf(
 
 describe("useEditing (renderHook)", () => {
   function setup(
-    cols: { id: string; width: number; editor?: string }[],
+    cols: { id: string; width: number; editor?: string; editCell?: any }[],
     data: Record<string, unknown>[],
     layoutBuf?: Float32Array,
     headerCount = 1,
@@ -202,7 +202,7 @@ describe("useEditing (renderHook)", () => {
       );
     }
 
-    it("calls updateData with correct rowIndex, columnId, value on commit", () => {
+    it("calls updateData with correct rowIndex, columnId, value on commitValue", () => {
       const updateData = mock(() => {});
       const buf = makeLayoutBuf([
         { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
@@ -216,16 +216,16 @@ describe("useEditing (renderHook)", () => {
       );
 
       act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
-      // Change value and commit
       const em = result.current.editorManagerRef.current;
       expect(em.isEditing).toBe(true);
       act(() => {
-        em.commit();
+        em.commitValue("NewName");
       });
       expect(updateData).toHaveBeenCalledTimes(1);
       // rowIndex=0 (row 1 - headerCount 1), columnId="name"
       expect(updateData.mock.calls[0]![0]).toBe(0);
       expect(updateData.mock.calls[0]![1]).toBe("name");
+      expect(updateData.mock.calls[0]![2]).toBe("NewName");
     });
 
     it("does not throw when meta is undefined", () => {
@@ -242,7 +242,7 @@ describe("useEditing (renderHook)", () => {
 
       act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
       expect(() => {
-        act(() => result.current.editorManagerRef.current.commit());
+        act(() => result.current.editorManagerRef.current.commitValue("val"));
       }).not.toThrow();
     });
 
@@ -260,7 +260,7 @@ describe("useEditing (renderHook)", () => {
 
       act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
       expect(() => {
-        act(() => result.current.editorManagerRef.current.commit());
+        act(() => result.current.editorManagerRef.current.commitValue("val"));
       }).not.toThrow();
     });
   });
@@ -297,6 +297,14 @@ describe("useEditing (renderHook)", () => {
   describe("isCellEditable", () => {
     it("returns true for data row with editor column", () => {
       const { result } = setup([{ id: "name", width: 100, editor: "text" }], [{ name: "Alice" }]);
+      expect(result.current.isCellEditable({ row: 1, col: 0 })).toBe(true);
+    });
+
+    it("returns true for data row with editCell column", () => {
+      const { result } = setup(
+        [{ id: "name", width: 100, editCell: () => null }],
+        [{ name: "Alice" }],
+      );
       expect(result.current.isCellEditable({ row: 1, col: 0 })).toBe(true);
     });
 
@@ -434,7 +442,7 @@ describe("useEditing (renderHook)", () => {
       return { ...hook, editorDiv };
     }
 
-    it("Tab moves to next editable column in the same row", () => {
+    it("Tab (commitAndNavigate) moves to next editable column in the same row", () => {
       const cols = [
         { id: "name", width: 100, editor: "text" },
         { id: "age", width: 80, editor: "number" },
@@ -449,17 +457,17 @@ describe("useEditing (renderHook)", () => {
         { row: 1, col: 1, x: 100, y: 40, w: 80, h: 36 },
         { row: 1, col: 2, x: 180, y: 40, w: 120, h: 36 },
       ];
-      const { result, editorDiv } = setupNav(cols, data, cells);
+      const { result } = setupNav(cols, data, cells);
 
       act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
       const em = result.current.editorManagerRef.current;
       expect(em.isEditing).toBe(true);
 
-      act(() => {
-        const input = editorDiv.querySelector("input")!;
-        input.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
-      });
+      // Simulate Tab via commitAndNavigate
+      act(() => em.commitAndNavigate("Alice", "next"));
+      // Should open editor at next editable cell (row:1, col:1)
       expect(em.isEditing).toBe(true);
+      expect(em.activeCoord).toEqual({ row: 1, col: 1 });
     });
 
     it("Tab skips non-editable columns", () => {
@@ -477,14 +485,13 @@ describe("useEditing (renderHook)", () => {
         { row: 1, col: 1, x: 100, y: 40, w: 80, h: 36 },
         { row: 1, col: 2, x: 180, y: 40, w: 120, h: 36 },
       ];
-      const { result, editorDiv } = setupNav(cols, data, cells);
+      const { result } = setupNav(cols, data, cells);
 
       act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
-      act(() => {
-        const input = editorDiv.querySelector("input")!;
-        input.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
-      });
+      act(() => result.current.editorManagerRef.current.commitAndNavigate("Alice", "next"));
+      // Should skip col 1 (no editor) and land on col 2
       expect(result.current.editorManagerRef.current.isEditing).toBe(true);
+      expect(result.current.editorManagerRef.current.activeCoord).toEqual({ row: 1, col: 2 });
     });
 
     it("Tab wraps to first editable column of next row", () => {
@@ -495,14 +502,12 @@ describe("useEditing (renderHook)", () => {
         { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
         { row: 2, col: 0, x: 0, y: 76, w: 100, h: 36 },
       ];
-      const { result, editorDiv } = setupNav(cols, data, cells);
+      const { result } = setupNav(cols, data, cells);
 
       act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
-      act(() => {
-        const input = editorDiv.querySelector("input")!;
-        input.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
-      });
+      act(() => result.current.editorManagerRef.current.commitAndNavigate("Alice", "next"));
       expect(result.current.editorManagerRef.current.isEditing).toBe(true);
+      expect(result.current.editorManagerRef.current.activeCoord).toEqual({ row: 2, col: 0 });
     });
 
     it("Shift+Tab moves to previous editable column", () => {
@@ -517,20 +522,12 @@ describe("useEditing (renderHook)", () => {
         { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
         { row: 1, col: 1, x: 100, y: 40, w: 80, h: 36 },
       ];
-      const { result, editorDiv } = setupNav(cols, data, cells);
+      const { result } = setupNav(cols, data, cells);
 
       act(() => result.current.handleCellDoubleClick({ row: 1, col: 1 }));
-      act(() => {
-        const input = editorDiv.querySelector("input")!;
-        input.dispatchEvent(
-          new KeyboardEvent("keydown", {
-            key: "Tab",
-            shiftKey: true,
-            bubbles: true,
-          }),
-        );
-      });
+      act(() => result.current.editorManagerRef.current.commitAndNavigate(30, "prev"));
       expect(result.current.editorManagerRef.current.isEditing).toBe(true);
+      expect(result.current.editorManagerRef.current.activeCoord).toEqual({ row: 1, col: 0 });
     });
 
     it("Tab at last cell of last row closes editor (no wrap)", () => {
@@ -540,14 +537,48 @@ describe("useEditing (renderHook)", () => {
         { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
         { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
       ];
-      const { result, editorDiv } = setupNav(cols, data, cells);
+      const { result } = setupNav(cols, data, cells);
 
       act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
-      act(() => {
-        const input = editorDiv.querySelector("input")!;
-        input.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
-      });
+      act(() => result.current.editorManagerRef.current.commitAndNavigate("Alice", "next"));
+      // No next editable cell → editor should be closed
       expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+    });
+  });
+
+  describe("editCell priority", () => {
+    it("editCell takes precedence over editor", () => {
+      const customEditor = mock(() => null);
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      ]);
+      const { result } = setup(
+        [{ id: "name", width: 100, editor: "text", editCell: customEditor }],
+        [{ name: "Alice" }],
+        buf,
+      );
+
+      act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
+      const em = result.current.editorManagerRef.current;
+      expect(em.isEditing).toBe(true);
+      // editorType should be "custom" when editCell is present
+      expect(em.editorType).toBe("custom");
+    });
+
+    it("opens editor for column with editCell but no editor prop", () => {
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      ]);
+      const { result } = setup(
+        [{ id: "name", width: 100, editCell: () => null }],
+        [{ name: "Alice" }],
+        buf,
+      );
+
+      act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
+      expect(result.current.editorManagerRef.current.isEditing).toBe(true);
     });
   });
 });
