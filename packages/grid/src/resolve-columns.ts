@@ -90,6 +90,8 @@ export function resolveColumns<TData>(
       ...(def.gridRow !== undefined && { gridRow: def.gridRow }),
       ...(def.gridColumn !== undefined && { gridColumn: def.gridColumn }),
       ...(def.justifySelf !== undefined && { justifySelf: def.justifySelf }),
+      ...(def.borderColor !== undefined && { borderColor: def.borderColor }),
+      ...(def.borderStyle !== undefined && { borderStyle: def.borderStyle }),
     };
 
     // Header render function → string
