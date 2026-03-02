@@ -189,6 +189,10 @@ export type { ContentCoords } from "./event-helpers";
 export { EditorManager } from "./adapter/editor-manager";
 export { SelectionManager, buildTSV } from "./adapter/selection-manager";
 
+// Built-in editor components
+export { TextEditor, NumberEditor, SelectEditor, editorStyle } from "./react/editors";
+export type { TextEditorProps, NumberEditorProps, SelectEditorProps } from "./react/editors";
+
 // Data export utilities
 export { exportToCSV, exportToTSV, exportToJSON } from "./export";
 export type { ExportOptions } from "./export";
@@ -332,5 +336,6 @@ export type {
   CssBorderStyle,
   CellBorderSide,
   CellBorderConfig,
+  CellEditRenderProps,
 } from "./types";
 export { DEFAULT_THEME, isHeaderRow, toDataRow } from "./types";
