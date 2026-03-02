@@ -11,6 +11,7 @@ const DOUBLE_TAP_DISTANCE = 20; // max px between taps for double-tap
 const LONG_PRESS_DURATION = 500; // ms hold → selection drag mode
 const MOUSE_DRAG_THRESHOLD = 5; // px movement before mousemove triggers drag-extend
 const RESIZE_HANDLE_ZONE = 5; // px from header right edge for resize handle
+const DRAG_HANDLE_ZONE = 20; // px zone for column DnD grip handle (left of resize zone)
 
 /** Content-space coordinates from a DOM event. */
 export interface EventCoords {
@@ -218,6 +219,26 @@ export class EventManager {
   }
 
   /**
+   * Check if x is within the drag handle zone of any header cell.
+   * The zone sits just to the left of the resize handle zone.
+   * Returns col index or -1.
+   */
+  findDragHandle(x: number, y: number): number {
+    for (const h of this.headerLayouts) {
+      const rightEdge = h.x + h.width;
+      if (
+        y >= h.y &&
+        y < h.y + h.height &&
+        x >= rightEdge - RESIZE_HANDLE_ZONE - DRAG_HANDLE_ZONE &&
+        x < rightEdge - RESIZE_HANDLE_ZONE
+      ) {
+        return h.col;
+      }
+    }
+    return -1;
+  }
+
+  /**
    * Re-run hit-test at the last known mouse position (for auto-scroll extend).
    * Falls back to nearest-cell when the mouse is outside the data area.
    */
@@ -375,8 +396,8 @@ export class EventManager {
         this.lastViewportPos = null;
 
         if (headerHit) {
-          // Column DnD: header mousedown starts drag (if handler provided)
-          if (handlers.onHeaderMouseDown) {
+          // Column DnD: only start from drag handle zone (if handler provided)
+          if (handlers.onHeaderMouseDown && this.findDragHandle(x, y) >= 0) {
             this.columnDnDState = { colIndex: headerHit.col };
             this.columnDnDMoved = false;
             this.columnDnDJustEnded = false;
@@ -384,7 +405,7 @@ export class EventManager {
             this.pendingHeaderSelection = { hit: headerHit, shiftKey: e.shiftKey, coords };
             handlers.onHeaderMouseDown(headerHit.col, e, coords);
           } else {
-            // No DnD — fire selection immediately
+            // Not in handle zone or no DnD — fire selection immediately
             handlers.onCellMouseDown?.(headerHit, e.shiftKey, e, coords);
           }
 

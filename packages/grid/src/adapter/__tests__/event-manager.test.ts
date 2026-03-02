@@ -540,9 +540,9 @@ describe("EventManager", () => {
       em.setLayouts(headerLayouts, []);
       em.attach(canvas, { onHeaderClick, onHeaderMouseDown });
 
-      // mousedown on header (sets columnDnDState)
+      // mousedown on drag handle zone (right edge: 200 - 5 - 20 to 200 - 5 → 175..195)
       canvas.dispatchEvent(
-        new MouseEvent("mousedown", { clientX: 100, clientY: 20, bubbles: true }),
+        new MouseEvent("mousedown", { clientX: 185, clientY: 20, bubbles: true }),
       );
       expect(onHeaderMouseDown).toHaveBeenCalledTimes(1);
 
@@ -550,7 +550,7 @@ describe("EventManager", () => {
       window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
 
       // click should go through since no actual drag movement
-      canvas.dispatchEvent(new MouseEvent("click", { clientX: 100, clientY: 20, bubbles: true }));
+      canvas.dispatchEvent(new MouseEvent("click", { clientX: 185, clientY: 20, bubbles: true }));
       expect(onHeaderClick).toHaveBeenCalledTimes(1);
     });
 
@@ -563,9 +563,9 @@ describe("EventManager", () => {
       em.setLayouts(headerLayouts, []);
       em.attach(canvas, { onHeaderClick, onHeaderMouseDown, onColumnDnDMove, onColumnDnDEnd });
 
-      // mousedown on header
+      // mousedown on drag handle zone of first header (175..195)
       canvas.dispatchEvent(
-        new MouseEvent("mousedown", { clientX: 100, clientY: 20, bubbles: true }),
+        new MouseEvent("mousedown", { clientX: 185, clientY: 20, bubbles: true }),
       );
 
       // actual drag movement
@@ -590,9 +590,9 @@ describe("EventManager", () => {
       em.setLayouts(headerLayouts, []);
       em.attach(canvas, { onHeaderMouseDown, onColumnDnDEnd });
 
-      // mousedown + mouseup without movement
+      // mousedown on drag handle zone + mouseup without movement
       canvas.dispatchEvent(
-        new MouseEvent("mousedown", { clientX: 100, clientY: 20, bubbles: true }),
+        new MouseEvent("mousedown", { clientX: 185, clientY: 20, bubbles: true }),
       );
       window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
 

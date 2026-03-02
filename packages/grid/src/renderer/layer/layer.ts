@@ -60,6 +60,7 @@ export interface InternalLayerContext extends LayerContext {
   _computeChildLayout?: (input: Float32Array) => Float32Array;
   _borderConfigMap?: Map<number, CellBorderConfig>;
   _headerRowCount: number;
+  _enableColumnDnD: boolean;
 }
 
 // ── Built-in layer factories ────────────────────────────────────────────
@@ -78,6 +79,7 @@ export function headerLayer(): GridLayer {
         ctx._headersWithSort,
         ctx.theme,
         ctx.headerHeight,
+        ctx._enableColumnDnD,
       );
     },
   };
