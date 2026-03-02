@@ -133,7 +133,10 @@ describe("StringTable", () => {
       st.populate([{ a: "old" }] as Record<string, unknown>[], ["a"]);
 
       // Append with a new column "b"
-      const data = [{ a: "old", b: "x" }, { a: "new", b: "y" }] as Record<string, unknown>[];
+      const data = [
+        { a: "old", b: "x" },
+        { a: "new", b: "y" },
+      ] as Record<string, unknown>[];
       st.append(data, ["a", "b"], 1);
 
       expect(st.get("a", 1)).toBe("new");
