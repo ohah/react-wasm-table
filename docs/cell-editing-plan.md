@@ -7,60 +7,59 @@
 
 ---
 
-## 현재 상태 (이미 구현된 것)
+## 현재 상태 (구현 완료)
 
-| 항목                       | 상태 | 비고                                                |
-| -------------------------- | ---- | --------------------------------------------------- |
-| EditorManager 클래스       | ✅   | native input createElement 방식. text/number 지원   |
-| useEditing 훅              | ✅   | 더블클릭 → open, layout buffer에서 위치 계산        |
-| DOM overlay (editorRef)    | ✅   | absolute positioned div, pointerEvents 토글         |
-| EventManager 더블클릭      | ✅   | hit-test → onCellDoubleClick 발화                   |
-| 클릭/드래그 시 에디터 취소 | ✅   | useEventAttachment에서 cancel() 호출                |
-| Column.editor prop         | ✅   | `"text" \| "number" \| "select"` (select 미구현)    |
-| editorManager DI           | ✅   | GridProps.editorManager로 외부 주입 가능 (테스트용) |
+| 항목                             | 상태 | 비고                                                         |
+| -------------------------------- | ---- | ------------------------------------------------------------ |
+| EditorManager 클래스             | ✅   | native input createElement 방식. text/number 지원            |
+| useEditing 훅                    | ✅   | 더블클릭/클릭 → open, layout buffer에서 위치 계산            |
+| DOM overlay (editorRef)          | ✅   | absolute positioned div, input에 pointerEvents: auto         |
+| EventManager 더블클릭            | ✅   | hit-test → onCellDoubleClick 발화                            |
+| 클릭/드래그 시 에디터 커밋       | ✅   | onCanvasEvent("mousedown")에서 commit() 호출                 |
+| Column.editor prop               | ✅   | `"text" \| "number" \| "select"` (select 미구현)             |
+| editorManager DI                 | ✅   | GridProps.editorManager로 외부 주입 가능 (테스트용)          |
+| meta.updateData 파이프라인       | ✅   | EditorManager.onCommit → use-editing → meta.updateData       |
+| Tab/Shift+Tab 네비게이션         | ✅   | EditorManager.onNavigate → 다음/이전 editable 셀 자동 이동   |
+| editTrigger prop                 | ✅   | `"dblclick"` (기본) / `"click"` 모드 지원                    |
+| click 모드 셀→셀 전환            | ✅   | pointerEvents를 input에만 적용, 컨테이너는 클릭 통과         |
+| isCellEditable + text cursor     | ✅   | editable 셀 hover 시 마우스 커서 text로 변경                 |
+| onCanvasEvent mousedown → commit | ✅   | 캔버스 어디든 mousedown 시 활성 에디터 commit (빈 영역 포함) |
+| 이중 호출 방지                   | ✅   | cleanup()에서 state를 먼저 null → blur 재진입 시 no-op       |
 
 ---
 
-## Step 1: meta.updateData + 값 커밋 파이프라인
+## Step 1: meta.updateData + 값 커밋 파이프라인 ✅ 완료
 
 **목표:** 에디터에서 커밋된 값이 데이터 소스까지 전달되는 파이프라인 완성
 
-### 할 일
+### 구현 내역
 
-1. **GridProps에 `meta` prop 추가**
-
-   ```ts
-   interface TableMeta<TData> {
-     updateData?: (rowIndex: number, columnId: string, value: unknown) => void;
-     [key: string]: unknown; // 사용자 확장 가능
-   }
-
-   interface GridProps {
-     meta?: TableMeta<TData>;
-   }
-   ```
-
-2. **EditorManager.commit() → meta.updateData() 연결**
-   - useEditing에서 commit 결과를 받아 `meta.updateData(rowIndex, columnId, value)` 호출
-   - EditorManager에 `onCommit` 콜백을 주입하는 방식으로 연결
-
-3. **기존 EditorManager 로직 유지** (native input 방식 그대로)
+1. **GridProps에 `meta` prop 추가** — `TableMeta` 타입 (`types.ts`)
+2. **EditorManager.onCommit 콜백** — commit() 시 coord/value와 함께 호출
+3. **EditorManager.onNavigate 콜백** — Tab/Shift+Tab 시 방향과 함께 호출
+4. **use-editing에서 onCommit → meta.updateData 연결** — coord → rowIndex/columnId 변환
+5. **editTrigger prop** — `"click"` / `"dblclick"` 모드 (계획 외 추가)
+6. **isCellEditable** — editable 셀 hover 시 text 커서 (계획 외 추가)
+7. **onCanvasEvent("mousedown") commit** — 캔버스 전체 mousedown에서 에디터 commit (계획 외 추가)
 
 ### 변경 파일
 
-- `types.ts` — `TableMeta` 타입, `GridProps.meta` prop 추가
-- `use-editing.ts` — commit 시 `meta.updateData` 호출 연결
-- `editor-manager.ts` — `onCommit` 콜백 지원 추가
+- `types.ts` — `TableMeta` 타입, `GridProps.meta`, `GridProps.editTrigger` prop
+- `editor-manager.ts` — `onCommit`/`onNavigate` 콜백, pointerEvents 수정
+- `use-editing.ts` — meta 연결, Tab 네비게이션, editTrigger, isCellEditable
+- `use-event-attachment.ts` — onCellHover cursor, onCanvasEvent commit
+- `event-manager.ts` — onCellHover 핸들러 추가
+- `Grid.tsx` — props wiring
 
 ### 테스트
 
-- meta.updateData가 commit 시 올바른 인자로 호출되는지
-- meta 미제공 시 에러 없이 동작하는지
-- number 타입 변환 (string → number) 확인
+- EditorManager: onCommit/onNavigate 콜백, 이중 호출 방지 (20개)
+- use-editing: isCellEditable, editTrigger (7개)
+- use-event-attachment: onCanvasEvent commit, cursor (14개)
 
 ---
 
-## Step 2: editCell render prop + React 컴포넌트 에디터
+## Step 2: editCell render prop + React 컴포넌트 에디터 — ❌ 미구현
 
 **목표:** 사용자가 React 컴포넌트로 에디터 UI를 자유롭게 결정
 
@@ -120,17 +119,21 @@
 
 ---
 
-## Step 3: 에디터 UX 완성
+## Step 3: 에디터 UX 완성 — 부분 구현
 
 **목표:** 편집 경험의 세부 동작 완성
 
-### 할 일
+### 구현 완료
 
-1. **키보드 네비게이션**
-   - Enter → commit + 아래 셀로 이동 (선택적)
-   - Tab → commit + 오른쪽 셀로 이동 (선택적)
-   - Escape → cancel
-   - 셀 선택 상태에서 타이핑 시작 → 자동 edit mode 진입
+- ✅ Tab → commit + 다음 editable 셀로 이동
+- ✅ Shift+Tab → commit + 이전 editable 셀로 이동
+- ✅ Enter → commit
+- ✅ Escape → cancel
+- ✅ 편집 중 셀 border 하이라이트 (2px solid #1976d2)
+
+### 미구현
+
+1. **셀 선택 상태에서 타이핑 시작 → 자동 edit mode 진입**
 
 2. **스크롤 동기화**
    - 편집 중 스크롤 시 에디터 위치 업데이트 또는 자동 cancel
@@ -140,9 +143,7 @@
    - `editor: "select"` 시 built-in select 컴포넌트 렌더링
    - ColumnProps에 `editorOptions?: { options: { label: string; value: unknown }[] }` 추가
 
-4. **편집 중 시각적 피드백**
-   - 편집 중인 셀 하이라이트 (border 등)
-   - 에디터가 셀 경계를 넘지 않도록 크기 제한
+4. **에디터가 셀 경계를 넘지 않도록 크기 제한**
 
 ### 변경 파일
 
@@ -153,26 +154,25 @@
 
 ### 테스트
 
-- Enter/Tab/Escape 키보드 동작
 - 스크롤 시 에디터 cancel 확인
 - select 에디터 옵션 렌더링 + 선택 commit
 
 ---
 
-## Step 별 예상 규모
+## Step 별 진행 상태
 
-| Step | 핵심 내용                       | 변경 파일 수 | 신규 파일 |
-| ---- | ------------------------------- | ------------ | --------- |
-| 1    | meta.updateData 파이프라인      | 3            | 0         |
-| 2    | editCell render prop + 리팩토링 | 4-5          | 1         |
-| 3    | 키보드/스크롤/select UX         | 3-4          | 0         |
+| Step | 핵심 내용                       | 상태      | 변경 파일 수 | 신규 파일 |
+| ---- | ------------------------------- | --------- | ------------ | --------- |
+| 1    | meta.updateData 파이프라인      | ✅ 완료   | 6            | 0         |
+| 2    | editCell render prop + 리팩토링 | ❌ 미착수 | 4-5          | 1         |
+| 3    | 키보드/스크롤/select UX         | 부분 구현 | 3-4          | 0         |
 
 ---
 
 ## 사용 예시 (최종 형태)
 
 ```tsx
-// 기본 사용 (built-in editor)
+// 기본 사용 (built-in editor) — ✅ 현재 동작
 <Grid
   data={data}
   meta={{
@@ -182,6 +182,7 @@
       );
     },
   }}
+  editTrigger="dblclick" // "dblclick" (기본) | "click"
 >
   <Column id="name" editor="text" />
   <Column id="price" editor="number" />
@@ -197,7 +198,7 @@
   />
 </Grid>;
 
-// 커스텀 에디터 (editCell render prop)
+// 커스텀 에디터 (editCell render prop) — ❌ Step 2에서 구현 예정
 const columns = [
   helper.accessor("name", {
     editCell: ({ value, onCommit, onCancel }) => (
@@ -221,9 +222,9 @@ const columns = [
 ## 의존성
 
 ```
-Step 1: meta.updateData ← 독립 (기존 코드에 추가만)
+Step 1: meta.updateData ✅ ← 독립 (기존 코드에 추가만)
          ↓
-Step 2: editCell render prop ← Step 1 필요 (onCommit → meta.updateData 연결)
+Step 2: editCell render prop ❌ ← Step 1 필요 (onCommit → meta.updateData 연결)
          ↓
-Step 3: UX 완성 ← Step 2 필요 (editCell 기반 위에 UX 추가)
+Step 3: UX 완성 (부분 ✅) ← Step 2 필요 (editCell 기반 위에 UX 추가)
 ```
