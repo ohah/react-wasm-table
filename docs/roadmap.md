@@ -438,6 +438,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | getPaginationRowModel (10)     | Row Model | buildPaginationRowModel, pageIndex/pageSize. PaginationDemo                                                  |
 | getFacetedRowModel (11)        | Row Model | 컬럼별 faceted values (unique/min/max). FacetedDemo                                                          |
 | Multi-level Column Header (14) | Render    | drawMultiLevelHeader, per-row hit-test, parent group 정렬/리사이즈 제외, selection leaf-only 보정. 데모 포함 |
+| Cell Editing (15)              | UX        | EditorManager DOM overlay, meta.updateData 파이프라인, editTrigger click/dblclick, Tab/Shift+Tab, text cursor, onCanvasEvent commit. 데모 포함 |
 
 ---
 
@@ -476,7 +477,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | 12   | Row Pinning               | 6-1  | ✅   | State/API/타입 ✅, WASM pinned layout ✅, buildRowRegions clip 렌더링 ✅                     |
 | 13   | Column DnD Reorder        | 6-2  | ✅   | EventManager 헤더 드래그 + useColumnDnD + 고스트/드롭 인디케이터. enableColumnDnD prop       |
 | 14   | Multi-level Column Header | 6-4  | ✅   | helper.group() + 다단 헤더 캔버스 렌더링. TS에서 leaf buffer 기반 group header 위치 계산     |
-| 15   | Cell Editing 고도화       | 6-3  | ❌   | EditorManager + DOM overlay 완성. editCell render prop                                       |
+| 15   | Cell Editing 고도화       | 6-3  | ✅   | EditorManager DOM overlay, meta.updateData, editTrigger, Tab navigation, text cursor. 7 테스트 |
 | 16   | Context Menu              | 6-5  | ✅   | EventManager contextmenu + hit-test. GridProps.onContextMenu, GridContextMenuEvent. 4 테스트 |
 
 ### Tier 5 — 고급 성능 (아키텍처 변경, 기존 기능 안정 후 마지막)
@@ -496,7 +497,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
          ↓
 14. Multi-level Header ✅ ── header 구조 확정 완료
          ↓
-15. Cell Editing 고도화 ─── 확정된 header 위에 기존 stub 완성
+15. Cell Editing 고도화 ✅ ── meta.updateData, editTrigger, Tab, text cursor
          ↓
 17. Worker + Streaming ──── opt-in 레이어, 기존 코드 변경 없음
          ↓
@@ -534,7 +535,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 7. Pinning 렌더링 ✅ ──→ 12. Row Pinning ✅
 2. Event System ✅ ──→ 13. Column DnD Reorder ✅
                    ──→ 16. Context Menu ✅
-14. Multi-level Column Header ✅ ──→ 15. Cell Editing 고도화 (header 구조 확정 후)
+14. Multi-level Column Header ✅ ──→ 15. Cell Editing 고도화 ✅
 17. Worker Bridge ──→ 18. Streaming Data (시너지)
 ```
 
@@ -582,27 +583,32 @@ const [rowPinning, setRowPinning] = useState<RowPinningState>({
 - 드래그 중 시각적 피드백: 고스트 컬럼 + 드롭 위치 인디케이터 (레이어)
 - 사용자가 `onColumnOrderChange`로 최종 순서 제어
 
-### 6-3. Cell Editing 고도화
+### 6-3. Cell Editing 고도화 ✅ (구현 완료)
 
-현재 stub 수준인 inline editor를 완성.
+셀 더블클릭/클릭으로 DOM input overlay 편집, 값 커밋 파이프라인, Tab 탐색.
 
 ```ts
 helper.accessor("name", {
-  enableEditing: true,
-  editCell: (info) => <input value={info.getValue()} onChange={...} />,
+  editor: "text",  // "text" | "number" → 빌트인 input overlay
 });
 
 <Grid
-  onCellEdit={(rowIndex, columnId, newValue) => {
-    // 사용자가 데이터 업데이트 처리
-  }}
+  meta={{ updateData: (rowIndex, columnId, value) => { /* 데이터 업데이트 */ } }}
+  editTrigger="dblclick"  // "dblclick" (기본) | "click"
 />
 ```
 
-- EditorManager가 셀 위에 DOM overlay 배치 (이미 editorRef div 존재)
-- 더블클릭 → edit mode 진입, Escape/Enter → 종료
-- 사용자가 `editCell` render prop으로 에디터 UI 결정
-- 유효성 검증은 `onCellEdit` 콜백에서 사용자가 처리
+**구현 내역:**
+
+- `EditorManager`: DOM `<input>` overlay 배치, Enter/Escape/Tab 키 처리
+- `onCommit` 콜백 → `meta.updateData(rowIndex, columnId, value)` 파이프라인
+- `onNavigate` 콜백 → Tab/Shift+Tab 시 다음/이전 editable 셀로 자동 이동
+- `editTrigger` prop: `"dblclick"` (기본) 또는 `"click"` 모드
+- Click 모드 cell-to-cell transition: `pointerEvents: "auto"`를 input에만 적용 (container는 통과)
+- `onCanvasEvent("mousedown")` → 캔버스 어디든 클릭/드래그 시 활성 에디터 commit
+- `isCellEditable(coord)` + `onCellHover` → editable 셀 위 마우스 커서 `text` 변경
+- `GridProps.onCellClick`, `onCellDoubleClick` → `preventDefault()`로 기본 동작 제어 가능
+- 테스트: EditorManager 20개, use-editing 7개, use-event-attachment 14개
 
 ### 6-4. Multi-level Column Header (Column Grouping)
 
