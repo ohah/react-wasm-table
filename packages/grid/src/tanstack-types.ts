@@ -232,7 +232,7 @@ export interface ColumnDefBase<TData, TValue = unknown> {
   /** Custom editor render function. Takes precedence over `editor` when both are set. */
   editCell?: (props: CellEditRenderProps) => ReactNode;
   /** Editor options (e.g. dropdown options for select editor). */
-  editorOptions?: { options: { label: string; value: unknown }[] };
+  editorOptions?: Record<string, unknown>;
 
   // Box model extensions
   /** Padding. */

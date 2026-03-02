@@ -324,6 +324,7 @@ export function Grid({
     isCellEditable,
     editorPortal,
     handleTypingKeyDown,
+    flushPendingOpen,
   } = useEditing({
     editorRef,
     columnRegistry,
@@ -489,7 +490,8 @@ export function Grid({
     layoutBufRef.current = buf;
     headerCountRef.current = hc;
     totalCellCountRef.current = tc;
-  }, []);
+    flushPendingOpen();
+  }, [flushPendingOpen]);
 
   const onVisStartComputed = useCallback((vs: number) => {
     visStartRef.current = vs;
