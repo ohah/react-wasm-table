@@ -490,9 +490,9 @@ export interface Theme {
   cellBackground: string;
   cellColor: string;
   borderColor: string;
-  /** Default grid line width in pixels. @default 0.5 */
+  /** Default grid line width in pixels. @default 0 */
   borderWidth: number;
-  /** Default grid line style. @default "solid" */
+  /** Default grid line style. @default "none" */
   borderStyle: CssBorderStyle;
   selectedBackground: string;
   fontFamily: string;
@@ -507,8 +507,8 @@ export const DEFAULT_THEME: Theme = {
   cellBackground: "#fff",
   cellColor: "#333",
   borderColor: "#000",
-  borderWidth: 0.5,
-  borderStyle: "solid",
+  borderWidth: 0,
+  borderStyle: "none",
   selectedBackground: "#e3f2fd",
   fontFamily: "system-ui, sans-serif",
   fontSize: 13,

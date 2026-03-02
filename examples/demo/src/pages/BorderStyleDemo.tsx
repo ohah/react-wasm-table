@@ -58,7 +58,12 @@ const labelStyle: React.CSSProperties = {
 // ── Theme presets ─────────────────────────────────────────────────
 
 const themePresets: Record<string, Partial<Theme>> = {
-  default: {},
+  "No borders (default)": {},
+  "Thin solid": {
+    borderWidth: 0.5,
+    borderStyle: "solid",
+    borderColor: "#000",
+  },
   "Thick borders": {
     borderWidth: 2,
     borderStyle: "solid",
@@ -68,9 +73,6 @@ const themePresets: Record<string, Partial<Theme>> = {
     borderWidth: 1,
     borderStyle: "solid",
     borderColor: "#e0e0e0",
-  },
-  "No borders": {
-    borderStyle: "none",
   },
   "Blue accent": {
     borderWidth: 1,
@@ -156,7 +158,7 @@ const tableColumns = [
 // ── Component ─────────────────────────────────────────────────────
 
 export function BorderStyleDemo() {
-  const [selectedPreset, setSelectedPreset] = useState("default");
+  const [selectedPreset, setSelectedPreset] = useState("No borders (default)");
   const { ref: gridRef, size: gridSize } = useContainerSize(400);
   const { ref: tableRef, size: tableSize } = useContainerSize(300);
 
@@ -173,8 +175,8 @@ export function BorderStyleDemo() {
       <p>
         Customize grid borders via <code>theme.borderWidth</code>, <code>theme.borderStyle</code>,{" "}
         <code>theme.borderColor</code> at the global level, <code>borderColor</code>/
-        <code>borderStyle</code> per column, and <code>style</code> prop on{" "}
-        <code>&lt;Td&gt;</code>/<code>&lt;Tr&gt;</code> for per-cell overrides.
+        <code>borderStyle</code> per column, and <code>style</code> prop on <code>&lt;Td&gt;</code>/
+        <code>&lt;Tr&gt;</code> for per-cell overrides.
       </p>
 
       {/* Theme preset selector */}
@@ -224,10 +226,10 @@ export function BorderStyleDemo() {
       {/* Example 2: Table API with per-cell border via Td style */}
       <h2 style={{ fontSize: 16, marginTop: 32 }}>2. Table API — Per-cell border via Td style</h2>
       <p style={{ fontSize: 13, color: "#666" }}>
-        Uses <code>&lt;Td style=&#123;&#123; borderBottom: "2px solid #1976d2" &#125;&#125;&gt;</code>{" "}
-        on salary cells, and{" "}
-        <code>&lt;Tr style=&#123;&#123; border: "none" &#125;&#125;&gt;</code> on even rows to
-        hide borders.
+        Uses{" "}
+        <code>&lt;Td style=&#123;&#123; borderBottom: "2px solid #1976d2" &#125;&#125;&gt;</code> on
+        salary cells, and <code>&lt;Tr style=&#123;&#123; border: "none" &#125;&#125;&gt;</code> on
+        even rows to hide borders.
       </p>
       <div ref={tableRef} style={{ width: "100%", height: 300 }}>
         {tableSize.width > 0 && (
@@ -247,20 +249,13 @@ export function BorderStyleDemo() {
             </Thead>
             <Tbody>
               {table.getRowModel().rows.map((row, rowIdx) => (
-                <Tr
-                  key={row.id}
-                  style={rowIdx % 2 === 0 ? { border: "none" } : undefined}
-                >
+                <Tr key={row.id} style={rowIdx % 2 === 0 ? { border: "none" } : undefined}>
                   {row.getVisibleCells().map((cell) => {
                     const isSalary = cell.column.id === "salary";
                     return (
                       <Td
                         key={cell.id}
-                        style={
-                          isSalary
-                            ? { borderBottom: "2px solid #1976d2" }
-                            : undefined
-                        }
+                        style={isSalary ? { borderBottom: "2px solid #1976d2" } : undefined}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </Td>
