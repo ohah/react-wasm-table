@@ -29,6 +29,7 @@ export function drawTextCellFromBuffer(
   cellIdx: number,
   text: string,
   style?: Partial<TextStyle>,
+  extraPadRight?: number,
 ): void {
   const fontSize = style?.fontSize ?? 13;
   const fontWeight = style?.fontWeight ?? "normal";
@@ -43,7 +44,7 @@ export function drawTextCellFromBuffer(
   const align = readCellAlign(buf, cellIdx);
 
   const padLeft = readCellPaddingLeft(buf, cellIdx);
-  const padRight = readCellPaddingRight(buf, cellIdx);
+  const padRight = readCellPaddingRight(buf, cellIdx) + (extraPadRight ?? 0);
   const padTop = readCellPaddingTop(buf, cellIdx);
   const padBottom = readCellPaddingBottom(buf, cellIdx);
 
