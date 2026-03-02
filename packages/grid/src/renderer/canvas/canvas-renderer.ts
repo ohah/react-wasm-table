@@ -153,7 +153,7 @@ export class CanvasRenderer {
 
     // Alternating row backgrounds (extend to full content width)
     for (const [rowIdx, bounds] of rowBounds) {
-      const bg = rowIdx % 2 === 0 ? theme.cellBackground : `${theme.cellBackground}f5`;
+      const bg = (rowIdx - 1) % 2 === 0 ? theme.cellBackground : `${theme.cellBackground}f5`;
       ctx.fillStyle = bg;
       ctx.fillRect(contentLeft, bounds.y, contentRight - contentLeft, bounds.h);
     }

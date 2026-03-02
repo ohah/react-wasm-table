@@ -361,24 +361,26 @@ export class EventManager {
           }
         }
 
-        // Column DnD: header mousedown starts drag (if handler provided)
+        // Header hit test (shared by DnD and selection)
         const headerHit = findCell(x, y, this.headerLayouts);
-        if (headerHit && handlers.onHeaderMouseDown) {
-          this.columnDnDState = { colIndex: headerHit.col };
-          this.columnDnDMoved = false;
-          this.columnDnDJustEnded = false;
-          handlers.onHeaderMouseDown(headerHit.col, e, coords);
-          e.preventDefault();
-          return;
-        }
 
         this.mouseDownPos = { x: e.clientX, y: e.clientY };
         this.mouseDragActive = false;
         this.lastViewportPos = null;
 
-        // Header cell selection (when DnD handler not provided)
         if (headerHit) {
+          // Always fire selection for header clicks
           handlers.onCellMouseDown?.(headerHit, e.shiftKey, e, coords);
+
+          // Column DnD: header mousedown also starts drag (if handler provided)
+          if (handlers.onHeaderMouseDown) {
+            this.columnDnDState = { colIndex: headerHit.col };
+            this.columnDnDMoved = false;
+            this.columnDnDJustEnded = false;
+            handlers.onHeaderMouseDown(headerHit.col, e, coords);
+          }
+
+          e.preventDefault();
           return;
         }
 
