@@ -17,9 +17,9 @@ export interface SelectionRect {
 
 /**
  * Compute the bounding rectangle for a cell selection from the layout buffer.
- * Scans data cells (headerCount..totalCount) to find the union bounding box
- * of all cells within the selection range.
- * Returns null if no visible cells fall within the selection.
+ * Scans data cells (headerCount..totalCount) and, when matched, also includes
+ * header cells whose column falls within the selection range.
+ * Returns null if no visible data cells fall within the selection.
  */
 export function computeSelectionRect(
   buf: Float32Array,
@@ -33,6 +33,7 @@ export function computeSelectionRect(
   let maxY = -Infinity;
   let found = false;
 
+  // Scan data cells (row + column match)
   for (let i = headerCount; i < totalCount; i++) {
     const row = readCellRow(buf, i);
     const col = readCellCol(buf, i);
@@ -52,5 +53,22 @@ export function computeSelectionRect(
   }
 
   if (!found) return null;
+
+  // Include header cells whose column falls within the selection range
+  for (let i = 0; i < headerCount; i++) {
+    const col = readCellCol(buf, i);
+    if (col < selection.minCol || col > selection.maxCol) continue;
+
+    const cx = readCellX(buf, i);
+    const cy = readCellY(buf, i);
+    const cw = readCellWidth(buf, i);
+    const ch = readCellHeight(buf, i);
+
+    minX = Math.min(minX, cx);
+    minY = Math.min(minY, cy);
+    maxX = Math.max(maxX, cx + cw);
+    maxY = Math.max(maxY, cy + ch);
+  }
+
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }

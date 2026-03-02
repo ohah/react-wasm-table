@@ -39,7 +39,8 @@ describe("computeSelectionRect", () => {
       minCol: 0,
       maxCol: 0,
     });
-    expect(result).toEqual({ x: 0, y: 40, width: 100, height: 36 });
+    // Header col 0 (y:0 h:40) is included → y starts at 0, height covers header+data
+    expect(result).toEqual({ x: 0, y: 0, width: 100, height: 76 });
   });
 
   it("computes bounding rect for a multi-cell range", () => {
@@ -58,7 +59,8 @@ describe("computeSelectionRect", () => {
       minCol: 0,
       maxCol: 1,
     });
-    expect(result).toEqual({ x: 0, y: 40, width: 200, height: 72 });
+    // Both header cols included → y starts at 0, height covers header+data
+    expect(result).toEqual({ x: 0, y: 0, width: 200, height: 112 });
   });
 
   it("ignores cells outside the selection range", () => {
@@ -127,6 +129,7 @@ describe("computeSelectionRect", () => {
       minCol: 1,
       maxCol: 2,
     });
-    expect(result).toEqual({ x: 80, y: 40, width: 220, height: 36 });
+    // Header col 1 (x:80 h:40) and col 2 (x:200 h:40) included → y starts at 0
+    expect(result).toEqual({ x: 80, y: 0, width: 220, height: 76 });
   });
 });
