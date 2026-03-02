@@ -1,8 +1,10 @@
 import {
   createColumnHelper,
+  editorStyle,
   flexRender,
   getCoreRowModel,
   Table,
+  type CellEditRenderProps,
   type TableMeta,
   Tbody,
   Td,
@@ -11,7 +13,8 @@ import {
   Tr,
   useReactTable,
 } from "@ohah/react-wasm-table";
-import { useCallback, useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface Person {
   name: string;
@@ -25,7 +28,67 @@ const INITIAL_DATA: Person[] = [
   { name: "Charlie", age: 35, department: "Design" },
   { name: "Diana", age: 28, department: "Engineering" },
   { name: "Eve", age: 32, department: "Marketing" },
+  { name: "Frank", age: 41, department: "Sales" },
+  { name: "Grace", age: 27, department: "Design" },
+  { name: "Henry", age: 33, department: "Engineering" },
+  { name: "Ivy", age: 29, department: "Marketing" },
+  { name: "Jack", age: 38, department: "Sales" },
+  { name: "Karen", age: 26, department: "Design" },
+  { name: "Leo", age: 44, department: "Engineering" },
+  { name: "Mia", age: 31, department: "Marketing" },
+  { name: "Noah", age: 36, department: "Sales" },
+  { name: "Olivia", age: 24, department: "Engineering" },
 ];
+
+/** Custom editCell editor: a styled text input with a colored border. */
+function CustomNameEditor({
+  value,
+  onCommit,
+  onCancel,
+  onCommitAndNavigate,
+  layout,
+  initialChar,
+}: CellEditRenderProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const committedRef = useRef(false);
+  const initialValue = initialChar != null ? initialChar : value == null ? "" : String(value);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.focus();
+    if (initialChar == null) input.select();
+    else input.setSelectionRange(input.value.length, input.value.length);
+  }, [initialChar]);
+
+  const getValue = () => inputRef.current?.value ?? "";
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      committedRef.current = true;
+      onCommit(getValue());
+    } else if (e.key === "Escape") {
+      committedRef.current = true;
+      onCancel();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      committedRef.current = true;
+      onCommitAndNavigate(getValue(), e.shiftKey ? "prev" : "next");
+    }
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      defaultValue={initialValue}
+      style={{ ...editorStyle(layout), borderColor: "#e91e63" }}
+      onKeyDown={handleKeyDown}
+      onBlur={() => {
+        if (!committedRef.current) onCommit(getValue());
+      }}
+    />
+  );
+}
 
 const helper = createColumnHelper<Person>();
 
@@ -56,10 +119,10 @@ export function TanStackEditing() {
   const columns = useMemo(
     () => [
       helper.accessor("name", {
-        header: "Name",
+        header: "Name (editCell)",
         size: 200,
         padding: [0, 8],
-        editor: "text",
+        editCell: (props) => <CustomNameEditor {...props} />,
       }),
       helper.accessor("age", {
         header: "Age",
@@ -69,10 +132,18 @@ export function TanStackEditing() {
         editor: "number",
       }),
       helper.accessor("department", {
-        header: "Department",
+        header: "Department (select)",
         size: 200,
         padding: [0, 8],
-        editor: "text",
+        editor: "select",
+        editorOptions: {
+          options: [
+            { label: "Engineering", value: "Engineering" },
+            { label: "Marketing", value: "Marketing" },
+            { label: "Design", value: "Design" },
+            { label: "Sales", value: "Sales" },
+          ],
+        },
       }),
     ],
     [],
@@ -88,12 +159,46 @@ export function TanStackEditing() {
 
   return (
     <>
-      <h1>Cell Editing — meta.updateData</h1>
+      <h1>Cell Editing — TanStack API</h1>
       <p>
         {editTrigger === "click" ? "Click" : "Double-click"} a cell to edit. Press{" "}
         <strong>Enter</strong> or click outside to commit. Press <strong>Tab</strong> /{" "}
         <strong>Shift+Tab</strong> to move between cells. Press <strong>Escape</strong> to cancel.
       </p>
+
+      <div
+        style={{
+          marginBottom: 12,
+          padding: 12,
+          background: "#fce4ec",
+          borderRadius: 4,
+          fontSize: 13,
+          lineHeight: 1.6,
+        }}
+      >
+        <strong>Features to test:</strong>
+        <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
+          <li>
+            <strong>editCell render prop</strong> — Name column uses a custom React editor (pink
+            border) via <code>editCell</code>
+          </li>
+          <li>
+            <strong>Type-to-edit</strong> — Select a cell, then type any character to start editing
+            (initialChar is passed to editor)
+          </li>
+          <li>
+            <strong>Scroll cancel</strong> — Start editing, then scroll — editor auto-cancels
+          </li>
+          <li>
+            <strong>Select editor</strong> — Department column uses built-in{" "}
+            <code>editor=&quot;select&quot;</code> with <code>editorOptions</code>
+          </li>
+          <li>
+            <strong>Mixed editors</strong> — Custom editCell (Name) + built-in number (Age) +
+            built-in select (Department) in one table
+          </li>
+        </ul>
+      </div>
 
       <div
         style={{

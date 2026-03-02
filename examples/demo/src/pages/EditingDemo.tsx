@@ -13,6 +13,16 @@ const INITIAL_DATA: Person[] = [
   { name: "Charlie", age: 35, department: "Design" },
   { name: "Diana", age: 28, department: "Engineering" },
   { name: "Eve", age: 32, department: "Marketing" },
+  { name: "Frank", age: 41, department: "Sales" },
+  { name: "Grace", age: 27, department: "Design" },
+  { name: "Henry", age: 33, department: "Engineering" },
+  { name: "Ivy", age: 29, department: "Marketing" },
+  { name: "Jack", age: 38, department: "Sales" },
+  { name: "Karen", age: 26, department: "Design" },
+  { name: "Leo", age: 44, department: "Engineering" },
+  { name: "Mia", age: 31, department: "Marketing" },
+  { name: "Noah", age: 36, department: "Sales" },
+  { name: "Olivia", age: 24, department: "Engineering" },
 ];
 
 interface EditLog {
@@ -43,12 +53,45 @@ export function EditingDemo() {
 
   return (
     <>
-      <h1>Cell Editing — meta.updateData</h1>
+      <h1>Cell Editing — Grid API</h1>
       <p>
         {editTrigger === "click" ? "Click" : "Double-click"} a cell to edit. Press{" "}
         <strong>Enter</strong> or click outside to commit. Press <strong>Tab</strong> /{" "}
         <strong>Shift+Tab</strong> to move between cells. Press <strong>Escape</strong> to cancel.
       </p>
+
+      <div
+        style={{
+          marginBottom: 12,
+          padding: 12,
+          background: "#e3f2fd",
+          borderRadius: 4,
+          fontSize: 13,
+          lineHeight: 1.6,
+        }}
+      >
+        <strong>Features to test:</strong>
+        <ul style={{ margin: "4px 0 0", paddingLeft: 20 }}>
+          <li>
+            <strong>Type-to-edit</strong> — Select a cell (click), then type any character to start
+            editing
+          </li>
+          <li>
+            <strong>Scroll cancel</strong> — Start editing a cell, then scroll — editor auto-cancels
+          </li>
+          <li>
+            <strong>Select editor</strong> — Department column uses a dropdown{" "}
+            <code>editor=&quot;select&quot;</code>
+          </li>
+          <li>
+            <strong>Number editor</strong> — Age column uses{" "}
+            <code>editor=&quot;number&quot;</code>
+          </li>
+          <li>
+            <strong>Editor size constraint</strong> — Editor stays within cell bounds
+          </li>
+        </ul>
+      </div>
 
       <div
         style={{
@@ -80,7 +123,20 @@ export function EditingDemo() {
       >
         <Column id="name" header="Name" width={200} editor="text" />
         <Column id="age" header="Age" width={100} editor="number" />
-        <Column id="department" header="Department" width={200} editor="text" />
+        <Column
+          id="department"
+          header="Department"
+          width={200}
+          editor="select"
+          editorOptions={{
+            options: [
+              { label: "Engineering", value: "Engineering" },
+              { label: "Marketing", value: "Marketing" },
+              { label: "Design", value: "Design" },
+              { label: "Sales", value: "Sales" },
+            ],
+          }}
+        />
       </Grid>
 
       <div
