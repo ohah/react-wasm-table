@@ -284,8 +284,7 @@ ingestData(engine, data, columnIds);
 // 변경:
 const isAppend = prevDataLenRef.current > 0
   && data.length > prevDataLenRef.current
-  && columnIds.join("\0") === prevColumnKeyRef.current
-  && engine.beginAppendColumnar !== undefined;  // WASM 지원 여부 체크
+  && columnIds.join("\0") === prevColumnKeyRef.current;
 
 if (isAppend) {
   appendData(engine, data, columnIds, prevDataLenRef.current);
@@ -353,7 +352,6 @@ cd packages/grid && bun run build
 | `uses appendData when data grows` | prevDataLen < data.length일 때 append 경로 |
 | `uses ingestData when columns change` | 컬럼 변경 시 전체 재적재 |
 | `uses ingestData when data shrinks` | data 축소 시 전체 재적재 |
-| `falls back to ingestData when append unavailable` | WASM 미지원 시 폴백 |
 
 ---
 
@@ -413,11 +411,6 @@ Phase 3에서 incremental index 패치로 추가 최적화 가능.
 - **해결:** `classifyColumns`는 전체 data에서 첫 non-null 값으로 판단 (현재 동작 유지)
   → append 시에도 기존 타입 체계 참조 필요
   → `prevColumnTypes` 캐시 추가
-
-### 5. Backward Compatibility
-
-- `beginAppendColumnar`가 없는 구 WASM 바이너리에서도 동작해야 함
-- `engine.beginAppendColumnar !== undefined` 체크로 폴백
 
 ---
 
