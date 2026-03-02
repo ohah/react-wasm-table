@@ -98,15 +98,31 @@ export class CanvasRenderer {
     ctx.fillStyle = theme.headerBackground;
     ctx.fillRect(contentLeft, headerY, contentRight - contentLeft, headerHeight);
 
-    // Draw header text
+    // Draw header text (clip to exclude drag handle zone when DnD enabled)
+    const HANDLE_ZONE = 20;
+    const RESIZE_ZONE = 5;
+    const handleReserved = enableColumnDnD ? HANDLE_ZONE + RESIZE_ZONE : 0;
+
     for (let i = 0; i < count; i++) {
       const cellIdx = start + i;
       const text = headers[i] ?? "";
+      if (handleReserved > 0) {
+        ctx.save();
+        const cx = readCellX(buf, cellIdx);
+        const cy = readCellY(buf, cellIdx);
+        const cw = readCellWidth(buf, cellIdx);
+        ctx.beginPath();
+        ctx.rect(cx, cy, cw - handleReserved, headerHeight);
+        ctx.clip();
+      }
       drawTextCellFromBuffer(ctx, buf, cellIdx, text, {
         color: theme.headerColor,
         fontWeight: "bold",
         fontSize: theme.headerFontSize,
       });
+      if (handleReserved > 0) {
+        ctx.restore();
+      }
     }
 
     // Draw drag handle grip dots (2 columns × 3 rows = 6 dots)
@@ -114,8 +130,6 @@ export class CanvasRenderer {
       const dotR = 1.5;
       const gapX = 5;
       const gapY = 4;
-      const HANDLE_ZONE = 20;
-      const RESIZE_ZONE = 5;
 
       ctx.save();
       ctx.fillStyle = theme.headerColor;
