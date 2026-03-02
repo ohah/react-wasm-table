@@ -1,7 +1,8 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type {
   RenderInstruction,
   BoxModelProps,
+  CellEditRenderProps,
   CssDimension,
   CssBorderStyle,
   CssAlignItems,
@@ -228,6 +229,10 @@ export interface ColumnDefBase<TData, TValue = unknown> {
   flexBasis?: CssDimension;
   /** Editor type for inline editing. */
   editor?: "text" | "number" | "select";
+  /** Custom editor render function. Takes precedence over `editor` when both are set. */
+  editCell?: (props: CellEditRenderProps) => ReactNode;
+  /** Editor options (e.g. dropdown options for select editor). */
+  editorOptions?: { options: { label: string; value: unknown }[] };
 
   // Box model extensions
   /** Padding. */

@@ -61,6 +61,8 @@ export function resolveColumns<TData>(
       ...(def.flexShrink !== undefined && { flexShrink: def.flexShrink }),
       ...(def.flexBasis !== undefined && { flexBasis: def.flexBasis }),
       ...(def.editor !== undefined && { editor: def.editor }),
+      ...(def.editCell !== undefined && { editCell: def.editCell }),
+      ...(def.editorOptions !== undefined && { editorOptions: def.editorOptions }),
       // Box model
       ...(def.padding !== undefined && { padding: def.padding }),
       ...(def.paddingTop !== undefined && { paddingTop: def.paddingTop }),
