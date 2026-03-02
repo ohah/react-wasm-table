@@ -36,6 +36,7 @@ const sections = [
       { to: "/faceted", label: "Faceted Values" },
       { to: "/grouped-columns", label: "Grouped Columns" },
       { to: "/editing", label: "Cell Editing" },
+      { to: "/streaming", label: "Streaming (Infinite Scroll)" },
     ],
   },
   {

@@ -790,6 +790,14 @@ export interface GridProps extends BoxModelProps {
   /** Optional external EditorManager instance. */
   editorManager?: import("./adapter/editor-manager").EditorManager;
 
+  // Streaming (infinite scroll)
+  /** Total row count. When set, enables streaming mode (scrollbar reflects totalCount, not data.length). */
+  totalCount?: number;
+  /** Called when the viewport approaches unloaded rows. Append new rows via setData(prev => [...prev, ...newRows]). */
+  onFetchMore?: (startIndex: number, count: number) => void;
+  /** Number of rows to fetch ahead of the visible area. @default 100 */
+  fetchAhead?: number;
+
   /** Pagination state (pageIndex + pageSize). When set, WASM slices view_indices per page. */
   pagination?: import("./tanstack-types").PaginationState;
 

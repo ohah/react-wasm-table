@@ -27,6 +27,28 @@ export class StringTable {
   }
 
   /**
+   * Append new rows to existing data (streaming optimization).
+   * Only processes rows from startIndex onward — O(delta) instead of O(n).
+   *
+   * @param data - The full data array (including previously loaded rows)
+   * @param columnIds - Column ID strings
+   * @param startIndex - Index of the first new row to process
+   */
+  append(data: Record<string, unknown>[], columnIds: string[], startIndex: number): void {
+    for (const key of columnIds) {
+      let col = this.columns.get(key);
+      if (!col) {
+        col = [];
+        this.columns.set(key, col);
+      }
+      for (let i = startIndex; i < data.length; i++) {
+        const v = data[i]![key];
+        col[i] = v == null ? "" : String(v);
+      }
+    }
+  }
+
+  /**
    * Get the display string for a cell.
    * @param colId - Column ID
    * @param rowIdx - Original row index (from view_indices)

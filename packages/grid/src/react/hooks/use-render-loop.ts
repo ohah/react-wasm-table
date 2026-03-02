@@ -139,6 +139,10 @@ export interface UseRenderLoopParams {
   parsedBorderStyles?: Map<string, import("../table-components").CellBorderStyleProps>;
   /** Callback to notify Table of visible row range changes. @internal */
   onVisibleRangeChange?: (visStart: number, visibleRowCount: number) => void;
+  /** Streaming mode: total row count for scrollbar height (overrides filteredCount). */
+  effectiveTotalRows?: number;
+  /** Streaming mode: check-and-fetch callback from useStreaming. */
+  checkAndFetch?: (scrollTop: number, rowHeight: number, viewportHeight: number) => void;
 }
 
 export function useRenderLoop({
@@ -179,6 +183,8 @@ export function useRenderLoop({
   parsedBodyContent,
   parsedBorderStyles,
   onVisibleRangeChange,
+  effectiveTotalRows,
+  checkAndFetch,
 }: UseRenderLoopParams) {
   const cellRendererRegistry = useMemo(
     () => createCellRendererRegistry(cellRenderers),
@@ -202,6 +208,10 @@ export function useRenderLoop({
   // Ref-wrap onVisibleRangeChange to avoid effect restarts
   const onVisibleRangeChangeRef = useRef(onVisibleRangeChange);
   onVisibleRangeChangeRef.current = onVisibleRangeChange;
+
+  // Ref-wrap checkAndFetch to avoid effect restarts
+  const checkAndFetchRef = useRef(checkAndFetch);
+  checkAndFetchRef.current = checkAndFetch;
 
   // Attach canvas renderer — re-run when size changes because
   // React setting canvas.width/height resets the 2D context (loses DPR scale).
@@ -448,6 +458,11 @@ export function useRenderLoop({
           onVisibleRangeChangeRef.current(visStart, visibleRowCount);
         }
 
+        // Streaming: check if we need to fetch more data
+        if (checkAndFetchRef.current) {
+          checkAndFetchRef.current(scrollTopRef.current, effectiveRowHeight, height - headerHeight);
+        }
+
         const layoutBuf = bridge.getLayoutBuffer();
         const viewIndices = bridge.getViewIndices();
         // When row pinning is active, use reorderedIndices for data lookup
@@ -484,11 +499,13 @@ export function useRenderLoop({
         }
 
         // Update filtered row count / scroll height when not row pinning
+        // In streaming mode, use effectiveTotalRows (totalCount) for scrollbar height
+        const effectiveRowCount = effectiveTotalRows ?? filteredCount;
         const rowHeightChanged = prevEffectiveRowHeightRef.current !== effectiveRowHeight;
-        if (!hasRowPinning && (viewRowCountRef.current !== filteredCount || rowHeightChanged)) {
-          (viewRowCountRef as React.MutableRefObject<number>).current = filteredCount;
+        if (!hasRowPinning && (viewRowCountRef.current !== effectiveRowCount || rowHeightChanged)) {
+          (viewRowCountRef as React.MutableRefObject<number>).current = effectiveRowCount;
           prevEffectiveRowHeightRef.current = effectiveRowHeight;
-          const newContentHeight = filteredCount * effectiveRowHeight + headerHeight;
+          const newContentHeight = effectiveRowCount * effectiveRowHeight + headerHeight;
           syncScrollBarContentSize(vScrollbarRef.current, newContentHeight, "vertical");
           const maxScrollY = Math.max(0, newContentHeight - height);
           if (scrollTopRef.current > maxScrollY) {

@@ -102,6 +102,69 @@ describe("StringTable", () => {
     });
   });
 
+  describe("append", () => {
+    it("adds new rows without affecting existing data", () => {
+      const st = new StringTable();
+      const initial = [
+        { name: "Alice", city: "Seoul" },
+        { name: "Bob", city: "Tokyo" },
+      ] as Record<string, unknown>[];
+      st.populate(initial, ["name", "city"]);
+
+      const extended = [
+        ...initial,
+        { name: "Carol", city: "Osaka" },
+        { name: "Dave", city: "Busan" },
+      ] as Record<string, unknown>[];
+      st.append(extended, ["name", "city"], 2);
+
+      // Original data preserved
+      expect(st.get("name", 0)).toBe("Alice");
+      expect(st.get("name", 1)).toBe("Bob");
+      // New data appended
+      expect(st.get("name", 2)).toBe("Carol");
+      expect(st.get("name", 3)).toBe("Dave");
+      expect(st.get("city", 2)).toBe("Osaka");
+      expect(st.get("city", 3)).toBe("Busan");
+    });
+
+    it("creates column array if not already present", () => {
+      const st = new StringTable();
+      st.populate([{ a: "old" }] as Record<string, unknown>[], ["a"]);
+
+      // Append with a new column "b"
+      const data = [{ a: "old", b: "x" }, { a: "new", b: "y" }] as Record<string, unknown>[];
+      st.append(data, ["a", "b"], 1);
+
+      expect(st.get("a", 1)).toBe("new");
+      expect(st.get("b", 1)).toBe("y");
+    });
+
+    it("converts null/undefined to empty string in appended rows", () => {
+      const st = new StringTable();
+      const initial = [{ name: "Alice" }] as Record<string, unknown>[];
+      st.populate(initial, ["name"]);
+
+      const extended = [...initial, { name: null }, { name: undefined }] as Record<
+        string,
+        unknown
+      >[];
+      st.append(extended, ["name"], 1);
+
+      expect(st.get("name", 1)).toBe("");
+      expect(st.get("name", 2)).toBe("");
+    });
+
+    it("handles startIndex equal to data.length (no-op)", () => {
+      const st = new StringTable();
+      const data = [{ name: "Alice" }] as Record<string, unknown>[];
+      st.populate(data, ["name"]);
+
+      st.append(data, ["name"], 1); // startIndex === data.length → no iteration
+      expect(st.get("name", 0)).toBe("Alice");
+    });
+  });
+
   describe("clear", () => {
     it("removes all data", () => {
       const st = new StringTable();

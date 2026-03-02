@@ -367,24 +367,43 @@ const engine = useWorkerEngine({
 - 메인 스레드는 렌더링만 담당
 - opt-in — 기본은 메인 스레드
 
-### 5-2. Streaming Data
+### 5-2. Streaming Data — Phase 1 ✅ (Infinite Scroll)
 
 대용량 데이터의 점진적 로딩.
 
 ```ts
+const [data, setData] = useState<Row[]>(initialBatch);
+
+const handleFetchMore = useCallback((startIndex: number, count: number) => {
+  fetchFromServer(startIndex, count).then(newRows => {
+    setData(prev => [...prev, ...newRows]);
+  });
+}, []);
+
 <Grid
-  data={streamingData}
-  onFetchMore={(startIndex, count) => {
-    // 사용자가 데이터 페칭 로직 구현
-    return fetchPage(startIndex, count);
-  }}
-  totalCount={1_000_000}
+  data={data}
+  totalCount={100_000}           // 전체 행 수 (scrollbar 높이 결정)
+  onFetchMore={handleFetchMore}  // 미로드 영역 스크롤 시 호출
+  fetchAhead={100}               // 미리 로드할 행 수 (기본 100)
 />
 ```
 
-- 무한 스크롤 / 가상화 데이터 소스
-- WASM 쪽 ColumnarStore에 chunk 단위 append
-- 사용자가 데이터 소스(REST, GraphQL, WebSocket)를 자유롭게 선택
+**Phase 1 구현 내역 (TS-only, WASM 변경 없음):**
+
+- `GridProps.totalCount` / `onFetchMore` / `fetchAhead` 스트리밍 props
+- `useStreaming` 훅: effectiveTotalRows 계산, 디바운싱(50ms), 중복 fetch 방지(in-flight range 추적)
+- `viewRowCountRef` + scrollbar 높이: streaming 모드에서 `totalCount` 기반
+- `StringTable.append()`: 증분 데이터만 처리 (O(delta) vs O(n))
+- `useDataIngestion`: data 성장 감지 → StringTable append 경로 사용
+- Render loop: visible range 기반 fetch 트리거 (`checkAndFetch`)
+- 10 use-streaming 테스트, 4 string-table append 테스트 (전체 1184 JS 테스트)
+
+**Phase 2 (후속 — 미구현):**
+
+- **WASM chunk append**: ColumnarStore에 `append_column_*` + `finalize_append` 추가
+- **Random access**: sparse data 구조, 임의 위치 점프, viewport 기반 데이터 윈도잉
+- **Placeholder 렌더링**: 미로드 행에 "Loading..." 표시 (커스텀 레이어)
+- **필터/정렬 제약**: streaming 모드에서 클라이언트 필터/정렬 비활성화 (서버 사이드 전제)
 
 ### 5-3. Layout Cache
 
@@ -439,6 +458,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | getFacetedRowModel (11)        | Row Model | 컬럼별 faceted values (unique/min/max). FacetedDemo                                                                                                                                                                                                                       |
 | Multi-level Column Header (14) | Render    | drawMultiLevelHeader, per-row hit-test, parent group 정렬/리사이즈 제외, selection leaf-only 보정. 데모 포함                                                                                                                                                              |
 | Cell Editing (15)              | UX        | EditorManager 순수 상태 관리자 + React createPortal 렌더링. editCell render prop (커스텀 에디터), built-in TextEditor/NumberEditor/SelectEditor, type-to-edit (initialChar), 스크롤 cancel, editorStyle 크기 제한. meta.updateData, editTrigger, Tab/Shift+Tab. 데모 포함 |
+| Streaming Data Phase 1 (18)    | Perf      | totalCount/onFetchMore/fetchAhead props, useStreaming 훅 (디바운싱+중복방지), effectiveTotalRows 기반 scrollbar, StringTable.append(), useDataIngestion 증분 경로. 14 테스트                                                                                              |
 
 ---
 
@@ -485,7 +505,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | 순서 | 항목                            | 참조                                             | 상태   | 이유                                                                                                                                                             |
 | ---- | ------------------------------- | ------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 17   | Worker Bridge                   | 5-1                                              | ❌     | SharedArrayBuffer + Worker 통신 구조 전면 변경. 기존 기능 안정 후 opt-in 추가                                                                                    |
-| 18   | Streaming Data                  | 5-2                                              | ❌     | ColumnarStore chunk append + 가상화 데이터 소스. Worker Bridge와 시너지                                                                                          |
+| 18   | Streaming Data                  | 5-2                                              | Phase 1 ✅ | Phase 1: Infinite scroll (TS-only). Phase 2: WASM chunk append + random access 미구현                                                                            |
 | —    | Variable Row Height / Flex→Rust | [variable-row-height.md](variable-row-height.md) | 계획만 | 고정 행 높이 제거 후, 행 높이 = 셀(Flex) 최대 높이. Flex 레이아웃을 Rust로 옮길 계획(바이너리 ArrayBuffer 포인터만 사용, 전체 행은 배치 처리). 상세는 문서 참고. |
 
 ### 남은 항목 개발 순서 (개발 속도 최적화 기준)
@@ -499,7 +519,8 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
          ↓
 15. Cell Editing 고도화 ✅ ── meta.updateData, editTrigger, Tab, text cursor
          ↓
-17. Worker + Streaming ──── opt-in 레이어, 기존 코드 변경 없음
+18. Streaming Data Phase 1 ✅ ── Infinite scroll (TS-only, WASM 변경 없음)
+17. Worker + Streaming Phase 2 ── opt-in 레이어, WASM chunk append + random access
          ↓
  —. Variable Row Height ─── 가장 침습적 변경, 마지막
 ```
@@ -536,7 +557,8 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 2. Event System ✅ ──→ 13. Column DnD Reorder ✅
                    ──→ 16. Context Menu ✅
 14. Multi-level Column Header ✅ ──→ 15. Cell Editing 고도화 ✅
-17. Worker Bridge ──→ 18. Streaming Data (시너지)
+18. Streaming Data Phase 1 ✅ (TS-only infinite scroll)
+17. Worker Bridge ──→ 18. Streaming Data Phase 2 (WASM chunk append + random access)
 ```
 
 ---

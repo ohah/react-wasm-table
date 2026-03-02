@@ -20,6 +20,7 @@ import { useEventAttachment } from "./hooks/use-event-attachment";
 import { useColumnResize } from "./hooks/use-column-resize";
 import { useColumnDnD } from "./hooks/use-column-dnd";
 import { useRenderLoop } from "./hooks/use-render-loop";
+import { useStreaming } from "./hooks/use-streaming";
 
 const DEFAULT_ROW_HEIGHT = 36;
 const DEFAULT_HEADER_HEIGHT = 40;
@@ -131,6 +132,10 @@ export function Grid({
   borderRightWidth,
   borderBottomWidth,
   borderLeftWidth,
+  // Streaming (infinite scroll)
+  totalCount: totalCountProp,
+  onFetchMore: onFetchMoreProp,
+  fetchAhead: fetchAheadProp,
   pagination: paginationProp,
   viewIndicesRef,
   engineRef,
@@ -143,12 +148,20 @@ export function Grid({
   const vScrollbarRef = useRef<HTMLDivElement>(null);
   const hScrollbarRef = useRef<HTMLDivElement>(null);
 
+  // Streaming: effectiveTotalRows drives scrollbar height and viewRowCountRef
+  const { effectiveTotalRows, checkAndFetch } = useStreaming({
+    data,
+    totalCount: totalCountProp,
+    onFetchMore: onFetchMoreProp,
+    fetchAhead: fetchAheadProp,
+  });
+
   // Filtered row count (updated from render loop when viewIndices changes)
-  const viewRowCountRef = useRef(data.length);
-  // Reset when data changes
+  const viewRowCountRef = useRef(effectiveTotalRows);
+  // Reset when effectiveTotalRows changes (data growth or totalCount change)
   useEffect(() => {
-    viewRowCountRef.current = data.length;
-  }, [data.length]);
+    viewRowCountRef.current = effectiveTotalRows;
+  }, [effectiveTotalRows]);
 
   const columnRegistry = useMemo(() => new ColumnRegistry(), []);
   const { engine, memoryBridgeRef } = useWasmEngine({ engineRef });
@@ -538,6 +551,8 @@ export function Grid({
     parsedBodyContent: _parsedBodyContent,
     parsedBorderStyles: _parsedBorderStyles,
     onVisibleRangeChange: _onVisibleRangeChange,
+    effectiveTotalRows: totalCountProp != null ? effectiveTotalRows : undefined,
+    checkAndFetch,
   });
   // Wire the bridge: all hooks using `invalidate` now delegate to useRenderLoop's internal dirtyRef
   invalidateRef.current = renderInvalidate;
