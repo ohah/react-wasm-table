@@ -287,8 +287,8 @@ export function StreamingDemo() {
         Streaming Data (Infinite Scroll)
       </h2>
       <p style={{ margin: "0 0 16px", color: "#666", fontSize: 14 }}>
-        Scroll down to trigger <code>onFetchMore</code>. Data is appended incrementally.
-        Scrollbar reflects <code>totalCount</code>, not loaded data length.
+        Scroll down to trigger <code>onFetchMore</code>. Data is appended incrementally. Scrollbar
+        reflects <code>totalCount</code>, not loaded data length.
       </p>
 
       {/* Controls */}
@@ -393,9 +393,7 @@ export function StreamingDemo() {
       </div>
 
       {/* Timing Stats */}
-      {timings.length > 0 && (
-        <TimingStats timings={timings} />
-      )}
+      {timings.length > 0 && <TimingStats timings={timings} />}
 
       {/* Grid */}
       <div ref={containerRef} style={{ width: "100%" }}>
@@ -491,8 +489,17 @@ function TimingStats({ timings }: { timings: TimingEntry[] }) {
     textAlign: "center",
     minWidth: 80,
   };
-  const labelStyle: React.CSSProperties = { fontSize: 10, color: "#888", textTransform: "uppercase", letterSpacing: 0.5 };
-  const valueStyle: React.CSSProperties = { fontSize: 16, fontWeight: 700, fontFamily: "monospace" };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 10,
+    color: "#888",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  };
+  const valueStyle: React.CSSProperties = {
+    fontSize: 16,
+    fontWeight: 700,
+    fontFamily: "monospace",
+  };
 
   return (
     <div
@@ -506,7 +513,12 @@ function TimingStats({ timings }: { timings: TimingEntry[] }) {
     >
       <div style={statStyle}>
         <div style={labelStyle}>Last Total</div>
-        <div style={{ ...valueStyle, color: last.totalMs > 200 ? "#d32f2f" : last.totalMs > 50 ? "#ed6c02" : "#2e7d32" }}>
+        <div
+          style={{
+            ...valueStyle,
+            color: last.totalMs > 200 ? "#d32f2f" : last.totalMs > 50 ? "#ed6c02" : "#2e7d32",
+          }}
+        >
           {last.totalMs}ms
         </div>
       </div>

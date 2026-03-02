@@ -10,27 +10,21 @@ describe("useStreaming", () => {
   describe("effectiveTotalRows", () => {
     it("returns data.length when totalCount is not set", () => {
       const data = [{ a: 1 }, { a: 2 }, { a: 3 }] as Record<string, unknown>[];
-      const { result } = renderHook(() =>
-        useStreaming({ data }),
-      );
+      const { result } = renderHook(() => useStreaming({ data }));
       expect(result.current.effectiveTotalRows).toBe(3);
       expect(result.current.isStreaming).toBe(false);
     });
 
     it("returns totalCount when set", () => {
       const data = [{ a: 1 }] as Record<string, unknown>[];
-      const { result } = renderHook(() =>
-        useStreaming({ data, totalCount: 10000 }),
-      );
+      const { result } = renderHook(() => useStreaming({ data, totalCount: 10000 }));
       expect(result.current.effectiveTotalRows).toBe(10000);
       expect(result.current.isStreaming).toBe(true);
     });
 
     it("updates effectiveTotalRows when data grows", () => {
       let data = [{ a: 1 }] as Record<string, unknown>[];
-      const { result, rerender } = renderHook(() =>
-        useStreaming({ data }),
-      );
+      const { result, rerender } = renderHook(() => useStreaming({ data }));
       expect(result.current.effectiveTotalRows).toBe(1);
 
       data = [{ a: 1 }, { a: 2 }] as Record<string, unknown>[];
@@ -43,9 +37,7 @@ describe("useStreaming", () => {
     it("does not call onFetchMore when not streaming", () => {
       const onFetchMore = mock(() => {});
       const data = [{ a: 1 }] as Record<string, unknown>[];
-      const { result } = renderHook(() =>
-        useStreaming({ data, onFetchMore }),
-      );
+      const { result } = renderHook(() => useStreaming({ data, onFetchMore }));
 
       act(() => {
         result.current.checkAndFetch(0, 36, 500);
@@ -81,10 +73,7 @@ describe("useStreaming", () => {
 
     it("does not call onFetchMore when data is already fully loaded", async () => {
       const onFetchMore = mock(() => {});
-      const data = Array.from({ length: 100 }, (_, i) => ({ id: i })) as Record<
-        string,
-        unknown
-      >[];
+      const data = Array.from({ length: 100 }, (_, i) => ({ id: i })) as Record<string, unknown>[];
       const { result } = renderHook(() =>
         useStreaming({
           data,
@@ -105,10 +94,7 @@ describe("useStreaming", () => {
 
     it("does not call onFetchMore when scroll position is far from end", async () => {
       const onFetchMore = mock(() => {});
-      const data = Array.from({ length: 1000 }, (_, i) => ({ id: i })) as Record<
-        string,
-        unknown
-      >[];
+      const data = Array.from({ length: 1000 }, (_, i) => ({ id: i })) as Record<string, unknown>[];
       const { result } = renderHook(() =>
         useStreaming({
           data,
@@ -130,10 +116,7 @@ describe("useStreaming", () => {
 
     it("prevents duplicate fetches for overlapping ranges", async () => {
       const onFetchMore = mock(() => {});
-      const data = Array.from({ length: 100 }, (_, i) => ({ id: i })) as Record<
-        string,
-        unknown
-      >[];
+      const data = Array.from({ length: 100 }, (_, i) => ({ id: i })) as Record<string, unknown>[];
       const { result } = renderHook(() =>
         useStreaming({
           data,
@@ -193,10 +176,7 @@ describe("useStreaming", () => {
 
     it("limits batch size to remaining rows", async () => {
       const onFetchMore = mock(() => {});
-      const data = Array.from({ length: 9980 }, (_, i) => ({ id: i })) as Record<
-        string,
-        unknown
-      >[];
+      const data = Array.from({ length: 9980 }, (_, i) => ({ id: i })) as Record<string, unknown>[];
       const { result } = renderHook(() =>
         useStreaming({
           data,
