@@ -106,11 +106,18 @@ export class CanvasRenderer {
     for (let i = 0; i < count; i++) {
       const cellIdx = start + i;
       const text = headers[i] ?? "";
-      drawTextCellFromBuffer(ctx, buf, cellIdx, text, {
-        color: theme.headerColor,
-        fontWeight: "bold",
-        fontSize: theme.headerFontSize,
-      }, handleReserved || undefined);
+      drawTextCellFromBuffer(
+        ctx,
+        buf,
+        cellIdx,
+        text,
+        {
+          color: theme.headerColor,
+          fontWeight: "bold",
+          fontSize: theme.headerFontSize,
+        },
+        handleReserved || undefined,
+      );
     }
 
     // Draw drag handle grip dots (2 columns × 3 rows = 6 dots)

@@ -80,7 +80,9 @@ export function copyToClipboard<TData>(
   const getText = (row: number, col: number): string => {
     if (row < headerRowCount) {
       const colDef = columns[col];
-      return typeof colDef?.columnDef?.header === "string" ? colDef.columnDef.header : colDef?.id ?? "";
+      return typeof colDef?.columnDef?.header === "string"
+        ? colDef.columnDef.header
+        : (colDef?.id ?? "");
     }
     const colDef = columns[col];
     const id = colDef?.id ?? "";
