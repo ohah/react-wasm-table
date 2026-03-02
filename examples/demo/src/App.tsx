@@ -50,6 +50,7 @@ import { GroupingDemo } from "./pages/GroupingDemo";
 import { FacetedDemo } from "./pages/FacetedDemo";
 import { TableApiDemo } from "./pages/TableApiDemo";
 import { BorderStyleDemo } from "./pages/BorderStyleDemo";
+import { EditingDemo } from "./pages/EditingDemo";
 import { GroupedColumnsDemo } from "./pages/GroupedColumnsDemo";
 import {
   TanStackColumnPinning,
@@ -74,6 +75,7 @@ import {
   TanStackTouchEvents,
   TanStackTdContent,
   TanStackExpanding,
+  TanStackEditing,
 } from "./pages/tanstack";
 import { FpsCounter } from "./components/FpsCounter";
 
@@ -114,6 +116,7 @@ export function App() {
           <Route path="/tanstack/touch-events" element={<TanStackTouchEvents />} />
           <Route path="/tanstack/td-content" element={<TanStackTdContent />} />
           <Route path="/tanstack/expanding" element={<TanStackExpanding />} />
+          <Route path="/tanstack/editing" element={<TanStackEditing />} />
           {/* Canvas / Flex / Box — TanStack route uses same component (identical demo) */}
           <Route path="/tanstack/canvas-components" element={<CanvasComponents />} />
           <Route path="/tanstack/canvas-text" element={<CanvasText />} />
@@ -182,6 +185,7 @@ export function App() {
           <Route path="/grouping" element={<GroupingDemo />} />
           <Route path="/faceted" element={<FacetedDemo />} />
           <Route path="/border-style" element={<BorderStyleDemo />} />
+          <Route path="/editing" element={<EditingDemo />} />
           <Route path="/grouped-columns" element={<GroupedColumnsDemo />} />
           <Route path="/tanstack/grouped-columns" element={<GroupedColumnsDemo />} />
         </Routes>
