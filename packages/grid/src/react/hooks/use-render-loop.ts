@@ -3,6 +3,7 @@ import type {
   WasmTableEngine,
   Theme,
   CellLayout,
+  CellBorderConfig,
   SelectionStyle,
   AfterDrawContext,
   CssDisplay,
@@ -19,6 +20,7 @@ import type {
   CssGridTrackSize,
   CssGridAutoFlow,
 } from "../../types";
+import { resolveCellBorder } from "../border-utils";
 import type { SortingState } from "../../tanstack-types";
 import type { ColumnRegistry } from "../../adapter/column-registry";
 import type { MemoryBridge } from "../../adapter/memory-bridge";
@@ -128,6 +130,8 @@ export interface UseRenderLoopParams {
   getRowId?: (row: Record<string, unknown>, index: number) => string;
   /** Parsed body content from Table <Td> children (keyed by "rowId:columnId"). */
   parsedBodyContent?: Map<string, import("../../types").RenderInstruction>;
+  /** Parsed border styles from Table <Td>/<Tr> children (keyed by "rowId:columnId"). */
+  parsedBorderStyles?: Map<string, import("../table-components").CellBorderStyleProps>;
   /** Callback to notify Table of visible row range changes. @internal */
   onVisibleRangeChange?: (visStart: number, visibleRowCount: number) => void;
 }
@@ -166,6 +170,7 @@ export function useRenderLoop({
   rowPinning,
   getRowId,
   parsedBodyContent,
+  parsedBorderStyles,
   onVisibleRangeChange,
 }: UseRenderLoopParams) {
   const cellRendererRegistry = useMemo(
@@ -601,6 +606,35 @@ export function useRenderLoop({
             return { type: "text" as const, value: text };
           };
 
+          // Build per-cell border config map (only when overrides exist)
+          let borderConfigMap: Map<number, CellBorderConfig> | undefined;
+          const hasColumnBorder = columns.some(
+            (c) => c.borderColor !== undefined || c.borderStyle !== undefined,
+          );
+          if (parsedBorderStyles || hasColumnBorder) {
+            borderConfigMap = new Map<number, CellBorderConfig>();
+            for (let i = headerCount; i < cellCount; i++) {
+              const col = columns[readCellCol(layoutBuf, i)];
+              const actualRow = effectiveViewIndices[readCellRow(layoutBuf, i)] ?? 0;
+
+              // Table path: cell-level style from parsedBorderStyles
+              const key = `${String(actualRow)}:${col?.id ?? ""}`;
+              const cellStyle = parsedBorderStyles?.get(key);
+
+              const config = resolveCellBorder(
+                theme,
+                col ? { color: col.borderColor, style: col.borderStyle } : undefined,
+                cellStyle,
+              );
+
+              // Only store non-empty configs (memory savings)
+              if (config.top || config.right || config.bottom || config.left) {
+                borderConfigMap.set(i, config);
+              }
+            }
+            if (borderConfigMap.size === 0) borderConfigMap = undefined;
+          }
+
           // Compute actual content bounds from cell edges
           let contentLeft = Infinity;
           let contentWidth = 0;
@@ -640,6 +674,7 @@ export function useRenderLoop({
             _computeChildLayout: engine.computeCompositeLayout
               ? (input: Float32Array) => engine.computeCompositeLayout!(input)
               : undefined,
+            _borderConfigMap: borderConfigMap,
           };
 
           const rowRegions = rowRegionLayout?.regions ?? null;
@@ -817,6 +852,7 @@ export function useRenderLoop({
     rowPinning,
     getRowId,
     parsedBodyContent,
+    parsedBorderStyles,
   ]);
 
   return { invalidate };
