@@ -166,7 +166,7 @@ impl ColumnarStore {
     // ── Incremental append (streaming Phase 2) ───────────────────────
 
     /// Prepare for appending `new_rows` rows. Does NOT reset existing data.
-    /// Pre-extends all column Vecs and updates row_count.
+    /// Pre-extends all column Vecs and updates `row_count`.
     pub fn begin_append(&mut self, new_rows: usize) {
         let new_count = self.row_count + new_rows;
 
@@ -225,8 +225,8 @@ impl ColumnarStore {
         }
     }
 
-    /// Finalize append. Marks view dirty so rebuild_view() runs on next access.
-    pub fn finalize_append(&mut self) {
+    /// Finalize append. Marks view dirty so `rebuild_view()` runs on next access.
+    pub const fn finalize_append(&mut self) {
         self.view_dirty = true;
     }
 
