@@ -92,6 +92,23 @@ describe("headerLayer", () => {
       false,
     );
   });
+
+  it("passes _enableColumnDnD=true to drawHeaderFromBuffer", () => {
+    const layer = headerLayer();
+    const ctx = buildContext({ _enableColumnDnD: true });
+    layer.draw(ctx);
+
+    const renderer = ctx.renderer as unknown as ReturnType<typeof mockRenderer>;
+    expect(renderer.drawHeaderFromBuffer).toHaveBeenCalledWith(
+      ctx.layoutBuf,
+      0,
+      ctx.headerCount,
+      ctx._headersWithSort,
+      ctx.theme,
+      ctx.headerHeight,
+      true,
+    );
+  });
 });
 
 describe("dataLayer", () => {
