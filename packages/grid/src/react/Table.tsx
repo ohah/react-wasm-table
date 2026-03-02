@@ -32,6 +32,7 @@ import type {
   CssGridAutoFlow,
   AfterDrawContext,
 } from "../types";
+import type { PaginationState } from "../tanstack-types";
 import type { EventMiddleware } from "../event-middleware";
 import type { CellRenderer } from "../renderer/components";
 import type { GridLayer } from "../renderer/layer";
@@ -96,6 +97,10 @@ export interface TableProps extends BoxModelProps {
   meta?: TableMeta;
   /** When to open the cell editor: "click" (single) or "dblclick" (double). @default "dblclick" */
   editTrigger?: "click" | "dblclick";
+
+  // Pagination (opt-in — NOT auto-synced from table state)
+  /** Pagination state. Only pass this when you explicitly want WASM-level pagination. */
+  pagination?: PaginationState;
 
   // Streaming (infinite scroll)
   /** Total row count. When set, enables streaming mode. */
@@ -247,7 +252,7 @@ export function Table({ table, children, overscan = 5, ...rest }: TableProps) {
       onColumnPinningChange={(u) => table.setColumnPinning(u)}
       rowPinning={state.rowPinning}
       onRowPinningChange={(u) => table.setRowPinning(u)}
-      pagination={state.pagination}
+      pagination={rest.pagination}
       table={table}
       _parsedBodyContent={parsedBodyContent}
       _parsedBorderStyles={parsedBorderStyles}
