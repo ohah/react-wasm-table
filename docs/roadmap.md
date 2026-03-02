@@ -438,7 +438,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | getPaginationRowModel (10)     | Row Model | buildPaginationRowModel, pageIndex/pageSize. PaginationDemo                                                                                    |
 | getFacetedRowModel (11)        | Row Model | 컬럼별 faceted values (unique/min/max). FacetedDemo                                                                                            |
 | Multi-level Column Header (14) | Render    | drawMultiLevelHeader, per-row hit-test, parent group 정렬/리사이즈 제외, selection leaf-only 보정. 데모 포함                                   |
-| Cell Editing (15)              | UX        | EditorManager DOM overlay, meta.updateData 파이프라인, editTrigger click/dblclick, Tab/Shift+Tab, text cursor, onCanvasEvent commit. 데모 포함 |
+| Cell Editing (15)              | UX        | EditorManager 순수 상태 관리자 + React createPortal 렌더링. editCell render prop (커스텀 에디터), built-in TextEditor/NumberEditor/SelectEditor, type-to-edit (initialChar), 스크롤 cancel, editorStyle 크기 제한. meta.updateData, editTrigger, Tab/Shift+Tab. 데모 포함 |
 
 ---
 
@@ -477,7 +477,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | 12   | Row Pinning               | 6-1  | ✅   | State/API/타입 ✅, WASM pinned layout ✅, buildRowRegions clip 렌더링 ✅                       |
 | 13   | Column DnD Reorder        | 6-2  | ✅   | EventManager 헤더 드래그 + useColumnDnD + 고스트/드롭 인디케이터. enableColumnDnD prop         |
 | 14   | Multi-level Column Header | 6-4  | ✅   | helper.group() + 다단 헤더 캔버스 렌더링. TS에서 leaf buffer 기반 group header 위치 계산       |
-| 15   | Cell Editing 고도화       | 6-3  | ✅   | EditorManager DOM overlay, meta.updateData, editTrigger, Tab navigation, text cursor. 7 테스트 |
+| 15   | Cell Editing 고도화       | 6-3  | ✅   | EditorManager 순수 상태 관리자 + createPortal. editCell render prop, built-in React 에디터 (Text/Number/Select), type-to-edit, 스크롤 cancel, editorStyle 크기 제한. 데모 포함 |
 | 16   | Context Menu              | 6-5  | ✅   | EventManager contextmenu + hit-test. GridProps.onContextMenu, GridContextMenuEvent. 4 테스트   |
 
 ### Tier 5 — 고급 성능 (아키텍처 변경, 기존 기능 안정 후 마지막)
@@ -600,15 +600,31 @@ helper.accessor("name", {
 
 **구현 내역:**
 
-- `EditorManager`: DOM `<input>` overlay 배치, Enter/Escape/Tab 키 처리
-- `onCommit` 콜백 → `meta.updateData(rowIndex, columnId, value)` 파이프라인
-- `onNavigate` 콜백 → Tab/Shift+Tab 시 다음/이전 editable 셀로 자동 이동
-- `editTrigger` prop: `"dblclick"` (기본) 또는 `"click"` 모드
-- Click 모드 cell-to-cell transition: `pointerEvents: "auto"`를 input에만 적용 (container는 통과)
-- `onCanvasEvent("mousedown")` → 캔버스 어디든 클릭/드래그 시 활성 에디터 commit
-- `isCellEditable(coord)` + `onCellHover` → editable 셀 위 마우스 커서 `text` 변경
+- **Step 1 — meta.updateData 파이프라인:**
+  - `EditorManager`: DOM `<input>` overlay 배치 (→ Step 2에서 순수 상태 관리자로 리팩토링)
+  - `onCommit` 콜백 → `meta.updateData(rowIndex, columnId, value)` 파이프라인
+  - `onNavigate` 콜백 → Tab/Shift+Tab 시 다음/이전 editable 셀로 자동 이동
+  - `editTrigger` prop: `"dblclick"` (기본) 또는 `"click"` 모드
+  - `onCanvasEvent("mousedown")` → 캔버스 mousedown 시 에디터 cancel
+  - `isCellEditable(coord)` + `onCellHover` → editable 셀 hover 시 text 커서
+
+- **Step 2 — editCell render prop + React 에디터:**
+  - `EditorManager` 리팩토링: DOM 생성 제거, 순수 상태 관리자 (open/commitValue/cancel + onStateChange)
+  - `CellEditRenderProps` 타입 + `ColumnProps.editCell` / `ColumnProps.editorOptions`
+  - React `createPortal` 기반 에디터 렌더링 (`use-editing.tsx`)
+  - Built-in React 에디터: `TextEditor`, `NumberEditor`, `SelectEditor` (`react/editors/`)
+  - `editorStyle(layout)` — absolute 포지셔닝 유틸리티 (maxWidth/maxHeight 크기 제한)
+  - editCell 우선순위: editCell > editor > 편집 불가
+
+- **Step 3 — UX 완성:**
+  - Type-to-edit: 셀 선택 후 printable key 입력 → 자동 edit mode (initialChar 전달)
+  - 스크롤 cancel: 편집 중 스크롤 시 에디터 자동 cancel
+  - Select 에디터: `editor: "select"` + `editorOptions.options`
+  - 에디터 크기 제한: 셀 경계 내 maxWidth/maxHeight
+
 - `GridProps.onCellClick`, `onCellDoubleClick` → `preventDefault()`로 기본 동작 제어 가능
-- 테스트: EditorManager 20개, use-editing 7개, use-event-attachment 14개
+- 테스트: EditorManager, use-editing, use-event-attachment
+- 데모: Grid API (`EditingDemo.tsx`), TanStack API (`tanstack/Editing.tsx`) — 커스텀 editCell + select + number 에디터
 
 ### 6-4. Multi-level Column Header (Column Grouping)
 

@@ -59,113 +59,104 @@
 
 ---
 
-## Step 2: editCell render prop + React 컴포넌트 에디터 — ❌ 미구현
+## Step 2: editCell render prop + React 컴포넌트 에디터 — ✅ 완료
 
 **목표:** 사용자가 React 컴포넌트로 에디터 UI를 자유롭게 결정
 
-### 할 일
+### 구현 내역
 
-1. **editCell render prop 타입 정의**
+1. **editCell render prop 타입 정의** (`types.ts`, `tanstack-types.ts`)
 
    ```ts
-   interface CellEditRenderProps<TData = unknown> {
+   interface CellEditRenderProps {
      value: unknown;
-     row: Row<TData>;
-     column: ColumnDef;
      onCommit: (newValue: unknown) => void;
      onCancel: () => void;
+     onCommitAndNavigate: (newValue: unknown, direction: "next" | "prev") => void;
+     layout: CellLayout;
+     initialChar: string | null;
    }
 
-   // ColumnDef에 추가
-   interface ColumnProps {
-     editCell?: (props: CellEditRenderProps) => React.ReactNode;
-     // 기존 editor?: "text" | "number" | "select" 유지 (built-in 단축)
-   }
+   // ColumnProps / ColumnDefBase에 추가
+   editCell?: (props: CellEditRenderProps) => React.ReactNode;
+   editorOptions?: { options: { label: string; value: unknown }[] };
    ```
 
-2. **EditorManager 리팩토링**
-   - 현재: input createElement + DOM 직접 조작
-   - 변경: 편집 상태(editingCell, cellLayout)만 관리
-   - React가 `createPortal`로 editorRef div에 editCell 컴포넌트 렌더링
+2. **EditorManager 리팩토링** — DOM 생성 코드 전체 제거, 순수 상태 관리자로 전환
+   - `open(coord, layout, editorType, currentValue, initialChar?)` — 상태 설정 + `onStateChange()` 호출
+   - `commitValue(value)` — React 에디터에서 값을 받아 onCommit 호출
+   - `commitAndNavigate(value, direction)` — commit + Tab 네비게이션
+   - `cancel()` — 상태 초기화, onCommit 미호출
+   - `onStateChange` 콜백으로 React 상태 동기화
 
 3. **editCell / editor 우선순위**
-   - `editCell` 제공 시 → 사용자 컴포넌트 렌더링
-   - `editCell` 미제공 + `editor` 제공 시 → built-in 에디터 (text/number/select)
+   - `editCell` 제공 시 → 사용자 React 컴포넌트 렌더링
+   - `editCell` 미제공 + `editor` 제공 시 → built-in 에디터 (TextEditor/NumberEditor/SelectEditor)
    - 둘 다 없으면 → 편집 불가
 
-4. **built-in 에디터를 editCell 기반으로 재구현**
-   - `defaultTextEditor`, `defaultNumberEditor`, `defaultSelectEditor` 컴포넌트
-   - 기존 EditorManager의 native input 로직을 React 컴포넌트로 전환
+4. **built-in React 에디터 컴포넌트** (`react/editors/built-in-editors.tsx`)
+   - `TextEditor` — `<input type="text">`, committedRef 패턴
+   - `NumberEditor` — `<input type="number">`, Number() 변환
+   - `SelectEditor` — `<select>`, editorOptions.options 기반
+   - `editorStyle(layout)` — 셀 경계 내 absolute 포지셔닝 스타일 유틸리티
 
-5. **onCommit → meta.updateData 연결**
-   - editCell의 `onCommit(newValue)` 호출 → 그리드가 `meta.updateData(rowIndex, columnId, newValue)` 발화
-   - 에디터 자동 닫힘
+5. **createPortal 기반 렌더링** (`use-editing.tsx`)
+   - `useState<EditorState>` + `EditorManager.onStateChange` → React 상태 동기화
+   - `createPortal(editorElement, editorRef.current)` — editorRef div에 에디터 포탈 렌더링
+   - editorState에 따라 editCell 커스텀 컴포넌트 또는 built-in 에디터 분기
 
 ### 변경 파일
 
-- `types.ts` — `CellEditRenderProps`, `ColumnProps.editCell` 추가
-- `editor-manager.ts` — 상태 관리자로 리팩토링 (DOM 생성 제거)
-- `use-editing.ts` — createPortal 기반 렌더링, editCell 호출
-- `Grid.tsx` — portal 마운트 포인트 연결
-- 새 파일: `built-in-editors.tsx` — 기본 에디터 컴포넌트들
+- `types.ts` — `CellEditRenderProps`, `ColumnProps.editCell`, `ColumnProps.editorOptions`
+- `tanstack-types.ts` — `ColumnDefBase.editCell`, `ColumnDefBase.editorOptions`
+- `editor-manager.ts` — 순수 상태 관리자로 전면 리팩토링
+- `use-editing.ts` → `use-editing.tsx` — createPortal 기반 렌더링, editCell 호출
+- `resolve-columns.ts` — editCell/editorOptions passthrough
+- `Grid.tsx` — editorPortal JSX 삽입
+- `Column.tsx` — editCell/editorOptions props
+- `index.ts` — CellEditRenderProps, TextEditor, NumberEditor, SelectEditor, editorStyle export
+- 새 파일: `react/editors/built-in-editors.tsx`, `react/editors/index.ts`
 
 ### 테스트
 
-- editCell render prop이 올바른 props로 호출되는지
-- onCommit 호출 시 meta.updateData 연결 확인
-- onCancel 호출 시 에디터 닫힘 확인
-- built-in editor fallback 동작
-- editCell + editor 동시 제공 시 editCell 우선
+- EditorManager: 상태 기반 테스트 (open/commitValue/cancel/onStateChange/initialChar)
+- use-editing: editCell 우선순위, isCellEditable, commitAndNavigate
+- use-event-attachment: mousedown cancel (commit → cancel 변경)
 
 ---
 
-## Step 3: 에디터 UX 완성 — 부분 구현
+## Step 3: 에디터 UX 완성 — ✅ 완료
 
 **목표:** 편집 경험의 세부 동작 완성
 
-### 구현 완료
+### 구현 내역
 
 - ✅ Tab → commit + 다음 editable 셀로 이동
 - ✅ Shift+Tab → commit + 이전 editable 셀로 이동
 - ✅ Enter → commit
 - ✅ Escape → cancel
 - ✅ 편집 중 셀 border 하이라이트 (2px solid #1976d2)
-
-### 미구현
-
-1. **셀 선택 상태에서 타이핑 시작 → 자동 edit mode 진입**
-
-2. **스크롤 동기화**
-   - 편집 중 스크롤 시 에디터 위치 업데이트 또는 자동 cancel
-   - 결정: 자동 cancel이 더 단순하고 안전 (AG Grid도 이 방식)
-
-3. **select 에디터 구현**
-   - `editor: "select"` 시 built-in select 컴포넌트 렌더링
-   - ColumnProps에 `editorOptions?: { options: { label: string; value: unknown }[] }` 추가
-
-4. **에디터가 셀 경계를 넘지 않도록 크기 제한**
+- ✅ **type-to-edit**: 셀 선택 상태에서 printable key 입력 시 자동 edit mode 진입 (initialChar 전달)
+- ✅ **스크롤 cancel**: 편집 중 스크롤 시 에디터 자동 cancel (`use-event-attachment.ts` onScroll)
+- ✅ **select 에디터**: `editor: "select"` + `editorOptions.options` → built-in `<select>` 렌더링
+- ✅ **에디터 크기 제한**: `editorStyle(layout)` — maxWidth/maxHeight = 셀 크기, overflow: hidden
 
 ### 변경 파일
 
-- `editor-manager.ts` — 키보드 네비게이션 상태 관리
-- `use-editing.ts` — 스크롤 이벤트 감지 + cancel
-- `built-in-editors.tsx` — select 에디터 추가
-- `types.ts` — editorOptions 타입
-
-### 테스트
-
-- 스크롤 시 에디터 cancel 확인
-- select 에디터 옵션 렌더링 + 선택 commit
+- `use-event-attachment.ts` — handleTypingKeyDown 연결, 스크롤 시 cancel, mousedown → cancel
+- `use-editing.tsx` — handleTypingKeyDown 구현 (single printable char + single cell selected)
+- `react/editors/built-in-editors.tsx` — SelectEditor, editorStyle maxWidth/maxHeight
+- `Grid.tsx` — handleTypingKeyDown handlers 전달
 
 ---
 
 ## Step 별 진행 상태
 
-| Step | 핵심 내용                       | 상태      | 변경 파일 수 | 신규 파일 |
-| ---- | ------------------------------- | --------- | ------------ | --------- |
-| 1    | meta.updateData 파이프라인      | ✅ 완료   | 6            | 0         |
-| 2    | editCell render prop + 리팩토링 | ❌ 미착수 | 4-5          | 1         |
-| 3    | 키보드/스크롤/select UX         | 부분 구현 | 3-4          | 0         |
+| Step | 핵심 내용                       | 상태    | 변경 파일 수 | 신규 파일 |
+| ---- | ------------------------------- | ------- | ------------ | --------- |
+| 1    | meta.updateData 파이프라인      | ✅ 완료 | 6            | 0         |
+| 2    | editCell render prop + 리팩토링 | ✅ 완료 | 9            | 2         |
+| 3    | 키보드/스크롤/select UX         | ✅ 완료 | 4            | 0         |
 
 ---
 
@@ -198,7 +189,7 @@
   />
 </Grid>;
 
-// 커스텀 에디터 (editCell render prop) — ❌ Step 2에서 구현 예정
+// 커스텀 에디터 (editCell render prop) — ✅ 구현 완료
 const columns = [
   helper.accessor("name", {
     editCell: ({ value, onCommit, onCancel }) => (
@@ -224,7 +215,7 @@ const columns = [
 ```
 Step 1: meta.updateData ✅ ← 독립 (기존 코드에 추가만)
          ↓
-Step 2: editCell render prop ❌ ← Step 1 필요 (onCommit → meta.updateData 연결)
+Step 2: editCell render prop ✅ ← Step 1 필요 (onCommit → meta.updateData 연결)
          ↓
-Step 3: UX 완성 (부분 ✅) ← Step 2 필요 (editCell 기반 위에 UX 추가)
+Step 3: UX 완성 ✅ ← Step 2 필요 (editCell 기반 위에 UX 추가)
 ```

@@ -12,5 +12,12 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ["@ohah/react-wasm-table"],
+    include: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "react-dom/client",
+    ],
   },
 });
