@@ -546,6 +546,205 @@ describe("useEditing (renderHook)", () => {
     });
   });
 
+  describe("handleTypingKeyDown", () => {
+    function setupTyping(
+      cols: { id: string; width: number; editor?: string }[],
+      data: Record<string, unknown>[],
+      layoutBuf: Float32Array,
+    ) {
+      const registry = new ColumnRegistry();
+      registry.setAll(cols as any);
+      const sm = new SelectionManager();
+      const editorDiv = document.createElement("div");
+      document.body.appendChild(editorDiv);
+      return renderHook(() =>
+        useEditing({
+          editorRef: { current: editorDiv },
+          columnRegistry: registry,
+          data,
+          selectionManagerRef: { current: sm },
+          getLayoutBuf: () => layoutBuf,
+          getHeaderCount: () => cols.length,
+          getTotalCellCount: () => layoutBuf.length / STRIDE,
+        }),
+      );
+    }
+
+    it("opens editor with initialChar on printable single character", () => {
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      ]);
+      const { result } = setupTyping(
+        [{ id: "name", width: 100, editor: "text" }],
+        [{ name: "Alice" }],
+        buf,
+      );
+
+      // Simulate single-cell selection
+      const sm = (result.current as any).editorManagerRef.current;
+      // We need to call handleCellClick or set up selection first
+      // Use the selectionManagerRef to set a single cell selection
+      // Access via the hook's internal selection manager
+      act(() => {
+        // Get selection manager from the closure — set selection manually
+        // The hook uses selectionManagerRef.current.getNormalized()
+        // We'll simulate by making the hook's handleCellClick first to create a selection state
+        // Instead, directly test handleTypingKeyDown by accessing it
+      });
+
+      // For this test, we need the selection manager to have a single cell selected
+      // Since setupTyping gives us a SelectionManager, let's set it up differently
+      const registry2 = new ColumnRegistry();
+      registry2.setAll([{ id: "name", width: 100, editor: "text" }] as any);
+      const sm2 = new SelectionManager();
+      sm2.start(1, 0);
+      sm2.finish();
+      const editorDiv2 = document.createElement("div");
+      document.body.appendChild(editorDiv2);
+
+      const { result: r2 } = renderHook(() =>
+        useEditing({
+          editorRef: { current: editorDiv2 },
+          columnRegistry: registry2,
+          data: [{ name: "Alice" }],
+          selectionManagerRef: { current: sm2 },
+          getLayoutBuf: () => buf,
+          getHeaderCount: () => 1,
+          getTotalCellCount: () => buf.length / STRIDE,
+        }),
+      );
+
+      const em2 = r2.current.editorManagerRef.current;
+      expect(em2.isEditing).toBe(false);
+
+      act(() => {
+        const event = new KeyboardEvent("keydown", { key: "a" });
+        r2.current.handleTypingKeyDown(event);
+      });
+
+      expect(em2.isEditing).toBe(true);
+      expect(em2.initialChar).toBe("a");
+    });
+
+    it("ignores ctrl/meta/alt key combinations", () => {
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      ]);
+      const registry = new ColumnRegistry();
+      registry.setAll([{ id: "name", width: 100, editor: "text" }] as any);
+      const sm = new SelectionManager();
+      sm.start(1, 0);
+      sm.finish();
+      const editorDiv = document.createElement("div");
+      document.body.appendChild(editorDiv);
+
+      const { result } = renderHook(() =>
+        useEditing({
+          editorRef: { current: editorDiv },
+          columnRegistry: registry,
+          data: [{ name: "Alice" }],
+          selectionManagerRef: { current: sm },
+          getLayoutBuf: () => buf,
+          getHeaderCount: () => 1,
+          getTotalCellCount: () => buf.length / STRIDE,
+        }),
+      );
+
+      act(() => {
+        result.current.handleTypingKeyDown(
+          new KeyboardEvent("keydown", { key: "c", ctrlKey: true }),
+        );
+      });
+      expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+
+      act(() => {
+        result.current.handleTypingKeyDown(
+          new KeyboardEvent("keydown", { key: "c", metaKey: true }),
+        );
+      });
+      expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+
+      act(() => {
+        result.current.handleTypingKeyDown(
+          new KeyboardEvent("keydown", { key: "c", altKey: true }),
+        );
+      });
+      expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+    });
+
+    it("ignores when already editing", () => {
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      ]);
+      const registry = new ColumnRegistry();
+      registry.setAll([{ id: "name", width: 100, editor: "text" }] as any);
+      const sm = new SelectionManager();
+      sm.start(1, 0);
+      sm.finish();
+      const editorDiv = document.createElement("div");
+      document.body.appendChild(editorDiv);
+
+      const { result } = renderHook(() =>
+        useEditing({
+          editorRef: { current: editorDiv },
+          columnRegistry: registry,
+          data: [{ name: "Alice" }],
+          selectionManagerRef: { current: sm },
+          getLayoutBuf: () => buf,
+          getHeaderCount: () => 1,
+          getTotalCellCount: () => buf.length / STRIDE,
+        }),
+      );
+
+      // Open editor first
+      act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
+      expect(result.current.editorManagerRef.current.isEditing).toBe(true);
+      const prevCoord = result.current.editorManagerRef.current.activeCoord;
+
+      // Type should not re-open or change anything
+      act(() => {
+        result.current.handleTypingKeyDown(new KeyboardEvent("keydown", { key: "x" }));
+      });
+      expect(result.current.editorManagerRef.current.activeCoord).toEqual(prevCoord);
+    });
+
+    it("ignores when selection spans multiple rows", () => {
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+        { row: 2, col: 0, x: 0, y: 76, w: 100, h: 36 },
+      ]);
+      const registry = new ColumnRegistry();
+      registry.setAll([{ id: "name", width: 100, editor: "text" }] as any);
+      const sm = new SelectionManager();
+      sm.start(1, 0);
+      sm.extend(2, 0);
+      sm.finish();
+      const editorDiv = document.createElement("div");
+      document.body.appendChild(editorDiv);
+
+      const { result } = renderHook(() =>
+        useEditing({
+          editorRef: { current: editorDiv },
+          columnRegistry: registry,
+          data: [{ name: "Alice" }, { name: "Bob" }],
+          selectionManagerRef: { current: sm },
+          getLayoutBuf: () => buf,
+          getHeaderCount: () => 1,
+          getTotalCellCount: () => buf.length / STRIDE,
+        }),
+      );
+
+      act(() => {
+        result.current.handleTypingKeyDown(new KeyboardEvent("keydown", { key: "a" }));
+      });
+      expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+    });
+  });
+
   describe("editCell priority", () => {
     it("editCell takes precedence over editor", () => {
       const customEditor = mock(() => null);

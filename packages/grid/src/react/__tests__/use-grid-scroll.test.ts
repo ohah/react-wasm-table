@@ -132,6 +132,66 @@ describe("useGridScroll", () => {
     });
   });
 
+  describe("scrollToRow", () => {
+    it("scrolls down when row is below viewport", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      // Row 50 cellBottom = 50*36+36 = 1836, viewport = 560, scrollTop = 0
+      // 1836 > 0 + 560, so should scroll
+      act(() => result.current.scrollToRow(50));
+      // scrollTop = cellBottom - viewportHeight = 1836 - 560 = 1276
+      expect(result.current.scrollTopRef.current).toBe(1276);
+      expect(params.invalidate).toHaveBeenCalled();
+    });
+
+    it("scrolls up when row is above viewport", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      // First scroll down
+      act(() => result.current.handleWheel(2000, 0));
+      expect(result.current.scrollTopRef.current).toBe(2000);
+
+      // Row 5 cellTop = 5*36 = 180, which is < scrollTop 2000
+      act(() => result.current.scrollToRow(5));
+      expect(result.current.scrollTopRef.current).toBe(180);
+    });
+
+    it("does nothing when row is already visible", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      // Row 5 cellTop=180, cellBottom=216, viewport=[0, 560] — visible
+      act(() => result.current.scrollToRow(5));
+      expect(result.current.scrollTopRef.current).toBe(0);
+      // invalidate not called from scrollToRow (only from initial render)
+      expect(params.invalidate).not.toHaveBeenCalled();
+    });
+
+    it("clamps to maxScrollY", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      // Last row (99) cellBottom = 99*36+36 = 3600, but maxScrollY = 3040
+      act(() => result.current.scrollToRow(99));
+      expect(result.current.scrollTopRef.current).toBe(3040);
+    });
+
+    it("scrolls to 0 for first row", () => {
+      const params = defaultParams();
+      const { result } = renderHook(() => useGridScroll(params));
+
+      // First scroll down
+      act(() => result.current.handleWheel(500, 0));
+      expect(result.current.scrollTopRef.current).toBe(500);
+
+      // Scroll back to row 0
+      act(() => result.current.scrollToRow(0));
+      expect(result.current.scrollTopRef.current).toBe(0);
+    });
+  });
+
   describe("handleDragEdge / stopAutoScroll", () => {
     it("starts auto-scroll interval on non-zero delta", () => {
       const params = defaultParams();
