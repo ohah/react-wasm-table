@@ -317,6 +317,16 @@ export interface CellLayout {
   contentAlign: "left" | "center" | "right";
 }
 
+/** Props passed to custom editCell render functions. */
+export interface CellEditRenderProps {
+  value: unknown;
+  onCommit: (newValue: unknown) => void;
+  onCancel: () => void;
+  onCommitAndNavigate: (newValue: unknown, direction: "next" | "prev") => void;
+  layout: CellLayout;
+  initialChar: string | null;
+}
+
 // ── After-draw context ──────────────────────────────────────────────────
 
 /** Context passed to onAfterDraw callback (Phase 3 Layer System entry point). */
@@ -579,6 +589,10 @@ export interface ColumnProps extends BoxModelProps {
   selectable?: boolean;
   /** Editor type for inline editing. */
   editor?: "text" | "number" | "select";
+  /** Custom editor render function. Takes precedence over `editor` when both are set. */
+  editCell?: (props: CellEditRenderProps) => React.ReactNode;
+  /** Editor options (e.g. dropdown options for select editor). */
+  editorOptions?: { options: { label: string; value: unknown }[] };
   /** Original TanStack cell definition (string or function). Resolved with real row data in render loop. */
   cellDef?: string | ((info: any) => unknown);
   /** Reference to the original column definition (for CellContext.column.columnDef). */
