@@ -437,6 +437,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | getGroupedRowModel (9)        | Row Model | buildGroupedRowModel, groupingKeys, aggregate. GroupingDemo                                                 |
 | getPaginationRowModel (10)    | Row Model | buildPaginationRowModel, pageIndex/pageSize. PaginationDemo                                                 |
 | getFacetedRowModel (11)       | Row Model | 컬럼별 faceted values (unique/min/max). FacetedDemo                                                         |
+| Multi-level Column Header (14)| Render    | drawMultiLevelHeader, per-row hit-test, parent group 정렬/리사이즈 제외, selection leaf-only 보정. 데모 포함 |
 
 ---
 
@@ -474,7 +475,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 | ---- | ------------------------- | ---- | ---- | -------------------------------------------------------------------------------------------- |
 | 12   | Row Pinning               | 6-1  | ✅   | State/API/타입 ✅, WASM pinned layout ✅, buildRowRegions clip 렌더링 ✅                     |
 | 13   | Column DnD Reorder        | 6-2  | ✅   | EventManager 헤더 드래그 + useColumnDnD + 고스트/드롭 인디케이터. enableColumnDnD prop       |
-| 14   | Multi-level Column Header | 6-4  | ❌   | helper.group() + 다단 헤더 레이아웃. 복잡도 높음                                             |
+| 14   | Multi-level Column Header | 6-4  | ✅   | helper.group() + 다단 헤더 캔버스 렌더링. TS에서 leaf buffer 기반 group header 위치 계산      |
 | 15   | Cell Editing 고도화       | 6-3  | ❌   | EditorManager + DOM overlay 완성. editCell render prop                                       |
 | 16   | Context Menu              | 6-5  | ✅   | EventManager contextmenu + hit-test. GridProps.onContextMenu, GridContextMenuEvent. 4 테스트 |
 
@@ -493,7 +494,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 10. getPaginationRowModel ──┼── ✅ 완료 (Row Model 패턴 복제)
 11. getFacetedRowModel ─────┘
          ↓
-14. Multi-level Header ──── header 구조 확정 (Cell Editing 선행 조건)
+14. Multi-level Header ✅ ── header 구조 확정 완료
          ↓
 15. Cell Editing 고도화 ─── 확정된 header 위에 기존 stub 완성
          ↓
@@ -533,7 +534,7 @@ WASM 레이아웃 결과를 캐싱해서 불필요한 재계산 방지.
 7. Pinning 렌더링 ✅ ──→ 12. Row Pinning ✅
 2. Event System ✅ ──→ 13. Column DnD Reorder ✅
                    ──→ 16. Context Menu ✅
-14. Multi-level Column Header ──→ 15. Cell Editing 고도화 (header 구조 확정 후)
+14. Multi-level Column Header ✅ ──→ 15. Cell Editing 고도화 (header 구조 확정 후)
 17. Worker Bridge ──→ 18. Streaming Data (시너지)
 ```
 
