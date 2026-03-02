@@ -23,14 +23,19 @@ export interface GridLineSpec {
 
 /**
  * Compute header grid lines from a layout buffer.
+ * Supports multi-level headers: draws horizontal lines at each header row boundary
+ * and vertical lines spanning the full header height.
  */
 export function computeHeaderLinesFromBuffer(
   buf: Float32Array,
   headerCount: number,
   canvasW: number,
   headerHeight: number,
+  headerRowCount?: number,
 ): GridLineSpec {
   if (headerCount === 0) return { horizontal: [], vertical: [] };
+
+  const rowCount = headerRowCount ?? 1;
 
   let gridMaxX = 0;
   for (let i = 0; i < headerCount; i++) {
@@ -43,11 +48,18 @@ export function computeHeaderLinesFromBuffer(
   for (let i = 0; i < headerCount; i++) {
     firstX = Math.min(firstX, readCellX(buf, i));
   }
+
+  // Horizontal lines: top boundary, each internal row boundary, bottom boundary
   const horizontal: HLine[] = [
     { y: headerY + 0.25, x1: firstX, x2: canvasW },
-    { y: headerY + headerHeight - 0.25, x1: firstX, x2: canvasW },
   ];
+  const perRowHeight = headerHeight / rowCount;
+  for (let r = 1; r < rowCount; r++) {
+    horizontal.push({ y: headerY + r * perRowHeight + 0.5, x1: firstX, x2: canvasW });
+  }
+  horizontal.push({ y: headerY + headerHeight - 0.25, x1: firstX, x2: canvasW });
 
+  // Vertical lines: leaf column edges spanning full header height
   const vertical: VLine[] = [{ x: firstX + 0.25, y1: headerY, y2: headerY + headerHeight }];
 
   const colEdges = new Set<number>();

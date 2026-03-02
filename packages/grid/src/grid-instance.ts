@@ -290,7 +290,7 @@ export interface GridInstance<TData = unknown> {
 
 // ── Callbacks ───────────────────────────────────────────────────────
 
-interface BuildColumnCallbacks {
+export interface BuildColumnCallbacks {
   onSortingChange: (updater: SortingUpdater) => void;
   onColumnFiltersChange: (updater: ColumnFiltersUpdater) => void;
   onColumnVisibilityChange: (updater: ColumnVisibilityUpdater) => void;
@@ -329,7 +329,7 @@ export interface BuildOptions<TData> {
 }
 
 /** Build GridColumn instances from column definitions. */
-function buildGridColumns<TData>(
+export function buildGridColumns<TData>(
   defs: GridColumnDef<TData, any>[],
   state: GridState,
   callbacks: BuildColumnCallbacks,

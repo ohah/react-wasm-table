@@ -210,6 +210,8 @@ export class EventManager {
    */
   findResizeHandle(x: number, y: number): number {
     for (const h of this.headerLayouts) {
+      // Skip parent group headers (negative row = group header, not resizable)
+      if (h.row < 0) continue;
       const rightEdge = h.x + h.width;
       if (y >= h.y && y < h.y + h.height && Math.abs(x - rightEdge) <= RESIZE_HANDLE_ZONE) {
         return h.col;
@@ -225,6 +227,8 @@ export class EventManager {
    */
   findDragHandle(x: number, y: number): number {
     for (const h of this.headerLayouts) {
+      // Skip parent group headers (negative row = group header, not draggable)
+      if (h.row < 0) continue;
       const rightEdge = h.x + h.width;
       if (
         y >= h.y &&
@@ -318,7 +322,11 @@ export class EventManager {
         // Check header first
         const headerHit = findCell(x, y, this.headerLayouts);
         if (headerHit) {
-          handlers.onHeaderClick?.(headerHit.col, e, coords);
+          // Only fire sorting for leaf headers (row >= 0).
+          // Parent group headers (row < 0) get selection only, no sorting.
+          if (headerHit.row >= 0) {
+            handlers.onHeaderClick?.(headerHit.col, e, coords);
+          }
           return;
         }
 

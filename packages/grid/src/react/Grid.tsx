@@ -4,6 +4,9 @@ import { DEFAULT_THEME } from "../types";
 import { resolveColumns } from "../resolve-columns";
 import { ColumnRegistry } from "../adapter/column-registry";
 import { EventManager } from "../adapter/event-manager";
+import { buildGridColumns } from "../grid-instance";
+import type { GridHeaderGroup } from "../grid-instance";
+import { buildHeaderGroups } from "../build-header-groups";
 import { GridContext } from "./context";
 import { ScrollBar } from "./ScrollBar";
 import { useSorting } from "./hooks/use-sorting";
@@ -172,6 +175,41 @@ export function Grid({
     columnPinningProp,
   ]);
 
+  // Build multi-level header groups from column definitions or table instance.
+  // If a table prop is provided, use its header groups directly.
+  // Otherwise build from columnsProp using buildGridColumns + buildHeaderGroups.
+  const headerGroups: GridHeaderGroup[] = useMemo(() => {
+    if (tableProp) {
+      return tableProp.getHeaderGroups();
+    }
+    if (!columnsProp) return [];
+    const noopCallbacks = {
+      onSortingChange: () => {},
+      onColumnFiltersChange: () => {},
+      onColumnVisibilityChange: () => {},
+      onColumnSizingChange: () => {},
+      onColumnSizingInfoChange: () => {},
+      onColumnPinningChange: () => {},
+      onRowPinningChange: () => {},
+      onExpandedChange: () => {},
+      onPaginationChange: () => {},
+      onGroupingChange: () => {},
+    };
+    const state = {
+      sorting: [],
+      columnFilters: [],
+      globalFilter: "",
+      columnVisibility: columnVisibilityProp,
+      columnSizing: columnSizingProp,
+      columnPinning: columnPinningProp,
+    };
+    const allColumns = buildGridColumns(columnsProp, state, noopCallbacks);
+    return buildHeaderGroups(allColumns);
+  }, [columnsProp, tableProp, columnVisibilityProp, columnSizingProp, columnPinningProp]);
+
+  const headerRowCount = headerGroups.length || 1;
+  const totalHeaderHeight = headerRowCount * headerHeight;
+
   // Shared mutable refs
   const layoutBufRef = useRef<Float32Array | null>(null);
   const headerCountRef = useRef(0);
@@ -206,7 +244,7 @@ export function Grid({
     viewRowCountRef,
     rowHeight,
     height,
-    headerHeight,
+    headerHeight: totalHeaderHeight,
     width,
     columnRegistry,
     invalidate,
@@ -250,7 +288,7 @@ export function Grid({
     columnRegistry,
     rowHeight,
     height,
-    headerHeight,
+    headerHeight: totalHeaderHeight,
     invalidate,
   });
   const getMemoryBridge = useCallback(() => memoryBridgeRef.current, []);
@@ -352,7 +390,7 @@ export function Grid({
     onTouchEnd: onTouchEndProp,
     eventMiddleware: eventMiddlewareProp,
     rowHeight,
-    headerHeight,
+    headerHeight: totalHeaderHeight,
     height,
   });
 
@@ -461,7 +499,7 @@ export function Grid({
     width,
     height,
     rowHeight,
-    headerHeight,
+    headerHeight: totalHeaderHeight,
     onLayoutComputed,
     onVisStartComputed,
     onAfterDraw,
@@ -469,6 +507,7 @@ export function Grid({
     layers: layersProp,
     columnPinning: columnPinningProp,
     viewIndicesRef,
+    headerGroups,
     enableColumnDnD: enableColumnDnDProp,
     columnDnDStateRef: dndStateRef,
     rowPinning: rowPinningProp,
@@ -481,7 +520,7 @@ export function Grid({
   invalidateRef.current = renderInvalidate;
 
   // Scrollbar visibility
-  const totalContentHeight = data.length * rowHeight + headerHeight;
+  const totalContentHeight = data.length * rowHeight + totalHeaderHeight;
   const needsVerticalScroll = totalContentHeight > height;
 
   const columns = columnRegistry.getAll();

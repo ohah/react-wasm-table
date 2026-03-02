@@ -71,8 +71,13 @@ export function useColumnDnD({
       const headers = eventManagerRef.current.getHeaderLayouts();
       if (headers.length === 0) return;
 
+      // Filter to leaf headers only (row >= 0); parent group headers (row < 0)
+      // should not participate in drop position computation.
+      const leafHeaders = headers.filter((h) => h.row >= 0);
+      if (leafHeaders.length === 0) return;
+
       // Sort by col index and find "drop before" column: first column whose left edge is > contentX
-      const sorted = headers.slice().sort((a, b) => a.col - b.col);
+      const sorted = leafHeaders.slice().sort((a, b) => a.col - b.col);
       let dropIndicatorColIndex = sorted.findIndex((h) => contentX < h.x);
       if (dropIndicatorColIndex === -1) dropIndicatorColIndex = sorted.length;
 

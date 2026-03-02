@@ -26,7 +26,7 @@ const defaultTheme: Theme = {
 
 function mockRenderer() {
   return {
-    drawHeaderFromBuffer: mock(() => {}),
+    drawMultiLevelHeader: mock(() => {}),
     drawRowsFromBuffer: mock(() => {}),
     drawGridLinesFromBuffer: mock(() => {}),
     drawSelection: mock(() => {}),
@@ -57,7 +57,19 @@ function buildContext(overrides?: Partial<InternalLayerContext>): InternalLayerC
     dataRowCount: 100,
     columns: [],
     theme: defaultTheme,
-    _headersWithSort: ["Name", "Age \u25B2", "Status"],
+    _headerGroups: [
+      {
+        id: "headerGroup_0",
+        depth: 0,
+        headers: [
+          { id: "name_h", column: { id: "name", columnDef: { header: "Name" } }, colSpan: 1, rowSpan: 1, depth: 0, isPlaceholder: false, subHeaders: [], getContext: () => ({}) },
+          { id: "age_h", column: { id: "age", columnDef: { header: "Age" } }, colSpan: 1, rowSpan: 1, depth: 0, isPlaceholder: false, subHeaders: [], getContext: () => ({}) },
+          { id: "status_h", column: { id: "status", columnDef: { header: "Status" } }, colSpan: 1, rowSpan: 1, depth: 0, isPlaceholder: false, subHeaders: [], getContext: () => ({}) },
+        ],
+      },
+    ] as any,
+    _sorting: [{ id: "age", desc: false }],
+    _headerRowCount: 1,
     _getInstruction: () => ({ type: "text", value: "test" }),
     _cellRendererRegistry: { get: () => undefined } as any,
     _enableSelection: true,
@@ -75,37 +87,37 @@ describe("headerLayer", () => {
     expect(layer.space).toBe("content");
   });
 
-  it("calls drawHeaderFromBuffer with correct args", () => {
+  it("calls drawMultiLevelHeader with correct args", () => {
     const layer = headerLayer();
     const ctx = buildContext();
     layer.draw(ctx);
 
     const renderer = ctx.renderer as unknown as ReturnType<typeof mockRenderer>;
-    expect(renderer.drawHeaderFromBuffer).toHaveBeenCalledTimes(1);
-    expect(renderer.drawHeaderFromBuffer).toHaveBeenCalledWith(
+    expect(renderer.drawMultiLevelHeader).toHaveBeenCalledTimes(1);
+    expect(renderer.drawMultiLevelHeader).toHaveBeenCalledWith(
       ctx.layoutBuf,
-      0,
       ctx.headerCount,
-      ctx._headersWithSort,
+      ctx._headerGroups,
+      ctx.headerHeight / ctx._headerRowCount,
       ctx.theme,
-      ctx.headerHeight,
+      ctx._sorting,
       false,
     );
   });
 
-  it("passes _enableColumnDnD=true to drawHeaderFromBuffer", () => {
+  it("passes _enableColumnDnD=true to drawMultiLevelHeader", () => {
     const layer = headerLayer();
     const ctx = buildContext({ _enableColumnDnD: true });
     layer.draw(ctx);
 
     const renderer = ctx.renderer as unknown as ReturnType<typeof mockRenderer>;
-    expect(renderer.drawHeaderFromBuffer).toHaveBeenCalledWith(
+    expect(renderer.drawMultiLevelHeader).toHaveBeenCalledWith(
       ctx.layoutBuf,
-      0,
       ctx.headerCount,
-      ctx._headersWithSort,
+      ctx._headerGroups,
+      ctx.headerHeight / ctx._headerRowCount,
       ctx.theme,
-      ctx.headerHeight,
+      ctx._sorting,
       true,
     );
   });
@@ -160,6 +172,7 @@ describe("gridLinesLayer", () => {
       ctx.headerHeight,
       ctx.rowHeight,
       undefined,
+      ctx._headerRowCount,
     );
   });
 });
@@ -185,6 +198,7 @@ describe("selectionLayer", () => {
       ctx._selection,
       ctx.theme,
       ctx._selectionStyle,
+      ctx._headerRowCount,
     );
   });
 

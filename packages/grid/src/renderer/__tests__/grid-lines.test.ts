@@ -339,6 +339,74 @@ describe("computeHeaderLinesFromBuffer", () => {
   });
 });
 
+describe("computeHeaderLinesFromBuffer (multi-level)", () => {
+  it("adds internal horizontal lines for 2 header rows", () => {
+    const buf = toBuffer(HEADER_START);
+    const totalHeaderHeight = 80; // 2 rows × 40px each
+    const spec = computeHeaderLinesFromBuffer(
+      buf,
+      HEADER_START.length,
+      CANVAS_W,
+      totalHeaderHeight,
+      2,
+    );
+    // Should have 3 horizontal lines: top, internal boundary, bottom
+    expect(spec.horizontal).toHaveLength(3);
+    // Top
+    expect(spec.horizontal[0]!.y).toBeCloseTo(0.25, 5);
+    // Internal boundary at y=40
+    expect(spec.horizontal[1]!.y).toBeCloseTo(40 + 0.5, 5);
+    // Bottom
+    expect(spec.horizontal[2]!.y).toBeCloseTo(80 - 0.25, 5);
+  });
+
+  it("adds 2 internal horizontal lines for 3 header rows", () => {
+    const buf = toBuffer(HEADER_START);
+    const totalHeaderHeight = 90; // 3 rows × 30px each
+    const spec = computeHeaderLinesFromBuffer(
+      buf,
+      HEADER_START.length,
+      CANVAS_W,
+      totalHeaderHeight,
+      3,
+    );
+    // Should have 4 horizontal lines: top, 2 internal boundaries, bottom
+    expect(spec.horizontal).toHaveLength(4);
+    expect(spec.horizontal[0]!.y).toBeCloseTo(0.25, 5);
+    expect(spec.horizontal[1]!.y).toBeCloseTo(30 + 0.5, 5);
+    expect(spec.horizontal[2]!.y).toBeCloseTo(60 + 0.5, 5);
+    expect(spec.horizontal[3]!.y).toBeCloseTo(90 - 0.25, 5);
+  });
+
+  it("vertical lines span the full multi-level header height", () => {
+    const buf = toBuffer(HEADER_START);
+    const totalHeaderHeight = 80;
+    const spec = computeHeaderLinesFromBuffer(
+      buf,
+      HEADER_START.length,
+      CANVAS_W,
+      totalHeaderHeight,
+      2,
+    );
+    for (const v of spec.vertical) {
+      expect(v.y1).toBe(0);
+      expect(v.y2).toBe(80);
+    }
+  });
+
+  it("falls back to single row when headerRowCount is omitted", () => {
+    const buf = toBuffer(HEADER_START);
+    const spec = computeHeaderLinesFromBuffer(
+      buf,
+      HEADER_START.length,
+      CANVAS_W,
+      HEADER_H,
+    );
+    // Should have 2 horizontal lines (top + bottom) — same as before
+    expect(spec.horizontal).toHaveLength(2);
+  });
+});
+
 // ── Buffer-based: computeDataLinesFromBuffer ────────────────────────
 
 describe("computeDataLinesFromBuffer", () => {
