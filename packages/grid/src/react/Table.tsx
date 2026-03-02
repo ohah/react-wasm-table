@@ -3,6 +3,7 @@ import type { GridInstance } from "../grid-instance";
 import type { RenderInstruction } from "../types";
 import { parseTableChildren } from "./parse-table-children";
 import { resolveInstruction } from "../resolve-instruction";
+import type { CellBorderStyleProps } from "./table-components";
 import type {
   TableCellContent,
   Theme,
@@ -191,6 +192,29 @@ export function Table({ table, children, overscan = 5, ...rest }: TableProps) {
     return map.size > 0 ? map : undefined;
   }, [children]);
 
+  // Parse <Tbody><Tr><Td> children into a border style map for canvas rendering
+  const parsedBorderStyles = useMemo(() => {
+    if (!children) return undefined;
+    const parsed = parseTableChildren(children as ReactNode);
+    if (!parsed.hasStructure || parsed.bodyRows.length === 0) return undefined;
+
+    const map = new Map<string, CellBorderStyleProps>();
+    for (const row of parsed.bodyRows) {
+      if (!row.key) continue;
+      for (const cell of row.cells) {
+        // Merge row-level borderStyle with cell-level borderStyle
+        const merged: CellBorderStyleProps = { ...row.borderStyle, ...cell.borderStyle };
+        if (Object.keys(merged).length === 0) continue;
+        if (!cell.key) continue;
+        const sep = cell.key.indexOf("_");
+        if (sep < 0) continue;
+        const columnId = cell.key.slice(sep + 1);
+        map.set(`${row.key}:${columnId}`, merged);
+      }
+    }
+    return map.size > 0 ? map : undefined;
+  }, [children]);
+
   return (
     <Grid
       data={data as Record<string, unknown>[]}
@@ -212,6 +236,7 @@ export function Table({ table, children, overscan = 5, ...rest }: TableProps) {
       pagination={state.pagination}
       table={table}
       _parsedBodyContent={parsedBodyContent}
+      _parsedBorderStyles={parsedBorderStyles}
       _onVisibleRangeChange={onVisibleRangeChange}
       {...rest}
     />

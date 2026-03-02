@@ -52,6 +52,8 @@ export function Column(props: ColumnProps): null {
     borderLeftWidth,
     boxSizing,
     aspectRatio,
+    borderColor,
+    borderStyle,
   } = props;
 
   useEffect(() => {
@@ -103,6 +105,8 @@ export function Column(props: ColumnProps): null {
     borderLeftWidth,
     boxSizing,
     aspectRatio,
+    borderColor,
+    borderStyle,
   ]);
 
   return null;
