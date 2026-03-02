@@ -84,8 +84,7 @@ export function EditingDemo() {
             <code>editor=&quot;select&quot;</code>
           </li>
           <li>
-            <strong>Number editor</strong> — Age column uses{" "}
-            <code>editor=&quot;number&quot;</code>
+            <strong>Number editor</strong> — Age column uses <code>editor=&quot;number&quot;</code>
           </li>
           <li>
             <strong>Editor size constraint</strong> — Editor stays within cell bounds

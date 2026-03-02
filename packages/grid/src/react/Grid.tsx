@@ -486,12 +486,15 @@ export function Grid({
     ],
   );
 
-  const onLayoutComputed = useCallback((buf: Float32Array, hc: number, tc: number) => {
-    layoutBufRef.current = buf;
-    headerCountRef.current = hc;
-    totalCellCountRef.current = tc;
-    flushPendingOpen();
-  }, [flushPendingOpen]);
+  const onLayoutComputed = useCallback(
+    (buf: Float32Array, hc: number, tc: number) => {
+      layoutBufRef.current = buf;
+      headerCountRef.current = hc;
+      totalCellCountRef.current = tc;
+      flushPendingOpen();
+    },
+    [flushPendingOpen],
+  );
 
   const onVisStartComputed = useCallback((vs: number) => {
     visStartRef.current = vs;
