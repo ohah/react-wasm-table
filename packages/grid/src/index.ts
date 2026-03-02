@@ -108,7 +108,7 @@ export { useGridTable } from "./use-grid-table";
 export type { UseGridTableOptions } from "./use-grid-table";
 export { useReactTable } from "./use-react-table";
 export type { UseReactTableOptions } from "./use-react-table";
-export { buildGridInstance } from "./grid-instance";
+export { buildGridInstance, buildGridColumns } from "./grid-instance";
 export type {
   GridInstance,
   GridColumn,
@@ -116,6 +116,7 @@ export type {
   GridHeaderGroup,
   GridState,
   BuildOptions,
+  BuildColumnCallbacks,
   ViewIndicesRef,
   // TanStack-compatible aliases
   TableInstance,

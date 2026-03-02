@@ -50,6 +50,7 @@ import { GroupingDemo } from "./pages/GroupingDemo";
 import { FacetedDemo } from "./pages/FacetedDemo";
 import { TableApiDemo } from "./pages/TableApiDemo";
 import { BorderStyleDemo } from "./pages/BorderStyleDemo";
+import { GroupedColumnsDemo } from "./pages/GroupedColumnsDemo";
 import {
   TanStackColumnPinning,
   TanStackHome,
@@ -181,6 +182,8 @@ export function App() {
           <Route path="/grouping" element={<GroupingDemo />} />
           <Route path="/faceted" element={<FacetedDemo />} />
           <Route path="/border-style" element={<BorderStyleDemo />} />
+          <Route path="/grouped-columns" element={<GroupedColumnsDemo />} />
+          <Route path="/tanstack/grouped-columns" element={<GroupedColumnsDemo />} />
         </Routes>
       </main>
     </div>

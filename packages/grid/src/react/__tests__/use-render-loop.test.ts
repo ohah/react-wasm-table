@@ -151,6 +151,24 @@ function defaultParams(overrides?: Partial<Parameters<typeof useRenderLoop>[0]>)
     headerHeight: 40,
     onLayoutComputed: mock(() => {}),
     onVisStartComputed: mock(() => {}),
+    headerGroups: [
+      {
+        id: "headerGroup_0",
+        depth: 0,
+        headers: [
+          {
+            id: "name_header",
+            column: { id: "name", columnDef: { header: "Name" } } as any,
+            colSpan: 1,
+            rowSpan: 1,
+            depth: 0,
+            isPlaceholder: false,
+            subHeaders: [],
+            getContext: () => ({}) as any,
+          },
+        ],
+      },
+    ],
     columnPinning: undefined,
     _mockCtx: ctx,
     ...overrides,
@@ -556,6 +574,270 @@ describe("useRenderLoop", () => {
       const textCalls = mockCtx.fillText.mock.calls;
       const drawn = textCalls.map((c: any) => c[0]);
       expect(drawn.some((t: string) => t === "Alice")).toBe(true);
+    });
+  });
+
+  describe("multi-level header groups", () => {
+    function make2LevelHeaderGroups() {
+      // 2-level: "Name" group (First, Last) + ungrouped "Age"
+      // Row 0: [Name (colSpan=2), Age placeholder (colSpan=1, rowSpan=2)]
+      // Row 1: [First (colSpan=1), Last (colSpan=1), Age (colSpan=1)]
+      return [
+        {
+          id: "headerGroup_0",
+          depth: 0,
+          headers: [
+            {
+              id: "name_group",
+              column: { id: "name", columnDef: { header: "Name" } } as any,
+              colSpan: 2,
+              rowSpan: 1,
+              depth: 0,
+              isPlaceholder: false,
+              subHeaders: [{} as any, {} as any],
+              getContext: () => ({}) as any,
+            },
+            {
+              id: "age_placeholder",
+              column: { id: "age", columnDef: { header: "Age" } } as any,
+              colSpan: 1,
+              rowSpan: 2,
+              depth: 0,
+              isPlaceholder: true,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+          ],
+        },
+        {
+          id: "headerGroup_1",
+          depth: 1,
+          headers: [
+            {
+              id: "firstName_header",
+              column: { id: "firstName", columnDef: { header: "First" } } as any,
+              colSpan: 1,
+              rowSpan: 1,
+              depth: 1,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+            {
+              id: "lastName_header",
+              column: { id: "lastName", columnDef: { header: "Last" } } as any,
+              colSpan: 1,
+              rowSpan: 1,
+              depth: 1,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+            {
+              id: "age_header",
+              column: { id: "age", columnDef: { header: "Age" } } as any,
+              colSpan: 1,
+              rowSpan: 1,
+              depth: 1,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+          ],
+        },
+      ];
+    }
+
+    it("derives headerRowCount from headerGroups.length", () => {
+      const headerGroups = make2LevelHeaderGroups();
+      // 3 leaf columns, headerHeight=60 → perRowHeight=30, totalHeaderHeight=60
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 120, h: 60 }, // leaf: firstName
+        { row: 0, col: 1, x: 120, y: 0, w: 120, h: 60 }, // leaf: lastName
+        { row: 0, col: 2, x: 240, y: 0, w: 80, h: 60 }, // leaf: age
+        { row: 0, col: 0, x: 0, y: 60, w: 120, h: 36 }, // data
+        { row: 0, col: 1, x: 120, y: 60, w: 120, h: 36 },
+        { row: 0, col: 2, x: 240, y: 60, w: 80, h: 36 },
+      ]);
+
+      const registry = new ColumnRegistry();
+      registry.setAll([
+        { id: "firstName", width: 120, header: "First" },
+        { id: "lastName", width: 120, header: "Last" },
+        { id: "age", width: 80, header: "Age" },
+      ] as any);
+
+      const st = new StringTable();
+      const data = [{ firstName: "Alice", lastName: "Kim", age: 30 }] as Record<string, unknown>[];
+      st.populate(data, ["firstName", "lastName", "age"]);
+
+      const em = new EventManager();
+      const setLayoutsSpy = mock(em.setLayouts.bind(em));
+      em.setLayouts = setLayoutsSpy;
+
+      const params = defaultParams({
+        columnRegistry: registry,
+        data,
+        stringTableRef: { current: st },
+        headerGroups,
+        headerHeight: 60,
+        eventManagerRef: { current: em },
+      });
+      params.memoryBridgeRef = {
+        current: {
+          getLayoutBuffer: () => buf,
+          getViewIndices: () => new Uint32Array([0]),
+        } as any,
+      };
+
+      renderHook(() => useRenderLoop(params));
+      flushRAF();
+
+      // setLayouts should have been called with multi-level header layouts
+      expect(setLayoutsSpy).toHaveBeenCalled();
+      const [headerLayouts] = setLayoutsSpy.mock.calls[0]!;
+
+      // 2-level: row 0 has 2 headers (Name group + Age placeholder), row 1 has 3 leaves
+      // Total: 5 header layouts
+      expect(headerLayouts.length).toBe(5);
+
+      // Row 0 (parent group): Name group spans 2 cols, y=0, height=30
+      const nameGroup = headerLayouts[0];
+      expect(nameGroup.x).toBe(0);
+      expect(nameGroup.y).toBe(0);
+      expect(nameGroup.width).toBe(240); // 120 + 120
+      expect(nameGroup.height).toBe(30); // perRowHeight
+      expect(nameGroup.row).toBeLessThan(0); // negative = parent group
+
+      // Row 0: Age placeholder spans 1 col, rowSpan=2 → height=60
+      const agePlaceholder = headerLayouts[1];
+      expect(agePlaceholder.x).toBe(240);
+      expect(agePlaceholder.y).toBe(0);
+      expect(agePlaceholder.width).toBe(80);
+      expect(agePlaceholder.height).toBe(60); // rowSpan=2 × 30
+      expect(agePlaceholder.row).toBeLessThan(0); // parent row
+
+      // Row 1 (leaf row): First, y=30, height=30
+      const firstLeaf = headerLayouts[2];
+      expect(firstLeaf.x).toBe(0);
+      expect(firstLeaf.y).toBe(30);
+      expect(firstLeaf.width).toBe(120);
+      expect(firstLeaf.height).toBe(30);
+      expect(firstLeaf.row).toBe(0); // leaf row = non-negative
+      expect(firstLeaf.col).toBe(0);
+
+      // Row 1 (leaf row): Last, y=30, height=30
+      const lastLeaf = headerLayouts[3];
+      expect(lastLeaf.x).toBe(120);
+      expect(lastLeaf.y).toBe(30);
+      expect(lastLeaf.width).toBe(120);
+      expect(lastLeaf.col).toBe(1);
+
+      // Row 1 (leaf row): Age, y=30, height=30
+      const ageLeaf = headerLayouts[4];
+      expect(ageLeaf.x).toBe(240);
+      expect(ageLeaf.y).toBe(30);
+      expect(ageLeaf.col).toBe(2);
+    });
+
+    it("single-level headerGroups uses WASM buffer directly", () => {
+      // Single-level: all leaf columns, no groups
+      const singleLevelGroups = [
+        {
+          id: "headerGroup_0",
+          depth: 0,
+          headers: [
+            {
+              id: "name_header",
+              column: { id: "name", columnDef: { header: "Name" } } as any,
+              colSpan: 1,
+              rowSpan: 1,
+              depth: 0,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+          ],
+        },
+      ];
+
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 200, h: 40 },
+        { row: 0, col: 0, x: 0, y: 40, w: 200, h: 36 },
+      ]);
+
+      const em = new EventManager();
+      const setLayoutsSpy = mock(em.setLayouts.bind(em));
+      em.setLayouts = setLayoutsSpy;
+
+      const params = defaultParams({
+        headerGroups: singleLevelGroups,
+        eventManagerRef: { current: em },
+      });
+      params.memoryBridgeRef = {
+        current: {
+          getLayoutBuffer: () => buf,
+          getViewIndices: () => new Uint32Array([0]),
+        } as any,
+      };
+
+      renderHook(() => useRenderLoop(params));
+      flushRAF();
+
+      expect(setLayoutsSpy).toHaveBeenCalled();
+      const [headerLayouts] = setLayoutsSpy.mock.calls[0]!;
+
+      // Single level: 1 header layout from WASM buffer directly
+      expect(headerLayouts.length).toBe(1);
+      expect(headerLayouts[0].y).toBe(0);
+      expect(headerLayouts[0].height).toBe(40); // full header height from buffer
+      expect(headerLayouts[0].row).toBe(0);
+    });
+
+    it("multi-level leaf headers get correct per-row height, not totalHeaderHeight", () => {
+      const headerGroups = make2LevelHeaderGroups();
+      // totalHeaderHeight=60 passed to WASM → each leaf cell h=60
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 120, h: 60 },
+        { row: 0, col: 1, x: 120, y: 0, w: 120, h: 60 },
+        { row: 0, col: 2, x: 240, y: 0, w: 80, h: 60 },
+        { row: 0, col: 0, x: 0, y: 60, w: 120, h: 36 },
+      ]);
+
+      const em = new EventManager();
+      const setLayoutsSpy = mock(em.setLayouts.bind(em));
+      em.setLayouts = setLayoutsSpy;
+
+      const registry = new ColumnRegistry();
+      registry.setAll([
+        { id: "firstName", width: 120, header: "First" },
+        { id: "lastName", width: 120, header: "Last" },
+        { id: "age", width: 80, header: "Age" },
+      ] as any);
+
+      const params = defaultParams({
+        headerGroups,
+        headerHeight: 60,
+        eventManagerRef: { current: em },
+        columnRegistry: registry,
+      });
+      params.memoryBridgeRef = {
+        current: {
+          getLayoutBuffer: () => buf,
+          getViewIndices: () => new Uint32Array([0]),
+        } as any,
+      };
+
+      renderHook(() => useRenderLoop(params));
+      flushRAF();
+
+      const [headerLayouts] = setLayoutsSpy.mock.calls[0]!;
+
+      // Leaf headers should have height=30 (perRowHeight), NOT 60 (totalHeaderHeight)
+      const leafHeaders = headerLayouts.filter((h: any) => h.row >= 0);
+      for (const leaf of leafHeaders) {
+        expect(leaf.height).toBe(30); // perRowHeight = 60/2
+      }
     });
   });
 });

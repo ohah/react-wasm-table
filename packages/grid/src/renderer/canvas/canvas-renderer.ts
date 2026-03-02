@@ -6,6 +6,8 @@ import type {
   CellBorderConfig,
 } from "../../types";
 import type { CellRendererRegistry } from "../components";
+import type { GridHeaderGroup } from "../../grid-instance";
+import type { SortingState } from "../../tanstack-types";
 import { drawTextCellFromBuffer } from "../draw-primitives";
 import {
   computeHeaderLinesFromBuffer,
@@ -65,77 +67,141 @@ export class CanvasRenderer {
   }
 
   /**
-   * Draw header row from a layout buffer.
-   * @param buf - Float32Array view of WASM layout buffer
-   * @param start - first cell index (typically 0)
-   * @param count - number of header cells
-   * @param headers - header label strings
+   * Draw multi-level header rows from a layout buffer + header groups.
+   * Leaf column x/width come from the WASM buffer; group header positions are
+   * derived by spanning across their children's leaf cells.
+   *
+   * @param buf - Float32Array view of WASM layout buffer (leaf header cells start at index 0)
+   * @param leafCount - number of leaf header cells in the buffer
+   * @param headerGroups - multi-level header group rows (depth 0 = top)
+   * @param perRowHeight - height of a single header row
    * @param theme - grid theme
+   * @param sorting - current sort state (indicators on leaf headers only)
+   * @param enableColumnDnD - show drag handle grip dots on leaf row
    */
-  drawHeaderFromBuffer(
+  drawMultiLevelHeader(
     buf: Float32Array,
-    start: number,
-    count: number,
-    headers: string[],
+    leafCount: number,
+    headerGroups: GridHeaderGroup[],
+    perRowHeight: number,
     theme: Theme,
-    headerHeight: number,
+    sorting: SortingState,
     enableColumnDnD?: boolean,
   ): void {
     const ctx = this.ctx;
-    if (!ctx || count === 0) return;
+    if (!ctx || leafCount === 0 || headerGroups.length === 0) return;
 
-    // Draw header background bounded by actual cell edges.
-    // Region clipping handles pinned column coverage; no need for canvasWidth floor.
+    const totalHeaderHeight = headerGroups.length * perRowHeight;
+
+    // Compute content bounds from leaf buffer cells
     let contentLeft = Infinity;
     let contentRight = 0;
-    for (let i = start; i < start + count; i++) {
+    for (let i = 0; i < leafCount; i++) {
       const x = readCellX(buf, i);
       contentLeft = Math.min(contentLeft, x);
       contentRight = Math.max(contentRight, x + readCellWidth(buf, i));
     }
     if (contentLeft === Infinity) contentLeft = 0;
-    const headerY = count > 0 ? readCellY(buf, start) : 0;
-    ctx.fillStyle = theme.headerBackground;
-    ctx.fillRect(contentLeft, headerY, contentRight - contentLeft, headerHeight);
 
-    // Draw header text (reserve right space for drag handle when DnD enabled)
+    // Base Y from the first leaf cell in buffer
+    const baseY = readCellY(buf, 0);
+
+    // Draw full header background
+    ctx.fillStyle = theme.headerBackground;
+    ctx.fillRect(contentLeft, baseY, contentRight - contentLeft, totalHeaderHeight);
+
+    // DnD constants
     const HANDLE_ZONE = 20;
     const RESIZE_ZONE = 5;
     const handleReserved = enableColumnDnD ? HANDLE_ZONE + RESIZE_ZONE : 0;
 
-    for (let i = 0; i < count; i++) {
-      const cellIdx = start + i;
-      const text = headers[i] ?? "";
-      drawTextCellFromBuffer(
-        ctx,
-        buf,
-        cellIdx,
-        text,
-        {
-          color: theme.headerColor,
-          fontWeight: "bold",
-          fontSize: theme.headerFontSize,
-        },
-        handleReserved || undefined,
-      );
+    const isLeafRow = headerGroups.length - 1;
+
+    // Iterate each header group row
+    for (let rowIdx = 0; rowIdx < headerGroups.length; rowIdx++) {
+      const group = headerGroups[rowIdx]!;
+      const rowY = baseY + rowIdx * perRowHeight;
+
+      // Track leaf index across headers in this row to map to buffer positions
+      let leafIdx = 0;
+
+      for (const header of group.headers) {
+        const colSpan = header.colSpan;
+        const rowSpan = header.rowSpan;
+
+        // Compute x and width from leaf buffer cells
+        if (leafIdx >= leafCount) break;
+        const cellX = readCellX(buf, leafIdx);
+        let cellW = 0;
+        for (let s = 0; s < colSpan && leafIdx + s < leafCount; s++) {
+          cellW += readCellWidth(buf, leafIdx + s);
+        }
+        const cellH = rowSpan * perRowHeight;
+
+        // Skip placeholder headers — background already drawn, no text
+        if (!header.isPlaceholder) {
+          // Build label text
+          let label = "";
+          const colDef = header.column.columnDef;
+          if (typeof colDef.header === "string") {
+            label = colDef.header;
+          } else if (colDef.header) {
+            label = colDef.header({ column: { id: header.column.id, columnDef: colDef } }) ?? "";
+          }
+
+          // Sort indicator (leaf headers only)
+          if (rowIdx === isLeafRow && header.subHeaders.length === 0) {
+            const sortEntry = sorting.find((s) => s.id === header.column.id);
+            if (sortEntry) {
+              label = `${label} ${sortEntry.desc ? "\u25BC" : "\u25B2"}`;
+            }
+          }
+
+          // Draw text centered in the merged cell
+          const fontSize = theme.headerFontSize ?? 13;
+          const fontWeight = "bold";
+          ctx.font = `${fontWeight} ${fontSize}px system-ui, sans-serif`;
+          ctx.fillStyle = theme.headerColor;
+          ctx.textBaseline = "middle";
+          ctx.textAlign = "center";
+
+          const textMaxW =
+            rowIdx === isLeafRow ? cellW - 8 - handleReserved : cellW - 8;
+          const measured = ctx.measureText(label);
+          const textW = Math.min(measured.width, Math.max(0, textMaxW));
+          // Clip to cell bounds
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(cellX, rowY, cellW, cellH);
+          ctx.clip();
+          ctx.fillText(
+            label,
+            cellX + (cellW - handleReserved * (rowIdx === isLeafRow ? 1 : 0)) / 2,
+            rowY + cellH / 2,
+            textW > 0 ? textW : undefined,
+          );
+          ctx.restore();
+        }
+
+        leafIdx += colSpan;
+      }
     }
 
-    // Draw drag handle grip dots (2 columns × 3 rows = 6 dots)
+    // Draw drag handle grip dots on leaf row only (2 columns × 3 rows = 6 dots)
     if (enableColumnDnD) {
       const dotR = 1.5;
       const gapX = 5;
       const gapY = 4;
+      const leafRowY = baseY + isLeafRow * perRowHeight;
 
       ctx.save();
       ctx.fillStyle = theme.headerColor;
       ctx.globalAlpha = 0.35;
-      for (let i = 0; i < count; i++) {
-        const cellIdx = start + i;
-        const cx = readCellX(buf, cellIdx);
-        const cy = readCellY(buf, cellIdx);
-        const cw = readCellWidth(buf, cellIdx);
+      for (let i = 0; i < leafCount; i++) {
+        const cx = readCellX(buf, i);
+        const cw = readCellWidth(buf, i);
         const centerX = cx + cw - RESIZE_ZONE - HANDLE_ZONE / 2;
-        const centerY = cy + headerHeight / 2;
+        const centerY = leafRowY + perRowHeight / 2;
 
         for (let r = -1; r <= 1; r++) {
           for (let c = 0; c < 2; c++) {
@@ -228,6 +294,7 @@ export class CanvasRenderer {
     headerHeight: number,
     rowHeight: number,
     borderConfigMap?: Map<number, CellBorderConfig>,
+    headerRowCount?: number,
   ): void {
     const ctx = this.ctx;
     if (!ctx || !this.canvas || totalCount === 0) return;
@@ -247,7 +314,7 @@ export class CanvasRenderer {
       ctx.lineWidth = theme.borderWidth;
       this.strokeLines(
         ctx,
-        computeHeaderLinesFromBuffer(buf, headerCount, contentRight, headerHeight),
+        computeHeaderLinesFromBuffer(buf, headerCount, contentRight, headerHeight, headerRowCount),
       );
     }
 
@@ -345,11 +412,12 @@ export class CanvasRenderer {
     selection: NormalizedRange,
     theme: Theme,
     style?: SelectionStyle,
+    headerRowCount?: number,
   ): void {
     const ctx = this.ctx;
     if (!ctx) return;
 
-    const rect = computeSelectionRect(buf, headerCount, totalCount, selection);
+    const rect = computeSelectionRect(buf, headerCount, totalCount, selection, headerRowCount);
     if (!rect) return;
 
     // Semi-transparent fill

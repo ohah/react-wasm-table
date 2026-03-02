@@ -30,6 +30,7 @@ import type { EventManager } from "../../adapter/event-manager";
 import { CanvasRenderer } from "../../renderer/canvas";
 import type { CellRenderer } from "../../renderer/components";
 import { createCellRendererRegistry } from "../../renderer/components";
+import type { GridHeaderGroup } from "../../grid-instance";
 import type { GridLayer } from "../../renderer/layer";
 import type { InternalLayerContext } from "../../renderer/layer";
 import { DEFAULT_LAYERS } from "../../renderer/layer";
@@ -122,6 +123,8 @@ export interface UseRenderLoopParams {
   layers?: GridLayer[];
   columnPinning?: ColumnPinningState;
   viewIndicesRef?: { current: Uint32Array | number[] | null };
+  /** Multi-level header groups (from buildHeaderGroups). */
+  headerGroups: GridHeaderGroup[];
   /** Whether column DnD reorder is enabled (controls grip icon rendering). */
   enableColumnDnD?: boolean;
   /** Ref to column DnD state for drawing ghost + drop indicator. */
@@ -168,6 +171,7 @@ export function useRenderLoop({
   layers,
   columnPinning,
   viewIndicesRef,
+  headerGroups,
   enableColumnDnD,
   columnDnDStateRef,
   rowPinning,
@@ -434,7 +438,7 @@ export function useRenderLoop({
         const effectiveRowHeight = meta[8] ?? rowHeight;
         const headerCount = colCount;
         const dataCount = cellCount - headerCount;
-        const headerRowCount = 1;
+        const headerRowCount = headerGroups.length || 1;
 
         onVisStartComputed(visStart);
 
@@ -500,18 +504,55 @@ export function useRenderLoop({
         // Store refs for hit-testing and editor positioning
         onLayoutComputed(layoutBuf, headerCount, cellCount);
 
-        // Build CellLayout arrays for event manager
+        // Build CellLayout arrays for event manager.
+        // For multi-level headers, derive per-row hit-test areas from headerGroups
+        // instead of using the WASM buffer (which gives each leaf cell height=totalHeaderHeight).
         const normalizedHeaders: CellLayout[] = [];
-        for (let i = 0; i < headerCount; i++) {
-          normalizedHeaders.push({
-            row: readCellRow(layoutBuf, i),
-            col: readCellCol(layoutBuf, i),
-            x: readCellX(layoutBuf, i),
-            y: readCellY(layoutBuf, i),
-            width: readCellWidth(layoutBuf, i),
-            height: readCellHeight(layoutBuf, i),
-            contentAlign: readCellAlign(layoutBuf, i),
-          });
+        if (headerGroups.length > 1 && headerCount > 0) {
+          const baseY = readCellY(layoutBuf, 0);
+          const perRowH = headerHeight / headerRowCount;
+          const leafRowIdx = headerGroups.length - 1;
+          for (let rowIdx = 0; rowIdx < headerGroups.length; rowIdx++) {
+            const group = headerGroups[rowIdx]!;
+            const rowY = baseY + rowIdx * perRowH;
+            let leafIdx = 0;
+            for (const header of group.headers) {
+              if (leafIdx >= headerCount) break;
+              const cellX = readCellX(layoutBuf, leafIdx);
+              let cellW = 0;
+              for (let s = 0; s < header.colSpan && leafIdx + s < headerCount; s++) {
+                cellW += readCellWidth(layoutBuf, leafIdx + s);
+              }
+              const cellH = header.rowSpan * perRowH;
+              // Use negative row for parent group headers so event manager
+              // can skip them in resize/drag handle detection.
+              // Leaf row headers keep row=0 for backward compatibility.
+              const isLeafRow = rowIdx === leafRowIdx;
+              normalizedHeaders.push({
+                row: isLeafRow ? readCellRow(layoutBuf, leafIdx) : -(rowIdx + 1),
+                col: readCellCol(layoutBuf, leafIdx),
+                x: cellX,
+                y: rowY,
+                width: cellW,
+                height: cellH,
+                contentAlign: readCellAlign(layoutBuf, leafIdx),
+              });
+              leafIdx += header.colSpan;
+            }
+          }
+        } else {
+          // Single-row or no groups — use WASM buffer directly
+          for (let i = 0; i < headerCount; i++) {
+            normalizedHeaders.push({
+              row: readCellRow(layoutBuf, i),
+              col: readCellCol(layoutBuf, i),
+              x: readCellX(layoutBuf, i),
+              y: readCellY(layoutBuf, i),
+              width: readCellWidth(layoutBuf, i),
+              height: readCellHeight(layoutBuf, i),
+              contentAlign: readCellAlign(layoutBuf, i),
+            });
+          }
         }
         const normalizedRows: CellLayout[] = [];
         for (let i = headerCount; i < cellCount; i++) {
@@ -537,17 +578,6 @@ export function useRenderLoop({
             sm.extend(hit.row, hit.col);
           }
         }
-
-        // Prepare header labels with sort indicators
-        const headers = columns.map((c) => c.header ?? c.id);
-        const headersWithSort = headers.map((h, i) => {
-          const col = columns[i];
-          const sortEntry = sorting.find((s) => s.id === col?.id);
-          if (sortEntry) {
-            return `${h} ${sortEntry.desc ? "\u25BC" : "\u25B2"}`;
-          }
-          return h;
-        });
 
         // Draw — region-based pipeline with clip+translate per region
         renderer.clear();
@@ -671,7 +701,8 @@ export function useRenderLoop({
             dataRowCount: data.length,
             columns,
             theme,
-            _headersWithSort: headersWithSort,
+            _headerGroups: headerGroups,
+            _sorting: sorting,
             _getInstruction: getInstruction,
             _cellRendererRegistry: cellRendererRegistry,
             _enableSelection: enableSelection,
@@ -764,6 +795,9 @@ export function useRenderLoop({
           const dnd = columnDnDStateRef.current;
           const headerWidth = readCellWidth(layoutBuf, dnd.dragColIndex);
           const ghostX = dnd.ghostViewportX - headerWidth / 2;
+          // Ghost covers only the leaf header row, not parent group rows
+          const perRowH = headerHeight / headerRowCount;
+          const ghostY = headerHeight - perRowH;
           ctx.save();
           ctx.globalAlpha = 0.9;
           ctx.fillStyle = theme.headerBackground;
@@ -771,9 +805,9 @@ export function useRenderLoop({
           ctx.lineWidth = 1;
           ctx.beginPath();
           if (typeof ctx.roundRect === "function") {
-            ctx.roundRect(ghostX, 0, headerWidth, headerHeight, 4);
+            ctx.roundRect(ghostX, ghostY, headerWidth, perRowH, 4);
           } else {
-            ctx.rect(ghostX, 0, headerWidth, headerHeight);
+            ctx.rect(ghostX, ghostY, headerWidth, perRowH);
           }
           ctx.fill();
           ctx.stroke();
@@ -851,6 +885,7 @@ export function useRenderLoop({
     data,
     containerProps,
     sorting,
+    headerGroups,
     enableSelection,
     selectionStyle,
     onLayoutComputed,

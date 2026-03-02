@@ -3,6 +3,7 @@ import { CanvasRenderer } from "../canvas";
 import { createCellRendererRegistry } from "../components";
 import type { CellRenderer } from "../components";
 import type { Theme, RenderInstruction } from "../../types";
+import type { GridHeaderGroup } from "../../grid-instance";
 
 const defaultTheme: Theme = {
   headerBackground: "#f5f5f5",
@@ -44,7 +45,8 @@ function mockCtx() {
     strokeStyle: "",
     lineWidth: 0,
     textBaseline: "",
-    textAlign: "",
+    textAlign: "left" as CanvasTextAlign,
+    globalAlpha: 1,
     scale: mock(() => {}),
     clearRect: mock(() => {}),
     fillRect: mock(() => {}),
@@ -57,6 +59,11 @@ function mockCtx() {
     fillText: mock(() => {}),
     roundRect: mock(() => {}),
     fill: mock(() => {}),
+    arc: mock(() => {}),
+    save: mock(() => {}),
+    restore: mock(() => {}),
+    clip: mock(() => {}),
+    rect: mock(() => {}),
   } as unknown as CanvasRenderingContext2D;
 }
 
@@ -147,15 +154,33 @@ describe("CanvasRenderer", () => {
     });
   });
 
-  describe("drawHeaderFromBuffer", () => {
+  describe("drawMultiLevelHeader", () => {
+    function makeHeaderGroups(headers: string[]): GridHeaderGroup[] {
+      return [
+        {
+          id: "headerGroup_0",
+          depth: 0,
+          headers: headers.map((h) => ({
+            id: `${h}_header`,
+            column: { id: h.toLowerCase(), columnDef: { header: h } } as any,
+            colSpan: 1,
+            rowSpan: 1,
+            depth: 0,
+            isPlaceholder: false,
+            subHeaders: [],
+            getContext: () => ({}) as any,
+          })),
+        },
+      ];
+    }
+
     it("draws header background and text", () => {
       renderer.attach(canvas);
-      // 2 header cells
       const buf = buildBuf([
         [0, 0, 0, 0, 200, 40],
         [0, 1, 200, 0, 200, 40],
       ]);
-      renderer.drawHeaderFromBuffer(buf, 0, 2, ["Name", "Age"], defaultTheme, 40);
+      renderer.drawMultiLevelHeader(buf, 2, makeHeaderGroups(["Name", "Age"]), 40, defaultTheme, []);
 
       // Should draw header background
       expect(ctx.fillRect).toHaveBeenCalled();
@@ -166,14 +191,169 @@ describe("CanvasRenderer", () => {
     it("is a no-op with count=0", () => {
       renderer.attach(canvas);
       const buf = new Float32Array(0);
-      renderer.drawHeaderFromBuffer(buf, 0, 0, [], defaultTheme, 40);
+      renderer.drawMultiLevelHeader(buf, 0, [], 40, defaultTheme, []);
       expect(ctx.fillRect).not.toHaveBeenCalled();
     });
 
     it("is a no-op when not attached", () => {
       const buf = buildBuf([[0, 0, 0, 0, 200, 40]]);
-      renderer.drawHeaderFromBuffer(buf, 0, 1, ["Name"], defaultTheme, 40);
+      renderer.drawMultiLevelHeader(buf, 1, makeHeaderGroups(["Name"]), 40, defaultTheme, []);
       // Should not throw
+    });
+
+    it("renders 2-level header groups (group row + leaf row)", () => {
+      renderer.attach(canvas);
+      // 3 leaf columns
+      const buf = buildBuf([
+        [0, 0, 0, 0, 100, 40],
+        [0, 1, 100, 0, 100, 40],
+        [0, 2, 200, 0, 100, 40],
+      ]);
+      const headerGroups: GridHeaderGroup[] = [
+        {
+          id: "headerGroup_0",
+          depth: 0,
+          headers: [
+            {
+              id: "personal_header",
+              column: { id: "personal", columnDef: { header: "Personal" } } as any,
+              colSpan: 2,
+              rowSpan: 1,
+              depth: 0,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+            {
+              id: "status_header",
+              column: { id: "status", columnDef: { header: "Status" } } as any,
+              colSpan: 1,
+              rowSpan: 2,
+              depth: 0,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+          ],
+        },
+        {
+          id: "headerGroup_1",
+          depth: 1,
+          headers: [
+            {
+              id: "name_header",
+              column: { id: "name", columnDef: { header: "Name" } } as any,
+              colSpan: 1,
+              rowSpan: 1,
+              depth: 1,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+            {
+              id: "age_header",
+              column: { id: "age", columnDef: { header: "Age" } } as any,
+              colSpan: 1,
+              rowSpan: 1,
+              depth: 1,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+            {
+              id: "status_placeholder",
+              column: { id: "status", columnDef: { header: "Status" } } as any,
+              colSpan: 1,
+              rowSpan: 1,
+              depth: 1,
+              isPlaceholder: true,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+          ],
+        },
+      ];
+      renderer.drawMultiLevelHeader(buf, 3, headerGroups, 20, defaultTheme, []);
+
+      // Should draw header background (full area)
+      expect(ctx.fillRect).toHaveBeenCalled();
+      // 4 non-placeholder headers: "Personal", "Status", "Name", "Age"
+      // (status_placeholder is skipped)
+      expect(ctx.fillText).toHaveBeenCalledTimes(4);
+    });
+
+    it("adds sort indicator only on leaf row headers", () => {
+      renderer.attach(canvas);
+      const buf = buildBuf([
+        [0, 0, 0, 0, 200, 40],
+        [0, 1, 200, 0, 200, 40],
+      ]);
+      const headerGroups: GridHeaderGroup[] = [
+        {
+          id: "headerGroup_0",
+          depth: 0,
+          headers: [
+            {
+              id: "group_header",
+              column: { id: "group", columnDef: { header: "Group" } } as any,
+              colSpan: 2,
+              rowSpan: 1,
+              depth: 0,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+          ],
+        },
+        {
+          id: "headerGroup_1",
+          depth: 1,
+          headers: [
+            {
+              id: "name_header",
+              column: { id: "name", columnDef: { header: "Name" } } as any,
+              colSpan: 1,
+              rowSpan: 1,
+              depth: 1,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+            {
+              id: "age_header",
+              column: { id: "age", columnDef: { header: "Age" } } as any,
+              colSpan: 1,
+              rowSpan: 1,
+              depth: 1,
+              isPlaceholder: false,
+              subHeaders: [],
+              getContext: () => ({}) as any,
+            },
+          ],
+        },
+      ];
+      const sorting = [{ id: "name", desc: false }];
+      renderer.drawMultiLevelHeader(buf, 2, headerGroups, 20, defaultTheme, sorting);
+
+      // Verify fillText calls contain the sort indicator on leaf row
+      const fillTextCalls = (ctx.fillText as any).mock.calls;
+      // Should have 3 texts: "Group", "Name ▲", "Age"
+      expect(fillTextCalls.length).toBe(3);
+      const texts = fillTextCalls.map((c: any) => c[0]);
+      expect(texts).toContain("Name \u25B2");
+      expect(texts).toContain("Age");
+      expect(texts).toContain("Group");
+    });
+
+    it("renders DnD grip dots only on leaf row", () => {
+      renderer.attach(canvas);
+      const buf = buildBuf([
+        [0, 0, 0, 0, 200, 40],
+      ]);
+      renderer.drawMultiLevelHeader(buf, 1, makeHeaderGroups(["Name"]), 40, defaultTheme, [], true);
+
+      // arc is called for grip dots (2 cols × 3 rows = 6 dots)
+      expect((ctx.arc as any).mock.calls.length).toBe(6);
     });
   });
 

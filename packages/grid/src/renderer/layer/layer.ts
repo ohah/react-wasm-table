@@ -9,6 +9,8 @@ import type {
 } from "../../types";
 import type { CanvasRenderer } from "../canvas";
 import type { CellRendererRegistry } from "../components";
+import type { GridHeaderGroup } from "../../grid-instance";
+import type { SortingState } from "../../tanstack-types";
 
 // ── Public types ────────────────────────────────────────────────────────
 
@@ -51,7 +53,8 @@ export interface GridLayer {
 
 /** Extended context for built-in layers — NOT exported to users. */
 export interface InternalLayerContext extends LayerContext {
-  _headersWithSort: string[];
+  _headerGroups: GridHeaderGroup[];
+  _sorting: SortingState;
   _getInstruction: (cellIdx: number) => RenderInstruction | undefined;
   _cellRendererRegistry: CellRendererRegistry;
   _enableSelection: boolean;
@@ -65,20 +68,20 @@ export interface InternalLayerContext extends LayerContext {
 
 // ── Built-in layer factories ────────────────────────────────────────────
 
-/** Header row layer — draws header background + labels. */
+/** Header row layer — draws multi-level header background + labels. */
 export function headerLayer(): GridLayer {
   return {
     name: "header",
     space: "content",
     draw(context: LayerContext) {
       const ctx = context as InternalLayerContext;
-      ctx.renderer.drawHeaderFromBuffer(
+      ctx.renderer.drawMultiLevelHeader(
         ctx.layoutBuf,
-        0,
         ctx.headerCount,
-        ctx._headersWithSort,
+        ctx._headerGroups,
+        ctx.headerHeight / ctx._headerRowCount,
         ctx.theme,
-        ctx.headerHeight,
+        ctx._sorting,
         ctx._enableColumnDnD,
       );
     },
@@ -121,6 +124,7 @@ export function gridLinesLayer(): GridLayer {
         context.headerHeight,
         context.rowHeight,
         ctx._borderConfigMap,
+        ctx._headerRowCount,
       );
     },
   };
@@ -142,6 +146,7 @@ export function selectionLayer(): GridLayer {
         ctx._selection,
         ctx.theme,
         ctx._selectionStyle,
+        ctx._headerRowCount,
       );
     },
   };

@@ -34,6 +34,7 @@ const sections = [
       { to: "/pagination", label: "Pagination" },
       { to: "/grouping", label: "Grouping" },
       { to: "/faceted", label: "Faceted Values" },
+      { to: "/grouped-columns", label: "Grouped Columns" },
     ],
   },
   {
