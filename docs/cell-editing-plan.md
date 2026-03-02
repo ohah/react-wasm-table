@@ -79,7 +79,7 @@
 
    // ColumnProps / ColumnDefBase에 추가
    editCell?: (props: CellEditRenderProps) => React.ReactNode;
-   editorOptions?: { options: { label: string; value: unknown }[] };
+   editorOptions?: Record<string, unknown>;
    ```
 
 2. **EditorManager 리팩토링** — DOM 생성 코드 전체 제거, 순수 상태 관리자로 전환
@@ -104,6 +104,11 @@
    - `useState<EditorState>` + `EditorManager.onStateChange` → React 상태 동기화
    - `createPortal(editorElement, editorRef.current)` — editorRef div에 에디터 포탈 렌더링
    - editorState에 따라 editCell 커스텀 컴포넌트 또는 built-in 에디터 분기
+
+6. **pendingOpen 패턴** — Tab 네비게이션 시 스크롤 후 에디터 오픈 타이밍 보장
+   - `pendingOpenRef`에 target coord 저장 → `scrollToRow()` 호출
+   - `onLayoutComputed` 콜백에서 `flushPendingOpen()` 호출 → 레이아웃 버퍼 갱신 후 에디터 오픈
+   - 기존 이중 `requestAnimationFrame` 대비 결정론적 타이밍 (레이아웃 완료 시점에 정확히 오픈)
 
 ### 변경 파일
 
@@ -140,6 +145,8 @@
 - ✅ **스크롤 cancel**: 편집 중 스크롤 시 에디터 자동 cancel (`use-event-attachment.ts` onScroll)
 - ✅ **select 에디터**: `editor: "select"` + `editorOptions.options` → built-in `<select>` 렌더링
 - ✅ **에디터 크기 제한**: `editorStyle(layout)` — maxWidth/maxHeight = 셀 크기, overflow: hidden
+- ✅ **editorOptions 제네릭화**: `Record<string, unknown>` 타입으로 변경 — select 외 다른 에디터 타입에서도 자유롭게 옵션 전달 가능
+- ✅ **pendingOpen 패턴**: 이중 rAF → `onLayoutComputed` 기반 결정론적 에디터 오픈
 
 ### 변경 파일
 
