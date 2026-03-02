@@ -1,7 +1,9 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@ohah/react-wasm-table": ["../packages/grid/src/index.ts"]
     }
   },
   "include": ["docs", "src", "theme", "rspress.config.ts", "*.ts", "*.tsx"]
