@@ -63,9 +63,10 @@ export function resolveCellBorder(
   if (cellStyle.borderColor !== undefined) baseColor = cellStyle.borderColor;
   if (cellStyle.borderStyle !== undefined) baseStyle = cellStyle.borderStyle;
   if (cellStyle.borderWidth !== undefined) {
-    baseWidth = typeof cellStyle.borderWidth === "number"
-      ? cellStyle.borderWidth
-      : parseFloat(String(cellStyle.borderWidth)) || baseWidth;
+    baseWidth =
+      typeof cellStyle.borderWidth === "number"
+        ? cellStyle.borderWidth
+        : parseFloat(String(cellStyle.borderWidth)) || baseWidth;
   }
 
   // Parse shorthand `border` if present (applies to all sides)
@@ -75,12 +76,24 @@ export function resolveCellBorder(
   }
 
   // Build per-side config
-  const baseSide: CellBorderSide = allSides ?? { width: baseWidth, style: baseStyle, color: baseColor };
+  const baseSide: CellBorderSide = allSides ?? {
+    width: baseWidth,
+    style: baseStyle,
+    color: baseColor,
+  };
 
-  const top = cellStyle.borderTop ? parseBorderShorthand(cellStyle.borderTop) ?? baseSide : baseSide;
-  const right = cellStyle.borderRight ? parseBorderShorthand(cellStyle.borderRight) ?? baseSide : baseSide;
-  const bottom = cellStyle.borderBottom ? parseBorderShorthand(cellStyle.borderBottom) ?? baseSide : baseSide;
-  const left = cellStyle.borderLeft ? parseBorderShorthand(cellStyle.borderLeft) ?? baseSide : baseSide;
+  const top = cellStyle.borderTop
+    ? (parseBorderShorthand(cellStyle.borderTop) ?? baseSide)
+    : baseSide;
+  const right = cellStyle.borderRight
+    ? (parseBorderShorthand(cellStyle.borderRight) ?? baseSide)
+    : baseSide;
+  const bottom = cellStyle.borderBottom
+    ? (parseBorderShorthand(cellStyle.borderBottom) ?? baseSide)
+    : baseSide;
+  const left = cellStyle.borderLeft
+    ? (parseBorderShorthand(cellStyle.borderLeft) ?? baseSide)
+    : baseSide;
 
   return { top, right, bottom, left };
 }

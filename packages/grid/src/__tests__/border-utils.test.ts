@@ -67,24 +67,17 @@ describe("resolveCellBorder", () => {
   });
 
   it("applies column-level color override", () => {
-    const config = resolveCellBorder(
-      DEFAULT_THEME,
-      { color: "#f00" },
-      undefined,
-    );
+    const config = resolveCellBorder(DEFAULT_THEME, { color: "#f00" }, undefined);
     expect(config.top?.color).toBe("#f00");
     expect(config.right?.color).toBe("#f00");
     expect(config.bottom?.color).toBe("#f00");
     expect(config.left?.color).toBe("#f00");
   });
 
-  it("applies column-level style override to none", () => {
-    const config = resolveCellBorder(
-      DEFAULT_THEME,
-      { style: "none" },
-      undefined,
-    );
-    expect(config.top?.style).toBe("none");
+  it("applies column-level style override to solid", () => {
+    const config = resolveCellBorder(DEFAULT_THEME, { style: "solid", color: "#333" }, undefined);
+    expect(config.top?.style).toBe("solid");
+    expect(config.top?.color).toBe("#333");
   });
 
   it("applies cell-level border shorthand", () => {
@@ -105,11 +98,7 @@ describe("resolveCellBorder", () => {
   });
 
   it("cell-level overrides column-level", () => {
-    const config = resolveCellBorder(
-      DEFAULT_THEME,
-      { color: "#f00" },
-      { borderColor: "#0f0" },
-    );
+    const config = resolveCellBorder(DEFAULT_THEME, { color: "#f00" }, { borderColor: "#0f0" });
     expect(config.top?.color).toBe("#0f0");
   });
 
