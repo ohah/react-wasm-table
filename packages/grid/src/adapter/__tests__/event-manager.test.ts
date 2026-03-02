@@ -601,6 +601,129 @@ describe("EventManager", () => {
     });
   });
 
+  describe("findDragHandle", () => {
+    it("returns col index when x is inside the drag handle zone", () => {
+      // Header: x=0, w=200 → rightEdge=200, handle zone=[175, 195)
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      expect(em.findDragHandle(175, 20)).toBe(0);
+      expect(em.findDragHandle(185, 20)).toBe(0);
+      expect(em.findDragHandle(194, 20)).toBe(0);
+    });
+
+    it("returns -1 when x is outside the drag handle zone", () => {
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      // Left of handle zone
+      expect(em.findDragHandle(100, 20)).toBe(-1);
+      expect(em.findDragHandle(174, 20)).toBe(-1);
+      // Right of handle zone (resize zone)
+      expect(em.findDragHandle(195, 20)).toBe(-1);
+      expect(em.findDragHandle(200, 20)).toBe(-1);
+    });
+
+    it("returns -1 when y is outside header bounds", () => {
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      // Above header
+      expect(em.findDragHandle(185, -1)).toBe(-1);
+      // Below header
+      expect(em.findDragHandle(185, 40)).toBe(-1);
+    });
+
+    it("works with multiple headers at different positions", () => {
+      const headerLayouts = [
+        makeLayout(0, 0, 0, 0, 150, 40),   // handle zone [125, 145)
+        makeLayout(0, 1, 150, 0, 200, 40),  // handle zone [325, 345)
+      ];
+      em.setLayouts(headerLayouts, []);
+      expect(em.findDragHandle(130, 20)).toBe(0);
+      expect(em.findDragHandle(330, 20)).toBe(1);
+      // Between headers (not in any handle zone)
+      expect(em.findDragHandle(160, 20)).toBe(-1);
+    });
+
+    it("returns -1 when no header layouts exist", () => {
+      em.setLayouts([], []);
+      expect(em.findDragHandle(100, 20)).toBe(-1);
+    });
+  });
+
+  describe("drag handle zone behavior", () => {
+    it("mousedown outside handle zone fires onCellMouseDown (selection) not DnD", () => {
+      const onHeaderMouseDown = mock(() => {});
+      const onCellMouseDown = mock(() => {});
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderMouseDown, onCellMouseDown });
+
+      // Click at center of header (x=100), outside handle zone [175, 195)
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 100, clientY: 20, bubbles: true }),
+      );
+
+      expect(onHeaderMouseDown).not.toHaveBeenCalled();
+      expect(onCellMouseDown).toHaveBeenCalledTimes(1);
+      const coord = (onCellMouseDown.mock.calls[0] as unknown as [{ row: number; col: number }])[0];
+      expect(coord).toEqual({ row: 0, col: 0 });
+    });
+
+    it("mousedown inside handle zone fires onHeaderMouseDown (DnD)", () => {
+      const onHeaderMouseDown = mock(() => {});
+      const onCellMouseDown = mock(() => {});
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderMouseDown, onCellMouseDown });
+
+      // Click in handle zone (x=185)
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 185, clientY: 20, bubbles: true }),
+      );
+
+      expect(onHeaderMouseDown).toHaveBeenCalledTimes(1);
+      expect(onCellMouseDown).not.toHaveBeenCalled();
+    });
+
+    it("drag from outside handle zone extends selection instead of DnD", () => {
+      const onHeaderMouseDown = mock(() => {});
+      const onCellMouseDown = mock(() => {});
+      const onCellMouseMove = mock(() => {});
+      const onColumnDnDMove = mock(() => {});
+      const headerLayouts = [
+        makeLayout(0, 0, 0, 0, 200, 40),
+        makeLayout(0, 1, 200, 0, 200, 40),
+      ];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onHeaderMouseDown, onCellMouseDown, onCellMouseMove, onColumnDnDMove });
+
+      // mousedown outside handle zone → selection
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 50, clientY: 20, bubbles: true }),
+      );
+      expect(onCellMouseDown).toHaveBeenCalledTimes(1);
+
+      // drag → should extend selection, not column DnD
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 250, clientY: 20, buttons: 1, bubbles: true }),
+      );
+      expect(onColumnDnDMove).not.toHaveBeenCalled();
+      expect(onCellMouseMove).toHaveBeenCalled();
+    });
+
+    it("when onHeaderMouseDown is absent, header mousedown always fires selection", () => {
+      const onCellMouseDown = mock(() => {});
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onCellMouseDown });
+
+      // Click even in handle zone area → should fire selection (no DnD handler)
+      canvas.dispatchEvent(
+        new MouseEvent("mousedown", { clientX: 185, clientY: 20, bubbles: true }),
+      );
+      expect(onCellMouseDown).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("touch events", () => {
     it("tap fires onCellClick and onHeaderClick", () => {
       const onCellClick = mock(() => {});

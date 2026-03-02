@@ -158,6 +158,56 @@ describe("drawTextCellFromBuffer", () => {
     expect(ctx.textAlign).toBe("right");
     expect(ctx.fillText).toHaveBeenCalledWith("RP", 184, 18, 184);
   });
+
+  it("extraPadRight reduces available width for left-aligned text", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(10, 20, 200, 36, 0); // left-aligned, no padding
+
+    drawTextCellFromBuffer(ctx, buf, 0, "Hello", undefined, 25);
+
+    // textX unchanged (left-aligned) = 10
+    // maxWidth = 200 - 0 - 25 = 175
+    expect(ctx.textAlign).toBe("left");
+    expect(ctx.fillText).toHaveBeenCalledWith("Hello", 10, 38, 175);
+  });
+
+  it("extraPadRight shifts right-aligned text leftward", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(10, 20, 200, 36, 2); // right-aligned
+
+    drawTextCellFromBuffer(ctx, buf, 0, "Right", undefined, 25);
+
+    // textX = x + w - padRight = 10 + 200 - 25 = 185
+    // maxWidth = 200 - 0 - 25 = 175
+    expect(ctx.textAlign).toBe("right");
+    expect(ctx.fillText).toHaveBeenCalledWith("Right", 185, 38, 175);
+  });
+
+  it("extraPadRight shifts center-aligned text leftward", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 200, 36, 1); // center-aligned
+
+    drawTextCellFromBuffer(ctx, buf, 0, "Center", undefined, 25);
+
+    // textX = 0 + 0 + (200 - 0 - 25) / 2 = 87.5
+    // maxWidth = 200 - 0 - 25 = 175
+    expect(ctx.textAlign).toBe("center");
+    expect(ctx.fillText).toHaveBeenCalledWith("Center", 87.5, 18, 175);
+  });
+
+  it("extraPadRight combines with existing padding", () => {
+    const ctx = mockCtx();
+    // padTop=0, padRight=8, padBottom=0, padLeft=12
+    const buf = makeBuf(10, 20, 200, 36, 2, 0, 8, 0, 12);
+
+    drawTextCellFromBuffer(ctx, buf, 0, "Both", undefined, 25);
+
+    // effective padRight = 8 + 25 = 33
+    // textX = 10 + 200 - 33 = 177
+    // maxWidth = 200 - 12 - 33 = 155
+    expect(ctx.textAlign).toBe("right");
+    expect(ctx.fillText).toHaveBeenCalledWith("Both", 177, 38, 155);
+  });
 });
 
 describe("drawBadgeFromBuffer", () => {
