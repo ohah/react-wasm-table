@@ -163,6 +163,12 @@ export class EventManager {
   private columnDnDMoved = false;
   private columnDnDJustEnded = false;
   private resizeJustEnded = false;
+  // Stashed header selection to fire on mouseup if no DnD drag occurred
+  private pendingHeaderSelection: {
+    hit: CellCoord;
+    shiftKey: boolean;
+    coords: EventCoords;
+  } | null = null;
 
   /** Update the layouts used for hit-testing. */
   setLayouts(headerLayouts: CellLayout[], rowLayouts: CellLayout[]): void {
@@ -369,15 +375,17 @@ export class EventManager {
         this.lastViewportPos = null;
 
         if (headerHit) {
-          // Always fire selection for header clicks
-          handlers.onCellMouseDown?.(headerHit, e.shiftKey, e, coords);
-
-          // Column DnD: header mousedown also starts drag (if handler provided)
+          // Column DnD: header mousedown starts drag (if handler provided)
           if (handlers.onHeaderMouseDown) {
             this.columnDnDState = { colIndex: headerHit.col };
             this.columnDnDMoved = false;
             this.columnDnDJustEnded = false;
+            // Stash header hit + shiftKey so mouseup can fire selection if no drag occurred
+            this.pendingHeaderSelection = { hit: headerHit, shiftKey: e.shiftKey, coords };
             handlers.onHeaderMouseDown(headerHit.col, e, coords);
+          } else {
+            // No DnD — fire selection immediately
+            handlers.onCellMouseDown?.(headerHit, e.shiftKey, e, coords);
           }
 
           e.preventDefault();
@@ -408,6 +416,7 @@ export class EventManager {
         // Column DnD in progress
         if (this.columnDnDState && handlers.onColumnDnDMove) {
           this.columnDnDMoved = true;
+          this.pendingHeaderSelection = null; // actual drag occurred, cancel pending selection
           const rect = canvas.getBoundingClientRect();
           const viewportX = e.clientX - rect.left;
           const contentX = this.toContentX(viewportX, rect.width);
@@ -485,12 +494,21 @@ export class EventManager {
 
         // Column DnD end
         if (this.columnDnDState) {
-          this.columnDnDJustEnded = this.columnDnDMoved;
+          const didDrag = this.columnDnDMoved;
+          this.columnDnDJustEnded = didDrag;
           // Always call onColumnDnDEnd to clean up React DnD state
           // (isDragging was set to true on mousedown)
           handlers.onColumnDnDEnd?.();
           this.columnDnDState = null;
           this.columnDnDMoved = false;
+
+          // No actual drag → treat as header click for selection
+          if (!didDrag && this.pendingHeaderSelection) {
+            const { hit, shiftKey, coords: downCoords } = this.pendingHeaderSelection;
+            handlers.onCellMouseDown?.(hit, shiftKey, e, downCoords);
+            handlers.onCellMouseUp?.();
+          }
+          this.pendingHeaderSelection = null;
           return;
         }
 
