@@ -180,7 +180,14 @@ describe("CanvasRenderer", () => {
         [0, 0, 0, 0, 200, 40],
         [0, 1, 200, 0, 200, 40],
       ]);
-      renderer.drawMultiLevelHeader(buf, 2, makeHeaderGroups(["Name", "Age"]), 40, defaultTheme, []);
+      renderer.drawMultiLevelHeader(
+        buf,
+        2,
+        makeHeaderGroups(["Name", "Age"]),
+        40,
+        defaultTheme,
+        [],
+      );
 
       // Should draw header background
       expect(ctx.fillRect).toHaveBeenCalled();
@@ -347,9 +354,7 @@ describe("CanvasRenderer", () => {
 
     it("renders DnD grip dots only on leaf row", () => {
       renderer.attach(canvas);
-      const buf = buildBuf([
-        [0, 0, 0, 0, 200, 40],
-      ]);
+      const buf = buildBuf([[0, 0, 0, 0, 200, 40]]);
       renderer.drawMultiLevelHeader(buf, 1, makeHeaderGroups(["Name"]), 40, defaultTheme, [], true);
 
       // arc is called for grip dots (2 cols × 3 rows = 6 dots)

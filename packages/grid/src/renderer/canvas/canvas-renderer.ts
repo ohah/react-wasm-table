@@ -165,8 +165,7 @@ export class CanvasRenderer {
           ctx.textBaseline = "middle";
           ctx.textAlign = "center";
 
-          const textMaxW =
-            rowIdx === isLeafRow ? cellW - 8 - handleReserved : cellW - 8;
+          const textMaxW = rowIdx === isLeafRow ? cellW - 8 - handleReserved : cellW - 8;
           const measured = ctx.measureText(label);
           const textW = Math.min(measured.width, Math.max(0, textMaxW));
           // Clip to cell bounds

@@ -396,12 +396,7 @@ describe("computeHeaderLinesFromBuffer (multi-level)", () => {
 
   it("falls back to single row when headerRowCount is omitted", () => {
     const buf = toBuffer(HEADER_START);
-    const spec = computeHeaderLinesFromBuffer(
-      buf,
-      HEADER_START.length,
-      CANVAS_W,
-      HEADER_H,
-    );
+    const spec = computeHeaderLinesFromBuffer(buf, HEADER_START.length, CANVAS_W, HEADER_H);
     // Should have 2 horizontal lines (top + bottom) — same as before
     expect(spec.horizontal).toHaveLength(2);
   });
