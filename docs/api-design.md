@@ -158,7 +158,8 @@ The `children` render prop (or `render` in ColumnDef) returns a `RenderInstructi
 a plain object describing what to draw. The canvas renderer maps each type to drawing commands.
 
 ```typescript
-type RenderInstruction = TextInstruction | BadgeInstruction;
+// 패키지에는 Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag, Stub 등이 정의됨
+type RenderInstruction = TextInstruction | BadgeInstruction | /* ... 기타 내장 instruction */;
 
 interface TextInstruction {
   type: "text";
