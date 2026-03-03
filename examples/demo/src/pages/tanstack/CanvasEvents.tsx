@@ -238,11 +238,7 @@ export function TanStackCanvasEvents() {
   });
 
   /** Render a TanStack Table component */
-  const renderTable = (
-    table: ReturnType<typeof useReactTable<Row>>,
-    w: number,
-    h: number,
-  ) => (
+  const renderTable = (table: ReturnType<typeof useReactTable<Row>>, w: number, h: number) => (
     <Table table={table} width={w} height={h}>
       <Thead>
         {table.getHeaderGroups().map((hg) => (
@@ -261,9 +257,7 @@ export function TanStackCanvasEvents() {
         {table.getRowModel().rows.map((row) => (
           <Tr key={row.id}>
             {row.getVisibleCells().map((cell) => (
-              <Td key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </Td>
+              <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
             ))}
           </Tr>
         ))}
@@ -275,9 +269,9 @@ export function TanStackCanvasEvents() {
     <>
       <h1>TanStack: Canvas Component Events</h1>
       <p>
-        Same <code>CanvasEventHandlers</code> work inside TanStack <code>{"<Table>"}</code>.
-        Column <code>cell</code> functions return canvas components with event handlers
-        that fire per-component, before the grid-level <code>onCellClick</code>.
+        Same <code>CanvasEventHandlers</code> work inside TanStack <code>{"<Table>"}</code>. Column{" "}
+        <code>cell</code> functions return canvas components with event handlers that fire
+        per-component, before the grid-level <code>onCellClick</code>.
       </p>
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>

@@ -335,7 +335,11 @@ describe("colorCellRenderer", () => {
     const buf = makeBuf(0, 0, 100, 36, 0);
 
     colorCellRenderer.draw(
-      { type: "color", value: "#00ff00", style: { borderColor: "#333", borderWidth: 2, borderRadius: 4 } },
+      {
+        type: "color",
+        value: "#00ff00",
+        style: { borderColor: "#333", borderWidth: 2, borderRadius: 4 },
+      },
       { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
     );
 
@@ -369,7 +373,11 @@ describe("tagCellRenderer", () => {
     const buf = makeBuf(0, 0, 200, 36, 0);
 
     tagCellRenderer.draw(
-      { type: "tag", value: "OK", style: { color: "#1565c0", borderColor: "#1565c0", borderRadius: 8, fontSize: 14 } },
+      {
+        type: "tag",
+        value: "OK",
+        style: { color: "#1565c0", borderColor: "#1565c0", borderRadius: 8, fontSize: 14 },
+      },
       { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
     );
 
@@ -444,7 +452,11 @@ describe("chipCellRenderer", () => {
     const buf = makeBuf(0, 0, 200, 36, 0);
 
     chipCellRenderer.draw(
-      { type: "chip", value: "X", style: { backgroundColor: "#4caf50", color: "#fff", borderRadius: 16 } },
+      {
+        type: "chip",
+        value: "X",
+        style: { backgroundColor: "#4caf50", color: "#fff", borderRadius: 16 },
+      },
       { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
     );
 

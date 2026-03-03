@@ -73,8 +73,8 @@ export function CanvasColor() {
     <>
       <h1>Canvas: Color</h1>
       <p>
-        <code>Color</code> draws a centered square color swatch. Supports{" "}
-        <code>borderRadius</code>, <code>borderWidth</code>, <code>borderColor</code>.
+        <code>Color</code> draws a centered square color swatch. Supports <code>borderRadius</code>,{" "}
+        <code>borderWidth</code>, <code>borderColor</code>.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 16 }}>
@@ -139,9 +139,7 @@ export function CanvasColor() {
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>
-                No events yet
-              </div>
+              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>No events yet</div>
             )}
             {logs.map((log) => (
               <div

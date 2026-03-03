@@ -213,10 +213,10 @@ export function CanvasEvents() {
     <>
       <h1>Canvas: Component Events</h1>
       <p>
-        Canvas components support HTMLElement-like event handlers:{" "}
-        <code>onClick</code>, <code>onDoubleClick</code>, <code>onMouseDown</code>,{" "}
-        <code>onMouseUp</code>, <code>onMouseEnter</code>, <code>onMouseLeave</code>.
-        Use <code>event.preventDefault()</code> to suppress default actions (e.g. Link navigation).
+        Canvas components support HTMLElement-like event handlers: <code>onClick</code>,{" "}
+        <code>onDoubleClick</code>, <code>onMouseDown</code>, <code>onMouseUp</code>,{" "}
+        <code>onMouseEnter</code>, <code>onMouseLeave</code>. Use{" "}
+        <code>event.preventDefault()</code> to suppress default actions (e.g. Link navigation).
       </p>
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
