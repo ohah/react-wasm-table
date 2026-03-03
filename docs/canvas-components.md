@@ -95,26 +95,26 @@ Image draws images on canvas using `drawImage()`. It supports all meaningful `<i
 
 ### 4.1 HTML `<img>` attributes
 
-| Prop             | Type                                    | Required | Description                         |
-| ---------------- | --------------------------------------- | -------- | ----------------------------------- |
-| `src`            | `string`                                | **Yes**  | Image URL                           |
-| `alt`            | `string`                                | No       | Fallback text rendered on load error |
-| `width`          | `number`                                | No       | Explicit render width (px)          |
-| `height`         | `number`                                | No       | Explicit render height (px)         |
-| `crossOrigin`    | `"anonymous" \| "use-credentials"`      | No       | CORS setting                        |
-| `referrerPolicy` | `ReferrerPolicy`                        | No       | Referrer policy for the image fetch |
-| `decoding`       | `"sync" \| "async" \| "auto"`           | No       | Decoding hint                       |
-| `fetchPriority`  | `"high" \| "low" \| "auto"`             | No       | Fetch priority hint                 |
+| Prop             | Type                               | Required | Description                          |
+| ---------------- | ---------------------------------- | -------- | ------------------------------------ |
+| `src`            | `string`                           | **Yes**  | Image URL                            |
+| `alt`            | `string`                           | No       | Fallback text rendered on load error |
+| `width`          | `number`                           | No       | Explicit render width (px)           |
+| `height`         | `number`                           | No       | Explicit render height (px)          |
+| `crossOrigin`    | `"anonymous" \| "use-credentials"` | No       | CORS setting                         |
+| `referrerPolicy` | `ReferrerPolicy`                   | No       | Referrer policy for the image fetch  |
+| `decoding`       | `"sync" \| "async" \| "auto"`      | No       | Decoding hint                        |
+| `fetchPriority`  | `"high" \| "low" \| "auto"`        | No       | Fetch priority hint                  |
 
 Attributes **not supported** (meaningless in Canvas context): `srcSet`, `sizes`, `loading`, `isMap`, `useMap`, deprecated attributes (`align`, `border`, `hspace`, `vspace`).
 
 ### 4.2 Style props
 
-| Prop           | Type                                                       | Default  | Description                                |
-| -------------- | ---------------------------------------------------------- | -------- | ------------------------------------------ |
-| `objectFit`    | `"fill" \| "contain" \| "cover" \| "none" \| "scale-down"` | `"fill"` | How the image fits within its content box   |
-| `borderRadius` | `number`                                                   | `0`      | Border radius in pixels (clip path)         |
-| `opacity`      | `number`                                                   | `1`      | Opacity (0–1, applied via `globalAlpha`)    |
+| Prop           | Type                                                       | Default  | Description                               |
+| -------------- | ---------------------------------------------------------- | -------- | ----------------------------------------- |
+| `objectFit`    | `"fill" \| "contain" \| "cover" \| "none" \| "scale-down"` | `"fill"` | How the image fits within its content box |
+| `borderRadius` | `number`                                                   | `0`      | Border radius in pixels (clip path)       |
+| `opacity`      | `number`                                                   | `1`      | Opacity (0–1, applied via `globalAlpha`)  |
 
 Same `style` prop pattern as other components: `style?: Partial<ImageStyle>`, individual props override `style`.
 

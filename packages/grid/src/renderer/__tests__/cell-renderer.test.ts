@@ -566,10 +566,7 @@ describe("imageCellRenderer", () => {
   it("draws nothing when image is not yet loaded", () => {
     seedImageCache("test://loading.png", { loaded: false, error: false });
     const context = makeContext();
-    imageCellRenderer.draw(
-      { type: "image", src: "test://loading.png" },
-      context,
-    );
+    imageCellRenderer.draw({ type: "image", src: "test://loading.png" }, context);
     expect(context.ctx.drawImage).not.toHaveBeenCalled();
     expect(context.ctx.fillText).not.toHaveBeenCalled();
   });
@@ -581,10 +578,7 @@ describe("imageCellRenderer", () => {
       error: false,
     });
     const context = makeContext();
-    imageCellRenderer.draw(
-      { type: "image", src: "test://loaded.png" },
-      context,
-    );
+    imageCellRenderer.draw({ type: "image", src: "test://loaded.png" }, context);
     expect(context.ctx.save).toHaveBeenCalled();
     expect(context.ctx.drawImage).toHaveBeenCalledTimes(1);
     expect(context.ctx.restore).toHaveBeenCalled();
@@ -605,10 +599,7 @@ describe("imageCellRenderer", () => {
   it("does nothing on error without alt", () => {
     seedImageCache("test://error-noalt.png", { loaded: false, error: true });
     const context = makeContext();
-    imageCellRenderer.draw(
-      { type: "image", src: "test://error-noalt.png" },
-      context,
-    );
+    imageCellRenderer.draw({ type: "image", src: "test://error-noalt.png" }, context);
     expect(context.ctx.drawImage).not.toHaveBeenCalled();
     expect(context.ctx.fillText).not.toHaveBeenCalled();
   });
@@ -666,10 +657,7 @@ describe("imageCellRenderer", () => {
       loaded: true,
     });
     const context = makeContext();
-    imageCellRenderer.draw(
-      { type: "image", src: "test://fill.png" },
-      context,
-    );
+    imageCellRenderer.draw({ type: "image", src: "test://fill.png" }, context);
     // default objectFit is "fill" — drawImage with content box dimensions
     const drawCalls = (context.ctx.drawImage as any).mock.calls;
     expect(drawCalls).toHaveLength(1);
@@ -739,10 +727,7 @@ describe("imageCellRenderer", () => {
       loaded: true,
     });
     const context = makeContext();
-    imageCellRenderer.draw(
-      { type: "image", src: "test://zero-natural.png" },
-      context,
-    );
+    imageCellRenderer.draw({ type: "image", src: "test://zero-natural.png" }, context);
     expect(context.ctx.drawImage).not.toHaveBeenCalled();
   });
 
@@ -752,10 +737,7 @@ describe("imageCellRenderer", () => {
       loaded: true,
     });
     const context = makeContext();
-    imageCellRenderer.draw(
-      { type: "image", src: "test://full-opacity.png" },
-      context,
-    );
+    imageCellRenderer.draw({ type: "image", src: "test://full-opacity.png" }, context);
     // globalAlpha should remain at default (1)
     expect((context.ctx as any).globalAlpha).toBe(1);
   });

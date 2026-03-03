@@ -43,10 +43,7 @@ interface LoadImageOptions {
   fetchPriority?: "high" | "low" | "auto";
 }
 
-function getOrLoadImage(
-  src: string,
-  opts?: LoadImageOptions,
-): ImageCacheEntry | null {
+function getOrLoadImage(src: string, opts?: LoadImageOptions): ImageCacheEntry | null {
   let entry = imageCache.get(src);
   if (entry) return entry;
 
@@ -163,12 +160,7 @@ export const imageCellRenderer: CellRenderer<ImageInstruction> = {
         ctx.fillStyle = "#999";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(
-          instruction.alt,
-          contentX + contentW / 2,
-          contentY + contentH / 2,
-          contentW,
-        );
+        ctx.fillText(instruction.alt, contentX + contentW / 2, contentY + contentH / 2, contentW);
       }
       return;
     }
@@ -188,13 +180,7 @@ export const imageCellRenderer: CellRenderer<ImageInstruction> = {
     const naturalH = entry.img.naturalHeight;
     if (naturalW === 0 || naturalH === 0) return;
 
-    const { dx, dy, dw, dh } = computeObjectFit(
-      objectFit,
-      naturalW,
-      naturalH,
-      targetW,
-      targetH,
-    );
+    const { dx, dy, dw, dh } = computeObjectFit(objectFit, naturalW, naturalH, targetW, targetH);
 
     ctx.save();
 
@@ -212,13 +198,7 @@ export const imageCellRenderer: CellRenderer<ImageInstruction> = {
     }
     ctx.clip();
 
-    ctx.drawImage(
-      entry.img,
-      contentX + dx,
-      contentY + dy,
-      dw,
-      dh,
-    );
+    ctx.drawImage(entry.img, contentX + dx, contentY + dy, dw, dh);
 
     ctx.restore();
   },
