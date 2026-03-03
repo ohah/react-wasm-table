@@ -12,6 +12,11 @@ Cell content is described with **render instructions**. The following components
 | **Box**       | Container: padding, margin, border; children in content rect (vertical stack) | `children?`, `style?`, `padding?`, `margin?`, `borderWidth?`, `backgroundColor?` |
 | **Stack**     | Row or column layout with gap                                                 | `children?`, `direction?` ("row" \| "column"), `gap?`, `style?`                  |
 | **Sparkline** | Inline mini line chart from `data` (number[])                                 | `data`, `style?`, `color?`, `strokeWidth?`, `variant?` ("line" \| "area")        |
+| **Color**     | Centered square color swatch                                                  | `value` (hex), `borderRadius?`, `borderWidth?`, `borderColor?`                   |
+| **Tag**       | Outlined text (stroke border + text)                                          | `value`, `color?`, `borderColor?`, `borderRadius?`, `fontSize?`                  |
+| **Rating**    | Filled ★ and empty ☆ stars                                                    | `value`, `max?`, `color?`, `emptyColor?`, `size?`                                |
+| **Chip**      | Filled pill with optional close button                                        | `value`, `color?`, `backgroundColor?`, `borderRadius?`, `closable?`              |
+| **Link**      | Text with link color, optional underline; opens URL on click                  | `value`, `href?`, `color?`, `underline?`, `fontSize?`                            |
 
 All support an optional `style` object; individual props override `style` when both are set.
 
@@ -101,6 +106,89 @@ export const Example = () => (
 );
 ```
 
+## Color, Tag, Rating, Chip, Link
+
+```tsx twoslash
+// @noErrors
+import React from "react";
+import { Color, Tag, Rating, Chip, Link } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <>
+    <Color value="#e53935" borderRadius={4} />
+    <Tag value="frontend" color="#1565c0" borderColor="#1565c0" />
+    <Rating value={4} max={5} color="#f59e0b" />
+    <Chip value="React" backgroundColor="#1976d2" color="#fff" />
+    <Link value="Docs" href="https://example.com" underline />
+  </>
+);
+```
+
+## Event handlers
+
+All canvas components support **HTMLElement-like event handlers** via the `CanvasEventHandlers` interface. Events fire per-component with a `GridCellEvent` containing cell coordinates and the native `MouseEvent`.
+
+| Handler         | Fires when                              |
+| --------------- | --------------------------------------- |
+| `onClick`       | Component cell is clicked               |
+| `onDoubleClick` | Component cell is double-clicked        |
+| `onMouseDown`   | Mouse button pressed on component cell  |
+| `onMouseUp`     | Mouse button released on component cell |
+| `onMouseEnter`  | Cursor enters a component cell          |
+| `onMouseLeave`  | Cursor leaves a component cell          |
+
+### Execution order
+
+Event handlers follow DOM semantics with a 3-level execution order:
+
+1. **Component-level** — `onClick` on the component (element handler)
+2. **Grid-level** — `onCellClick` prop on the Grid (parent/bubbling)
+3. **Renderer default action** — e.g., Link opens URL
+
+Calling `e.preventDefault()` at any level stops the levels below it.
+
+### Example
+
+```tsx twoslash
+// @noErrors
+import React from "react";
+import { Link, Chip, type GridCellEvent } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <>
+    {/* preventDefault() blocks the Link renderer from opening the URL */}
+    <Link
+      value="Click me"
+      href="https://example.com"
+      onClick={(e) => {
+        e.preventDefault();
+        console.log("clicked link at", e.cell);
+      }}
+    />
+
+    {/* Hover events */}
+    <Chip
+      value="Hover me"
+      backgroundColor="#e3f2fd"
+      color="#1565c0"
+      onMouseEnter={(e) => console.log("enter", e.cell)}
+      onMouseLeave={(e) => console.log("leave", e.cell)}
+    />
+
+    {/* Multiple events on one component */}
+    <Chip
+      value="All events"
+      backgroundColor="#e8f5e9"
+      color="#2e7d32"
+      onClick={(e) => console.log("click", e.cell)}
+      onDoubleClick={(e) => console.log("dblclick", e.cell)}
+      onMouseDown={(e) => console.log("mousedown", e.cell)}
+      onMouseUp={(e) => console.log("mouseup", e.cell)}
+    />
+  </>
+);
+```
+
 ## Stub components (planned)
 
-These are exported and usable in JSX but the renderer only draws a placeholder (e.g. `[ProgressBar]`): Rating, Icon, Image, Avatar, Tag, Chip, Link, Color, ProgressBar, Input, NumberInput, Select, Checkbox, Switch, DatePicker, Dropdown. They accept `style` and other props for when real renderers are added.
+These are exported and usable in JSX but the renderer only draws a placeholder (e.g. `[ProgressBar]`): Icon, Image, Avatar, ProgressBar, Input, NumberInput, Select, Checkbox, Switch, DatePicker, Dropdown. They accept `style` and other props for when real renderers are added.

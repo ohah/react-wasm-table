@@ -24,6 +24,7 @@
   { "type": "file", "name": "canvas-rating", "label": "Canvas: Rating" },
   { "type": "file", "name": "canvas-chip", "label": "Canvas: Chip" },
   { "type": "file", "name": "canvas-link", "label": "Canvas: Link" },
+  { "type": "file", "name": "canvas-events", "label": "Canvas: Events" },
   { "type": "file", "name": "custom-renderer", "label": "Custom Renderer" },
   { "type": "file", "name": "layers", "label": "Layer System" },
   { "type": "file", "name": "column-features", "label": "Column Features" },
