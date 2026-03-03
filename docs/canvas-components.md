@@ -103,11 +103,11 @@ These components are **exported and usable in JSX**, but the renderer only draws
 
 Display-only; no DOM overlay. Canvas drawing only.
 
-| Component  | Intended use                   |
-| ---------- | ------------------------------ |
-| **Icon**   | Icon (name or glyph).          |
-| **Image**  | Image (src, alt).              |
-| **Avatar** | User avatar.                   |
+| Component  | Intended use          |
+| ---------- | --------------------- |
+| **Icon**   | Icon (name or glyph). |
+| **Image**  | Image (src, alt).     |
+| **Avatar** | User avatar.          |
 
 ### Interactive (DOM overlay)
 
