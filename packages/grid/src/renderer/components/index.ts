@@ -11,6 +11,7 @@ import { tagCellRenderer } from "./tag";
 import { ratingCellRenderer } from "./rating";
 import { chipCellRenderer } from "./chip";
 import { linkCellRenderer } from "./link";
+import { imageCellRenderer } from "./image";
 
 // Re-export types for public API
 export type { CellRenderContext, CellRenderer, InstructionLike } from "./types";
@@ -36,7 +37,7 @@ export class CellRendererRegistry {
 }
 
 /**
- * Create a CellRendererRegistry pre-loaded with the 12 built-in renderers.
+ * Create a CellRendererRegistry pre-loaded with the 13 built-in renderers.
  * Optional `userRenderers` are merged on top — same type overrides built-in.
  */
 export function createCellRendererRegistry(
@@ -55,6 +56,7 @@ export function createCellRendererRegistry(
   registry.register(ratingCellRenderer);
   registry.register(chipCellRenderer);
   registry.register(linkCellRenderer);
+  registry.register(imageCellRenderer);
   if (userRenderers) {
     for (const r of userRenderers) {
       registry.register(r);
@@ -76,3 +78,4 @@ export { tagCellRenderer } from "./tag";
 export { ratingCellRenderer } from "./rating";
 export { chipCellRenderer } from "./chip";
 export { linkCellRenderer } from "./link";
+export { imageCellRenderer } from "./image";

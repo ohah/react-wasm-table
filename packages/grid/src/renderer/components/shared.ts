@@ -78,6 +78,9 @@ export function measureInstructionWidth(
     ctx.font = `${fontSize}px system-ui, sans-serif`;
     return ctx.measureText(instruction.value).width;
   }
+  if (instruction.type === "image") {
+    return instruction.width ?? FLEX_CHILD_HEIGHT;
+  }
   if (
     instruction.type === "stub" ||
     instruction.type === "box" ||
@@ -94,6 +97,9 @@ export function measureInstructionHeight(
   _ctx: CanvasRenderingContext2D,
   instruction: RenderInstruction,
 ): number {
+  if (instruction.type === "image") {
+    return instruction.height ?? FLEX_CHILD_HEIGHT;
+  }
   return instruction.type === "badge" ||
     instruction.type === "text" ||
     instruction.type === "stub" ||

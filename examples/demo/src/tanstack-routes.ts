@@ -40,6 +40,7 @@ export const BASE_TO_TANSTACK: Record<string, string> = {
   "/canvas-rating": "/tanstack/canvas-rating",
   "/canvas-chip": "/tanstack/canvas-chip",
   "/canvas-link": "/tanstack/canvas-link",
+  "/canvas-image": "/tanstack/canvas-image",
   "/canvas-events": "/tanstack/canvas-events",
   // Grid / Flex / Box
   "/grid-template": "/tanstack/grid-template",

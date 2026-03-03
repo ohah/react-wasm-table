@@ -13,6 +13,7 @@ import {
   Rating,
   Chip,
   Link,
+  Image,
 } from "../components";
 import { resolveInstruction } from "../resolve-instruction";
 import type {
@@ -28,6 +29,7 @@ import type {
   RatingInstruction,
   ChipInstruction,
   LinkInstruction,
+  ImageInstruction,
 } from "../types";
 
 describe("Canvas components", () => {
@@ -592,6 +594,102 @@ describe("Canvas components", () => {
         style: { color: "red", fontSize: 14 },
       };
       expect(result).toEqual(expected);
+    });
+  });
+
+  describe("Image", () => {
+    it("returns an ImageInstruction when called directly", () => {
+      const result = Image({
+        src: "https://example.com/photo.png",
+        alt: "Photo",
+        objectFit: "cover",
+      }) as RenderInstruction;
+      const expected: ImageInstruction = {
+        type: "image",
+        src: "https://example.com/photo.png",
+        alt: "Photo",
+        style: { objectFit: "cover" },
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("returns an ImageInstruction via JSX + resolveInstruction", () => {
+      const element = (
+        <Image src="https://example.com/img.jpg" borderRadius={8} opacity={0.5} />
+      );
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("image");
+      if (result.type === "image") {
+        expect(result.src).toBe("https://example.com/img.jpg");
+        expect(result.style).toEqual({ borderRadius: 8, opacity: 0.5 });
+      }
+    });
+
+    it("omits style when no style properties given", () => {
+      const result = Image({ src: "https://example.com/plain.png" }) as RenderInstruction;
+      expect(result).toEqual({ type: "image", src: "https://example.com/plain.png" });
+      expect((result as ImageInstruction).style).toBeUndefined();
+    });
+
+    it("includes optional HTML img attributes when provided", () => {
+      const result = Image({
+        src: "https://example.com/img.jpg",
+        alt: "Alt text",
+        width: 200,
+        height: 150,
+        crossOrigin: "anonymous",
+        referrerPolicy: "no-referrer",
+        decoding: "async",
+        fetchPriority: "high",
+      }) as RenderInstruction;
+      expect(result.type).toBe("image");
+      if (result.type === "image") {
+        expect(result.src).toBe("https://example.com/img.jpg");
+        expect(result.alt).toBe("Alt text");
+        expect(result.width).toBe(200);
+        expect(result.height).toBe(150);
+        expect(result.crossOrigin).toBe("anonymous");
+        expect(result.referrerPolicy).toBe("no-referrer");
+        expect(result.decoding).toBe("async");
+        expect(result.fetchPriority).toBe("high");
+      }
+    });
+
+    it("omits optional HTML attributes when not provided", () => {
+      const result = Image({ src: "https://example.com/min.png" }) as RenderInstruction;
+      if (result.type === "image") {
+        expect(result.alt).toBeUndefined();
+        expect(result.width).toBeUndefined();
+        expect(result.height).toBeUndefined();
+        expect(result.crossOrigin).toBeUndefined();
+        expect(result.referrerPolicy).toBeUndefined();
+        expect(result.decoding).toBeUndefined();
+        expect(result.fetchPriority).toBeUndefined();
+      }
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Image({
+        src: "https://example.com/img.jpg",
+        style: { objectFit: "contain", borderRadius: 16 },
+        objectFit: "cover",
+      }) as RenderInstruction;
+      const expected: ImageInstruction = {
+        type: "image",
+        src: "https://example.com/img.jpg",
+        style: { objectFit: "cover", borderRadius: 16 },
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("attaches event handlers via _handlers", () => {
+      const onClick = () => {};
+      const result = Image({
+        src: "https://example.com/img.jpg",
+        onClick,
+      }) as any;
+      expect(result._handlers).toBeDefined();
+      expect(result._handlers.onClick).toBe(onClick);
     });
   });
 
