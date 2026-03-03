@@ -5,6 +5,12 @@ import {
   drawBadgeFromBuffer,
   drawSparklineFromBuffer,
 } from "../draw-primitives";
+import { colorCellRenderer } from "../components/color";
+import { tagCellRenderer } from "../components/tag";
+import { ratingCellRenderer } from "../components/rating";
+import { chipCellRenderer } from "../components/chip";
+import { linkCellRenderer } from "../components/link";
+import { DEFAULT_THEME } from "../../types";
 
 /** Create a mock CanvasRenderingContext2D with spies. */
 function mockCtx() {
@@ -305,5 +311,190 @@ describe("drawSparklineFromBuffer", () => {
 
     expect(ctx.beginPath).not.toHaveBeenCalled();
     expect(ctx.stroke).not.toHaveBeenCalled();
+  });
+});
+
+describe("colorCellRenderer", () => {
+  it("draws a color swatch with default style", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(10, 20, 200, 36, 0);
+
+    colorCellRenderer.draw(
+      { type: "color", value: "#ff0000" },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    expect(ctx.beginPath).toHaveBeenCalled();
+    expect(ctx.roundRect).toHaveBeenCalled();
+    expect(ctx.fill).toHaveBeenCalled();
+    expect(ctx.fillStyle).toBe("#ff0000");
+  });
+
+  it("draws border when borderColor and borderWidth set", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 100, 36, 0);
+
+    colorCellRenderer.draw(
+      { type: "color", value: "#00ff00", style: { borderColor: "#333", borderWidth: 2, borderRadius: 4 } },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    expect(ctx.strokeStyle).toBe("#333");
+    expect(ctx.lineWidth).toBe(2);
+    expect(ctx.stroke).toHaveBeenCalled();
+    const roundRectCall = (ctx.roundRect as any).mock.calls[0];
+    expect(roundRectCall[4]).toBe(4); // borderRadius
+  });
+});
+
+describe("tagCellRenderer", () => {
+  it("draws a tag with stroke border and text", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(10, 20, 200, 36, 0);
+
+    tagCellRenderer.draw(
+      { type: "tag", value: "New" },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    expect(ctx.beginPath).toHaveBeenCalled();
+    expect(ctx.roundRect).toHaveBeenCalled();
+    expect(ctx.stroke).toHaveBeenCalled();
+    expect(ctx.fillText).toHaveBeenCalled();
+    expect(ctx.textAlign).toBe("center");
+  });
+
+  it("applies custom tag style", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 200, 36, 0);
+
+    tagCellRenderer.draw(
+      { type: "tag", value: "OK", style: { color: "#1565c0", borderColor: "#1565c0", borderRadius: 8, fontSize: 14 } },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    expect(ctx.strokeStyle).toBe("#1565c0");
+    expect(ctx.fillStyle).toBe("#1565c0");
+    const roundRectCall = (ctx.roundRect as any).mock.calls[0];
+    expect(roundRectCall[4]).toBe(8);
+  });
+});
+
+describe("ratingCellRenderer", () => {
+  it("draws filled and empty stars", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(10, 20, 200, 36, 0);
+
+    ratingCellRenderer.draw(
+      { type: "rating", value: 3 },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    // 5 stars total (default max=5): 3 filled + 2 empty
+    expect(ctx.fillText).toHaveBeenCalledTimes(5);
+  });
+
+  it("uses custom max and colors", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 300, 36, 0);
+
+    ratingCellRenderer.draw(
+      { type: "rating", value: 7, style: { max: 10, color: "gold", emptyColor: "#aaa" } },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    // 10 stars total
+    expect(ctx.fillText).toHaveBeenCalledTimes(10);
+  });
+});
+
+describe("chipCellRenderer", () => {
+  it("draws a chip with default style", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(10, 20, 200, 36, 0);
+
+    chipCellRenderer.draw(
+      { type: "chip", value: "React" },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    expect(ctx.beginPath).toHaveBeenCalled();
+    expect(ctx.roundRect).toHaveBeenCalled();
+    expect(ctx.fill).toHaveBeenCalled();
+    expect(ctx.fillText).toHaveBeenCalled();
+  });
+
+  it("draws close button when closable", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 200, 36, 0);
+
+    chipCellRenderer.draw(
+      { type: "chip", value: "Tag", style: { closable: true } },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    // fillText called twice: once for label, once for "×"
+    expect(ctx.fillText).toHaveBeenCalledTimes(2);
+    const secondCall = (ctx.fillText as any).mock.calls[1];
+    expect(secondCall[0]).toBe("×");
+  });
+
+  it("applies custom chip style", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 200, 36, 0);
+
+    chipCellRenderer.draw(
+      { type: "chip", value: "X", style: { backgroundColor: "#4caf50", color: "#fff", borderRadius: 16 } },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    const roundRectCall = (ctx.roundRect as any).mock.calls[0];
+    expect(roundRectCall[4]).toBe(16);
+  });
+});
+
+describe("linkCellRenderer", () => {
+  it("draws link text with underline by default", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(10, 20, 200, 36, 0);
+
+    linkCellRenderer.draw(
+      { type: "link", value: "Click me" },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    expect(ctx.fillStyle).toBe("#2563eb");
+    expect(ctx.fillText).toHaveBeenCalled();
+    // Underline: beginPath + moveTo + lineTo + stroke
+    expect(ctx.beginPath).toHaveBeenCalled();
+    expect(ctx.moveTo).toHaveBeenCalled();
+    expect(ctx.lineTo).toHaveBeenCalled();
+    expect(ctx.stroke).toHaveBeenCalled();
+  });
+
+  it("no underline when underline=false", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 200, 36, 0);
+
+    linkCellRenderer.draw(
+      { type: "link", value: "Plain", style: { underline: false } },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    expect(ctx.fillText).toHaveBeenCalled();
+    expect(ctx.beginPath).not.toHaveBeenCalled();
+  });
+
+  it("applies custom link style", () => {
+    const ctx = mockCtx();
+    const buf = makeBuf(0, 0, 200, 36, 0);
+
+    linkCellRenderer.draw(
+      { type: "link", value: "Home", style: { color: "#e65100", fontSize: 16 } },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+    );
+
+    expect(ctx.fillStyle).toBe("#e65100");
+    expect(ctx.font).toBe("16px system-ui, sans-serif");
   });
 });

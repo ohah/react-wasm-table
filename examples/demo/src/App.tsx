@@ -41,6 +41,12 @@ import { CanvasProgressBar } from "./pages/CanvasProgressBar";
 import { CanvasBox } from "./pages/CanvasBox";
 import { CanvasStack } from "./pages/CanvasStack";
 import { CanvasSparkline } from "./pages/CanvasSparkline";
+import { CanvasColor } from "./pages/CanvasColor";
+import { CanvasTag } from "./pages/CanvasTag";
+import { CanvasRating } from "./pages/CanvasRating";
+import { CanvasChip } from "./pages/CanvasChip";
+import { CanvasLink } from "./pages/CanvasLink";
+import { CanvasEvents } from "./pages/CanvasEvents";
 import { CustomRendererDemo } from "./pages/CustomRendererDemo";
 import { LayerDemo } from "./pages/LayerDemo";
 import { ColumnPinningDemo } from "./pages/ColumnPinningDemo";
@@ -78,6 +84,7 @@ import {
   TanStackExpanding,
   TanStackEditing,
   TanStackStreaming,
+  TanStackCanvasEvents,
 } from "./pages/tanstack";
 import { FpsCounter } from "./components/FpsCounter";
 
@@ -129,6 +136,12 @@ export function App() {
           <Route path="/tanstack/canvas-box" element={<CanvasBox />} />
           <Route path="/tanstack/canvas-stack" element={<CanvasStack />} />
           <Route path="/tanstack/canvas-sparkline" element={<CanvasSparkline />} />
+          <Route path="/tanstack/canvas-color" element={<CanvasColor />} />
+          <Route path="/tanstack/canvas-tag" element={<CanvasTag />} />
+          <Route path="/tanstack/canvas-rating" element={<CanvasRating />} />
+          <Route path="/tanstack/canvas-chip" element={<CanvasChip />} />
+          <Route path="/tanstack/canvas-link" element={<CanvasLink />} />
+          <Route path="/tanstack/canvas-events" element={<TanStackCanvasEvents />} />
           <Route path="/tanstack/grid-template" element={<GridTemplate />} />
           <Route path="/tanstack/flex-direction" element={<FlexDirection />} />
           <Route path="/tanstack/flex-wrap" element={<FlexWrap />} />
@@ -180,6 +193,12 @@ export function App() {
           <Route path="/canvas-box" element={<CanvasBox />} />
           <Route path="/canvas-stack" element={<CanvasStack />} />
           <Route path="/canvas-sparkline" element={<CanvasSparkline />} />
+          <Route path="/canvas-color" element={<CanvasColor />} />
+          <Route path="/canvas-tag" element={<CanvasTag />} />
+          <Route path="/canvas-rating" element={<CanvasRating />} />
+          <Route path="/canvas-chip" element={<CanvasChip />} />
+          <Route path="/canvas-link" element={<CanvasLink />} />
+          <Route path="/canvas-events" element={<CanvasEvents />} />
           <Route path="/custom-renderer" element={<CustomRendererDemo />} />
           <Route path="/layers" element={<LayerDemo />} />
           <Route path="/column-pinning" element={<ColumnPinningDemo />} />

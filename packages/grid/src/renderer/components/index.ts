@@ -6,6 +6,11 @@ import { stubCellRenderer } from "./stub";
 import { boxCellRenderer } from "./box";
 import { flexCellRenderer } from "./flex";
 import { stackCellRenderer } from "./stack";
+import { colorCellRenderer } from "./color";
+import { tagCellRenderer } from "./tag";
+import { ratingCellRenderer } from "./rating";
+import { chipCellRenderer } from "./chip";
+import { linkCellRenderer } from "./link";
 
 // Re-export types for public API
 export type { CellRenderContext, CellRenderer, InstructionLike } from "./types";
@@ -31,7 +36,7 @@ export class CellRendererRegistry {
 }
 
 /**
- * Create a CellRendererRegistry pre-loaded with the 7 built-in renderers.
+ * Create a CellRendererRegistry pre-loaded with the 12 built-in renderers.
  * Optional `userRenderers` are merged on top — same type overrides built-in.
  */
 export function createCellRendererRegistry(
@@ -45,6 +50,11 @@ export function createCellRendererRegistry(
   registry.register(boxCellRenderer);
   registry.register(flexCellRenderer);
   registry.register(stackCellRenderer);
+  registry.register(colorCellRenderer);
+  registry.register(tagCellRenderer);
+  registry.register(ratingCellRenderer);
+  registry.register(chipCellRenderer);
+  registry.register(linkCellRenderer);
   if (userRenderers) {
     for (const r of userRenderers) {
       registry.register(r);
@@ -61,3 +71,8 @@ export { boxCellRenderer } from "./box";
 export { flexCellRenderer } from "./flex";
 export { stackCellRenderer } from "./stack";
 export { sparklineCellRenderer } from "./sparkline";
+export { colorCellRenderer } from "./color";
+export { tagCellRenderer } from "./tag";
+export { ratingCellRenderer } from "./rating";
+export { chipCellRenderer } from "./chip";
+export { linkCellRenderer } from "./link";

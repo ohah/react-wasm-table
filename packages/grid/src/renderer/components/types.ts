@@ -24,4 +24,8 @@ export type InstructionLike = { type: string };
 export interface CellRenderer<T extends InstructionLike = InstructionLike> {
   readonly type: T["type"];
   draw(instruction: T, context: CellRenderContext): void;
+  /** Optional click handler. Called when a cell with this instruction type is clicked. */
+  onCellClick?(instruction: T): void;
+  /** CSS cursor to show on hover (e.g. "pointer"). */
+  cursor?: string;
 }

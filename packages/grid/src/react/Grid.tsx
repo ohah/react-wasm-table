@@ -381,51 +381,6 @@ export function Grid({
       invalidate,
     });
 
-  useEventAttachment({
-    canvasRef,
-    eventManagerRef,
-    editorManagerRef,
-    table: tableProp,
-    handlers: {
-      handleHeaderClick,
-      handleCellDoubleClick,
-      handleCellClick,
-      handleCellMouseDown,
-      handleCellMouseMove,
-      handleCellMouseUp,
-      handleDragEdge,
-      handleWheel,
-      handleKeyDown,
-      stopAutoScroll,
-      handleResizeStart,
-      handleResizeMove,
-      handleResizeEnd,
-      handleResizeHover,
-      handleHeaderMouseDown: enableColumnDnDProp ? handleHeaderMouseDown : undefined,
-      handleColumnDnDMove: enableColumnDnDProp ? handleColumnDnDMove : undefined,
-      handleColumnDnDEnd: enableColumnDnDProp ? handleColumnDnDEnd : undefined,
-      isCellEditable,
-      handleTypingKeyDown,
-    },
-    onCellClick: onCellClickProp,
-    onCellDoubleClick: onCellDoubleClickProp,
-    onHeaderClick: onHeaderClickProp,
-    onKeyDown: onKeyDownProp,
-    onCellMouseDown: onCellMouseDownProp,
-    onCellMouseMove: onCellMouseMoveProp,
-    onCellMouseUp: onCellMouseUpProp,
-    onScroll: onScrollProp,
-    onCanvasEvent: onCanvasEventProp,
-    onContextMenu: onContextMenuProp,
-    onTouchStart: onTouchStartProp,
-    onTouchMove: onTouchMoveProp,
-    onTouchEnd: onTouchEndProp,
-    eventMiddleware: eventMiddlewareProp,
-    rowHeight,
-    headerHeight: totalHeaderHeight,
-    height,
-  });
-
   const containerProps = useMemo(
     () => ({
       display,
@@ -513,7 +468,7 @@ export function Grid({
     visStartRef.current = vs;
   }, []);
 
-  const { invalidate: renderInvalidate } = useRenderLoop({
+  const { invalidate: renderInvalidate, getInstructionForCellRef, cellRendererRegistryRef } = useRenderLoop({
     engine,
     memoryBridgeRef,
     canvasRef,
@@ -556,6 +511,53 @@ export function Grid({
   });
   // Wire the bridge: all hooks using `invalidate` now delegate to useRenderLoop's internal dirtyRef
   invalidateRef.current = renderInvalidate;
+
+  useEventAttachment({
+    canvasRef,
+    eventManagerRef,
+    editorManagerRef,
+    table: tableProp,
+    handlers: {
+      handleHeaderClick,
+      handleCellDoubleClick,
+      handleCellClick,
+      handleCellMouseDown,
+      handleCellMouseMove,
+      handleCellMouseUp,
+      handleDragEdge,
+      handleWheel,
+      handleKeyDown,
+      stopAutoScroll,
+      handleResizeStart,
+      handleResizeMove,
+      handleResizeEnd,
+      handleResizeHover,
+      handleHeaderMouseDown: enableColumnDnDProp ? handleHeaderMouseDown : undefined,
+      handleColumnDnDMove: enableColumnDnDProp ? handleColumnDnDMove : undefined,
+      handleColumnDnDEnd: enableColumnDnDProp ? handleColumnDnDEnd : undefined,
+      isCellEditable,
+      handleTypingKeyDown,
+    },
+    onCellClick: onCellClickProp,
+    onCellDoubleClick: onCellDoubleClickProp,
+    onHeaderClick: onHeaderClickProp,
+    onKeyDown: onKeyDownProp,
+    onCellMouseDown: onCellMouseDownProp,
+    onCellMouseMove: onCellMouseMoveProp,
+    onCellMouseUp: onCellMouseUpProp,
+    onScroll: onScrollProp,
+    onCanvasEvent: onCanvasEventProp,
+    onContextMenu: onContextMenuProp,
+    onTouchStart: onTouchStartProp,
+    onTouchMove: onTouchMoveProp,
+    onTouchEnd: onTouchEndProp,
+    eventMiddleware: eventMiddlewareProp,
+    rowHeight,
+    headerHeight: totalHeaderHeight,
+    height,
+    getInstructionForCellRef,
+    cellRendererRegistryRef,
+  });
 
   // Scrollbar visibility
   const totalContentHeight = data.length * rowHeight + totalHeaderHeight;

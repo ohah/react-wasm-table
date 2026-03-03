@@ -245,6 +245,20 @@ export interface GridContextMenuEvent extends GridMouseEvent {
   table?: GridInstance;
 }
 
+/**
+ * HTMLElement-like event handlers for canvas components.
+ * Attach these to any canvas component (Text, Link, Chip, etc.) to receive
+ * per-component events without relying on Grid-level callbacks.
+ */
+export interface CanvasEventHandlers {
+  onClick?: (event: GridCellEvent) => void;
+  onDoubleClick?: (event: GridCellEvent) => void;
+  onMouseDown?: (event: GridCellEvent) => void;
+  onMouseUp?: (event: GridCellEvent) => void;
+  onMouseEnter?: (event: GridCellEvent) => void;
+  onMouseLeave?: (event: GridCellEvent) => void;
+}
+
 /** Touch event types exposed to users. */
 export type GridTouchEventType = "touchstart" | "touchmove" | "touchend";
 
@@ -474,15 +488,25 @@ export interface StubInstruction {
   props?: Record<string, unknown>;
 }
 
-/** Union of all render instruction types. */
+/** Optional event handlers attached to any instruction at runtime. */
+interface InstructionEventMixin {
+  _handlers?: CanvasEventHandlers;
+}
+
+/** Union of all render instruction types. Each member may carry `_handlers`. */
 export type RenderInstruction =
-  | TextInstruction
-  | BadgeInstruction
-  | SparklineInstruction
-  | FlexInstruction
-  | BoxInstruction
-  | StackInstruction
-  | StubInstruction;
+  | (TextInstruction & InstructionEventMixin)
+  | (BadgeInstruction & InstructionEventMixin)
+  | (SparklineInstruction & InstructionEventMixin)
+  | (FlexInstruction & InstructionEventMixin)
+  | (BoxInstruction & InstructionEventMixin)
+  | (StackInstruction & InstructionEventMixin)
+  | (ColorInstruction & InstructionEventMixin)
+  | (TagInstruction & InstructionEventMixin)
+  | (RatingInstruction & InstructionEventMixin)
+  | (ChipInstruction & InstructionEventMixin)
+  | (LinkInstruction & InstructionEventMixin)
+  | (StubInstruction & InstructionEventMixin);
 
 /** Table cell content: ReactNode or RenderInstruction. Use for Td children so flexRender return type is valid. */
 export type TableCellContent = ReactNode | RenderInstruction;
@@ -499,6 +523,80 @@ export interface BadgeStyle {
   color: string;
   backgroundColor: string;
   borderRadius: number;
+}
+
+/** Styling for color swatch cells. */
+export interface ColorStyle {
+  borderColor: string;
+  borderWidth: number;
+  borderRadius: number;
+}
+
+/** A color swatch instruction. */
+export interface ColorInstruction {
+  type: "color";
+  value: string;
+  style?: Partial<ColorStyle>;
+}
+
+/** Styling for tag cells. */
+export interface TagStyle {
+  color: string;
+  borderColor: string;
+  borderRadius: number;
+  fontSize: number;
+}
+
+/** A tag instruction. */
+export interface TagInstruction {
+  type: "tag";
+  value: string;
+  style?: Partial<TagStyle>;
+}
+
+/** Styling for rating cells. */
+export interface RatingStyle {
+  max: number;
+  color: string;
+  emptyColor: string;
+  size: number;
+}
+
+/** A rating instruction. */
+export interface RatingInstruction {
+  type: "rating";
+  value: number;
+  style?: Partial<RatingStyle>;
+}
+
+/** Styling for chip cells. */
+export interface ChipStyle {
+  color: string;
+  backgroundColor: string;
+  borderRadius: number;
+  closable: boolean;
+}
+
+/** A chip instruction. */
+export interface ChipInstruction {
+  type: "chip";
+  value: string;
+  style?: Partial<ChipStyle>;
+}
+
+/** Styling for link cells. */
+export interface LinkStyle {
+  color: string;
+  fontSize: number;
+  underline: boolean;
+}
+
+/** A link instruction. */
+export interface LinkInstruction {
+  type: "link";
+  value: string;
+  href?: string;
+  style?: Partial<LinkStyle>;
 }
 
 // ── Theme ──────────────────────────────────────────────────────────────

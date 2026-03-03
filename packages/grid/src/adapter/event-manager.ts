@@ -585,7 +585,15 @@ export class EventManager {
       "mousemove",
       (e: MouseEvent) => {
         if (e.buttons & 1) return; // skip during drag — handled by window mousemove
-        const { contentX: x, contentY: y } = toContentCoords(e.clientX, e.clientY);
+        const coords = toContentCoords(e.clientX, e.clientY);
+        const { contentX: x, contentY: y } = coords;
+
+        // Fire low-level canvas event (enables component mouseEnter/mouseLeave)
+        if (handlers.onCanvasEvent) {
+          const hitTest = buildHitTest(x, y);
+          handlers.onCanvasEvent("mousemove", e, hitTest, coords);
+        }
+
         const resizeCol = this.findResizeHandle(x, y);
         handlers.onResizeHover?.(resizeCol !== -1 ? resizeCol : null);
         if (handlers.onCellHover) {
@@ -595,6 +603,20 @@ export class EventManager {
             const rowHit = findCell(x, y, this.rowLayouts);
             handlers.onCellHover(rowHit ?? null);
           }
+        }
+      },
+      { signal },
+    );
+
+    // mouseleave on canvas: clear hover state and fire component onMouseLeave
+    canvas.addEventListener(
+      "mouseleave",
+      (e: MouseEvent) => {
+        handlers.onCellHover?.(null);
+        handlers.onResizeHover?.(null);
+        if (handlers.onCanvasEvent) {
+          const coords = toContentCoords(e.clientX, e.clientY);
+          handlers.onCanvasEvent("mousemove", e, { type: "empty" }, coords);
         }
       },
       { signal },

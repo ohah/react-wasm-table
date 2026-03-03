@@ -24,6 +24,12 @@ export { CanvasProgressBar } from "./pages/CanvasProgressBar";
 export { CanvasBox } from "./pages/CanvasBox";
 export { CanvasStack } from "./pages/CanvasStack";
 export { CanvasSparkline } from "./pages/CanvasSparkline";
+export { CanvasColor } from "./pages/CanvasColor";
+export { CanvasTag } from "./pages/CanvasTag";
+export { CanvasRating } from "./pages/CanvasRating";
+export { CanvasChip } from "./pages/CanvasChip";
+export { CanvasLink } from "./pages/CanvasLink";
+export { CanvasEvents } from "./pages/CanvasEvents";
 export { CustomRendererDemo } from "./pages/CustomRendererDemo";
 export { LayerDemo } from "./pages/LayerDemo";
 export { ColumnFeatures } from "./pages/ColumnFeatures";
@@ -78,4 +84,5 @@ export {
   TanStackTouchEvents,
   TanStackTdContent,
   TanStackExpanding,
+  TanStackCanvasEvents,
 } from "./pages/tanstack";

@@ -51,10 +51,30 @@ export function measureInstructionWidth(
     const fontSize = instruction.style?.fontSize ?? theme.fontSize;
     return measureText(ctx, instruction.value, fontSize, "system-ui, sans-serif");
   }
-  if (instruction.type === "badge") {
+  if (instruction.type === "badge" || instruction.type === "chip") {
     ctx.font = "12px system-ui, sans-serif";
     const tw = ctx.measureText(instruction.value).width;
+    return tw + BADGE_PADDING * 2 + (instruction.type === "chip" && instruction.style?.closable ? 14 : 0);
+  }
+  if (instruction.type === "tag") {
+    const fontSize = instruction.style?.fontSize ?? 12;
+    ctx.font = `${fontSize}px system-ui, sans-serif`;
+    const tw = ctx.measureText(instruction.value).width;
     return tw + BADGE_PADDING * 2;
+  }
+  if (instruction.type === "rating") {
+    const max = instruction.style?.max ?? 5;
+    const size = instruction.style?.size ?? 14;
+    ctx.font = `${size}px system-ui, sans-serif`;
+    return ctx.measureText("★".repeat(max)).width;
+  }
+  if (instruction.type === "color") {
+    return FLEX_CHILD_HEIGHT;
+  }
+  if (instruction.type === "link") {
+    const fontSize = instruction.style?.fontSize ?? 13;
+    ctx.font = `${fontSize}px system-ui, sans-serif`;
+    return ctx.measureText(instruction.value).width;
   }
   if (
     instruction.type === "stub" ||
@@ -77,7 +97,12 @@ export function measureInstructionHeight(
     instruction.type === "stub" ||
     instruction.type === "box" ||
     instruction.type === "flex" ||
-    instruction.type === "stack"
+    instruction.type === "stack" ||
+    instruction.type === "color" ||
+    instruction.type === "tag" ||
+    instruction.type === "rating" ||
+    instruction.type === "chip" ||
+    instruction.type === "link"
     ? FLEX_CHILD_HEIGHT
     : 0;
 }

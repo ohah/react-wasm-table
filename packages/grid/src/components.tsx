@@ -6,6 +6,12 @@ import type {
   TextStyle,
   BadgeStyle,
   SparklineStyle,
+  ColorStyle,
+  TagStyle,
+  RatingStyle,
+  ChipStyle,
+  LinkStyle,
+  CanvasEventHandlers,
   CssFlexDirection,
   CssFlexWrap,
   CssAlignItems,
@@ -29,10 +35,33 @@ import { Children, isValidElement, type ReactNode, type JSX } from "react";
  */
 type CanvasElement = RenderInstruction & JSX.Element;
 
+// ── Event handler extraction ────────────────────────────────────────
+
+const EVENT_KEYS = [
+  "onClick",
+  "onDoubleClick",
+  "onMouseDown",
+  "onMouseUp",
+  "onMouseEnter",
+  "onMouseLeave",
+] as const;
+
+/** Extract CanvasEventHandlers from props. Returns undefined when none are set. */
+function pickEventHandlers(props: CanvasEventHandlers): CanvasEventHandlers | undefined {
+  let handlers: CanvasEventHandlers | undefined;
+  for (const key of EVENT_KEYS) {
+    if (props[key]) {
+      if (!handlers) handlers = {};
+      (handlers as Record<string, unknown>)[key] = props[key];
+    }
+  }
+  return handlers;
+}
+
 // ── Immediately implemented components ──────────────────────────────
 
 /** Props for the Text canvas component. Individual props override style. */
-export interface TextProps {
+export interface TextProps extends CanvasEventHandlers {
   value: string;
   style?: Partial<TextStyle>;
   color?: string;
@@ -53,15 +82,17 @@ function pickTextStyle(props: TextProps): Partial<TextStyle> {
 /** Canvas text component. Returns a TextInstruction. */
 export function Text(props: TextProps): CanvasElement {
   const style = pickTextStyle(props);
+  const _handlers = pickEventHandlers(props);
   return {
     type: "text",
     value: props.value,
     style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
   } as CanvasElement;
 }
 
 /** Props for the Badge canvas component. Individual props override style. */
-export interface BadgeProps {
+export interface BadgeProps extends CanvasEventHandlers {
   value: string;
   style?: Partial<BadgeStyle>;
   color?: string;
@@ -82,15 +113,17 @@ function pickBadgeStyle(props: BadgeProps): Partial<BadgeStyle> {
 /** Canvas badge component. Returns a BadgeInstruction. */
 export function Badge(props: BadgeProps): CanvasElement {
   const style = pickBadgeStyle(props);
+  const _handlers = pickEventHandlers(props);
   return {
     type: "badge",
     value: props.value,
     style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
   } as CanvasElement;
 }
 
 /** Props for the Sparkline canvas component. */
-export interface SparklineProps {
+export interface SparklineProps extends CanvasEventHandlers {
   /** Data points (y-values); x is evenly spaced. */
   data: number[];
   style?: Partial<SparklineStyle>;
@@ -113,15 +146,17 @@ function pickSparklineStyle(props: SparklineProps): Partial<SparklineStyle> {
 /** Canvas sparkline component. Draws a mini line chart. Returns a SparklineInstruction. */
 export function Sparkline(props: SparklineProps): CanvasElement {
   const style = pickSparklineStyle(props);
+  const _handlers = pickEventHandlers(props);
   return {
     type: "sparkline",
     data: props.data,
     style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
   } as CanvasElement;
 }
 
 /** Props for the Flex canvas component (Taffy-compatible flex container). */
-export interface FlexProps {
+export interface FlexProps extends CanvasEventHandlers {
   /** Child canvas elements (ReactNode; only valid elements are resolved). */
   children: ReactNode;
   /** Flex container style (same as individual props; explicit props override style). */
@@ -190,6 +225,7 @@ export function Flex(props: FlexProps): CanvasElement {
     }
   });
   const style = pickFlexStyle(props);
+  const _handlers = pickEventHandlers(props);
   return {
     type: "flex",
     flexDirection: style.flexDirection,
@@ -206,11 +242,12 @@ export function Flex(props: FlexProps): CanvasElement {
     boxSizing: style.boxSizing,
     overflow: style.overflow,
     children: resolved,
+    ...(_handlers && { _handlers }),
   } as CanvasElement;
 }
 
 /** Props for the Box canvas component (padding, margin, border; no layout). */
-export interface BoxProps {
+export interface BoxProps extends CanvasEventHandlers {
   children?: ReactNode;
   style?: Partial<BoxModelStyle>;
   padding?: CssRect<CssLength>;
@@ -245,6 +282,7 @@ export function Box(props: BoxProps): CanvasElement {
     });
   }
   const style = pickBoxStyle(props);
+  const _handlers = pickEventHandlers(props);
   return {
     type: "box",
     padding: style.padding,
@@ -254,6 +292,7 @@ export function Box(props: BoxProps): CanvasElement {
     backgroundColor: style.backgroundColor,
     boxSizing: style.boxSizing,
     children: resolved,
+    ...(_handlers && { _handlers }),
   } as CanvasElement;
 }
 
@@ -281,7 +320,7 @@ function stub(component: string) {
 }
 
 /** Props for the Stack canvas component (direction + gap only). */
-export interface StackProps {
+export interface StackProps extends CanvasEventHandlers {
   children?: ReactNode;
   /** "row" = horizontal, "column" = vertical. @default "row" */
   direction?: StackDirection;
@@ -302,25 +341,186 @@ export function Stack(props: StackProps): CanvasElement {
   }
   const direction = props.direction ?? props.style?.direction ?? "row";
   const gap = props.gap ?? props.style?.gap ?? 4;
+  const _handlers = pickEventHandlers(props);
   return {
     type: "stack",
     direction,
     gap,
     children: resolved,
+    ...(_handlers && { _handlers }),
   } as CanvasElement;
 }
 
 // Layout
 // Data display
 export const ProgressBar = stub("ProgressBar");
-export const Rating = stub("Rating");
+
+/** Props for the Color canvas component. */
+export interface ColorProps extends CanvasEventHandlers {
+  value: string;
+  style?: Partial<ColorStyle>;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+}
+
+function pickColorStyle(props: ColorProps): Partial<ColorStyle> {
+  const { style, borderColor, borderWidth, borderRadius } = props;
+  return {
+    ...style,
+    ...(borderColor !== undefined && { borderColor }),
+    ...(borderWidth !== undefined && { borderWidth }),
+    ...(borderRadius !== undefined && { borderRadius }),
+  };
+}
+
+/** Canvas color swatch component. Returns a ColorInstruction. */
+export function Color(props: ColorProps): CanvasElement {
+  const style = pickColorStyle(props);
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "color",
+    value: props.value,
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
+/** Props for the Tag canvas component. */
+export interface TagProps extends CanvasEventHandlers {
+  value: string;
+  style?: Partial<TagStyle>;
+  color?: string;
+  borderColor?: string;
+  borderRadius?: number;
+  fontSize?: number;
+}
+
+function pickTagStyle(props: TagProps): Partial<TagStyle> {
+  const { style, color, borderColor, borderRadius, fontSize } = props;
+  return {
+    ...style,
+    ...(color !== undefined && { color }),
+    ...(borderColor !== undefined && { borderColor }),
+    ...(borderRadius !== undefined && { borderRadius }),
+    ...(fontSize !== undefined && { fontSize }),
+  };
+}
+
+/** Canvas tag component. Returns a TagInstruction. */
+export function Tag(props: TagProps): CanvasElement {
+  const style = pickTagStyle(props);
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "tag",
+    value: props.value,
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
+/** Props for the Rating canvas component. */
+export interface RatingProps extends CanvasEventHandlers {
+  value: number;
+  style?: Partial<RatingStyle>;
+  max?: number;
+  color?: string;
+  emptyColor?: string;
+  size?: number;
+}
+
+function pickRatingStyle(props: RatingProps): Partial<RatingStyle> {
+  const { style, max, color, emptyColor, size } = props;
+  return {
+    ...style,
+    ...(max !== undefined && { max }),
+    ...(color !== undefined && { color }),
+    ...(emptyColor !== undefined && { emptyColor }),
+    ...(size !== undefined && { size }),
+  };
+}
+
+/** Canvas rating component. Returns a RatingInstruction. */
+export function Rating(props: RatingProps): CanvasElement {
+  const style = pickRatingStyle(props);
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "rating",
+    value: props.value,
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
+/** Props for the Chip canvas component. */
+export interface ChipProps extends CanvasEventHandlers {
+  value: string;
+  style?: Partial<ChipStyle>;
+  color?: string;
+  backgroundColor?: string;
+  borderRadius?: number;
+  closable?: boolean;
+}
+
+function pickChipStyle(props: ChipProps): Partial<ChipStyle> {
+  const { style, color, backgroundColor, borderRadius, closable } = props;
+  return {
+    ...style,
+    ...(color !== undefined && { color }),
+    ...(backgroundColor !== undefined && { backgroundColor }),
+    ...(borderRadius !== undefined && { borderRadius }),
+    ...(closable !== undefined && { closable }),
+  };
+}
+
+/** Canvas chip component. Returns a ChipInstruction. */
+export function Chip(props: ChipProps): CanvasElement {
+  const style = pickChipStyle(props);
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "chip",
+    value: props.value,
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
+/** Props for the Link canvas component. */
+export interface LinkProps extends CanvasEventHandlers {
+  value: string;
+  href?: string;
+  style?: Partial<LinkStyle>;
+  color?: string;
+  fontSize?: number;
+  underline?: boolean;
+}
+
+function pickLinkStyle(props: LinkProps): Partial<LinkStyle> {
+  const { style, color, fontSize, underline } = props;
+  return {
+    ...style,
+    ...(color !== undefined && { color }),
+    ...(fontSize !== undefined && { fontSize }),
+    ...(underline !== undefined && { underline }),
+  };
+}
+
+/** Canvas link component. Returns a LinkInstruction. */
+export function Link(props: LinkProps): CanvasElement {
+  const style = pickLinkStyle(props);
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "link",
+    value: props.value,
+    ...(props.href !== undefined && { href: props.href }),
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
 export const Icon = stub("Icon");
 export const Image = stub("Image");
 export const Avatar = stub("Avatar");
-export const Tag = stub("Tag");
-export const Chip = stub("Chip");
-export const Link = stub("Link");
-export const Color = stub("Color");
 
 // Interactive (DOM overlay)
 export const Input = stub("Input");
