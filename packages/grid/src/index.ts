@@ -31,6 +31,7 @@ export type {
   RatingProps,
   ChipProps,
   LinkProps,
+  ImageProps,
   StubProps,
 } from "./components";
 export {
@@ -254,6 +255,7 @@ export {
   ratingCellRenderer,
   chipCellRenderer,
   linkCellRenderer,
+  imageCellRenderer,
 } from "./renderer/components";
 export type { CellRenderer, CellRenderContext } from "./renderer/components";
 
@@ -309,6 +311,10 @@ export type {
   ChipStyle,
   LinkInstruction,
   LinkStyle,
+  ImageInstruction,
+  ImageStyle,
+  CssObjectFit,
+  ReferrerPolicy,
   RenderInstruction,
   TableCellContent,
   TextStyle,

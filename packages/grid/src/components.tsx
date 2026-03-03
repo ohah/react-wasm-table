@@ -11,6 +11,7 @@ import type {
   RatingStyle,
   ChipStyle,
   LinkStyle,
+  ImageStyle,
   CanvasEventHandlers,
   CssFlexDirection,
   CssFlexWrap,
@@ -23,6 +24,8 @@ import type {
   CssLengthAuto,
   CssBoxSizing,
   CssOverflow,
+  CssObjectFit,
+  ReferrerPolicy,
 } from "./types";
 import { resolveInstruction } from "./resolve-instruction";
 import { Children, isValidElement, type ReactNode, type JSX } from "react";
@@ -519,7 +522,60 @@ export function Link(props: LinkProps): CanvasElement {
 }
 
 export const Icon = stub("Icon");
-export const Image = stub("Image");
+
+/** Props for the Image canvas component. */
+export interface ImageProps extends CanvasEventHandlers {
+  /** Image URL (required). */
+  src: string;
+  /** Alt text rendered on load error. */
+  alt?: string;
+  /** Explicit render width in px. */
+  width?: number;
+  /** Explicit render height in px. */
+  height?: number;
+  /** CORS setting. */
+  crossOrigin?: "anonymous" | "use-credentials";
+  /** Referrer policy for the image fetch. */
+  referrerPolicy?: ReferrerPolicy;
+  /** Decoding hint. */
+  decoding?: "sync" | "async" | "auto";
+  /** Fetch priority hint. */
+  fetchPriority?: "high" | "low" | "auto";
+  style?: Partial<ImageStyle>;
+  objectFit?: CssObjectFit;
+  borderRadius?: number;
+  opacity?: number;
+}
+
+function pickImageStyle(props: ImageProps): Partial<ImageStyle> {
+  const { style, objectFit, borderRadius, opacity } = props;
+  return {
+    ...style,
+    ...(objectFit !== undefined && { objectFit }),
+    ...(borderRadius !== undefined && { borderRadius }),
+    ...(opacity !== undefined && { opacity }),
+  };
+}
+
+/** Canvas image component. Returns an ImageInstruction. */
+export function Image(props: ImageProps): CanvasElement {
+  const style = pickImageStyle(props);
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "image",
+    src: props.src,
+    ...(props.alt !== undefined && { alt: props.alt }),
+    ...(props.width !== undefined && { width: props.width }),
+    ...(props.height !== undefined && { height: props.height }),
+    ...(props.crossOrigin !== undefined && { crossOrigin: props.crossOrigin }),
+    ...(props.referrerPolicy !== undefined && { referrerPolicy: props.referrerPolicy }),
+    ...(props.decoding !== undefined && { decoding: props.decoding }),
+    ...(props.fetchPriority !== undefined && { fetchPriority: props.fetchPriority }),
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
 export const Avatar = stub("Avatar");
 
 // Interactive (DOM overlay)

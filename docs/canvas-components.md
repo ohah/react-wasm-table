@@ -1,6 +1,6 @@
 # Canvas Components
 
-Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering. Implemented: Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag.
+Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering. Implemented: Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag, Image.
 
 ---
 
@@ -89,7 +89,74 @@ Same extensible pattern as Flex:
 
 ---
 
-## 4. Stub components
+## 4. Image
+
+Image draws images on canvas using `drawImage()`. It supports all meaningful `<img>` HTML attributes that work in a Canvas rendering context, plus CSS `object-fit` style properties.
+
+### 4.1 HTML `<img>` attributes
+
+| Prop             | Type                                    | Required | Description                         |
+| ---------------- | --------------------------------------- | -------- | ----------------------------------- |
+| `src`            | `string`                                | **Yes**  | Image URL                           |
+| `alt`            | `string`                                | No       | Fallback text rendered on load error |
+| `width`          | `number`                                | No       | Explicit render width (px)          |
+| `height`         | `number`                                | No       | Explicit render height (px)         |
+| `crossOrigin`    | `"anonymous" \| "use-credentials"`      | No       | CORS setting                        |
+| `referrerPolicy` | `ReferrerPolicy`                        | No       | Referrer policy for the image fetch |
+| `decoding`       | `"sync" \| "async" \| "auto"`           | No       | Decoding hint                       |
+| `fetchPriority`  | `"high" \| "low" \| "auto"`             | No       | Fetch priority hint                 |
+
+Attributes **not supported** (meaningless in Canvas context): `srcSet`, `sizes`, `loading`, `isMap`, `useMap`, deprecated attributes (`align`, `border`, `hspace`, `vspace`).
+
+### 4.2 Style props
+
+| Prop           | Type                                                       | Default  | Description                                |
+| -------------- | ---------------------------------------------------------- | -------- | ------------------------------------------ |
+| `objectFit`    | `"fill" \| "contain" \| "cover" \| "none" \| "scale-down"` | `"fill"` | How the image fits within its content box   |
+| `borderRadius` | `number`                                                   | `0`      | Border radius in pixels (clip path)         |
+| `opacity`      | `number`                                                   | `1`      | Opacity (0–1, applied via `globalAlpha`)    |
+
+Same `style` prop pattern as other components: `style?: Partial<ImageStyle>`, individual props override `style`.
+
+### 4.3 object-fit modes
+
+- **fill** — Stretches image to fill content box (ignores aspect ratio).
+- **contain** — Scales image to fit entirely within content box (letterboxed).
+- **cover** — Scales image to completely cover content box (cropped).
+- **none** — Draws image at natural size, centered.
+- **scale-down** — Uses the smaller of `none` and `contain`.
+
+### 4.4 Image cache
+
+Images are cached at module level (`Map<string, ImageCacheEntry>`). Each unique `src` is loaded only once. When the image finishes loading, it appears on the next canvas redraw cycle (triggered by scroll, interaction, or state change).
+
+### 4.5 Content box clipping
+
+The image is **always clipped to the content box** (cell area minus padding), regardless of `borderRadius`. This prevents `cover` and `none` modes from drawing outside the cell boundary. When `borderRadius > 0`, `roundRect` is used for the clip path; otherwise a plain `rect` clip is used.
+
+### 4.6 Error handling
+
+When an image fails to load and `alt` is provided, the alt text is rendered centered in the content box with `12px system-ui` in `#999` color. Without `alt`, nothing is drawn.
+
+### 4.7 Example
+
+```tsx
+// Avatar with circular clip
+<Image src={avatarUrl} objectFit="cover" borderRadius={20} crossOrigin="anonymous" />
+
+// Photo with controls
+<Image src={photoUrl} alt="User photo" objectFit="contain" opacity={0.8} />
+
+// Inside a Stack layout
+<Stack direction="row" gap={8}>
+  <Image src={avatarUrl} width={28} height={28} objectFit="cover" borderRadius={14} />
+  <Text value={userName} />
+</Stack>
+```
+
+---
+
+## 5. Stub components
 
 Icon, ProgressBar, Input, etc. are stubs (placeholder instructions). They use the same pattern: optional `style` + individual prop merging (individual overrides), and `ReactNode` children where applicable. When implemented, each stub can expose a typed style surface like Text/Badge/Flex.
 
@@ -106,7 +173,6 @@ Display-only; no DOM overlay. Canvas drawing only.
 | Component  | Intended use          |
 | ---------- | --------------------- |
 | **Icon**   | Icon (name or glyph). |
-| **Image**  | Image (src, alt).     |
 | **Avatar** | User avatar.          |
 
 ### Interactive (DOM overlay)

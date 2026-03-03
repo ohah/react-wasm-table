@@ -506,6 +506,7 @@ export type RenderInstruction =
   | (RatingInstruction & InstructionEventMixin)
   | (ChipInstruction & InstructionEventMixin)
   | (LinkInstruction & InstructionEventMixin)
+  | (ImageInstruction & InstructionEventMixin)
   | (StubInstruction & InstructionEventMixin);
 
 /** Table cell content: ReactNode or RenderInstruction. Use for Td children so flexRender return type is valid. */
@@ -597,6 +598,52 @@ export interface LinkInstruction {
   value: string;
   href?: string;
   style?: Partial<LinkStyle>;
+}
+
+/** CSS object-fit values for image rendering. */
+export type CssObjectFit = "contain" | "cover" | "fill" | "none" | "scale-down";
+
+/** Styling for image cells. */
+export interface ImageStyle {
+  /** How the image fits within its content box. @default "fill" */
+  objectFit: CssObjectFit;
+  /** Border radius in pixels. @default 0 */
+  borderRadius: number;
+  /** Opacity (0–1). @default 1 */
+  opacity: number;
+}
+
+/** Referrer policy values for image fetch. */
+export type ReferrerPolicy =
+  | "no-referrer"
+  | "no-referrer-when-downgrade"
+  | "origin"
+  | "origin-when-cross-origin"
+  | "same-origin"
+  | "strict-origin"
+  | "strict-origin-when-cross-origin"
+  | "unsafe-url";
+
+/** An image instruction. */
+export interface ImageInstruction {
+  type: "image";
+  /** Image URL (required). */
+  src: string;
+  /** Alt text rendered on load error. */
+  alt?: string;
+  /** Explicit render width in px. */
+  width?: number;
+  /** Explicit render height in px. */
+  height?: number;
+  /** CORS setting. */
+  crossOrigin?: "anonymous" | "use-credentials";
+  /** Referrer policy for the image fetch. */
+  referrerPolicy?: ReferrerPolicy;
+  /** Decoding hint. @default "auto" */
+  decoding?: "sync" | "async" | "auto";
+  /** Fetch priority hint. */
+  fetchPriority?: "high" | "low" | "auto";
+  style?: Partial<ImageStyle>;
 }
 
 // ── Theme ──────────────────────────────────────────────────────────────
