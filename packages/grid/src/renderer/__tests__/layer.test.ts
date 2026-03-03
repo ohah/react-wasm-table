@@ -173,6 +173,7 @@ describe("dataLayer", () => {
       ctx.rowHeight,
       ctx._cellRendererRegistry,
       ctx._computeChildLayout,
+      ctx._invalidate,
     );
   });
 });

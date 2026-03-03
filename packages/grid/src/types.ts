@@ -507,6 +507,7 @@ export type RenderInstruction =
   | (ChipInstruction & InstructionEventMixin)
   | (LinkInstruction & InstructionEventMixin)
   | (ImageInstruction & InstructionEventMixin)
+  | (SwitchInstruction & InstructionEventMixin)
   | (StubInstruction & InstructionEventMixin);
 
 /** Table cell content: ReactNode or RenderInstruction. Use for Td children so flexRender return type is valid. */
@@ -598,6 +599,32 @@ export interface LinkInstruction {
   value: string;
   href?: string;
   style?: Partial<LinkStyle>;
+}
+
+/** Styling for switch (toggle) cells. */
+export interface SwitchStyle {
+  /** Unchecked track color. @default "#d1d5db" */
+  trackColor: string;
+  /** Checked track color. @default "#3b82f6" */
+  activeTrackColor: string;
+  /** Thumb (knob) color. @default "#fff" */
+  thumbColor: string;
+  /** Track width in px. @default 36 */
+  width: number;
+  /** Track height in px. @default 20 */
+  height: number;
+  /** Transition duration in ms. @default 150 */
+  transitionDuration: number;
+  /** CSS timing function. @default "ease" */
+  transitionTimingFunction: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
+}
+
+/** A switch (toggle) instruction. */
+export interface SwitchInstruction {
+  type: "switch";
+  checked: boolean;
+  disabled?: boolean;
+  style?: Partial<SwitchStyle>;
 }
 
 /** CSS object-fit values for image rendering. */

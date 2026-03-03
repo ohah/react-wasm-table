@@ -64,6 +64,7 @@ export interface InternalLayerContext extends LayerContext {
   _borderConfigMap?: Map<number, CellBorderConfig>;
   _headerRowCount: number;
   _enableColumnDnD: boolean;
+  _invalidate?: () => void;
 }
 
 // ── Built-in layer factories ────────────────────────────────────────────
@@ -104,6 +105,7 @@ export function dataLayer(): GridLayer {
         ctx.rowHeight,
         ctx._cellRendererRegistry,
         ctx._computeChildLayout,
+        ctx._invalidate,
       );
     },
   };
