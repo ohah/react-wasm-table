@@ -68,6 +68,7 @@ export function CanvasSwitch() {
               transitionTimingFunction={timingFunction}
               onClick={(e) => {
                 e.preventDefault();
+                if (disabled) return;
                 addLog("onClick", String(!checked), e);
                 const rowIndex = info.row.index;
                 setData((prev) =>
