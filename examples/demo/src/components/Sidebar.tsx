@@ -31,6 +31,7 @@ const sections = [
       { to: "/canvas-chip", label: "Canvas: Chip" },
       { to: "/canvas-link", label: "Canvas: Link" },
       { to: "/canvas-image", label: "Canvas: Image" },
+      { to: "/canvas-switch", label: "Canvas: Switch" },
       { to: "/canvas-events", label: "Canvas: Events" },
       { to: "/custom-renderer", label: "Custom Renderer" },
       { to: "/layers", label: "Layer System" },

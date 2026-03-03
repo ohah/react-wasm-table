@@ -51,6 +51,11 @@ export function CanvasComponents() {
             Sparkline
           </Link>
         </li>
+        <li>
+          <Link to="/canvas-switch" style={linkStyle}>
+            Switch
+          </Link>
+        </li>
       </ul>
 
       <h2 style={{ marginTop: 24, fontSize: 16 }}>Planned — interactive (DOM overlay)</h2>

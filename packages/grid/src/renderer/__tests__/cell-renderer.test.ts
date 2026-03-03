@@ -10,6 +10,7 @@ import {
   flexCellRenderer,
   stackCellRenderer,
   imageCellRenderer,
+  switchCellRenderer,
 } from "../components";
 import type { CellRenderer, CellRenderContext } from "../components";
 import type { Theme, RenderInstruction } from "../../types";
@@ -72,6 +73,7 @@ function mockCtx() {
     restore: mock(() => {}),
     clip: mock(() => {}),
     drawImage: mock(() => {}),
+    arc: mock(() => {}),
   } as unknown as CanvasRenderingContext2D;
 }
 
@@ -125,9 +127,9 @@ describe("CellRendererRegistry", () => {
 });
 
 describe("createCellRendererRegistry", () => {
-  it("creates registry with 13 built-in renderers", () => {
+  it("creates registry with 14 built-in renderers", () => {
     const registry = createCellRendererRegistry();
-    expect(registry.size).toBe(13);
+    expect(registry.size).toBe(14);
     expect(registry.get("text")).toBe(textCellRenderer);
     expect(registry.get("badge")).toBe(badgeCellRenderer);
     expect(registry.get("sparkline")).toBe(sparklineCellRenderer);
@@ -139,7 +141,7 @@ describe("createCellRendererRegistry", () => {
   it("merges user renderers on top of built-ins", () => {
     const custom: CellRenderer<{ type: "progress" }> = { type: "progress", draw: mock(() => {}) };
     const registry = createCellRendererRegistry([custom]);
-    expect(registry.size).toBe(14);
+    expect(registry.size).toBe(15);
     expect(registry.get("progress")).toBe(custom);
     // Built-ins still present
     expect(registry.get("text")).toBe(textCellRenderer);
@@ -148,14 +150,14 @@ describe("createCellRendererRegistry", () => {
   it("user renderer overrides built-in with same type", () => {
     const customText: CellRenderer = { type: "text", draw: mock(() => {}) };
     const registry = createCellRendererRegistry([customText]);
-    expect(registry.size).toBe(13);
+    expect(registry.size).toBe(14);
     expect(registry.get("text")).toBe(customText);
     expect(registry.get("text")).not.toBe(textCellRenderer);
   });
 
   it("handles empty user renderers array", () => {
     const registry = createCellRendererRegistry([]);
-    expect(registry.size).toBe(13);
+    expect(registry.size).toBe(14);
   });
 });
 
@@ -740,5 +742,98 @@ describe("imageCellRenderer", () => {
     imageCellRenderer.draw({ type: "image", src: "test://full-opacity.png" }, context);
     // globalAlpha should remain at default (1)
     expect((context.ctx as any).globalAlpha).toBe(1);
+  });
+});
+
+// ── switchCellRenderer tests ────────────────────────────────────────────
+
+describe("switchCellRenderer", () => {
+  it("has type 'switch'", () => {
+    expect(switchCellRenderer.type).toBe("switch");
+  });
+
+  it("is registered in default registry", () => {
+    const registry = createCellRendererRegistry();
+    expect(registry.get("switch")).toBe(switchCellRenderer);
+  });
+
+  it("has cursor 'pointer'", () => {
+    expect(switchCellRenderer.cursor).toBe("pointer");
+  });
+
+  it("draws unchecked state with trackColor and thumb on left", () => {
+    const context = makeContext();
+    switchCellRenderer.draw({ type: "switch", checked: false }, context);
+    // Track drawn via roundRect + fill
+    expect(context.ctx.beginPath).toHaveBeenCalled();
+    expect(context.ctx.roundRect).toHaveBeenCalled();
+    expect(context.ctx.fill).toHaveBeenCalled();
+    // Thumb drawn via arc + fill
+    expect((context.ctx as any).arc).toHaveBeenCalled();
+    // Default trackColor for unchecked
+    const fillCalls = (context.ctx as any).fillStyle;
+    // Last fillStyle set should be thumb color (#fff)
+    expect(fillCalls).toBe("#fff");
+  });
+
+  it("draws checked state with activeTrackColor and thumb on right", () => {
+    const context = makeContext();
+    switchCellRenderer.draw({ type: "switch", checked: true }, context);
+    expect(context.ctx.roundRect).toHaveBeenCalled();
+    expect((context.ctx as any).arc).toHaveBeenCalled();
+    // Verify arc was called — checked thumb should be on the right side
+    const arcCalls = ((context.ctx as any).arc as any).mock.calls;
+    expect(arcCalls.length).toBe(1);
+    // trackX + trackW - radius = right side
+    const thumbCx = arcCalls[0][0];
+    // For default 36w track, centered in 200w cell: trackX = 10 + (200-36)/2 = 92
+    // thumbCx = 92 + 36 - 10 = 118
+    expect(thumbCx).toBe(118);
+  });
+
+  it("unchecked thumb is on left side", () => {
+    const context = makeContext();
+    switchCellRenderer.draw({ type: "switch", checked: false }, context);
+    const arcCalls = ((context.ctx as any).arc as any).mock.calls;
+    expect(arcCalls.length).toBe(1);
+    const thumbCx = arcCalls[0][0];
+    // trackX + radius = left side: 92 + 10 = 102
+    expect(thumbCx).toBe(102);
+  });
+
+  it("applies globalAlpha for disabled state with save/restore", () => {
+    const context = makeContext();
+    switchCellRenderer.draw({ type: "switch", checked: false, disabled: true }, context);
+    expect(context.ctx.save).toHaveBeenCalled();
+    expect((context.ctx as any).globalAlpha).toBe(0.4);
+    expect(context.ctx.restore).toHaveBeenCalled();
+  });
+
+  it("does not call save/restore when not disabled", () => {
+    const context = makeContext();
+    switchCellRenderer.draw({ type: "switch", checked: true }, context);
+    expect(context.ctx.save).not.toHaveBeenCalled();
+    expect(context.ctx.restore).not.toHaveBeenCalled();
+  });
+
+  it("applies custom style overrides", () => {
+    const context = makeContext();
+    switchCellRenderer.draw(
+      {
+        type: "switch",
+        checked: true,
+        style: {
+          activeTrackColor: "#10b981",
+          thumbColor: "#fef3c7",
+          width: 44,
+          height: 24,
+        },
+      },
+      context,
+    );
+    // roundRect called with custom dimensions
+    const rrCalls = (context.ctx.roundRect as any).mock.calls;
+    expect(rrCalls[0][2]).toBe(44); // width
+    expect(rrCalls[0][3]).toBe(24); // height
   });
 });

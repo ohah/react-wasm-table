@@ -749,6 +749,7 @@ export function useRenderLoop({
             _borderConfigMap: borderConfigMap,
             _headerRowCount: headerRowCount,
             _enableColumnDnD: enableColumnDnD ?? false,
+            _invalidate: invalidate,
           };
 
           const rowRegions = rowRegionLayout?.regions ?? null;

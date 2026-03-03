@@ -12,6 +12,7 @@ import type {
   ChipStyle,
   LinkStyle,
   ImageStyle,
+  SwitchStyle,
   CanvasEventHandlers,
   CssFlexDirection,
   CssFlexWrap,
@@ -583,6 +584,58 @@ export const Input = stub("Input");
 export const NumberInput = stub("NumberInput");
 export const Select = stub("Select");
 export const Checkbox = stub("Checkbox");
-export const Switch = stub("Switch");
+
+/** Props for the Switch canvas component. */
+export interface SwitchProps extends CanvasEventHandlers {
+  checked: boolean;
+  disabled?: boolean;
+  style?: Partial<SwitchStyle>;
+  trackColor?: string;
+  activeTrackColor?: string;
+  thumbColor?: string;
+  width?: number;
+  height?: number;
+  /** Transition duration in ms. @default 150 */
+  transitionDuration?: number;
+  /** CSS timing function. @default "ease" */
+  transitionTimingFunction?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
+}
+
+function pickSwitchStyle(props: SwitchProps): Partial<SwitchStyle> {
+  const {
+    style,
+    trackColor,
+    activeTrackColor,
+    thumbColor,
+    width,
+    height,
+    transitionDuration,
+    transitionTimingFunction,
+  } = props;
+  return {
+    ...style,
+    ...(trackColor !== undefined && { trackColor }),
+    ...(activeTrackColor !== undefined && { activeTrackColor }),
+    ...(thumbColor !== undefined && { thumbColor }),
+    ...(width !== undefined && { width }),
+    ...(height !== undefined && { height }),
+    ...(transitionDuration !== undefined && { transitionDuration }),
+    ...(transitionTimingFunction !== undefined && { transitionTimingFunction }),
+  };
+}
+
+/** Canvas switch (toggle) component. Returns a SwitchInstruction. */
+export function Switch(props: SwitchProps): CanvasElement {
+  const style = pickSwitchStyle(props);
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "switch",
+    checked: props.checked,
+    ...(props.disabled !== undefined && { disabled: props.disabled }),
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
 export const DatePicker = stub("DatePicker");
 export const Dropdown = stub("Dropdown");

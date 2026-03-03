@@ -32,6 +32,7 @@ export type {
   ChipProps,
   LinkProps,
   ImageProps,
+  SwitchProps,
   StubProps,
 } from "./components";
 export {
@@ -256,8 +257,12 @@ export {
   chipCellRenderer,
   linkCellRenderer,
   imageCellRenderer,
+  switchCellRenderer,
 } from "./renderer/components";
 export type { CellRenderer, CellRenderContext } from "./renderer/components";
+
+// Easing / animation utilities
+export type { TimingFunction } from "./renderer/easing";
 
 // Layer system
 export {
@@ -313,6 +318,8 @@ export type {
   LinkStyle,
   ImageInstruction,
   ImageStyle,
+  SwitchInstruction,
+  SwitchStyle,
   CssObjectFit,
   ReferrerPolicy,
   RenderInstruction,
