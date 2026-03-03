@@ -258,7 +258,11 @@ export function CanvasImage() {
               ["referrerPolicy", "ReferrerPolicy", "Referrer policy for fetch"],
               ["decoding", '"sync" | "async" | "auto"', "Decoding hint"],
               ["fetchPriority", '"high" | "low" | "auto"', "Fetch priority hint"],
-              ["objectFit", '"fill" | "contain" | "cover" | "none" | "scale-down"', "Object-fit mode"],
+              [
+                "objectFit",
+                '"fill" | "contain" | "cover" | "none" | "scale-down"',
+                "Object-fit mode",
+              ],
               ["borderRadius", "number", "Border radius (px)"],
               ["opacity", "number", "Opacity (0-1)"],
             ].map(([prop, type, desc]) => (

@@ -614,9 +614,7 @@ describe("Canvas components", () => {
     });
 
     it("returns an ImageInstruction via JSX + resolveInstruction", () => {
-      const element = (
-        <Image src="https://example.com/img.jpg" borderRadius={8} opacity={0.5} />
-      );
+      const element = <Image src="https://example.com/img.jpg" borderRadius={8} opacity={0.5} />;
       const result = resolveInstruction(element);
       expect(result.type).toBe("image");
       if (result.type === "image") {
