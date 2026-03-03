@@ -26,6 +26,11 @@ export type {
   FlexProps,
   BoxProps,
   StackProps,
+  ColorProps,
+  TagProps,
+  RatingProps,
+  ChipProps,
+  LinkProps,
   StubProps,
 } from "./components";
 export {
@@ -244,6 +249,11 @@ export {
   sparklineCellRenderer,
   stubCellRenderer,
   flexCellRenderer,
+  colorCellRenderer,
+  tagCellRenderer,
+  ratingCellRenderer,
+  chipCellRenderer,
+  linkCellRenderer,
 } from "./renderer/components";
 export type { CellRenderer, CellRenderContext } from "./renderer/components";
 
@@ -289,6 +299,16 @@ export type {
   StackDirection,
   StackInstruction,
   StubInstruction,
+  ColorInstruction,
+  ColorStyle,
+  TagInstruction,
+  TagStyle,
+  RatingInstruction,
+  RatingStyle,
+  ChipInstruction,
+  ChipStyle,
+  LinkInstruction,
+  LinkStyle,
   RenderInstruction,
   TableCellContent,
   TextStyle,
@@ -299,6 +319,7 @@ export type {
   TableMeta,
   WasmTableEngine,
   // Event types
+  CanvasEventHandlers,
   GridEventBase,
   GridMouseEvent,
   GridCellEvent,

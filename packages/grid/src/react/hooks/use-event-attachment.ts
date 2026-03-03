@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { GridInstance } from "../../grid-instance";
 import type {
   CellCoord,
+  RenderInstruction,
   GridCellEvent,
   GridHeaderEvent,
   GridKeyboardEvent,
@@ -12,6 +13,7 @@ import type {
 } from "../../types";
 import type { EventManager, EventCoords } from "../../adapter/event-manager";
 import type { EditorManager } from "../../adapter/editor-manager";
+import type { CellRendererRegistryLike } from "../../renderer/components/types";
 import {
   createGridCellEvent,
   createGridHeaderEvent,
@@ -72,6 +74,12 @@ export interface UseEventAttachmentParams {
   rowHeight: number;
   headerHeight: number;
   height: number;
+  /** Ref to resolve cell instruction (from useRenderLoop). */
+  getInstructionForCellRef?: React.RefObject<
+    ((row: number, col: number) => RenderInstruction | undefined) | null
+  >;
+  /** Ref to cell renderer registry (for cursor + renderer default actions). */
+  cellRendererRegistryRef?: React.RefObject<CellRendererRegistryLike | null>;
 }
 
 export function useEventAttachment({
@@ -97,6 +105,8 @@ export function useEventAttachment({
   rowHeight,
   headerHeight,
   height,
+  getInstructionForCellRef,
+  cellRendererRegistryRef,
 }: UseEventAttachmentParams) {
   // Ref pattern: stable identity across renders, no re-attach on callback change
   const onCellClickRef = useRef(onCellClick);
@@ -132,6 +142,9 @@ export function useEventAttachment({
   isCellEditableRef.current = handlers.isCellEditable;
   handleTypingKeyDownRef.current = handlers.handleTypingKeyDown;
 
+  // Track hovered cell for mouseEnter / mouseLeave on canvas components
+  const prevHoverCellRef = useRef<CellCoord | null>(null);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const em = eventManagerRef.current;
@@ -161,9 +174,20 @@ export function useEventAttachment({
         },
         onCellClick: (coord, native, coords) => {
           const event = createGridCellEvent(native, coord, coords);
+          // 1. Component-level onClick (element-level handler)
+          const instruction = getInstructionForCellRef?.current?.(coord.row, coord.col);
+          if (instruction?._handlers?.onClick) {
+            instruction._handlers.onClick(event);
+          }
+          // 2. Grid-level dispatch → user callback → renderer default → internal default
           dispatch("cellClick", event, () => {
             onCellClickRef.current?.(event);
             if (event.defaultPrevented) return;
+            // Renderer default action (e.g., Link opens URL)
+            if (instruction) {
+              const renderer = cellRendererRegistryRef?.current?.get(instruction.type);
+              renderer?.onCellClick?.(instruction);
+            }
             if (handlers.handleCellClick) {
               handlers.handleCellClick(coord);
             } else if (editorManagerRef.current.isEditing) {
@@ -173,6 +197,10 @@ export function useEventAttachment({
         },
         onCellDoubleClick: (coord, native, coords) => {
           const event = createGridCellEvent(native, coord, coords);
+          const instruction = getInstructionForCellRef?.current?.(coord.row, coord.col);
+          if (instruction?._handlers?.onDoubleClick) {
+            instruction._handlers.onDoubleClick(event);
+          }
           dispatch("cellDoubleClick", event, () => {
             onCellDoubleClickRef.current?.(event);
             if (event.defaultPrevented) return;
@@ -181,6 +209,10 @@ export function useEventAttachment({
         },
         onCellMouseDown: (coord, shiftKey, native, coords) => {
           const event = createGridCellEvent(native, coord, coords);
+          const instruction = getInstructionForCellRef?.current?.(coord.row, coord.col);
+          if (instruction?._handlers?.onMouseDown) {
+            instruction._handlers.onMouseDown(event);
+          }
           dispatch("cellMouseDown", event, () => {
             onCellMouseDownRef.current?.(event);
             if (event.defaultPrevented) return;
@@ -231,9 +263,20 @@ export function useEventAttachment({
         onCellHover: (coord) => {
           const canvas = canvasRef.current;
           if (!canvas) return;
-          if (coord && isCellEditableRef.current?.(coord)) {
-            canvas.style.cursor = "text";
-          } else if (canvas.style.cursor === "text") {
+          if (coord) {
+            // Check renderer cursor first (e.g., Link → "pointer")
+            const instr = getInstructionForCellRef?.current?.(coord.row, coord.col);
+            const renderer = instr
+              ? cellRendererRegistryRef?.current?.get(instr.type)
+              : undefined;
+            if (renderer?.cursor) {
+              canvas.style.cursor = renderer.cursor;
+            } else if (isCellEditableRef.current?.(coord)) {
+              canvas.style.cursor = "text";
+            } else {
+              canvas.style.cursor = "";
+            }
+          } else {
             canvas.style.cursor = "";
           }
         },
@@ -249,6 +292,62 @@ export function useEventAttachment({
           if (type === "mousedown" && editorManagerRef.current.isEditing) {
             editorManagerRef.current.cancel();
           }
+
+          // Component-level mouseEnter / mouseLeave tracking
+          if (type === "mousemove") {
+            const newCell =
+              hitTest.type === "cell" && hitTest.cell ? hitTest.cell : null;
+            const prev = prevHoverCellRef.current;
+            const changed =
+              !prev !== !newCell ||
+              (prev &&
+                newCell &&
+                (prev.row !== newCell.row || prev.col !== newCell.col));
+
+            if (changed) {
+              if (prev) {
+                const prevInstr = getInstructionForCellRef?.current?.(
+                  prev.row,
+                  prev.col,
+                );
+                if (prevInstr?._handlers?.onMouseLeave) {
+                  prevInstr._handlers.onMouseLeave(
+                    createGridCellEvent(native, prev, coords),
+                  );
+                }
+              }
+              if (newCell) {
+                const instr = getInstructionForCellRef?.current?.(
+                  newCell.row,
+                  newCell.col,
+                );
+                if (instr?._handlers?.onMouseEnter) {
+                  instr._handlers.onMouseEnter(
+                    createGridCellEvent(native, newCell, coords),
+                  );
+                }
+              }
+              prevHoverCellRef.current = newCell;
+            }
+          }
+
+          // Component-level onMouseUp
+          if (
+            type === "mouseup" &&
+            hitTest.type === "cell" &&
+            hitTest.cell
+          ) {
+            const instr = getInstructionForCellRef?.current?.(
+              hitTest.cell.row,
+              hitTest.cell.col,
+            );
+            if (instr?._handlers?.onMouseUp) {
+              instr._handlers.onMouseUp(
+                createGridCellEvent(native, hitTest.cell, coords),
+              );
+            }
+          }
+
           const event = createGridCanvasEvent(type, native, hitTest, coords);
           dispatch("canvasEvent", event, () => {
             onCanvasEventRef.current?.(event);

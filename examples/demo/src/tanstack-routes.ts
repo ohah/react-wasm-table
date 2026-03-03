@@ -35,6 +35,12 @@ export const BASE_TO_TANSTACK: Record<string, string> = {
   "/canvas-box": "/tanstack/canvas-box",
   "/canvas-stack": "/tanstack/canvas-stack",
   "/canvas-sparkline": "/tanstack/canvas-sparkline",
+  "/canvas-color": "/tanstack/canvas-color",
+  "/canvas-tag": "/tanstack/canvas-tag",
+  "/canvas-rating": "/tanstack/canvas-rating",
+  "/canvas-chip": "/tanstack/canvas-chip",
+  "/canvas-link": "/tanstack/canvas-link",
+  "/canvas-events": "/tanstack/canvas-events",
   // Grid / Flex / Box
   "/grid-template": "/tanstack/grid-template",
   "/flex-direction": "/tanstack/flex-direction",

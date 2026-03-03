@@ -205,6 +205,14 @@ export function useRenderLoop({
   const onAfterDrawRef = useRef(onAfterDraw);
   onAfterDrawRef.current = onAfterDraw;
 
+  // Expose getInstruction for event handlers (cell click → instruction resolution).
+  // Updated each rAF frame inside the render loop.
+  const getInstructionForCellRef = useRef<
+    ((row: number, col: number) => import("../../types").RenderInstruction | undefined) | null
+  >(null);
+  const cellRendererRegistryRef = useRef(cellRendererRegistry);
+  cellRendererRegistryRef.current = cellRendererRegistry;
+
   // Ref-wrap onVisibleRangeChange to avoid effect restarts
   const onVisibleRangeChangeRef = useRef(onVisibleRangeChange);
   onVisibleRangeChangeRef.current = onVisibleRangeChange;
@@ -658,6 +666,16 @@ export function useRenderLoop({
             return { type: "text" as const, value: text };
           };
 
+          // Expose getInstruction to event handlers via ref (cell coord → instruction)
+          getInstructionForCellRef.current = (row: number, col: number) => {
+            for (let i = headerCount; i < cellCount; i++) {
+              if (readCellRow(layoutBuf, i) === row && readCellCol(layoutBuf, i) === col) {
+                return getInstruction(i);
+              }
+            }
+            return undefined;
+          };
+
           // Build per-cell border config map (only when overrides exist)
           let borderConfigMap: Map<number, CellBorderConfig> | undefined;
           const hasColumnBorder = columns.some(
@@ -915,5 +933,5 @@ export function useRenderLoop({
     parsedBorderStyles,
   ]);
 
-  return { invalidate };
+  return { invalidate, getInstructionForCellRef, cellRendererRegistryRef };
 }

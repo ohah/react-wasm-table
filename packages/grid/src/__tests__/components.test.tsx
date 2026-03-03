@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import React from "react";
-import { Text, Badge, Sparkline, Flex, ProgressBar, Box, Stack } from "../components";
+import { Text, Badge, Sparkline, Flex, ProgressBar, Box, Stack, Color, Tag, Rating, Chip, Link } from "../components";
 import { resolveInstruction } from "../resolve-instruction";
 import type {
   RenderInstruction,
@@ -10,6 +10,11 @@ import type {
   BoxInstruction,
   StackInstruction,
   StubInstruction,
+  ColorInstruction,
+  TagInstruction,
+  RatingInstruction,
+  ChipInstruction,
+  LinkInstruction,
 } from "../types";
 
 describe("Canvas components", () => {
@@ -353,6 +358,223 @@ describe("Canvas components", () => {
       if (result.type === "stack") {
         expect(result.children).toHaveLength(1);
       }
+    });
+  });
+
+  describe("Color", () => {
+    it("returns a ColorInstruction when called directly", () => {
+      const result = Color({ value: "#ff0000", borderRadius: 4 }) as RenderInstruction;
+      const expected: ColorInstruction = {
+        type: "color",
+        value: "#ff0000",
+        style: { borderRadius: 4 },
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("returns a ColorInstruction via JSX + resolveInstruction", () => {
+      const element = <Color value="#00ff00" borderWidth={2} borderColor="#333" />;
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("color");
+      if (result.type === "color") {
+        expect(result.value).toBe("#00ff00");
+        expect(result.style).toEqual({ borderWidth: 2, borderColor: "#333" });
+      }
+    });
+
+    it("omits style when no style properties given", () => {
+      const result = Color({ value: "#000" }) as RenderInstruction;
+      expect(result).toEqual({ type: "color", value: "#000" });
+      expect((result as ColorInstruction).style).toBeUndefined();
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Color({
+        value: "#fff",
+        style: { borderRadius: 8, borderColor: "#ccc" },
+        borderRadius: 4,
+      }) as RenderInstruction;
+      const expected: ColorInstruction = {
+        type: "color",
+        value: "#fff",
+        style: { borderRadius: 4, borderColor: "#ccc" },
+      };
+      expect(result).toEqual(expected);
+    });
+  });
+
+  describe("Tag", () => {
+    it("returns a TagInstruction when called directly", () => {
+      const result = Tag({ value: "New", color: "#1565c0" }) as RenderInstruction;
+      const expected: TagInstruction = {
+        type: "tag",
+        value: "New",
+        style: { color: "#1565c0" },
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("returns a TagInstruction via JSX + resolveInstruction", () => {
+      const element = <Tag value="Active" borderColor="green" borderRadius={8} />;
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("tag");
+      if (result.type === "tag") {
+        expect(result.value).toBe("Active");
+        expect(result.style).toEqual({ borderColor: "green", borderRadius: 8 });
+      }
+    });
+
+    it("omits style when no style properties given", () => {
+      const result = Tag({ value: "Plain" }) as RenderInstruction;
+      expect(result).toEqual({ type: "tag", value: "Plain" });
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Tag({
+        value: "x",
+        style: { color: "gray", fontSize: 14 },
+        color: "red",
+      }) as RenderInstruction;
+      const expected: TagInstruction = {
+        type: "tag",
+        value: "x",
+        style: { color: "red", fontSize: 14 },
+      };
+      expect(result).toEqual(expected);
+    });
+  });
+
+  describe("Rating", () => {
+    it("returns a RatingInstruction when called directly", () => {
+      const result = Rating({ value: 3, max: 5 }) as RenderInstruction;
+      const expected: RatingInstruction = {
+        type: "rating",
+        value: 3,
+        style: { max: 5 },
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("returns a RatingInstruction via JSX + resolveInstruction", () => {
+      const element = <Rating value={4} color="#f59e0b" />;
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("rating");
+      if (result.type === "rating") {
+        expect(result.value).toBe(4);
+        expect(result.style).toEqual({ color: "#f59e0b" });
+      }
+    });
+
+    it("omits style when no style properties given", () => {
+      const result = Rating({ value: 2 }) as RenderInstruction;
+      expect(result).toEqual({ type: "rating", value: 2 });
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Rating({
+        value: 3,
+        style: { max: 10, color: "gray" },
+        color: "gold",
+      }) as RenderInstruction;
+      const expected: RatingInstruction = {
+        type: "rating",
+        value: 3,
+        style: { max: 10, color: "gold" },
+      };
+      expect(result).toEqual(expected);
+    });
+  });
+
+  describe("Chip", () => {
+    it("returns a ChipInstruction when called directly", () => {
+      const result = Chip({
+        value: "React",
+        color: "white",
+        backgroundColor: "#1976d2",
+      }) as RenderInstruction;
+      const expected: ChipInstruction = {
+        type: "chip",
+        value: "React",
+        style: { color: "white", backgroundColor: "#1976d2" },
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("returns a ChipInstruction via JSX + resolveInstruction", () => {
+      const element = <Chip value="Tag" closable />;
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("chip");
+      if (result.type === "chip") {
+        expect(result.value).toBe("Tag");
+        expect(result.style).toEqual({ closable: true });
+      }
+    });
+
+    it("omits style when no style properties given", () => {
+      const result = Chip({ value: "Simple" }) as RenderInstruction;
+      expect(result).toEqual({ type: "chip", value: "Simple" });
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Chip({
+        value: "x",
+        style: { color: "gray", borderRadius: 4 },
+        backgroundColor: "blue",
+      }) as RenderInstruction;
+      const expected: ChipInstruction = {
+        type: "chip",
+        value: "x",
+        style: { color: "gray", backgroundColor: "blue", borderRadius: 4 },
+      };
+      expect(result).toEqual(expected);
+    });
+  });
+
+  describe("Link", () => {
+    it("returns a LinkInstruction when called directly", () => {
+      const result = Link({ value: "Click me", href: "https://example.com", color: "#2563eb" }) as RenderInstruction;
+      const expected: LinkInstruction = {
+        type: "link",
+        value: "Click me",
+        href: "https://example.com",
+        style: { color: "#2563eb" },
+      };
+      expect(result).toEqual(expected);
+    });
+
+    it("returns a LinkInstruction via JSX + resolveInstruction", () => {
+      const element = <Link value="Home" underline={false} />;
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("link");
+      if (result.type === "link") {
+        expect(result.value).toBe("Home");
+        expect(result.style).toEqual({ underline: false });
+      }
+    });
+
+    it("omits style when no style properties given", () => {
+      const result = Link({ value: "plain" }) as RenderInstruction;
+      expect(result).toEqual({ type: "link", value: "plain" });
+    });
+
+    it("omits href when not provided", () => {
+      const result = Link({ value: "no href" }) as RenderInstruction;
+      expect(result).toEqual({ type: "link", value: "no href" });
+      expect((result as LinkInstruction).href).toBeUndefined();
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Link({
+        value: "x",
+        style: { color: "gray", fontSize: 14 },
+        color: "red",
+      }) as RenderInstruction;
+      const expected: LinkInstruction = {
+        type: "link",
+        value: "x",
+        style: { color: "red", fontSize: 14 },
+      };
+      expect(result).toEqual(expected);
     });
   });
 

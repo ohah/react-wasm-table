@@ -52,6 +52,31 @@ export function CanvasComponents() {
             Sparkline
           </Link>
         </li>
+        <li>
+          <Link to="/canvas-color" style={linkStyle}>
+            Color
+          </Link>
+        </li>
+        <li>
+          <Link to="/canvas-tag" style={linkStyle}>
+            Tag
+          </Link>
+        </li>
+        <li>
+          <Link to="/canvas-rating" style={linkStyle}>
+            Rating
+          </Link>
+        </li>
+        <li>
+          <Link to="/canvas-chip" style={linkStyle}>
+            Chip
+          </Link>
+        </li>
+        <li>
+          <Link to="/canvas-link" style={linkStyle}>
+            Link
+          </Link>
+        </li>
       </ul>
 
       <h2 style={{ marginTop: 24, fontSize: 16 }}>Planned — interactive (DOM overlay)</h2>
