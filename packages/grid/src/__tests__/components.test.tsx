@@ -1,6 +1,19 @@
 import { describe, expect, it } from "bun:test";
 import React from "react";
-import { Text, Badge, Sparkline, Flex, ProgressBar, Box, Stack, Color, Tag, Rating, Chip, Link } from "../components";
+import {
+  Text,
+  Badge,
+  Sparkline,
+  Flex,
+  ProgressBar,
+  Box,
+  Stack,
+  Color,
+  Tag,
+  Rating,
+  Chip,
+  Link,
+} from "../components";
 import { resolveInstruction } from "../resolve-instruction";
 import type {
   RenderInstruction,
@@ -532,7 +545,11 @@ describe("Canvas components", () => {
 
   describe("Link", () => {
     it("returns a LinkInstruction when called directly", () => {
-      const result = Link({ value: "Click me", href: "https://example.com", color: "#2563eb" }) as RenderInstruction;
+      const result = Link({
+        value: "Click me",
+        href: "https://example.com",
+        color: "#2563eb",
+      }) as RenderInstruction;
       const expected: LinkInstruction = {
         type: "link",
         value: "Click me",

@@ -468,7 +468,11 @@ export function Grid({
     visStartRef.current = vs;
   }, []);
 
-  const { invalidate: renderInvalidate, getInstructionForCellRef, cellRendererRegistryRef } = useRenderLoop({
+  const {
+    invalidate: renderInvalidate,
+    getInstructionForCellRef,
+    cellRendererRegistryRef,
+  } = useRenderLoop({
     engine,
     memoryBridgeRef,
     canvasRef,

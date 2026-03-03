@@ -100,16 +100,10 @@ export function CanvasChip() {
         <div>
           <strong>closable:</strong>
           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-            <button
-              style={!closable ? btnActive : btnBase}
-              onClick={() => setClosable(false)}
-            >
+            <button style={!closable ? btnActive : btnBase} onClick={() => setClosable(false)}>
               Off
             </button>
-            <button
-              style={closable ? btnActive : btnBase}
-              onClick={() => setClosable(true)}
-            >
+            <button style={closable ? btnActive : btnBase} onClick={() => setClosable(true)}>
               On
             </button>
           </div>
@@ -147,9 +141,7 @@ export function CanvasChip() {
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>
-                No events yet
-              </div>
+              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>No events yet</div>
             )}
             {logs.map((log) => (
               <div

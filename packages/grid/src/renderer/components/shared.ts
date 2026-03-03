@@ -54,7 +54,9 @@ export function measureInstructionWidth(
   if (instruction.type === "badge" || instruction.type === "chip") {
     ctx.font = "12px system-ui, sans-serif";
     const tw = ctx.measureText(instruction.value).width;
-    return tw + BADGE_PADDING * 2 + (instruction.type === "chip" && instruction.style?.closable ? 14 : 0);
+    return (
+      tw + BADGE_PADDING * 2 + (instruction.type === "chip" && instruction.style?.closable ? 14 : 0)
+    );
   }
   if (instruction.type === "tag") {
     const fontSize = instruction.style?.fontSize ?? 12;

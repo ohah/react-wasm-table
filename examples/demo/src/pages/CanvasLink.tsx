@@ -80,11 +80,7 @@ export function CanvasLink() {
           <strong>color:</strong>
           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
             {["#2563eb", "#e53935", "#2e7d32", "#7c3aed"].map((c) => (
-              <button
-                key={c}
-                style={color === c ? btnActive : btnBase}
-                onClick={() => setColor(c)}
-              >
+              <button key={c} style={color === c ? btnActive : btnBase} onClick={() => setColor(c)}>
                 <span style={{ color: c }}>Link</span>
               </button>
             ))}
@@ -93,16 +89,10 @@ export function CanvasLink() {
         <div>
           <strong>underline:</strong>
           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-            <button
-              style={underline ? btnActive : btnBase}
-              onClick={() => setUnderline(true)}
-            >
+            <button style={underline ? btnActive : btnBase} onClick={() => setUnderline(true)}>
               On
             </button>
-            <button
-              style={!underline ? btnActive : btnBase}
-              onClick={() => setUnderline(false)}
-            >
+            <button style={!underline ? btnActive : btnBase} onClick={() => setUnderline(false)}>
               Off
             </button>
           </div>
@@ -126,8 +116,8 @@ export function CanvasLink() {
             </button>
           </h2>
           <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
-            Click or hover over Link cells.{" "}
-            <code>onClick</code> calls <code>preventDefault()</code> to block URL open.
+            Click or hover over Link cells. <code>onClick</code> calls <code>preventDefault()</code>{" "}
+            to block URL open.
           </p>
           <div
             style={{
@@ -141,9 +131,7 @@ export function CanvasLink() {
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>
-                No events yet
-              </div>
+              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>No events yet</div>
             )}
             {logs.map((log) => (
               <div

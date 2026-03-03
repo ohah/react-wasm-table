@@ -76,9 +76,8 @@ export function CanvasTag() {
     <>
       <h1>Canvas: Tag</h1>
       <p>
-        <code>Tag</code> draws outlined text (stroke border + text). Supports{" "}
-        <code>color</code>, <code>borderColor</code>, <code>borderRadius</code>,{" "}
-        <code>fontSize</code>.
+        <code>Tag</code> draws outlined text (stroke border + text). Supports <code>color</code>,{" "}
+        <code>borderColor</code>, <code>borderRadius</code>, <code>fontSize</code>.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 16 }}>
@@ -143,9 +142,7 @@ export function CanvasTag() {
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>
-                No events yet
-              </div>
+              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>No events yet</div>
             )}
             {logs.map((log) => (
               <div

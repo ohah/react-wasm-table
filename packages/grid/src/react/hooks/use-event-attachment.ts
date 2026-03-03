@@ -266,9 +266,7 @@ export function useEventAttachment({
           if (coord) {
             // Check renderer cursor first (e.g., Link → "pointer")
             const instr = getInstructionForCellRef?.current?.(coord.row, coord.col);
-            const renderer = instr
-              ? cellRendererRegistryRef?.current?.get(instr.type)
-              : undefined;
+            const renderer = instr ? cellRendererRegistryRef?.current?.get(instr.type) : undefined;
             if (renderer?.cursor) {
               canvas.style.cursor = renderer.cursor;
             } else if (isCellEditableRef.current?.(coord)) {
@@ -295,36 +293,23 @@ export function useEventAttachment({
 
           // Component-level mouseEnter / mouseLeave tracking
           if (type === "mousemove") {
-            const newCell =
-              hitTest.type === "cell" && hitTest.cell ? hitTest.cell : null;
+            const newCell = hitTest.type === "cell" && hitTest.cell ? hitTest.cell : null;
             const prev = prevHoverCellRef.current;
             const changed =
               !prev !== !newCell ||
-              (prev &&
-                newCell &&
-                (prev.row !== newCell.row || prev.col !== newCell.col));
+              (prev && newCell && (prev.row !== newCell.row || prev.col !== newCell.col));
 
             if (changed) {
               if (prev) {
-                const prevInstr = getInstructionForCellRef?.current?.(
-                  prev.row,
-                  prev.col,
-                );
+                const prevInstr = getInstructionForCellRef?.current?.(prev.row, prev.col);
                 if (prevInstr?._handlers?.onMouseLeave) {
-                  prevInstr._handlers.onMouseLeave(
-                    createGridCellEvent(native, prev, coords),
-                  );
+                  prevInstr._handlers.onMouseLeave(createGridCellEvent(native, prev, coords));
                 }
               }
               if (newCell) {
-                const instr = getInstructionForCellRef?.current?.(
-                  newCell.row,
-                  newCell.col,
-                );
+                const instr = getInstructionForCellRef?.current?.(newCell.row, newCell.col);
                 if (instr?._handlers?.onMouseEnter) {
-                  instr._handlers.onMouseEnter(
-                    createGridCellEvent(native, newCell, coords),
-                  );
+                  instr._handlers.onMouseEnter(createGridCellEvent(native, newCell, coords));
                 }
               }
               prevHoverCellRef.current = newCell;
@@ -332,19 +317,10 @@ export function useEventAttachment({
           }
 
           // Component-level onMouseUp
-          if (
-            type === "mouseup" &&
-            hitTest.type === "cell" &&
-            hitTest.cell
-          ) {
-            const instr = getInstructionForCellRef?.current?.(
-              hitTest.cell.row,
-              hitTest.cell.col,
-            );
+          if (type === "mouseup" && hitTest.type === "cell" && hitTest.cell) {
+            const instr = getInstructionForCellRef?.current?.(hitTest.cell.row, hitTest.cell.col);
             if (instr?._handlers?.onMouseUp) {
-              instr._handlers.onMouseUp(
-                createGridCellEvent(native, hitTest.cell, coords),
-              );
+              instr._handlers.onMouseUp(createGridCellEvent(native, hitTest.cell, coords));
             }
           }
 

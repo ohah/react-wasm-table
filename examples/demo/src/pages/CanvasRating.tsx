@@ -69,8 +69,8 @@ export function CanvasRating() {
     <>
       <h1>Canvas: Rating</h1>
       <p>
-        <code>Rating</code> draws filled ★ and empty ☆ stars. Supports{" "}
-        <code>max</code>, <code>color</code>, <code>emptyColor</code>, <code>size</code>.
+        <code>Rating</code> draws filled ★ and empty ☆ stars. Supports <code>max</code>,{" "}
+        <code>color</code>, <code>emptyColor</code>, <code>size</code>.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 16 }}>
@@ -78,11 +78,7 @@ export function CanvasRating() {
           <strong>max:</strong>
           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
             {[3, 5, 10].map((n) => (
-              <button
-                key={n}
-                style={max === n ? btnActive : btnBase}
-                onClick={() => setMax(n)}
-              >
+              <button key={n} style={max === n ? btnActive : btnBase} onClick={() => setMax(n)}>
                 {n}
               </button>
             ))}
@@ -92,11 +88,7 @@ export function CanvasRating() {
           <strong>color:</strong>
           <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
             {["#f59e0b", "#e53935", "#1e88e5", "#43a047"].map((c) => (
-              <button
-                key={c}
-                style={color === c ? btnActive : btnBase}
-                onClick={() => setColor(c)}
-              >
+              <button key={c} style={color === c ? btnActive : btnBase} onClick={() => setColor(c)}>
                 <span style={{ color: c }}>★</span>
               </button>
             ))}
@@ -135,9 +127,7 @@ export function CanvasRating() {
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>
-                No events yet
-              </div>
+              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>No events yet</div>
             )}
             {logs.map((log) => (
               <div
