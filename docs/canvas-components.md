@@ -1,6 +1,6 @@
 # Canvas Components
 
-Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering.
+Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering. Implemented: Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag.
 
 ---
 
@@ -87,10 +87,46 @@ Same extensible pattern as Flex:
 - **Badge**: `value`, `style?`, `color?`, `backgroundColor?`, `borderRadius?`.
 - **Sparkline**: Inline mini line chart. `data` (number[]), `style?`, `color?`, `strokeWidth?`, `variant?` (`"line"` | `"area"`). Fully drawn on canvas.
 
+---
+
 ## 4. Stub components
 
-Rating, Icon, ProgressBar, etc. are stubs (placeholder instructions). ProgressBar is planned as an **interactive (DOM overlay)** component: canvas-drawn bar for display, plus `<input type="range">` overlay when the cell is edited. Stubs use the same pattern:
+Icon, ProgressBar, Input, etc. are stubs (placeholder instructions). They use the same pattern: optional `style` + individual prop merging (individual overrides), and `ReactNode` children where applicable. When implemented, each stub can expose a typed style surface like Text/Badge/Flex.
 
-- **`style` prop**: Optional `style?: Record<string, unknown>`. Merged with other props; individual props override `style`. When implemented, each stub can expose a typed style surface like Text/Badge/Flex.
+---
 
-New components should follow the same rules: optional `style` + individual prop merging (individual overrides), and `ReactNode` children where applicable.
+## Planned components (stub)
+
+These components are **exported and usable in JSX**, but the renderer only draws a placeholder (e.g. `[ProgressBar]`). They return a `StubInstruction`; props (including `style`) are stored and will apply when a real renderer is added.
+
+### Data display
+
+Display-only; no DOM overlay. Canvas drawing only.
+
+| Component  | Intended use                   |
+| ---------- | ------------------------------ |
+| **Icon**   | Icon (name or glyph).          |
+| **Image**  | Image (src, alt).              |
+| **Avatar** | User avatar.                   |
+
+### Interactive (DOM overlay)
+
+These require **DOM overlays** over the canvas (e.g. for editing or user control). The grid already has an editor layer; these stubs reserve the component names for future overlay UI.
+
+| Component       | Intended use                                                                |
+| --------------- | --------------------------------------------------------------------------- |
+| **ProgressBar** | Progress bar: canvas display + `<input type="range">` overlay when editing. |
+| **Input**       | Text input.                                                                 |
+| **NumberInput** | Number input.                                                               |
+| **Select**      | Dropdown select.                                                            |
+| **Checkbox**    | Checkbox.                                                                   |
+| **Switch**      | Toggle switch.                                                              |
+| **DatePicker**  | Date picker.                                                                |
+| **Dropdown**    | Dropdown menu.                                                              |
+
+---
+
+## Adding a new component
+
+1. **Implement**: Add a cell renderer in `packages/grid/src/renderer/components/<name>.ts`, export and register it in `createCellRendererRegistry` in `components/index.ts`, and add the component in `components.tsx` that returns the corresponding instruction type.
+2. **Stub only**: Add a stub in `components.tsx` with `stub("ComponentName")` and document it in the “Planned components” section above. No renderer change until implementation.

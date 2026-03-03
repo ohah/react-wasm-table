@@ -17,7 +17,7 @@ export function CanvasComponents() {
       <h1>Canvas Components</h1>
       <p>
         One page per component. All support optional <code>style</code> and individual props. See{" "}
-        <code>docs/canvas-components.md</code> and <code>docs/canvas-component-list.md</code>.
+        <code>docs/canvas-components.md</code>.
       </p>
 
       <h2 style={{ marginTop: 24, fontSize: 16 }}>Supported (drawn on canvas)</h2>
