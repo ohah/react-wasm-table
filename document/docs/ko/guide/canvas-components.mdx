@@ -12,6 +12,11 @@
 | **Box**       | 패딩, 마진, 테두리; 자식은 콘텐츠 영역에 세로 스택 | `children?`, `style?`, `padding?`, `margin?`, `borderWidth?`, `backgroundColor?` |
 | **Stack**     | gap이 있는 행/열 레이아웃                          | `children?`, `direction?` ("row" \| "column"), `gap?`, `style?`                  |
 | **Sparkline** | `data`(number[])로 그리는 인라인 미니 라인 차트    | `data`, `style?`, `color?`, `strokeWidth?`, `variant?` ("line" \| "area")        |
+| **Color**     | 중앙 정렬 정사각형 색상 견본                       | `value` (hex), `borderRadius?`, `borderWidth?`, `borderColor?`                   |
+| **Tag**       | 테두리가 있는 텍스트 (stroke + text)               | `value`, `color?`, `borderColor?`, `borderRadius?`, `fontSize?`                  |
+| **Rating**    | 채워진 ★과 빈 ☆ 별점                               | `value`, `max?`, `color?`, `emptyColor?`, `size?`                                |
+| **Chip**      | 배경이 있는 pill (닫기 버튼 선택)                  | `value`, `color?`, `backgroundColor?`, `borderRadius?`, `closable?`              |
+| **Link**      | 링크 색상 + 밑줄 텍스트; 클릭 시 URL 열기          | `value`, `href?`, `color?`, `underline?`, `fontSize?`                            |
 
 모두 선택적 `style` 객체를 지원하며, 개별 props가 동일 키일 때 `style`보다 우선합니다.
 
@@ -100,6 +105,89 @@ export const Example = () => (
 );
 ```
 
+## Color, Tag, Rating, Chip, Link
+
+```tsx twoslash
+// @noErrors
+import React from "react";
+import { Color, Tag, Rating, Chip, Link } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <>
+    <Color value="#e53935" borderRadius={4} />
+    <Tag value="frontend" color="#1565c0" borderColor="#1565c0" />
+    <Rating value={4} max={5} color="#f59e0b" />
+    <Chip value="React" backgroundColor="#1976d2" color="#fff" />
+    <Link value="Docs" href="https://example.com" underline />
+  </>
+);
+```
+
+## 이벤트 핸들러
+
+모든 캔버스 컴포넌트는 `CanvasEventHandlers` 인터페이스를 통해 **HTMLElement과 동일한 이벤트 핸들러**를 지원합니다. 이벤트는 컴포넌트별로 발생하며, 셀 좌표와 네이티브 `MouseEvent`를 포함하는 `GridCellEvent`를 받습니다.
+
+| 핸들러          | 발생 시점                        |
+| --------------- | -------------------------------- |
+| `onClick`       | 컴포넌트 셀 클릭                 |
+| `onDoubleClick` | 컴포넌트 셀 더블클릭             |
+| `onMouseDown`   | 컴포넌트 셀에서 마우스 버튼 누름 |
+| `onMouseUp`     | 컴포넌트 셀에서 마우스 버튼 놓음 |
+| `onMouseEnter`  | 커서가 컴포넌트 셀에 진입        |
+| `onMouseLeave`  | 커서가 컴포넌트 셀에서 벗어남    |
+
+### 실행 순서
+
+이벤트 핸들러는 DOM 시맨틱스를 따르는 3단계 실행 순서로 동작합니다:
+
+1. **컴포넌트 레벨** — 컴포넌트의 `onClick` (요소 핸들러)
+2. **Grid 레벨** — Grid의 `onCellClick` prop (부모/버블링)
+3. **렌더러 기본 동작** — 예: Link가 URL 열기
+
+어느 레벨에서든 `e.preventDefault()`를 호출하면 하위 단계가 차단됩니다.
+
+### 예제
+
+```tsx twoslash
+// @noErrors
+import React from "react";
+import { Link, Chip, type GridCellEvent } from "@ohah/react-wasm-table";
+
+export const Example = () => (
+  <>
+    {/* preventDefault()로 Link 렌더러의 URL 열기를 차단 */}
+    <Link
+      value="Click me"
+      href="https://example.com"
+      onClick={(e) => {
+        e.preventDefault();
+        console.log("clicked link at", e.cell);
+      }}
+    />
+
+    {/* 호버 이벤트 */}
+    <Chip
+      value="Hover me"
+      backgroundColor="#e3f2fd"
+      color="#1565c0"
+      onMouseEnter={(e) => console.log("enter", e.cell)}
+      onMouseLeave={(e) => console.log("leave", e.cell)}
+    />
+
+    {/* 하나의 컴포넌트에 여러 이벤트 */}
+    <Chip
+      value="All events"
+      backgroundColor="#e8f5e9"
+      color="#2e7d32"
+      onClick={(e) => console.log("click", e.cell)}
+      onDoubleClick={(e) => console.log("dblclick", e.cell)}
+      onMouseDown={(e) => console.log("mousedown", e.cell)}
+      onMouseUp={(e) => console.log("mouseup", e.cell)}
+    />
+  </>
+);
+```
+
 ## 스텁 컴포넌트 (예정)
 
-JSX에서 사용 가능하지만 렌더러는 플레이스홀더만 그립니다(예: `[ProgressBar]`): Rating, Icon, Image, Avatar, Tag, Chip, Link, Color, ProgressBar, Input, NumberInput, Select, Checkbox, Switch, DatePicker, Dropdown. 실제 렌더러 추가 시를 위해 `style` 등 props를 받습니다.
+JSX에서 사용 가능하지만 렌더러는 플레이스홀더만 그립니다(예: `[ProgressBar]`): Icon, Image, Avatar, ProgressBar, Input, NumberInput, Select, Checkbox, Switch, DatePicker, Dropdown. 실제 렌더러 추가 시를 위해 `style` 등 props를 받습니다.
