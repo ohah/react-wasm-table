@@ -3,8 +3,7 @@ import {
   Grid,
   createColumnHelper,
   Radio,
-  Box,
-  Text,
+  Label,
   type GridCellEvent,
 } from "@ohah/react-wasm-table";
 
@@ -88,20 +87,7 @@ export function CanvasRadio() {
                 onMouseEnter={(e) => addLog("onMouseEnter", plan, e)}
                 onMouseLeave={(e) => addLog("onMouseLeave", plan, e)}
               >
-                <Box
-                  backgroundColor={checked ? "#3b82f6" : "#fff"}
-                  borderColor={checked ? "#3b82f6" : "#d1d5db"}
-                  borderWidth={2}
-                  borderRadius={999}
-                >
-                  <Text
-                    value={checked ? "\u25CF" : ""}
-                    color="#fff"
-                    fontSize={10}
-                    fontWeight="bold"
-                  />
-                </Box>
-                <Text value={plan} fontSize={12} />
+                <Label value={plan} fontSize={12} />
               </Radio>
             );
           },
@@ -115,8 +101,8 @@ export function CanvasRadio() {
     <>
       <h1>Canvas: Radio</h1>
       <p>
-        <code>Radio</code> is a headless canvas container (same layout as <code>Checkbox</code>).
-        Children supply visuals — here a circular <code>Box</code> with a dot indicator.
+        <code>Radio</code> self-draws a radio indicator on canvas. Use{" "}
+        <code>Label</code> as children for associated text.
         Only one plan per row can be selected.
       </p>
 
