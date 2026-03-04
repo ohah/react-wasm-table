@@ -51,7 +51,8 @@ import { CanvasSwitch } from "./pages/CanvasSwitch";
 import { CanvasCheckbox } from "./pages/CanvasCheckbox";
 import { CanvasRadio } from "./pages/CanvasRadio";
 import { CanvasInput } from "./pages/CanvasInput";
-import { CanvasNumberInput } from "./pages/CanvasNumberInput";
+import { CanvasIcon } from "./pages/CanvasIcon";
+import { CanvasSelect } from "./pages/CanvasSelect";
 import { CanvasEvents } from "./pages/CanvasEvents";
 import { CustomRendererDemo } from "./pages/CustomRendererDemo";
 import { LayerDemo } from "./pages/LayerDemo";
@@ -153,7 +154,8 @@ export function App() {
           <Route path="/tanstack/canvas-checkbox" element={<CanvasCheckbox />} />
           <Route path="/tanstack/canvas-radio" element={<TanStackCanvasRadio />} />
           <Route path="/tanstack/canvas-input" element={<CanvasInput />} />
-          <Route path="/tanstack/canvas-number-input" element={<CanvasNumberInput />} />
+          <Route path="/tanstack/canvas-icon" element={<CanvasIcon />} />
+          <Route path="/tanstack/canvas-select" element={<CanvasSelect />} />
           <Route path="/tanstack/canvas-events" element={<TanStackCanvasEvents />} />
           <Route path="/tanstack/grid-template" element={<GridTemplate />} />
           <Route path="/tanstack/flex-direction" element={<FlexDirection />} />
@@ -216,7 +218,8 @@ export function App() {
           <Route path="/canvas-checkbox" element={<CanvasCheckbox />} />
           <Route path="/canvas-radio" element={<CanvasRadio />} />
           <Route path="/canvas-input" element={<CanvasInput />} />
-          <Route path="/canvas-number-input" element={<CanvasNumberInput />} />
+          <Route path="/canvas-icon" element={<CanvasIcon />} />
+          <Route path="/canvas-select" element={<CanvasSelect />} />
           <Route path="/canvas-events" element={<CanvasEvents />} />
           <Route path="/custom-renderer" element={<CustomRendererDemo />} />
           <Route path="/layers" element={<LayerDemo />} />
