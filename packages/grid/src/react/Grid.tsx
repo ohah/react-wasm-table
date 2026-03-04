@@ -757,6 +757,44 @@ export function Grid({
             {domOverlays.map((d) => {
               const inst = d.instruction;
               const s = inst.style;
+              const baseStyle: React.CSSProperties = {
+                position: "absolute",
+                left: d.x - overlayScrollLeft,
+                top: d.y,
+                width: d.width,
+                height: d.height,
+                pointerEvents: "auto",
+                boxSizing: "border-box",
+                padding: "2px 6px",
+                fontSize: s?.fontSize ?? 13,
+                fontFamily: s?.fontFamily ?? "system-ui, sans-serif",
+                color: s?.color ?? "#333",
+                backgroundColor: s?.backgroundColor ?? "#fff",
+                borderColor: s?.borderColor ?? "#d1d5db",
+                borderWidth: s?.borderWidth ?? 1,
+                borderStyle: "solid",
+                borderRadius: s?.borderRadius ?? 4,
+                outline: "none",
+                opacity: inst.disabled ? 0.5 : 1,
+              };
+              if (inst.type === "select") {
+                return (
+                  <OverlaySelect
+                    key={d.key}
+                    value={inst.value ?? ""}
+                    options={inst.options}
+                    placeholder={inst.placeholder}
+                    disabled={inst.disabled}
+                    onChange={inst._domHandlers?.onChange}
+                    onFocus={inst._domHandlers?.onFocus}
+                    onBlur={inst._domHandlers?.onBlur}
+                    onWheel={(e) => {
+                      canvasRef.current?.dispatchEvent(new WheelEvent("wheel", e.nativeEvent));
+                    }}
+                    style={baseStyle}
+                  />
+                );
+              }
               return (
                 <OverlayInput
                   key={d.key}
@@ -784,26 +822,7 @@ export function Grid({
                   onWheel={(e) => {
                     canvasRef.current?.dispatchEvent(new WheelEvent("wheel", e.nativeEvent));
                   }}
-                  style={{
-                    position: "absolute",
-                    left: d.x - overlayScrollLeft,
-                    top: d.y,
-                    width: d.width,
-                    height: d.height,
-                    pointerEvents: "auto",
-                    boxSizing: "border-box",
-                    padding: "2px 6px",
-                    fontSize: s?.fontSize ?? 13,
-                    fontFamily: s?.fontFamily ?? "system-ui, sans-serif",
-                    color: s?.color ?? "#333",
-                    backgroundColor: s?.backgroundColor ?? "#fff",
-                    borderColor: s?.borderColor ?? "#d1d5db",
-                    borderWidth: s?.borderWidth ?? 1,
-                    borderStyle: "solid",
-                    borderRadius: s?.borderRadius ?? 4,
-                    outline: "none",
-                    opacity: inst.disabled ? 0.5 : 1,
-                  }}
+                  style={baseStyle}
                 />
               );
             })}
@@ -866,5 +885,53 @@ function OverlayInput({
       }}
       onKeyDown={onKeyDown}
     />
+  );
+}
+
+/**
+ * Wrapper for DOM overlay <select> that avoids controlled-component re-render loops.
+ * Uses defaultValue + imperative sync (same pattern as OverlayInput) so that
+ * React does not set el.value on every frame, preventing spurious change events.
+ */
+function OverlaySelect({
+  value,
+  options,
+  placeholder,
+  onChange,
+  ...rest
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+} & Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "value">) {
+  const elRef = useRef<HTMLSelectElement | null>(null);
+  const prevValueRef = useRef(value);
+
+  // Sync external value → DOM imperatively
+  if (value !== prevValueRef.current) {
+    prevValueRef.current = value;
+    if (elRef.current) {
+      elRef.current.value = value;
+    }
+  }
+
+  return (
+    <select
+      {...rest}
+      ref={elRef}
+      defaultValue={value}
+      onChange={onChange}
+    >
+      {placeholder && (
+        <option value="" disabled>
+          {placeholder}
+        </option>
+      )}
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
   );
 }
