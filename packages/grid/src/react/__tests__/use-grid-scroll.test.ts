@@ -193,14 +193,16 @@ describe("useGridScroll", () => {
   });
 
   describe("handleDragEdge / stopAutoScroll", () => {
-    it("starts auto-scroll interval on non-zero delta", () => {
+    it("starts auto-scroll interval on non-zero delta", async () => {
       const params = defaultParams();
       const { result } = renderHook(() => useGridScroll(params));
 
       act(() => result.current.handleDragEdge(8, 0));
-      // Auto-scroll should be active (interval created)
-      // Stop it to avoid leaks
+      // Wait for interval to fire at least once (16ms)
+      await new Promise((r) => setTimeout(r, 50));
       act(() => result.current.stopAutoScroll());
+      // scrollTop should have increased from auto-scroll
+      expect(result.current.scrollTopRef.current).toBeGreaterThan(0);
     });
 
     it("stopAutoScroll clears the interval", () => {

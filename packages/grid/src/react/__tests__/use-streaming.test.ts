@@ -34,6 +34,20 @@ describe("useStreaming", () => {
   });
 
   describe("checkAndFetch", () => {
+    it("does not call onFetchMore when rowHeight <= 0", async () => {
+      const onFetchMore = mock(() => {});
+      const data = Array.from({ length: 10 }, (_, i) => ({ id: i })) as Record<string, unknown>[];
+      const { result } = renderHook(() =>
+        useStreaming({ data, totalCount: 100, onFetchMore, fetchAhead: 5 }),
+      );
+
+      act(() => {
+        result.current.checkAndFetch(0, 0, 500);
+      });
+      await new Promise((r) => setTimeout(r, 50));
+      expect(onFetchMore).not.toHaveBeenCalled();
+    });
+
     it("does not call onFetchMore when not streaming", () => {
       const onFetchMore = mock(() => {});
       const data = [{ a: 1 }] as Record<string, unknown>[];

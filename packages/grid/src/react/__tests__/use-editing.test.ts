@@ -1,6 +1,8 @@
 import { describe, expect, it, mock } from "bun:test";
-import { renderHook, act } from "@testing-library/react";
+import React from "react";
+import { renderHook, act, render } from "@testing-library/react";
 import { useEditing } from "../hooks/use-editing";
+import type { UseEditingParams } from "../hooks/use-editing";
 import { ColumnRegistry } from "../../adapter/column-registry";
 import { EditorManager } from "../../adapter/editor-manager";
 import { SelectionManager } from "../../adapter/selection-manager";
@@ -699,6 +701,177 @@ describe("useEditing (renderHook)", () => {
         result.current.handleTypingKeyDown(new KeyboardEvent("keydown", { key: "a" }));
       });
       expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+    });
+  });
+
+  describe("Shift+Tab wraps to previous row", () => {
+    function setupNavWithScroll(
+      cols: { id: string; width: number; editor?: string }[],
+      data: Record<string, unknown>[],
+      layoutCells: {
+        row: number;
+        col: number;
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+      }[],
+      scrollToRow?: (idx: number) => void,
+    ) {
+      const buf = makeLayoutBuf(layoutCells);
+      const registry = new ColumnRegistry();
+      registry.setAll(cols as any);
+      const sm = new SelectionManager();
+      const editorDiv = document.createElement("div");
+      document.body.appendChild(editorDiv);
+      const hook = renderHook(() =>
+        useEditing({
+          editorRef: { current: editorDiv },
+          columnRegistry: registry,
+          data,
+          selectionManagerRef: { current: sm },
+          getLayoutBuf: () => buf,
+          getHeaderCount: () => cols.length,
+          getTotalCellCount: () => layoutCells.length,
+          scrollToRow,
+        }),
+      );
+      return { ...hook, editorDiv };
+    }
+
+    it("Shift+Tab wraps to last editable column of previous row", () => {
+      const cols = [
+        { id: "name", width: 100, editor: "text" },
+        { id: "age", width: 80, editor: "number" },
+      ];
+      const data = [
+        { name: "Alice", age: 30 },
+        { name: "Bob", age: 25 },
+      ];
+      const cells = [
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 0, col: 1, x: 100, y: 0, w: 80, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+        { row: 1, col: 1, x: 100, y: 40, w: 80, h: 36 },
+        { row: 2, col: 0, x: 0, y: 76, w: 100, h: 36 },
+        { row: 2, col: 1, x: 100, y: 76, w: 80, h: 36 },
+      ];
+      const { result } = setupNavWithScroll(cols, data, cells);
+
+      // Open editor at row 2, col 0 (first editable col of second data row)
+      act(() => result.current.handleCellDoubleClick({ row: 2, col: 0 }));
+      expect(result.current.editorManagerRef.current.isEditing).toBe(true);
+
+      // Shift+Tab should wrap to row 1, col 1 (last editable col of first data row)
+      act(() => result.current.editorManagerRef.current.commitAndNavigate("Bob", "prev"));
+      expect(result.current.editorManagerRef.current.isEditing).toBe(true);
+      expect(result.current.editorManagerRef.current.activeCoord).toEqual({ row: 1, col: 1 });
+    });
+
+    it("uses scrollToRow + flushPendingOpen when scrollToRow is provided", () => {
+      const scrollToRow = mock((_idx: number) => {});
+      const cols = [
+        { id: "name", width: 100, editor: "text" },
+        { id: "age", width: 80, editor: "number" },
+      ];
+      const data = [
+        { name: "Alice", age: 30 },
+        { name: "Bob", age: 25 },
+      ];
+      const cells = [
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 0, col: 1, x: 100, y: 0, w: 80, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+        { row: 1, col: 1, x: 100, y: 40, w: 80, h: 36 },
+        { row: 2, col: 0, x: 0, y: 76, w: 100, h: 36 },
+        { row: 2, col: 1, x: 100, y: 76, w: 80, h: 36 },
+      ];
+      const { result } = setupNavWithScroll(cols, data, cells, scrollToRow);
+
+      // Open editor at row 1, col 0
+      act(() => result.current.handleCellDoubleClick({ row: 1, col: 0 }));
+      expect(result.current.editorManagerRef.current.isEditing).toBe(true);
+
+      // Tab (next) → should call scrollToRow
+      act(() => result.current.editorManagerRef.current.commitAndNavigate("Alice", "next"));
+      expect(scrollToRow).toHaveBeenCalled();
+
+      // Simulate layout buffer update → flushPendingOpen opens the editor
+      act(() => result.current.flushPendingOpen());
+      expect(result.current.editorManagerRef.current.isEditing).toBe(true);
+    });
+
+    it("flushPendingOpen does nothing when no pending target", () => {
+      const cols = [{ id: "name", width: 100, editor: "text" }];
+      const data = [{ name: "Alice" }];
+      const cells = [
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      ];
+      const { result } = setupNavWithScroll(cols, data, cells);
+
+      // No pending open — should not throw or change state
+      act(() => result.current.flushPendingOpen());
+      expect(result.current.editorManagerRef.current.isEditing).toBe(false);
+    });
+  });
+
+  describe("editor portal rendering", () => {
+    it("renders SelectEditor when editor is 'select' with options", () => {
+      const buf = makeLayoutBuf([
+        { row: 0, col: 0, x: 0, y: 0, w: 100, h: 40 },
+        { row: 1, col: 0, x: 0, y: 40, w: 100, h: 36 },
+      ]);
+      const registry = new ColumnRegistry();
+      registry.setAll([
+        {
+          id: "status",
+          width: 100,
+          editor: "select",
+          editorOptions: {
+            options: [
+              { label: "Active", value: "active" },
+              { label: "Inactive", value: "inactive" },
+            ],
+          },
+        },
+      ] as any);
+      const sm = new SelectionManager();
+      const editorDiv = document.createElement("div");
+      document.body.appendChild(editorDiv);
+
+      const emRef = { current: null as EditorManager | null };
+
+      function Wrapper() {
+        const editing = useEditing({
+          editorRef: { current: editorDiv },
+          columnRegistry: registry,
+          data: [{ status: "active" }],
+          selectionManagerRef: { current: sm },
+          getLayoutBuf: () => buf,
+          getHeaderCount: () => 1,
+          getTotalCellCount: () => buf.length / STRIDE,
+        });
+        emRef.current = editing.editorManagerRef.current;
+        return React.createElement(React.Fragment, null, editing.editorPortal);
+      }
+
+      const { rerender } = render(React.createElement(Wrapper));
+
+      // Open editor
+      act(() => {
+        emRef.current!.open(
+          { row: 1, col: 0 },
+          { row: 1, col: 0, x: 0, y: 40, width: 100, height: 36, contentAlign: "left" },
+          "select",
+          "active",
+          null,
+        );
+      });
+
+      rerender(React.createElement(Wrapper));
+      const selectEl = editorDiv.querySelector("select");
+      expect(selectEl).toBeTruthy();
     });
   });
 
