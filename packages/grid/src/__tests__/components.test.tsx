@@ -1098,7 +1098,14 @@ describe("ProgressBar with onChange handlers", () => {
     const ctx = mockCtx();
     progressBarCellRenderer.draw(
       { type: "progressbar", value: 50 },
-      { ctx, buf, cellIdx: 0, theme: defaultTheme, registry: createCellRendererRegistry(), computeChildLayout: (input: Float32Array) => new Float32Array(0) },
+      {
+        ctx,
+        buf,
+        cellIdx: 0,
+        theme: defaultTheme,
+        registry: createCellRendererRegistry(),
+        computeChildLayout: (input: Float32Array) => new Float32Array(0),
+      },
     );
   }
 

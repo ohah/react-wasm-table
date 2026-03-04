@@ -16,7 +16,10 @@ class MockEvent {
   timeStamp = Date.now();
   isTrusted = false;
   cancelBubble = false;
-  constructor(type: string, init?: { bubbles?: boolean; cancelable?: boolean; [key: string]: any }) {
+  constructor(
+    type: string,
+    init?: { bubbles?: boolean; cancelable?: boolean; [key: string]: any },
+  ) {
     this.type = type;
     this.bubbles = init?.bubbles ?? false;
     this.cancelable = init?.cancelable ?? false;
@@ -30,7 +33,9 @@ class MockEvent {
   stopImmediatePropagation() {
     this.cancelBubble = true;
   }
-  composedPath() { return []; }
+  composedPath() {
+    return [];
+  }
 }
 
 class MockMouseEvent extends MockEvent {
@@ -219,7 +224,9 @@ class MockNode {
     node.textContent = this.textContent;
     return node;
   }
-  getRootNode() { return _mockDocument; }
+  getRootNode() {
+    return _mockDocument;
+  }
   remove(): void {
     if (this.parentNode) {
       this.parentNode.removeChild(this);
@@ -231,7 +238,12 @@ class MockElement extends MockNode {
   tagName: string;
   localName: string;
   namespaceURI: string | null = "http://www.w3.org/1999/xhtml";
-  style: Record<string, string> & { getPropertyValue?: (name: string) => string; setProperty?: (name: string, value: string) => void; removeProperty?: (name: string) => void; cssText?: string };
+  style: Record<string, string> & {
+    getPropertyValue?: (name: string) => string;
+    setProperty?: (name: string, value: string) => void;
+    removeProperty?: (name: string) => void;
+    cssText?: string;
+  };
   attributes: Map<string, string> = new Map();
   innerHTML = "";
   outerHTML = "";
@@ -259,8 +271,14 @@ class MockElement extends MockNode {
     this.style = new Proxy({} as any, {
       get(_target, prop) {
         if (prop === "getPropertyValue") return (name: string) => _target[name] ?? "";
-        if (prop === "setProperty") return (name: string, value: string) => { _target[name] = value; };
-        if (prop === "removeProperty") return (name: string) => { delete _target[name]; };
+        if (prop === "setProperty")
+          return (name: string, value: string) => {
+            _target[name] = value;
+          };
+        if (prop === "removeProperty")
+          return (name: string) => {
+            delete _target[name];
+          };
         if (prop === "cssText") return "";
         return _target[prop] ?? "";
       },
@@ -320,12 +338,21 @@ class MockElement extends MockNode {
     this._listeners.get(type)?.delete(fn);
   }
   dispatchEvent(event: any) {
-    try { if (!event.target) event.target = this; } catch {}
-    try { event.currentTarget = this; } catch {}
+    try {
+      if (!event.target) event.target = this;
+    } catch {}
+    try {
+      event.currentTarget = this;
+    } catch {}
     const fns = this._listeners.get(event.type);
     if (fns) for (const fn of fns) fn(event);
     // Bubble the event up the DOM tree (React uses event delegation)
-    if (event.bubbles && !event.cancelBubble && this.parentNode && this.parentNode instanceof MockElement) {
+    if (
+      event.bubbles &&
+      !event.cancelBubble &&
+      this.parentNode &&
+      this.parentNode instanceof MockElement
+    ) {
       (this.parentNode as MockElement).dispatchEvent(event);
     }
     return !event.defaultPrevented;
@@ -413,7 +440,7 @@ class MockElement extends MockNode {
     let el: MockElement | null = this;
     while (el) {
       if (el._matchesSelector(selector)) return el;
-      el = el.parentElement instanceof MockElement ? el.parentElement as MockElement : null;
+      el = el.parentElement instanceof MockElement ? (el.parentElement as MockElement) : null;
     }
     return null;
   }
@@ -447,7 +474,9 @@ class MockElement extends MockNode {
   // React internals may access these
   get dataset() {
     return new Proxy({} as Record<string, string>, {
-      get: (_t, prop: string) => this.getAttribute(`data-${prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`) ?? undefined,
+      get: (_t, prop: string) =>
+        this.getAttribute(`data-${prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`) ??
+        undefined,
       set: (_t, prop: string, value: string) => {
         this.setAttribute(`data-${prop.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`, value);
         return true;
@@ -479,7 +508,7 @@ class MockHTMLInputElement extends MockElement {
     // For <select>, return the value of the selected option
     if (this.localName === "select") {
       const opts = this.options;
-      const selected = opts.find(o => o.selected);
+      const selected = opts.find((o) => o.selected);
       if (selected) return selected.value;
       return opts[0]?.value ?? "";
     }
@@ -496,7 +525,7 @@ class MockHTMLInputElement extends MockElement {
     if (this.localName === "select") {
       const opts = this.options;
       for (const opt of opts) {
-        opt.selected = (opt.value === v);
+        opt.selected = opt.value === v;
       }
     }
   }
@@ -599,8 +628,12 @@ const mockDocument: Record<string, any> = {
   defaultView: null as any, // set later
   childNodes: [documentElement],
   firstChild: documentElement,
-  get ownerDocument() { return null; }, // document's ownerDocument is null per spec
-  contains(node: any) { return documentElement.contains(node); },
+  get ownerDocument() {
+    return null;
+  }, // document's ownerDocument is null per spec
+  contains(node: any) {
+    return documentElement.contains(node);
+  },
   createElement(tag: string) {
     const lower = tag.toLowerCase();
     if (lower === "input" || lower === "textarea" || lower === "select" || lower === "option") {
@@ -650,7 +683,9 @@ const mockDocument: Record<string, any> = {
     docListeners.get(type)!.add(fn);
     const signal = options?.signal as AbortSignal | undefined;
     if (signal) {
-      signal.addEventListener("abort", () => { docListeners.get(type)?.delete(fn); });
+      signal.addEventListener("abort", () => {
+        docListeners.get(type)?.delete(fn);
+      });
     }
   },
   removeEventListener(type: string, fn: Function, _options?: any) {
@@ -661,15 +696,21 @@ const mockDocument: Record<string, any> = {
     if (fns) for (const fn of fns) fn(event);
     return true;
   },
-  execCommand(_command: string) { return true; },
+  execCommand(_command: string) {
+    return true;
+  },
   // React feature-detection: "oninput" in document → true enables native input event support
   oninput: null,
   onselectionchange: null,
   // React accesses these
   activeElement: null,
   implementation: {
-    createHTMLDocument(title?: string) { return mockDocument; },
-    hasFeature() { return true; },
+    createHTMLDocument(title?: string) {
+      return mockDocument;
+    },
+    hasFeature() {
+      return true;
+    },
   },
 };
 
@@ -680,8 +721,19 @@ const windowListeners = new Map<string, Set<Function>>();
 const mockWindow: Record<string, any> = {
   document: mockDocument,
   navigator: { userAgent: "bun-test", platform: "test" },
-  location: { href: "https://localhost", origin: "https://localhost", protocol: "https:", hostname: "localhost", pathname: "/", search: "", hash: "" },
-  getComputedStyle: () => new Proxy({} as CSSStyleDeclaration, { get: (_t, p) => typeof p === "string" ? "" : undefined }),
+  location: {
+    href: "https://localhost",
+    origin: "https://localhost",
+    protocol: "https:",
+    hostname: "localhost",
+    pathname: "/",
+    search: "",
+    hash: "",
+  },
+  getComputedStyle: () =>
+    new Proxy({} as CSSStyleDeclaration, {
+      get: (_t, p) => (typeof p === "string" ? "" : undefined),
+    }),
   requestAnimationFrame: (cb: Function) => setTimeout(cb, 0) as unknown as number,
   cancelAnimationFrame: (id: number) => clearTimeout(id),
   addEventListener(type: string, fn: Function, options?: any) {
@@ -689,7 +741,9 @@ const mockWindow: Record<string, any> = {
     windowListeners.get(type)!.add(fn);
     const signal = options?.signal as AbortSignal | undefined;
     if (signal) {
-      signal.addEventListener("abort", () => { windowListeners.get(type)?.delete(fn); });
+      signal.addEventListener("abort", () => {
+        windowListeners.get(type)?.delete(fn);
+      });
     }
   },
   removeEventListener(type: string, fn: Function, _options?: any) {
@@ -700,7 +754,9 @@ const mockWindow: Record<string, any> = {
     if (fns) for (const fn of fns) fn(event);
     return true;
   },
-  open() { return null; },
+  open() {
+    return null;
+  },
   close() {},
   focus() {},
   blur() {},
@@ -713,9 +769,27 @@ const mockWindow: Record<string, any> = {
   scrollY: 0,
   pageXOffset: 0,
   pageYOffset: 0,
-  screen: { width: 1024, height: 768, availWidth: 1024, availHeight: 768, colorDepth: 24, pixelDepth: 24 },
+  screen: {
+    width: 1024,
+    height: 768,
+    availWidth: 1024,
+    availHeight: 768,
+    colorDepth: 24,
+    pixelDepth: 24,
+  },
   matchMedia(_query: string) {
-    return { matches: false, media: _query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent() { return true; } };
+    return {
+      matches: false,
+      media: _query,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      onchange: null,
+      dispatchEvent() {
+        return true;
+      },
+    };
   },
   HTMLIFrameElement: MockElement,
   HTMLElement: MockElement,
@@ -737,7 +811,10 @@ const mockWindow: Record<string, any> = {
   clearTimeout,
   setInterval,
   clearInterval,
-  queueMicrotask: typeof queueMicrotask !== "undefined" ? queueMicrotask : (fn: () => void) => Promise.resolve().then(fn),
+  queueMicrotask:
+    typeof queueMicrotask !== "undefined"
+      ? queueMicrotask
+      : (fn: () => void) => Promise.resolve().then(fn),
 };
 
 // Wire up circular reference
@@ -793,7 +870,9 @@ if (typeof g.MutationObserver === "undefined") {
   g.MutationObserver = class {
     observe() {}
     disconnect() {}
-    takeRecords() { return []; }
+    takeRecords() {
+      return [];
+    }
   };
 }
 if (typeof g.ResizeObserver === "undefined") {
@@ -808,12 +887,16 @@ if (typeof g.IntersectionObserver === "undefined") {
     observe() {}
     disconnect() {}
     unobserve() {}
-    takeRecords() { return []; }
+    takeRecords() {
+      return [];
+    }
   };
 }
 if (typeof g.getComputedStyle === "undefined") g.getComputedStyle = mockWindow.getComputedStyle;
-if (typeof g.requestAnimationFrame === "undefined") g.requestAnimationFrame = mockWindow.requestAnimationFrame;
-if (typeof g.cancelAnimationFrame === "undefined") g.cancelAnimationFrame = mockWindow.cancelAnimationFrame;
+if (typeof g.requestAnimationFrame === "undefined")
+  g.requestAnimationFrame = mockWindow.requestAnimationFrame;
+if (typeof g.cancelAnimationFrame === "undefined")
+  g.cancelAnimationFrame = mockWindow.cancelAnimationFrame;
 if (typeof g.matchMedia === "undefined") g.matchMedia = mockWindow.matchMedia;
 
 // Node type constants
