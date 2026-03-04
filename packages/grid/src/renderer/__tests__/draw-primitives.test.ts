@@ -10,6 +10,16 @@ import { tagCellRenderer } from "../components/tag";
 import { ratingCellRenderer } from "../components/rating";
 import { chipCellRenderer } from "../components/chip";
 import { linkCellRenderer } from "../components/link";
+import {
+  lengthToPx,
+  rectToPx,
+  measureInstructionWidth,
+  measureInstructionHeight,
+  makeSubCellBuf,
+  encodeCompositeInput,
+  FLEX_CHILD_HEIGHT,
+  BADGE_PADDING,
+} from "../components/shared";
 import { DEFAULT_THEME } from "../../types";
 
 /** Create a mock CanvasRenderingContext2D with spies. */
@@ -508,5 +518,406 @@ describe("linkCellRenderer", () => {
 
     expect(ctx.fillStyle).toBe("#e65100");
     expect(ctx.font).toBe("16px system-ui, sans-serif");
+  });
+});
+
+// ── shared.ts utility tests ────────────────────────────────────────────
+
+describe("lengthToPx", () => {
+  it("returns 0 for undefined", () => {
+    expect(lengthToPx(undefined, 100)).toBe(0);
+  });
+
+  it("returns number directly", () => {
+    expect(lengthToPx(10, 100)).toBe(10);
+  });
+
+  it("resolves percentage", () => {
+    expect(lengthToPx("50%", 200)).toBe(100);
+    expect(lengthToPx("25%", 400)).toBe(100);
+  });
+
+  it("returns 0 for invalid string", () => {
+    expect(lengthToPx("auto" as any, 100)).toBe(0);
+  });
+});
+
+describe("rectToPx", () => {
+  it("returns zeros for undefined", () => {
+    expect(rectToPx(undefined, 100, 100)).toEqual({ top: 0, right: 0, bottom: 0, left: 0 });
+  });
+
+  it("resolves single number", () => {
+    expect(rectToPx(8, 100, 100)).toEqual({ top: 8, right: 8, bottom: 8, left: 8 });
+  });
+
+  it("resolves 2-tuple", () => {
+    const result = rectToPx([4, 8], 200, 100);
+    expect(result).toEqual({ top: 4, right: 8, bottom: 4, left: 8 });
+  });
+
+  it("resolves 3-tuple", () => {
+    const result = rectToPx([4, 8, 12], 200, 100);
+    expect(result).toEqual({ top: 4, right: 8, bottom: 12, left: 8 });
+  });
+
+  it("resolves 4-tuple", () => {
+    const result = rectToPx([1, 2, 3, 4], 200, 100);
+    expect(result).toEqual({ top: 1, right: 2, bottom: 3, left: 4 });
+  });
+
+  it("resolves percentage values in tuple", () => {
+    const result = rectToPx(["10%", "20%"], 200, 100);
+    expect(result).toEqual({ top: 10, right: 40, bottom: 10, left: 40 });
+  });
+});
+
+describe("measureInstructionWidth", () => {
+  it("measures text width", () => {
+    const ctx = mockCtx();
+    (ctx.measureText as any).mockImplementation(() => ({ width: 50 }));
+    const w = measureInstructionWidth(ctx, { type: "text", value: "hello" }, DEFAULT_THEME);
+    expect(w).toBe(50);
+  });
+
+  it("measures badge width with padding", () => {
+    const ctx = mockCtx();
+    const w = measureInstructionWidth(
+      ctx,
+      { type: "badge", value: "OK", style: { backgroundColor: "#0f0" } },
+      DEFAULT_THEME,
+    );
+    expect(w).toBe("OK".length * 8 + BADGE_PADDING * 2);
+  });
+
+  it("measures chip width with closable", () => {
+    const ctx = mockCtx();
+    const w = measureInstructionWidth(
+      ctx,
+      { type: "chip", value: "X", style: { closable: true } },
+      DEFAULT_THEME,
+    );
+    expect(w).toBe("X".length * 8 + BADGE_PADDING * 2 + 14);
+  });
+
+  it("measures tag width", () => {
+    const ctx = mockCtx();
+    const w = measureInstructionWidth(ctx, { type: "tag", value: "New" }, DEFAULT_THEME);
+    expect(w).toBe("New".length * 8 + BADGE_PADDING * 2);
+  });
+
+  it("measures rating width", () => {
+    const ctx = mockCtx();
+    const w = measureInstructionWidth(ctx, { type: "rating", value: 3 }, DEFAULT_THEME);
+    expect(w).toBe("★★★★★".length * 8);
+  });
+
+  it("returns FLEX_CHILD_HEIGHT for color", () => {
+    const ctx = mockCtx();
+    expect(measureInstructionWidth(ctx, { type: "color", value: "#f00" }, DEFAULT_THEME)).toBe(
+      FLEX_CHILD_HEIGHT,
+    );
+  });
+
+  it("measures link width", () => {
+    const ctx = mockCtx();
+    const w = measureInstructionWidth(ctx, { type: "link", value: "Click" }, DEFAULT_THEME);
+    expect(w).toBe("Click".length * 8);
+  });
+
+  it("returns default for image", () => {
+    const ctx = mockCtx();
+    expect(
+      measureInstructionWidth(ctx, { type: "image", src: "x.png" } as any, DEFAULT_THEME),
+    ).toBe(FLEX_CHILD_HEIGHT);
+  });
+
+  it("returns explicit width for image", () => {
+    const ctx = mockCtx();
+    expect(
+      measureInstructionWidth(
+        ctx,
+        { type: "image", src: "x.png", width: 100 } as any,
+        DEFAULT_THEME,
+      ),
+    ).toBe(100);
+  });
+
+  it("returns default for switch", () => {
+    const ctx = mockCtx();
+    expect(
+      measureInstructionWidth(ctx, { type: "switch", checked: false } as any, DEFAULT_THEME),
+    ).toBe(36);
+  });
+
+  it("returns custom width for switch", () => {
+    const ctx = mockCtx();
+    expect(
+      measureInstructionWidth(
+        ctx,
+        { type: "switch", checked: false, style: { width: 44 } } as any,
+        DEFAULT_THEME,
+      ),
+    ).toBe(44);
+  });
+
+  it("returns 60 for checkbox", () => {
+    const ctx = mockCtx();
+    expect(
+      measureInstructionWidth(
+        ctx,
+        { type: "checkbox", checked: false, children: [] } as any,
+        DEFAULT_THEME,
+      ),
+    ).toBe(60);
+  });
+
+  it("returns 120 for input", () => {
+    const ctx = mockCtx();
+    expect(measureInstructionWidth(ctx, { type: "input", value: "" } as any, DEFAULT_THEME)).toBe(
+      120,
+    );
+  });
+
+  it("returns 60 for stub/box/flex/stack", () => {
+    const ctx = mockCtx();
+    expect(
+      measureInstructionWidth(ctx, { type: "stub", component: "X" } as any, DEFAULT_THEME),
+    ).toBe(60);
+    expect(
+      measureInstructionWidth(ctx, { type: "box", padding: 0, children: [] } as any, DEFAULT_THEME),
+    ).toBe(60);
+    expect(measureInstructionWidth(ctx, { type: "flex", children: [] } as any, DEFAULT_THEME)).toBe(
+      60,
+    );
+    expect(
+      measureInstructionWidth(ctx, { type: "stack", children: [] } as any, DEFAULT_THEME),
+    ).toBe(60);
+  });
+
+  it("returns 0 for unknown type", () => {
+    const ctx = mockCtx();
+    expect(measureInstructionWidth(ctx, { type: "unknown" } as any, DEFAULT_THEME)).toBe(0);
+  });
+});
+
+describe("measureInstructionHeight", () => {
+  it("returns FLEX_CHILD_HEIGHT for common types", () => {
+    const ctx = mockCtx();
+    const types = [
+      "badge",
+      "text",
+      "stub",
+      "box",
+      "flex",
+      "stack",
+      "color",
+      "tag",
+      "rating",
+      "chip",
+      "link",
+      "checkbox",
+      "input",
+    ];
+    for (const t of types) {
+      expect(measureInstructionHeight(ctx, { type: t } as any)).toBe(FLEX_CHILD_HEIGHT);
+    }
+  });
+
+  it("returns FLEX_CHILD_HEIGHT for image without explicit height", () => {
+    const ctx = mockCtx();
+    expect(measureInstructionHeight(ctx, { type: "image", src: "x.png" } as any)).toBe(
+      FLEX_CHILD_HEIGHT,
+    );
+  });
+
+  it("returns explicit height for image", () => {
+    const ctx = mockCtx();
+    expect(measureInstructionHeight(ctx, { type: "image", src: "x.png", height: 80 } as any)).toBe(
+      80,
+    );
+  });
+
+  it("returns 0 for unknown type", () => {
+    const ctx = mockCtx();
+    expect(measureInstructionHeight(ctx, { type: "progressbar" } as any)).toBe(0);
+  });
+});
+
+describe("makeSubCellBuf", () => {
+  it("creates buffer with correct position and size", () => {
+    const buf = makeSubCellBuf(10, 20, 100, 50);
+    expect(buf[2]).toBe(10); // x
+    expect(buf[3]).toBe(20); // y
+    expect(buf[4]).toBe(100); // w
+    expect(buf[5]).toBe(50); // h
+    expect(buf[6]).toBe(0); // align=left
+  });
+});
+
+describe("encodeCompositeInput", () => {
+  it("encodes container and child layout data", () => {
+    const result = encodeCompositeInput(
+      200,
+      100,
+      "row",
+      4,
+      "center",
+      "start",
+      [2, 4, 2, 4],
+      [40, 60],
+      [22, 22],
+    );
+    expect(result[0]).toBe(200); // containerW
+    expect(result[1]).toBe(100); // containerH
+    expect(result[2]).toBe(0); // row=0
+    expect(result[3]).toBe(4); // gap
+    expect(result[4]).toBe(2); // center=2
+    expect(result[5]).toBe(0); // start=0
+    expect(result[6]).toBe(2); // padT
+    expect(result[7]).toBe(4); // padR
+    expect(result[8]).toBe(2); // padB
+    expect(result[9]).toBe(4); // padL
+    expect(result[10]).toBe(2); // childCount
+    expect(result[11]).toBe(40); // child0 width
+    expect(result[12]).toBe(22); // child0 height
+    expect(result[13]).toBe(60); // child1 width
+    expect(result[14]).toBe(22); // child1 height
+  });
+
+  it("encodes column direction as 1", () => {
+    const result = encodeCompositeInput(
+      100,
+      100,
+      "column",
+      0,
+      undefined,
+      undefined,
+      [0, 0, 0, 0],
+      [],
+      [],
+    );
+    expect(result[2]).toBe(1);
+  });
+
+  it("encodes row-reverse as 2 and column-reverse as 3", () => {
+    const rr = encodeCompositeInput(
+      100,
+      100,
+      "row-reverse",
+      0,
+      undefined,
+      undefined,
+      [0, 0, 0, 0],
+      [],
+      [],
+    );
+    expect(rr[2]).toBe(2);
+    const cr = encodeCompositeInput(
+      100,
+      100,
+      "column-reverse",
+      0,
+      undefined,
+      undefined,
+      [0, 0, 0, 0],
+      [],
+      [],
+    );
+    expect(cr[2]).toBe(3);
+  });
+
+  it("encodes align/justify: end=1, stretch=3, space-between=3", () => {
+    const result = encodeCompositeInput(
+      100,
+      100,
+      "row",
+      0,
+      "end",
+      "space-between",
+      [0, 0, 0, 0],
+      [],
+      [],
+    );
+    expect(result[4]).toBe(1); // end
+    expect(result[5]).toBe(3); // space-between
+  });
+
+  it("encodes stretch align as 3", () => {
+    const result = encodeCompositeInput(
+      100,
+      100,
+      "row",
+      0,
+      "stretch",
+      "center",
+      [0, 0, 0, 0],
+      [],
+      [],
+    );
+    expect(result[4]).toBe(3); // stretch
+    expect(result[5]).toBe(2); // center
+  });
+
+  it("encodes undefined align/justify as NaN", () => {
+    const result = encodeCompositeInput(
+      100,
+      100,
+      "row",
+      0,
+      undefined,
+      undefined,
+      [0, 0, 0, 0],
+      [],
+      [],
+    );
+    expect(Number.isNaN(result[4])).toBe(true);
+    expect(Number.isNaN(result[5])).toBe(true);
+  });
+});
+
+describe("linkCellRenderer onCellClick", () => {
+  it("opens href in new tab", () => {
+    const openMock = mock(() => null);
+    const origOpen = window.open;
+    window.open = openMock as any;
+    try {
+      linkCellRenderer.onCellClick!({
+        type: "link",
+        value: "Click",
+        href: "https://example.com",
+      } as any);
+      expect(openMock).toHaveBeenCalledWith("https://example.com", "_blank", "noopener,noreferrer");
+    } finally {
+      window.open = origOpen;
+    }
+  });
+
+  it("opens value as URL when href is not set", () => {
+    const openMock = mock(() => null);
+    const origOpen = window.open;
+    window.open = openMock as any;
+    try {
+      linkCellRenderer.onCellClick!({ type: "link", value: "https://fallback.com" } as any);
+      expect(openMock).toHaveBeenCalledWith(
+        "https://fallback.com",
+        "_blank",
+        "noopener,noreferrer",
+      );
+    } finally {
+      window.open = origOpen;
+    }
+  });
+
+  it("does not open when both href and value are empty", () => {
+    const openMock = mock(() => null);
+    const origOpen = window.open;
+    window.open = openMock as any;
+    try {
+      linkCellRenderer.onCellClick!({ type: "link", value: "" } as any);
+      expect(openMock).not.toHaveBeenCalled();
+    } finally {
+      window.open = origOpen;
+    }
   });
 });

@@ -530,6 +530,63 @@ describe("CanvasRenderer", () => {
       renderer.drawGridLinesFromBuffer(new Float32Array(0), 0, 0, defaultTheme, 40, 36);
       expect(ctx.beginPath).not.toHaveBeenCalled();
     });
+
+    it("draws per-cell borders when borderConfigMap is provided", () => {
+      renderer.attach(canvas);
+
+      const buf = buildBuf([
+        [0, 0, 0, 0, 100, 40],
+        [1, 0, 0, 40, 100, 36],
+      ]);
+
+      const borderConfigMap = new Map();
+      borderConfigMap.set(1, {
+        top: { width: 2, color: "#ff0000", style: "solid" },
+        right: { width: 1, color: "#00ff00", style: "solid" },
+        bottom: { width: 1, color: "#0000ff", style: "solid" },
+        left: { width: 1, color: "#333", style: "solid" },
+      });
+
+      renderer.drawGridLinesFromBuffer(buf, 1, 2, defaultTheme, 40, 36, borderConfigMap);
+      expect(ctx.fillRect).toHaveBeenCalled();
+    });
+
+    it("uses theme defaults for cells without config in borderConfigMap", () => {
+      renderer.attach(canvas);
+
+      const buf = buildBuf([
+        [0, 0, 0, 0, 100, 40],
+        [1, 0, 0, 40, 100, 36],
+        [1, 1, 100, 40, 100, 36],
+      ]);
+
+      const borderConfigMap = new Map();
+      // Only cell at index 1 has custom config; cell at index 2 uses defaults
+      borderConfigMap.set(1, {
+        top: { width: 2, color: "#f00", style: "solid" },
+      });
+
+      renderer.drawGridLinesFromBuffer(buf, 1, 3, defaultTheme, 40, 36, borderConfigMap);
+      expect(ctx.fillRect).toHaveBeenCalled();
+    });
+
+    it("skips border sides with style 'none'", () => {
+      renderer.attach(canvas);
+
+      const buf = buildBuf([
+        [0, 0, 0, 0, 100, 40],
+        [1, 0, 0, 40, 100, 36],
+      ]);
+
+      const noneTheme = { ...defaultTheme, borderStyle: "none" as const, borderWidth: 0 };
+      const borderConfigMap = new Map();
+      borderConfigMap.set(1, {
+        top: { width: 1, color: "#f00", style: "none" },
+        right: { width: 0, color: "#0f0", style: "solid" },
+      });
+
+      renderer.drawGridLinesFromBuffer(buf, 1, 2, noneTheme, 40, 36, borderConfigMap);
+    });
   });
 
   describe("drawSelection", () => {
