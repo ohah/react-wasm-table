@@ -37,6 +37,8 @@ export type {
   RadioProps,
   LabelProps,
   InputProps,
+  IconProps,
+  SelectProps,
   ProgressBarProps,
   StubProps,
 } from "./components";
@@ -57,7 +59,6 @@ export {
   Link,
   Color,
   Input,
-  NumberInput,
   Select,
   Checkbox,
   Radio,
@@ -268,6 +269,8 @@ export {
   checkboxCellRenderer,
   labelCellRenderer,
   inputCellRenderer,
+  iconCellRenderer,
+  selectCellRenderer,
   progressBarCellRenderer,
 } from "./renderer/components";
 export type { CellRenderer, CellRenderContext } from "./renderer/components";
@@ -339,6 +342,10 @@ export type {
   LabelStyle,
   InputInstruction,
   InputStyle,
+  IconInstruction,
+  IconStyle,
+  SelectInstruction,
+  SelectStyle,
   ProgressBarInstruction,
   ProgressBarStyle,
   DomOverlayDescriptor,

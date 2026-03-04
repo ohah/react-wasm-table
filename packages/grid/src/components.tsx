@@ -17,6 +17,8 @@ import type {
   RadioStyle,
   LabelStyle,
   InputStyle,
+  IconStyle,
+  SelectStyle,
   ProgressBarStyle,
   CanvasEventHandlers,
   CssFlexDirection,
@@ -636,7 +638,35 @@ export function Link(props: LinkProps): CanvasElement {
   } as CanvasElement;
 }
 
-export const Icon = stub("Icon");
+/** Props for the Icon canvas component (SVG path rendering). */
+export interface IconProps extends CanvasEventHandlers {
+  /** SVG path data string (d attribute). */
+  path: string;
+  /** Icon size in px. @default 24 */
+  size?: number;
+  /** Icon fill color. */
+  color?: string;
+  /** SVG viewBox size (assumes square). @default 24 */
+  viewBox?: number;
+  style?: Partial<IconStyle>;
+}
+
+/** Canvas icon component. Renders an SVG path on canvas. Returns an IconInstruction. */
+export function Icon(props: IconProps): CanvasElement {
+  const style: Partial<IconStyle> = {
+    ...props.style,
+    ...(props.size !== undefined && { size: props.size }),
+    ...(props.color !== undefined && { color: props.color }),
+    ...(props.viewBox !== undefined && { viewBox: props.viewBox }),
+  };
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "icon",
+    path: props.path,
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
 
 /** Props for the Image canvas component. */
 export interface ImageProps extends CanvasEventHandlers {
@@ -850,8 +880,58 @@ export function Input(props: InputProps): CanvasElement {
   } as CanvasElement;
 }
 
-export const NumberInput = stub("NumberInput");
-export const Select = stub("Select");
+/** Props for the Select canvas component (DOM overlay). */
+export interface SelectProps extends CanvasEventHandlers {
+  value?: string;
+  options: { value: string; label: string }[];
+  disabled?: boolean;
+  placeholder?: string;
+  onChange?: (e: ChangeEvent<HTMLSelectElement>) => void;
+  onFocus?: (e: FocusEvent<HTMLSelectElement>) => void;
+  onBlur?: (e: FocusEvent<HTMLSelectElement>) => void;
+  style?: Partial<SelectStyle>;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+}
+
+function pickSelectStyle(props: SelectProps): Partial<SelectStyle> {
+  const { style, fontSize, fontFamily, color, backgroundColor, borderColor, borderWidth, borderRadius } = props;
+  return {
+    ...style,
+    ...(fontSize !== undefined && { fontSize }),
+    ...(fontFamily !== undefined && { fontFamily }),
+    ...(color !== undefined && { color }),
+    ...(backgroundColor !== undefined && { backgroundColor }),
+    ...(borderColor !== undefined && { borderColor }),
+    ...(borderWidth !== undefined && { borderWidth }),
+    ...(borderRadius !== undefined && { borderRadius }),
+  };
+}
+
+/** Canvas select component. Renders a DOM overlay <select> positioned by Taffy layout. */
+export function Select(props: SelectProps): CanvasElement {
+  const style = pickSelectStyle(props);
+  const _handlers = pickEventHandlers(props);
+  const _domHandlers: Record<string, unknown> = {};
+  if (props.onChange) _domHandlers.onChange = props.onChange;
+  if (props.onFocus) _domHandlers.onFocus = props.onFocus;
+  if (props.onBlur) _domHandlers.onBlur = props.onBlur;
+  return {
+    type: "select",
+    ...(props.value !== undefined && { value: props.value }),
+    options: props.options,
+    ...(props.disabled !== undefined && { disabled: props.disabled }),
+    ...(props.placeholder !== undefined && { placeholder: props.placeholder }),
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(Object.keys(_domHandlers).length > 0 && { _domHandlers }),
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
 
 /** Props for the Switch canvas component. */
 export interface SwitchProps extends CanvasEventHandlers {
