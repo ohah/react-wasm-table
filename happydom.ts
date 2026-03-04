@@ -267,7 +267,6 @@ class MockElement extends MockNode {
     this.tagName = tagName.toUpperCase();
     this.localName = tagName.toLowerCase();
     this.nodeName = this.tagName;
-    const self = this;
     this.style = new Proxy({} as any, {
       get(_target, prop) {
         if (prop === "getPropertyValue") return (name: string) => _target[name] ?? "";
@@ -325,7 +324,7 @@ class MockElement extends MockNode {
   }
   addEventListener(type: string, fn: Function, options?: any) {
     if (!this._listeners.has(type)) this._listeners.set(type, new Set());
-    this._listeners.get(type)!.add(fn);
+    this._listeners.get(type)?.add(fn);
     // Support AbortSignal-based removal
     const signal = options?.signal as AbortSignal | undefined;
     if (signal) {
@@ -386,7 +385,7 @@ class MockElement extends MockNode {
     // [attr] or [attr="val"] selector
     const attrMatch = sel.match(/^\[([a-zA-Z\-]+)(?:="([^"]*)")?\]$/);
     if (attrMatch) {
-      const attrName = attrMatch[1]!;
+      const attrName = attrMatch[1] ?? "";
       if (attrMatch[2] !== undefined) {
         return this.getAttribute(attrName) === attrMatch[2];
       }
@@ -397,8 +396,8 @@ class MockElement extends MockNode {
     // Try to split tag from rest
     const tagMatch = sel.match(/^([a-zA-Z][a-zA-Z0-9]*)([\[\.\#].*)$/);
     if (tagMatch) {
-      if (this.localName !== tagMatch[1]!.toLowerCase()) return false;
-      return this._matchesSelector(tagMatch[2]!);
+      if (this.localName !== tagMatch[1]?.toLowerCase()) return false;
+      return this._matchesSelector(tagMatch[2] ?? "");
     }
 
     return false;
@@ -436,11 +435,12 @@ class MockElement extends MockNode {
     return this._matchesSelector(selector);
   }
   closest(selector: string): MockElement | null {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let el: MockElement | null = this;
-    while (el) {
+    for (
+      let el: MockElement | null = this as MockElement;
+      el;
+      el = el.parentElement instanceof MockElement ? (el.parentElement as MockElement) : null
+    ) {
       if (el._matchesSelector(selector)) return el;
-      el = el.parentElement instanceof MockElement ? (el.parentElement as MockElement) : null;
     }
     return null;
   }
@@ -680,7 +680,7 @@ const mockDocument: Record<string, any> = {
   },
   addEventListener(type: string, fn: Function, options?: any) {
     if (!docListeners.has(type)) docListeners.set(type, new Set());
-    docListeners.get(type)!.add(fn);
+    docListeners.get(type)?.add(fn);
     const signal = options?.signal as AbortSignal | undefined;
     if (signal) {
       signal.addEventListener("abort", () => {
@@ -738,7 +738,7 @@ const mockWindow: Record<string, any> = {
   cancelAnimationFrame: (id: number) => clearTimeout(id),
   addEventListener(type: string, fn: Function, options?: any) {
     if (!windowListeners.has(type)) windowListeners.set(type, new Set());
-    windowListeners.get(type)!.add(fn);
+    windowListeners.get(type)?.add(fn);
     const signal = options?.signal as AbortSignal | undefined;
     if (signal) {
       signal.addEventListener("abort", () => {
