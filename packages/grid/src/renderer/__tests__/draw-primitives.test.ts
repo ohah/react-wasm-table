@@ -22,6 +22,8 @@ import {
 } from "../components/shared";
 import { DEFAULT_THEME } from "../../types";
 
+const noopLayout = (_input: Float32Array) => new Float32Array(0);
+
 /** Create a mock CanvasRenderingContext2D with spies. */
 function mockCtx() {
   return {
@@ -331,7 +333,7 @@ describe("colorCellRenderer", () => {
 
     colorCellRenderer.draw(
       { type: "color", value: "#ff0000" },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     expect(ctx.beginPath).toHaveBeenCalled();
@@ -350,7 +352,7 @@ describe("colorCellRenderer", () => {
         value: "#00ff00",
         style: { borderColor: "#333", borderWidth: 2, borderRadius: 4 },
       },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     expect(ctx.strokeStyle).toBe("#333");
@@ -368,7 +370,7 @@ describe("tagCellRenderer", () => {
 
     tagCellRenderer.draw(
       { type: "tag", value: "New" },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     expect(ctx.beginPath).toHaveBeenCalled();
@@ -388,7 +390,7 @@ describe("tagCellRenderer", () => {
         value: "OK",
         style: { color: "#1565c0", borderColor: "#1565c0", borderRadius: 8, fontSize: 14 },
       },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     expect(ctx.strokeStyle).toBe("#1565c0");
@@ -405,7 +407,7 @@ describe("ratingCellRenderer", () => {
 
     ratingCellRenderer.draw(
       { type: "rating", value: 3 },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     // 5 stars total (default max=5): 3 filled + 2 empty
@@ -418,7 +420,7 @@ describe("ratingCellRenderer", () => {
 
     ratingCellRenderer.draw(
       { type: "rating", value: 7, style: { max: 10, color: "gold", emptyColor: "#aaa" } },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     // 10 stars total
@@ -433,7 +435,7 @@ describe("chipCellRenderer", () => {
 
     chipCellRenderer.draw(
       { type: "chip", value: "React" },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     expect(ctx.beginPath).toHaveBeenCalled();
@@ -448,7 +450,7 @@ describe("chipCellRenderer", () => {
 
     chipCellRenderer.draw(
       { type: "chip", value: "Tag", style: { closable: true } },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     // fillText called twice: once for label, once for "×"
@@ -467,7 +469,7 @@ describe("chipCellRenderer", () => {
         value: "X",
         style: { backgroundColor: "#4caf50", color: "#fff", borderRadius: 16 },
       },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     const roundRectCall = (ctx.roundRect as any).mock.calls[0];
@@ -482,7 +484,7 @@ describe("linkCellRenderer", () => {
 
     linkCellRenderer.draw(
       { type: "link", value: "Click me" },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     expect(ctx.fillStyle).toBe("#2563eb");
@@ -500,7 +502,7 @@ describe("linkCellRenderer", () => {
 
     linkCellRenderer.draw(
       { type: "link", value: "Plain", style: { underline: false } },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     expect(ctx.fillText).toHaveBeenCalled();
@@ -513,7 +515,7 @@ describe("linkCellRenderer", () => {
 
     linkCellRenderer.draw(
       { type: "link", value: "Home", style: { color: "#e65100", fontSize: 16 } },
-      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME },
+      { ctx, buf, cellIdx: 0, theme: DEFAULT_THEME, computeChildLayout: noopLayout },
     );
 
     expect(ctx.fillStyle).toBe("#e65100");
@@ -877,10 +879,17 @@ describe("encodeCompositeInput", () => {
 });
 
 describe("linkCellRenderer onCellClick", () => {
+  const ensureWindow = () => {
+    if (typeof globalThis.window === "undefined") {
+      (globalThis as any).window = {} as any;
+    }
+  };
+
   it("opens href in new tab", () => {
+    ensureWindow();
     const openMock = mock(() => null);
-    const origOpen = window.open;
-    window.open = openMock as any;
+    const origOpen = globalThis.window.open;
+    globalThis.window.open = openMock as any;
     try {
       linkCellRenderer.onCellClick!({
         type: "link",
@@ -889,14 +898,15 @@ describe("linkCellRenderer onCellClick", () => {
       } as any);
       expect(openMock).toHaveBeenCalledWith("https://example.com", "_blank", "noopener,noreferrer");
     } finally {
-      window.open = origOpen;
+      globalThis.window.open = origOpen;
     }
   });
 
   it("opens value as URL when href is not set", () => {
+    ensureWindow();
     const openMock = mock(() => null);
-    const origOpen = window.open;
-    window.open = openMock as any;
+    const origOpen = globalThis.window.open;
+    globalThis.window.open = openMock as any;
     try {
       linkCellRenderer.onCellClick!({ type: "link", value: "https://fallback.com" } as any);
       expect(openMock).toHaveBeenCalledWith(
@@ -905,19 +915,20 @@ describe("linkCellRenderer onCellClick", () => {
         "noopener,noreferrer",
       );
     } finally {
-      window.open = origOpen;
+      globalThis.window.open = origOpen;
     }
   });
 
   it("does not open when both href and value are empty", () => {
+    ensureWindow();
     const openMock = mock(() => null);
-    const origOpen = window.open;
-    window.open = openMock as any;
+    const origOpen = globalThis.window.open;
+    globalThis.window.open = openMock as any;
     try {
       linkCellRenderer.onCellClick!({ type: "link", value: "" } as any);
       expect(openMock).not.toHaveBeenCalled();
     } finally {
-      window.open = origOpen;
+      globalThis.window.open = origOpen;
     }
   });
 });

@@ -75,6 +75,7 @@ function makeContext(overrides?: Partial<CellRenderContext>): CellRenderContext 
     cellIdx: 0,
     theme: defaultTheme,
     registry: createCellRendererRegistry(),
+    computeChildLayout: (input: Float32Array) => new Float32Array(0),
     ...overrides,
   };
 }
