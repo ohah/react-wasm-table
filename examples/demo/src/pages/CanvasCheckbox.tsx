@@ -126,10 +126,9 @@ export function CanvasCheckbox() {
     <>
       <h1>Canvas: Checkbox</h1>
       <p>
-        <code>Checkbox</code> self-draws a checkbox indicator on canvas. Use{" "}
-        <code>Label</code> as children for associated text. Scroll down to see all{" "}
-        {data.length} rows. Touch events (<code>onTouchStart</code>,{" "}
-        <code>onTouchEnd</code>) are supported for mobile.
+        <code>Checkbox</code> self-draws a checkbox indicator on canvas. Use <code>Label</code> as
+        children for associated text. Scroll down to see all {data.length} rows. Touch events (
+        <code>onTouchStart</code>, <code>onTouchEnd</code>) are supported for mobile.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 16 }}>

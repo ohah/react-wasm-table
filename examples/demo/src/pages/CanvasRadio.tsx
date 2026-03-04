@@ -1,11 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import {
-  Grid,
-  createColumnHelper,
-  Radio,
-  Label,
-  type GridCellEvent,
-} from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper, Radio, Label, type GridCellEvent } from "@ohah/react-wasm-table";
 
 type Row = { id: number; name: string; plan: string };
 const helper = createColumnHelper<Row>();
@@ -36,9 +30,31 @@ interface LogEntry {
 let logId = 0;
 
 const USERS = [
-  "Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Grace", "Hank",
-  "Ivy", "Jack", "Kate", "Leo", "Mia", "Nick", "Olivia", "Paul",
-  "Quinn", "Rose", "Sam", "Tina", "Uma", "Victor", "Wendy", "Xander", "Yuki",
+  "Alice",
+  "Bob",
+  "Charlie",
+  "Diana",
+  "Eve",
+  "Frank",
+  "Grace",
+  "Hank",
+  "Ivy",
+  "Jack",
+  "Kate",
+  "Leo",
+  "Mia",
+  "Nick",
+  "Olivia",
+  "Paul",
+  "Quinn",
+  "Rose",
+  "Sam",
+  "Tina",
+  "Uma",
+  "Victor",
+  "Wendy",
+  "Xander",
+  "Yuki",
 ];
 
 function generateData(): Row[] {
@@ -80,9 +96,7 @@ export function CanvasRadio() {
                   if (disabled) return;
                   addLog("onClick", plan, e);
                   const rowIndex = info.row.index;
-                  setData((prev) =>
-                    prev.map((r, i) => (i === rowIndex ? { ...r, plan } : r)),
-                  );
+                  setData((prev) => prev.map((r, i) => (i === rowIndex ? { ...r, plan } : r)));
                 }}
                 onMouseEnter={(e) => addLog("onMouseEnter", plan, e)}
                 onMouseLeave={(e) => addLog("onMouseLeave", plan, e)}
@@ -101,9 +115,8 @@ export function CanvasRadio() {
     <>
       <h1>Canvas: Radio</h1>
       <p>
-        <code>Radio</code> self-draws a radio indicator on canvas. Use{" "}
-        <code>Label</code> as children for associated text.
-        Only one plan per row can be selected.
+        <code>Radio</code> self-draws a radio indicator on canvas. Use <code>Label</code> as
+        children for associated text. Only one plan per row can be selected.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 16 }}>
@@ -130,9 +143,7 @@ export function CanvasRadio() {
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <section style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: 16, marginBottom: 8 }}>
-            Plan Selection ({data.length} users)
-          </h2>
+          <h2 style={{ fontSize: 16, marginBottom: 8 }}>Plan Selection ({data.length} users)</h2>
           <Grid
             data={data}
             columns={columns}
