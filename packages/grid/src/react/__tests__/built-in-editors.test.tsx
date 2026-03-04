@@ -294,6 +294,56 @@ describe("NumberEditor", () => {
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(committed === "" || committed === 0 || typeof committed === "string").toBe(true);
   });
+
+  it("calls onCommitAndNavigate('next') on Tab", () => {
+    const { container } = render(
+      <NumberEditor
+        value={42}
+        onCommit={onCommit}
+        onCancel={onCancel}
+        onCommitAndNavigate={onCommitAndNavigate}
+        layout={layout}
+        initialChar={null}
+      />,
+    );
+    const input = container.querySelector("input")!;
+    fireEvent.keyDown(input, { key: "Tab" });
+    expect(onCommitAndNavigate).toHaveBeenCalledWith(42, "next");
+  });
+
+  it("calls onCommitAndNavigate('prev') on Shift+Tab", () => {
+    const { container } = render(
+      <NumberEditor
+        value={42}
+        onCommit={onCommit}
+        onCancel={onCancel}
+        onCommitAndNavigate={onCommitAndNavigate}
+        layout={layout}
+        initialChar={null}
+      />,
+    );
+    const input = container.querySelector("input")!;
+    fireEvent.keyDown(input, { key: "Tab", shiftKey: true });
+    expect(onCommitAndNavigate).toHaveBeenCalledWith(42, "prev");
+  });
+
+  it("does not double-commit on blur after Tab", () => {
+    const { container } = render(
+      <NumberEditor
+        value={42}
+        onCommit={onCommit}
+        onCancel={onCancel}
+        onCommitAndNavigate={onCommitAndNavigate}
+        layout={layout}
+        initialChar={null}
+      />,
+    );
+    const input = container.querySelector("input")!;
+    fireEvent.keyDown(input, { key: "Tab" });
+    fireEvent.blur(input);
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(onCommitAndNavigate).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("SelectEditor", () => {

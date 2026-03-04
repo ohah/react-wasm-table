@@ -183,6 +183,70 @@ describe("useSelection (renderHook)", () => {
     });
   });
 
+  describe("Ctrl+V paste", () => {
+    let savedNav: Navigator;
+    beforeEach(() => {
+      savedNav = globalThis.navigator;
+    });
+    afterEach(() => {
+      Object.defineProperty(globalThis, "navigator", {
+        value: savedNav,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    it("calls onPaste with clipboard text and selection target", async () => {
+      const readTextMock = mock(() => Promise.resolve("pasted-data"));
+      Object.defineProperty(globalThis, "navigator", {
+        value: { ...savedNav, clipboard: { readText: readTextMock } },
+        writable: true,
+        configurable: true,
+      });
+
+      const onPaste = mock(() => {});
+      const params = defaultParams({ onPaste });
+      const { result } = renderHook(() => useSelection(params));
+
+      // Select a cell
+      act(() => result.current.handleCellMouseDown({ row: 2, col: 1 }, false));
+      act(() => result.current.handleCellMouseUp());
+
+      // Ctrl+V
+      act(() =>
+        result.current.handleKeyDown(new KeyboardEvent("keydown", { key: "v", ctrlKey: true })),
+      );
+
+      // Wait for promise
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(readTextMock).toHaveBeenCalled();
+      expect(onPaste).toHaveBeenCalledWith("pasted-data", { row: 2, col: 1 });
+    });
+
+    it("uses {row:0,col:0} when no selection exists", async () => {
+      const readTextMock = mock(() => Promise.resolve("pasted"));
+      Object.defineProperty(globalThis, "navigator", {
+        value: { ...savedNav, clipboard: { readText: readTextMock } },
+        writable: true,
+        configurable: true,
+      });
+
+      const onPaste = mock(() => {});
+      const params = defaultParams({ onPaste });
+      const { result } = renderHook(() => useSelection(params));
+
+      // No selection — paste should default to (0,0)
+      act(() =>
+        result.current.handleKeyDown(new KeyboardEvent("keydown", { key: "v", metaKey: true })),
+      );
+
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(onPaste).toHaveBeenCalledWith("pasted", { row: 0, col: 0 });
+    });
+  });
+
   describe("onBeforeSelectionChange guard", () => {
     it("returning false prevents selection start", () => {
       const guard = mock(() => false as const);
