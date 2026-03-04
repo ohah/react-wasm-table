@@ -35,6 +35,7 @@ const sections = [
       { to: "/canvas-checkbox", label: "Canvas: Checkbox" },
       { to: "/canvas-radio", label: "Canvas: Radio" },
       { to: "/canvas-input", label: "Canvas: Input" },
+      { to: "/canvas-number-input", label: "Canvas: Number Input" },
       { to: "/canvas-events", label: "Canvas: Events" },
       { to: "/custom-renderer", label: "Custom Renderer" },
       { to: "/layers", label: "Layer System" },
