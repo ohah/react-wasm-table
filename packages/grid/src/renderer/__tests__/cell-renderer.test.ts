@@ -1275,10 +1275,7 @@ describe("iconCellRenderer", () => {
 
   it("draws icon using fill with Path2D", () => {
     const context = makeContext();
-    iconCellRenderer.draw(
-      { type: "icon", path: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" },
-      context,
-    );
+    iconCellRenderer.draw({ type: "icon", path: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" }, context);
     expect(context.ctx.save).toHaveBeenCalled();
     expect(context.ctx.scale).toHaveBeenCalled();
     expect(context.ctx.fill).toHaveBeenCalled();
