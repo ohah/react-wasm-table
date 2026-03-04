@@ -3,8 +3,7 @@ import {
   Grid,
   createColumnHelper,
   Checkbox,
-  Box,
-  Text,
+  Label,
   type GridCellEvent,
 } from "@ohah/react-wasm-table";
 
@@ -91,8 +90,8 @@ export function CanvasCheckbox() {
     () => [
       helper.display({
         id: "check",
-        header: "",
-        size: 50,
+        header: "Task",
+        size: 220,
         cell: (info) => {
           const checked = info.row.original.done;
           return (
@@ -113,23 +112,11 @@ export function CanvasCheckbox() {
               onMouseEnter={(e) => addLog("onMouseEnter", String(checked), e)}
               onMouseLeave={(e) => addLog("onMouseLeave", String(checked), e)}
             >
-              <Box
-                backgroundColor={checked ? "#3b82f6" : "#fff"}
-                borderColor={checked ? "#3b82f6" : "#d1d5db"}
-                borderWidth={2}
-              >
-                <Text
-                  value={checked ? "\u2713" : ""}
-                  color="#fff"
-                  fontSize={12}
-                  fontWeight="bold"
-                />
-              </Box>
+              <Label value={info.row.original.task} />
             </Checkbox>
           );
         },
       }),
-      helper.accessor("task", { header: "Task", size: 200, padding: [0, 8] }),
       helper.accessor("category", { header: "Category", size: 80, padding: [0, 8] }),
     ],
     [disabled, addLog],
@@ -139,9 +126,9 @@ export function CanvasCheckbox() {
     <>
       <h1>Canvas: Checkbox</h1>
       <p>
-        <code>Checkbox</code> is a headless canvas container. It provides click/touch behavior and
-        disabled state; children (e.g., <code>Box</code> + <code>Text</code>) supply visuals. Scroll
-        down to see all {data.length} rows. Touch events (<code>onTouchStart</code>,{" "}
+        <code>Checkbox</code> self-draws a checkbox indicator on canvas. Use{" "}
+        <code>Label</code> as children for associated text. Scroll down to see all{" "}
+        {data.length} rows. Touch events (<code>onTouchStart</code>,{" "}
         <code>onTouchEnd</code>) are supported for mobile.
       </p>
 
