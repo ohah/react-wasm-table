@@ -136,13 +136,18 @@ export function buildRowRegions(
     return {
       regions: [
         {
+          name: "header",
+          clipRect: [0, 0, canvasWidth, headerHeight],
+          translateY: 0,
+        },
+        {
           name: "center",
-          clipRect: [0, 0, canvasWidth, canvasHeight],
-          translateY: -scrollTop,
+          clipRect: [0, headerHeight, canvasWidth, canvasHeight - headerHeight],
+          translateY: 0,
         },
       ],
       topHeight: 0,
-      centerHeight: canvasHeight,
+      centerHeight: canvasHeight - headerHeight,
       bottomHeight: 0,
       scrollableCount: totalRows,
     };
