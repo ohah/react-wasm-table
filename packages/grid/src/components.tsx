@@ -13,6 +13,9 @@ import type {
   LinkStyle,
   ImageStyle,
   SwitchStyle,
+  CheckboxStyle,
+  RadioStyle,
+  LabelStyle,
   InputStyle,
   ProgressBarStyle,
   CanvasEventHandlers,
@@ -690,14 +693,15 @@ export function Image(props: ImageProps): CanvasElement {
 
 export const Avatar = stub("Avatar");
 
-/** Props for the Checkbox canvas component (headless container). */
+/** Props for the Checkbox canvas component. */
 export interface CheckboxProps extends CanvasEventHandlers {
   checked: boolean;
   disabled?: boolean;
+  style?: Partial<CheckboxStyle>;
   children?: ReactNode;
 }
 
-/** Canvas checkbox component. Headless container — children provide visuals. */
+/** Canvas checkbox component. Self-drawing checkbox with optional children (e.g. Label). */
 export function Checkbox(props: CheckboxProps): CanvasElement {
   const resolved: RenderInstruction[] = [];
   if (props.children != null) {
@@ -712,19 +716,21 @@ export function Checkbox(props: CheckboxProps): CanvasElement {
     type: "checkbox",
     checked: props.checked,
     ...(props.disabled !== undefined && { disabled: props.disabled }),
+    ...(props.style !== undefined && { style: props.style }),
     children: resolved,
     ...(_handlers && { _handlers }),
   } as CanvasElement;
 }
 
-/** Props for the Radio canvas component (headless container). */
+/** Props for the Radio canvas component. */
 export interface RadioProps extends CanvasEventHandlers {
   checked: boolean;
   disabled?: boolean;
+  style?: Partial<RadioStyle>;
   children?: ReactNode;
 }
 
-/** Canvas radio button component. Headless container — children provide visuals. */
+/** Canvas radio button component. Self-drawing radio with optional children (e.g. Label). */
 export function Radio(props: RadioProps): CanvasElement {
   const resolved: RenderInstruction[] = [];
   if (props.children != null) {
@@ -739,7 +745,34 @@ export function Radio(props: RadioProps): CanvasElement {
     type: "radio",
     checked: props.checked,
     ...(props.disabled !== undefined && { disabled: props.disabled }),
+    ...(props.style !== undefined && { style: props.style }),
     children: resolved,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
+/** Props for the Label canvas component. */
+export interface LabelProps extends CanvasEventHandlers {
+  value: string;
+  style?: Partial<LabelStyle>;
+  color?: string;
+  fontSize?: number;
+  fontWeight?: string;
+}
+
+/** Canvas label component. Like Text but with pointer cursor. */
+export function Label(props: LabelProps): CanvasElement {
+  const style: Partial<LabelStyle> = {
+    ...props.style,
+    ...(props.color !== undefined && { color: props.color }),
+    ...(props.fontSize !== undefined && { fontSize: props.fontSize }),
+    ...(props.fontWeight !== undefined && { fontWeight: props.fontWeight }),
+  };
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "label",
+    value: props.value,
+    style: Object.keys(style).length > 0 ? style : undefined,
     ...(_handlers && { _handlers }),
   } as CanvasElement;
 }
