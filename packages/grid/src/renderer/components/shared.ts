@@ -85,7 +85,30 @@ export function measureInstructionWidth(
     return instruction.style?.width ?? 36;
   }
   if (instruction.type === "checkbox") {
-    return 60;
+    const boxSize = instruction.style?.size ?? 16;
+    let childrenW = 0;
+    if (instruction.children.length > 0) {
+      for (const child of instruction.children) {
+        childrenW += measureInstructionWidth(ctx, child, theme);
+      }
+      childrenW += instruction.children.length * 4; // gap
+    }
+    return boxSize + 6 + childrenW;
+  }
+  if (instruction.type === "radio") {
+    const circleSize = instruction.style?.size ?? 16;
+    let childrenW = 0;
+    if (instruction.children.length > 0) {
+      for (const child of instruction.children) {
+        childrenW += measureInstructionWidth(ctx, child, theme);
+      }
+      childrenW += instruction.children.length * 4; // gap
+    }
+    return circleSize + 6 + childrenW;
+  }
+  if (instruction.type === "label") {
+    const fontSize = instruction.style?.fontSize ?? theme.fontSize;
+    return measureText(ctx, instruction.value, fontSize, "system-ui, sans-serif");
   }
   if (instruction.type === "input") {
     return 120;
@@ -121,6 +144,8 @@ export function measureInstructionHeight(
     instruction.type === "chip" ||
     instruction.type === "link" ||
     instruction.type === "checkbox" ||
+    instruction.type === "radio" ||
+    instruction.type === "label" ||
     instruction.type === "input"
     ? FLEX_CHILD_HEIGHT
     : 0;
