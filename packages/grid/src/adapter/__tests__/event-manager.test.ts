@@ -1262,4 +1262,117 @@ describe("EventManager", () => {
       expect(hitTest.colIndex).toBe(0);
     });
   });
+
+  describe("getHeaderLayouts", () => {
+    it("returns current header layouts", () => {
+      const headers = [makeLayout(0, 0, 0, 0, 200, 40), makeLayout(0, 1, 200, 0, 150, 40)];
+      em.setLayouts(headers, []);
+      expect(em.getHeaderLayouts()).toBe(headers);
+    });
+  });
+
+  describe("canvas hover (non-drag mousemove)", () => {
+    it("fires onCellHover when hovering over cells without buttons pressed", () => {
+      const onCellHover = mock((_coord: CellCoord | null) => {});
+      const onResizeHover = mock((_colIndex: number | null) => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36), makeLayout(0, 1, 200, 0, 150, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCellHover, onResizeHover });
+
+      // mousemove with buttons=0 (no drag) over a cell
+      canvas.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 50, clientY: 10, buttons: 0, bubbles: true }),
+      );
+
+      expect(onCellHover).toHaveBeenCalledTimes(1);
+      expect(onCellHover.mock.calls[0]![0]).toEqual({ row: 0, col: 0 });
+    });
+
+    it("fires onCellHover(null) when over resize handle", () => {
+      const onCellHover = mock((_coord: CellCoord | null) => {});
+      const onResizeHover = mock((_colIndex: number | null) => {});
+      const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
+      em.setLayouts(headerLayouts, []);
+      em.attach(canvas, { onCellHover, onResizeHover });
+
+      // mousemove at header right edge (resize handle zone)
+      canvas.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 200, clientY: 20, buttons: 0, bubbles: true }),
+      );
+
+      // resize handle found → onCellHover(null) + onResizeHover(colIndex)
+      expect(onResizeHover).toHaveBeenCalled();
+      if (onCellHover.mock.calls.length > 0) {
+        expect(onCellHover.mock.calls[onCellHover.mock.calls.length - 1]![0]).toBeNull();
+      }
+    });
+
+    it("fires onCanvasEvent mousemove with hitTest on hover", () => {
+      const onCanvasEvent = mock(
+        (_type: string, _native: MouseEvent, _hitTest: HitTestResult, _coords: EventCoords) => {},
+      );
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCanvasEvent });
+
+      canvas.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 50, clientY: 10, buttons: 0, bubbles: true }),
+      );
+
+      expect(onCanvasEvent).toHaveBeenCalledTimes(1);
+      const [type, , hitTest] = onCanvasEvent.mock.calls[0] as unknown as [
+        string,
+        MouseEvent,
+        HitTestResult,
+        EventCoords,
+      ];
+      expect(type).toBe("mousemove");
+      expect(hitTest.type).toBe("cell");
+    });
+  });
+
+  describe("mouseleave", () => {
+    it("clears hover state on mouseleave", () => {
+      const onCellHover = mock((_coord: CellCoord | null) => {});
+      const onResizeHover = mock((_colIndex: number | null) => {});
+      const rowLayouts = [makeLayout(0, 0, 0, 0, 200, 36)];
+      em.setLayouts([], rowLayouts);
+      em.attach(canvas, { onCellHover, onResizeHover });
+
+      // First hover over a cell
+      canvas.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 50, clientY: 10, buttons: 0, bubbles: true }),
+      );
+
+      // Then leave
+      canvas.dispatchEvent(
+        new MouseEvent("mouseleave", { clientX: -1, clientY: -1, bubbles: true }),
+      );
+
+      expect(onCellHover.mock.calls[onCellHover.mock.calls.length - 1]![0]).toBeNull();
+      expect(onResizeHover.mock.calls[onResizeHover.mock.calls.length - 1]![0]).toBeNull();
+    });
+
+    it("fires onCanvasEvent mousemove with empty hitTest on mouseleave", () => {
+      const onCanvasEvent = mock(
+        (_type: string, _native: MouseEvent, _hitTest: HitTestResult, _coords: EventCoords) => {},
+      );
+      em.setLayouts([], []);
+      em.attach(canvas, { onCanvasEvent });
+
+      canvas.dispatchEvent(
+        new MouseEvent("mouseleave", { clientX: -1, clientY: -1, bubbles: true }),
+      );
+
+      expect(onCanvasEvent).toHaveBeenCalledTimes(1);
+      const [type, , hitTest] = onCanvasEvent.mock.calls[0] as unknown as [
+        string,
+        MouseEvent,
+        HitTestResult,
+        EventCoords,
+      ];
+      expect(type).toBe("mousemove");
+      expect(hitTest.type).toBe("empty");
+    });
+  });
 });

@@ -1148,6 +1148,60 @@ describe("GridInstance", () => {
       expect(instance.getIsAllRowsExpanded()).toBe(false);
     });
 
+    it("getIsAllRowsExpanded returns true when all expandable rows are individually expanded", () => {
+      // Alice (index 0) is the only expandable row; expanded={"0":true} covers all
+      const { instance } = createExpandInstance({ "0": true });
+      expect(instance.getIsAllRowsExpanded()).toBe(true);
+    });
+
+    it("getIsAllRowsExpanded returns false when a deep nested child is not expanded", () => {
+      // Create tree with deeper nesting: Alice > Bob > Eve
+      type DeepTreePerson = Person & { children?: DeepTreePerson[] };
+      const deepTreeHelper = createColumnHelper<DeepTreePerson>();
+      const deepTreeData: DeepTreePerson[] = [
+        {
+          firstName: "Alice",
+          lastName: "Smith",
+          age: 30,
+          status: "active",
+          children: [
+            {
+              firstName: "Bob",
+              lastName: "Jones",
+              age: 25,
+              status: "inactive",
+              children: [{ firstName: "Eve", lastName: "Lee", age: 5, status: "active" }],
+            },
+          ],
+        },
+      ];
+      const deepTreeColumns = [
+        deepTreeHelper.accessor("firstName", { header: "First", size: 150 }),
+        deepTreeHelper.accessor("age", { header: "Age", size: 80 }),
+      ];
+      const getDeepSubRows = (row: DeepTreePerson) => row.children;
+
+      // Alice (index 0) is expanded, but Bob (a child, not in data by index) is also expandable
+      // Since Bob is not a top-level data item, data.indexOf(bob) returns -1 → checkAll returns false
+      const instance = buildGridInstance({
+        data: deepTreeData,
+        columns: deepTreeColumns,
+        state: {
+          sorting: [],
+          columnFilters: [],
+          globalFilter: "",
+          expanded: { "0": true },
+        },
+        onSortingChange: () => {},
+        onColumnFiltersChange: () => {},
+        onGlobalFilterChange: () => {},
+        onExpandedChange: () => {},
+        getSubRows: getDeepSubRows,
+      });
+      // Alice is expanded but Bob (expandable child) is not → should be false
+      expect(instance.getIsAllRowsExpanded()).toBe(false);
+    });
+
     it("getExpandedRowModel without getSubRows returns core model", () => {
       const instance = buildGridInstance({
         data: sampleData,

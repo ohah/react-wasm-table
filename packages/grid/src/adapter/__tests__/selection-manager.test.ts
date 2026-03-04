@@ -380,4 +380,14 @@ describe("SelectionManager", () => {
       expect(cb).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("clear() no-op when no range", () => {
+    it("does nothing when already empty", () => {
+      const cb = mock(() => {});
+      const sm = new SelectionManager();
+      sm.setOnDirty(cb);
+      sm.clear();
+      expect(cb).not.toHaveBeenCalled();
+    });
+  });
 });
