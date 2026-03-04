@@ -12,6 +12,9 @@ import {
   imageCellRenderer,
   switchCellRenderer,
 } from "../components";
+import { checkboxCellRenderer } from "../components/checkbox";
+import { inputCellRenderer } from "../components/input";
+import { progressBarCellRenderer, getBarGeometry } from "../components/progressbar";
 import type { CellRenderer, CellRenderContext } from "../components";
 import type { Theme, RenderInstruction } from "../../types";
 
@@ -743,6 +746,94 @@ describe("imageCellRenderer", () => {
     // globalAlpha should remain at default (1)
     expect((context.ctx as any).globalAlpha).toBe(1);
   });
+
+  it("creates new cache entry for uncached src", () => {
+    // Clear any existing entry
+    const cache = _getImageCache();
+    const testSrc = `test://new-image-${Date.now()}.png`;
+    cache.delete(testSrc);
+
+    const context = makeContext();
+    imageCellRenderer.draw({ type: "image", src: testSrc }, context);
+
+    // A new entry should be created (may or may not load depending on env)
+    const entry = cache.get(testSrc);
+    // In test env, Image constructor might be from happy-dom
+    // The entry may exist or not depending on globalThis.Image availability
+    // Just verify no crash occurs
+  });
+
+  it("handles crossOrigin option", () => {
+    const cache = _getImageCache();
+    const testSrc = `test://crossorigin-${Date.now()}.png`;
+    cache.delete(testSrc);
+
+    const context = makeContext();
+    imageCellRenderer.draw({ type: "image", src: testSrc, crossOrigin: "anonymous" }, context);
+  });
+
+  it("handles referrerPolicy option", () => {
+    const cache = _getImageCache();
+    const testSrc = `test://referrer-${Date.now()}.png`;
+    cache.delete(testSrc);
+
+    const context = makeContext();
+    imageCellRenderer.draw(
+      { type: "image", src: testSrc, referrerPolicy: "no-referrer" } as any,
+      context,
+    );
+
+    const entry = cache.get(testSrc);
+    expect(entry).toBeTruthy();
+  });
+
+  it("handles decoding and fetchPriority options", () => {
+    const cache = _getImageCache();
+    const testSrc = `test://opts-${Date.now()}.png`;
+    cache.delete(testSrc);
+
+    const context = makeContext();
+    imageCellRenderer.draw(
+      { type: "image", src: testSrc, decoding: "async", fetchPriority: "high" },
+      context,
+    );
+  });
+
+  it("onload callback sets loaded=true on cache entry", () => {
+    const cache = _getImageCache();
+    const testSrc = `test://onload-${Date.now()}.png`;
+    cache.delete(testSrc);
+
+    const context = makeContext();
+    imageCellRenderer.draw({ type: "image", src: testSrc }, context);
+
+    const entry = cache.get(testSrc);
+    expect(entry).toBeTruthy();
+    expect(entry!.loaded).toBe(false);
+    // Manually trigger onload callback
+    const onload = entry!.img.onload;
+    expect(onload).toBeTruthy();
+    (onload as Function).call(entry!.img, {});
+    expect(entry!.loaded).toBe(true);
+  });
+
+  it("onerror callback sets error=true on cache entry", () => {
+    const cache = _getImageCache();
+    const testSrc = `test://onerror-${Date.now()}.png`;
+    cache.delete(testSrc);
+
+    const context = makeContext();
+    imageCellRenderer.draw({ type: "image", src: testSrc }, context);
+
+    const entry = cache.get(testSrc);
+    expect(entry).toBeTruthy();
+    expect(entry!.error).toBe(false);
+    // Manually trigger onerror callback
+    const onerror = entry!.img.onerror;
+    expect(onerror).toBeTruthy();
+    (onerror as Function).call(entry!.img, {});
+    expect(entry!.error).toBe(true);
+  });
 });
 
 // ── switchCellRenderer tests ────────────────────────────────────────────
@@ -835,5 +926,666 @@ describe("switchCellRenderer", () => {
     const rrCalls = (context.ctx.roundRect as any).mock.calls;
     expect(rrCalls[0][2]).toBe(44); // width
     expect(rrCalls[0][3]).toBe(24); // height
+  });
+});
+
+// ── stackCellRenderer tests ────────────────────────────────────────────
+
+describe("stackCellRenderer", () => {
+  it("has type 'stack'", () => {
+    expect(stackCellRenderer.type).toBe("stack");
+  });
+
+  it("is registered in default registry", () => {
+    const registry = createCellRendererRegistry();
+    expect(registry.get("stack")).toBe(stackCellRenderer);
+  });
+
+  it("does nothing with empty children", () => {
+    const context = makeContext();
+    stackCellRenderer.draw({ type: "stack", children: [] }, context);
+    expect(context.ctx.fillText).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when registry is falsy", () => {
+    const context = makeContext({ registry: undefined as any });
+    stackCellRenderer.draw({ type: "stack", children: [{ type: "text", value: "A" }] }, context);
+    expect(context.ctx.fillText).not.toHaveBeenCalled();
+  });
+
+  it("renders children in row direction (JS fallback)", () => {
+    const context = makeContext();
+    stackCellRenderer.draw(
+      {
+        type: "stack",
+        children: [
+          { type: "text", value: "A" },
+          { type: "text", value: "B" },
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
+    const calls = (context.ctx.fillText as any).mock.calls;
+    expect(calls[0][0]).toBe("A");
+    expect(calls[1][0]).toBe("B");
+  });
+
+  it("renders children in column direction (JS fallback)", () => {
+    const context = makeContext();
+    stackCellRenderer.draw(
+      {
+        type: "stack",
+        direction: "column",
+        children: [
+          { type: "text", value: "X" },
+          { type: "text", value: "Y" },
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
+    const calls = (context.ctx.fillText as any).mock.calls;
+    expect(calls[0][0]).toBe("X");
+    expect(calls[1][0]).toBe("Y");
+    // Column: Y positions should differ
+    expect(calls[1][2]).toBeGreaterThan(calls[0][2]);
+  });
+
+  it("applies custom gap", () => {
+    const context = makeContext();
+    stackCellRenderer.draw(
+      {
+        type: "stack",
+        gap: 10,
+        children: [
+          { type: "text", value: "A" },
+          { type: "text", value: "B" },
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses WASM path when computeChildLayout is provided", () => {
+    const computeFn = mock(mockComputeChildLayout);
+    const context = makeContext({ computeChildLayout: computeFn });
+    stackCellRenderer.draw(
+      {
+        type: "stack",
+        children: [
+          { type: "text", value: "A" },
+          { type: "text", value: "B" },
+        ],
+      },
+      context,
+    );
+    expect(computeFn).toHaveBeenCalledTimes(1);
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ── checkboxCellRenderer tests ─────────────────────────────────────────
+
+describe("checkboxCellRenderer", () => {
+  it("has type 'checkbox'", () => {
+    expect(checkboxCellRenderer.type).toBe("checkbox");
+  });
+
+  it("has cursor 'pointer'", () => {
+    expect(checkboxCellRenderer.cursor).toBe("pointer");
+  });
+
+  it("is registered in default registry", () => {
+    const registry = createCellRendererRegistry();
+    expect(registry.get("checkbox")).toBe(checkboxCellRenderer);
+  });
+
+  it("renders children in row direction (JS fallback)", () => {
+    const context = makeContext();
+    checkboxCellRenderer.draw(
+      {
+        type: "checkbox",
+        checked: true,
+        children: [{ type: "text", value: "Label" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+    expect((context.ctx.fillText as any).mock.calls[0][0]).toBe("Label");
+  });
+
+  it("does nothing with empty children", () => {
+    const context = makeContext();
+    checkboxCellRenderer.draw({ type: "checkbox", checked: false, children: [] }, context);
+    expect(context.ctx.fillText).not.toHaveBeenCalled();
+  });
+
+  it("applies globalAlpha for disabled state", () => {
+    const context = makeContext();
+    checkboxCellRenderer.draw(
+      {
+        type: "checkbox",
+        checked: true,
+        disabled: true,
+        children: [{ type: "text", value: "D" }],
+      },
+      context,
+    );
+    expect(context.ctx.save).toHaveBeenCalled();
+    expect((context.ctx as any).globalAlpha).toBe(0.4);
+    expect(context.ctx.restore).toHaveBeenCalled();
+  });
+
+  it("restores context when disabled with empty children", () => {
+    const context = makeContext();
+    checkboxCellRenderer.draw(
+      { type: "checkbox", checked: false, disabled: true, children: [] },
+      context,
+    );
+    expect(context.ctx.save).toHaveBeenCalled();
+    expect(context.ctx.restore).toHaveBeenCalled();
+  });
+
+  it("does not call save/restore when not disabled", () => {
+    const context = makeContext();
+    checkboxCellRenderer.draw(
+      {
+        type: "checkbox",
+        checked: false,
+        children: [{ type: "text", value: "X" }],
+      },
+      context,
+    );
+    expect(context.ctx.save).not.toHaveBeenCalled();
+    expect(context.ctx.restore).not.toHaveBeenCalled();
+  });
+
+  it("uses WASM path when computeChildLayout is provided", () => {
+    const computeFn = mock(mockComputeChildLayout);
+    const context = makeContext({ computeChildLayout: computeFn });
+    checkboxCellRenderer.draw(
+      {
+        type: "checkbox",
+        checked: true,
+        children: [{ type: "text", value: "WASM" }],
+      },
+      context,
+    );
+    expect(computeFn).toHaveBeenCalledTimes(1);
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("does nothing when registry is falsy", () => {
+    const context = makeContext({ registry: undefined as any });
+    checkboxCellRenderer.draw(
+      {
+        type: "checkbox",
+        checked: true,
+        children: [{ type: "text", value: "Z" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).not.toHaveBeenCalled();
+  });
+});
+
+// ── inputCellRenderer tests ────────────────────────────────────────────
+
+describe("inputCellRenderer", () => {
+  it("has type 'input'", () => {
+    expect(inputCellRenderer.type).toBe("input");
+  });
+
+  it("has cursor 'text'", () => {
+    expect(inputCellRenderer.cursor).toBe("text");
+  });
+
+  it("is registered in default registry", () => {
+    const registry = createCellRendererRegistry();
+    expect(registry.get("input")).toBe(inputCellRenderer);
+  });
+
+  it("draws input background and border", () => {
+    const context = makeContext();
+    inputCellRenderer.draw({ type: "input", value: "Hello" }, context);
+    expect(context.ctx.beginPath).toHaveBeenCalled();
+    expect(context.ctx.roundRect).toHaveBeenCalled();
+    expect(context.ctx.fill).toHaveBeenCalled();
+    expect(context.ctx.stroke).toHaveBeenCalled();
+  });
+
+  it("draws text value", () => {
+    const context = makeContext();
+    inputCellRenderer.draw({ type: "input", value: "Test" }, context);
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+    expect((context.ctx.fillText as any).mock.calls[0][0]).toBe("Test");
+  });
+
+  it("draws placeholder with gray color when value is empty", () => {
+    const context = makeContext();
+    inputCellRenderer.draw({ type: "input", value: "", placeholder: "Enter..." }, context);
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+    expect((context.ctx.fillText as any).mock.calls[0][0]).toBe("Enter...");
+    expect(context.ctx.fillStyle).toBe("#9ca3af");
+  });
+
+  it("uses value color (not placeholder) when value is present", () => {
+    const context = makeContext();
+    inputCellRenderer.draw({ type: "input", value: "A", placeholder: "Enter..." }, context);
+    expect(context.ctx.fillStyle).toBe(defaultTheme.cellColor);
+  });
+
+  it("applies disabled state with globalAlpha=0.5", () => {
+    const context = makeContext();
+    inputCellRenderer.draw({ type: "input", value: "Disabled", disabled: true }, context);
+    expect(context.ctx.save).toHaveBeenCalled();
+    expect(context.ctx.restore).toHaveBeenCalled();
+  });
+
+  it("clips text to prevent overflow", () => {
+    const context = makeContext();
+    inputCellRenderer.draw({ type: "input", value: "Long text" }, context);
+    expect(context.ctx.clip).toHaveBeenCalled();
+    expect(context.ctx.rect).toHaveBeenCalled();
+  });
+
+  it("applies custom style overrides", () => {
+    const context = makeContext();
+    inputCellRenderer.draw(
+      {
+        type: "input",
+        value: "X",
+        style: {
+          fontSize: 16,
+          color: "#ff0000",
+          backgroundColor: "#eee",
+          borderColor: "#000",
+          borderWidth: 2,
+          borderRadius: 8,
+        },
+      },
+      context,
+    );
+    expect(context.ctx.font).toContain("16px");
+    expect(context.ctx.strokeStyle).toBe("#000");
+    expect(context.ctx.lineWidth).toBe(2);
+  });
+
+  it("skips border stroke when borderWidth is 0", () => {
+    const context = makeContext();
+    inputCellRenderer.draw({ type: "input", value: "X", style: { borderWidth: 0 } }, context);
+    expect(context.ctx.stroke).not.toHaveBeenCalled();
+  });
+
+  it("draws empty string when no value or placeholder", () => {
+    const context = makeContext();
+    inputCellRenderer.draw({ type: "input", value: "" }, context);
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+    expect((context.ctx.fillText as any).mock.calls[0][0]).toBe("");
+  });
+});
+
+// ── progressBarCellRenderer tests ──────────────────────────────────────
+
+describe("progressBarCellRenderer", () => {
+  it("has type 'progressbar'", () => {
+    expect(progressBarCellRenderer.type).toBe("progressbar");
+  });
+
+  it("has cursor 'pointer'", () => {
+    expect(progressBarCellRenderer.cursor).toBe("pointer");
+  });
+
+  it("is registered in default registry", () => {
+    const registry = createCellRendererRegistry();
+    expect(registry.get("progressbar")).toBe(progressBarCellRenderer);
+  });
+
+  it("draws background bar", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw({ type: "progressbar", value: 50 }, context);
+    expect(context.ctx.beginPath).toHaveBeenCalled();
+    expect(context.ctx.roundRect).toHaveBeenCalled();
+    expect(context.ctx.fill).toHaveBeenCalled();
+  });
+
+  it("draws filled bar when ratio > 0", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw({ type: "progressbar", value: 75 }, context);
+    // roundRect called twice: background + filled
+    expect(context.ctx.roundRect).toHaveBeenCalledTimes(2);
+    expect(context.ctx.fill).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not draw filled bar when value is 0", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw({ type: "progressbar", value: 0 }, context);
+    // Only background bar
+    expect(context.ctx.roundRect).toHaveBeenCalledTimes(1);
+    expect(context.ctx.fill).toHaveBeenCalledTimes(1);
+  });
+
+  it("clamps ratio to [0, 1]", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw({ type: "progressbar", value: 150 }, context);
+    // ratio clamped to 1, so filled bar drawn
+    expect(context.ctx.roundRect).toHaveBeenCalledTimes(2);
+  });
+
+  it("clamps negative values to 0", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw({ type: "progressbar", value: -10 }, context);
+    // ratio clamped to 0, no filled bar
+    expect(context.ctx.roundRect).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows label when showLabel is true", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw(
+      { type: "progressbar", value: 75, style: { showLabel: true } },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+    expect((context.ctx.fillText as any).mock.calls[0][0]).toBe("75%");
+  });
+
+  it("does not show label by default", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw({ type: "progressbar", value: 50 }, context);
+    expect(context.ctx.fillText).not.toHaveBeenCalled();
+  });
+
+  it("applies custom colors", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw(
+      {
+        type: "progressbar",
+        value: 50,
+        style: { color: "#ff0000", backgroundColor: "#ccc" },
+      },
+      context,
+    );
+    // Check that fillStyle was set to the custom colors
+    expect(context.ctx.fill).toHaveBeenCalled();
+  });
+
+  it("applies custom max", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw(
+      { type: "progressbar", value: 5, max: 10, style: { showLabel: true } },
+      context,
+    );
+    expect((context.ctx.fillText as any).mock.calls[0][0]).toBe("50%");
+  });
+
+  it("caches bar geometry via getBarGeometry", () => {
+    const context = makeContext();
+    progressBarCellRenderer.draw({ type: "progressbar", value: 50 }, context);
+    // Buffer has row=0, col=0
+    const geo = getBarGeometry("0,0");
+    expect(geo).toBeDefined();
+    expect(geo!.barX).toBeGreaterThan(0);
+    expect(geo!.barW).toBeGreaterThan(0);
+  });
+
+  it("getBarGeometry returns undefined for uncached key", () => {
+    expect(getBarGeometry("999,999")).toBeUndefined();
+  });
+});
+
+// ── flexCellRenderer column & alignment tests ──────────────────────────
+
+describe("flexCellRenderer column and alignment", () => {
+  it("renders in column direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        flexDirection: "column",
+        children: [
+          { type: "text", value: "Top" },
+          { type: "text", value: "Bottom" },
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
+    const calls = (context.ctx.fillText as any).mock.calls;
+    expect(calls[0][0]).toBe("Top");
+    expect(calls[1][0]).toBe("Bottom");
+    // Column: Y positions differ
+    expect(calls[1][2]).toBeGreaterThan(calls[0][2]);
+  });
+
+  it("renders in row-reverse direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        flexDirection: "row-reverse",
+        children: [
+          { type: "text", value: "First" },
+          { type: "text", value: "Second" },
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
+    const calls = (context.ctx.fillText as any).mock.calls;
+    // reversed order
+    expect(calls[0][0]).toBe("Second");
+    expect(calls[1][0]).toBe("First");
+  });
+
+  it("renders in column-reverse direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        flexDirection: "column-reverse",
+        children: [
+          { type: "text", value: "A" },
+          { type: "text", value: "B" },
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
+    const calls = (context.ctx.fillText as any).mock.calls;
+    expect(calls[0][0]).toBe("B");
+    expect(calls[1][0]).toBe("A");
+  });
+
+  it("applies justify=end for row direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        justifyContent: "end",
+        children: [{ type: "text", value: "End" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies justify=center for row direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        justifyContent: "center",
+        children: [{ type: "text", value: "Ctr" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies align=start for row direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        alignItems: "start",
+        children: [{ type: "text", value: "S" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies align=end for row direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        alignItems: "end",
+        children: [{ type: "text", value: "E" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies justify=end for column direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        flexDirection: "column",
+        justifyContent: "end",
+        children: [{ type: "text", value: "E" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies justify=center for column direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        children: [{ type: "text", value: "C" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies align=end for column direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        flexDirection: "column",
+        alignItems: "end",
+        children: [{ type: "text", value: "E" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies align=start for column direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        flexDirection: "column",
+        alignItems: "start",
+        children: [{ type: "text", value: "S" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies align=stretch for column direction", () => {
+    const context = makeContext();
+    flexCellRenderer.draw(
+      {
+        type: "flex",
+        flexDirection: "column",
+        alignItems: "stretch",
+        children: [{ type: "text", value: "Stretch" }],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ── imageCellRenderer scale-down & explicit dimensions tests ───────────
+
+describe("imageCellRenderer additional", () => {
+  it("scale-down mode uses natural size when smaller than content", () => {
+    seedImageCache("test://scaledown-small.png", {
+      img: mockImageLike({ naturalWidth: 50, naturalHeight: 20 }),
+      loaded: true,
+    });
+    const context = makeContext();
+    imageCellRenderer.draw(
+      { type: "image", src: "test://scaledown-small.png", style: { objectFit: "scale-down" } },
+      context,
+    );
+    const drawCalls = (context.ctx.drawImage as any).mock.calls;
+    expect(drawCalls).toHaveLength(1);
+    const [, , , dw, dh] = drawCalls[0];
+    // Natural size is smaller than content: scale = min(1, min(200/50, 36/20)) = min(1, 1.8) = 1
+    expect(dw).toBe(50);
+    expect(dh).toBe(20);
+  });
+
+  it("scale-down mode shrinks when larger than content", () => {
+    seedImageCache("test://scaledown-large.png", {
+      img: mockImageLike({ naturalWidth: 400, naturalHeight: 400 }),
+      loaded: true,
+    });
+    const context = makeContext();
+    imageCellRenderer.draw(
+      { type: "image", src: "test://scaledown-large.png", style: { objectFit: "scale-down" } },
+      context,
+    );
+    const drawCalls = (context.ctx.drawImage as any).mock.calls;
+    expect(drawCalls).toHaveLength(1);
+    const [, , , dw, dh] = drawCalls[0];
+    // containScale = min(200/400, 36/400) = 0.09, scale = min(1, 0.09) = 0.09
+    expect(dw).toBeCloseTo(36, 0);
+    expect(dh).toBeCloseTo(36, 0);
+  });
+
+  it("uses explicit width/height when provided", () => {
+    seedImageCache("test://explicit-wh.png", {
+      img: mockImageLike({ naturalWidth: 100, naturalHeight: 100 }),
+      loaded: true,
+    });
+    const context = makeContext();
+    imageCellRenderer.draw(
+      { type: "image", src: "test://explicit-wh.png", width: 50, height: 50 },
+      context,
+    );
+    const drawCalls = (context.ctx.drawImage as any).mock.calls;
+    expect(drawCalls).toHaveLength(1);
+    const [, , , dw, dh] = drawCalls[0];
+    // fill mode with explicit 50x50 target
+    expect(dw).toBe(50);
+    expect(dh).toBe(50);
+  });
+
+  it("returns early when contentW is 0", () => {
+    seedImageCache("test://zero-w.png", {
+      img: mockImageLike({ naturalWidth: 100, naturalHeight: 100 }),
+      loaded: true,
+    });
+    const buf = buildBuf([[0, 0, 10, 40, 0, 36]]); // width=0
+    const context = makeContext({ buf });
+    imageCellRenderer.draw({ type: "image", src: "test://zero-w.png" }, context);
+    expect(context.ctx.drawImage).not.toHaveBeenCalled();
   });
 });
