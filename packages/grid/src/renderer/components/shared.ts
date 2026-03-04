@@ -81,6 +81,15 @@ export function measureInstructionWidth(
   if (instruction.type === "image") {
     return instruction.width ?? FLEX_CHILD_HEIGHT;
   }
+  if (instruction.type === "switch") {
+    return instruction.style?.width ?? 36;
+  }
+  if (instruction.type === "checkbox") {
+    return 60;
+  }
+  if (instruction.type === "input") {
+    return 120;
+  }
   if (
     instruction.type === "stub" ||
     instruction.type === "box" ||
@@ -110,7 +119,9 @@ export function measureInstructionHeight(
     instruction.type === "tag" ||
     instruction.type === "rating" ||
     instruction.type === "chip" ||
-    instruction.type === "link"
+    instruction.type === "link" ||
+    instruction.type === "checkbox" ||
+    instruction.type === "input"
     ? FLEX_CHILD_HEIGHT
     : 0;
 }

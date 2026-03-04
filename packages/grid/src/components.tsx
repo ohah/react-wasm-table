@@ -13,6 +13,7 @@ import type {
   LinkStyle,
   ImageStyle,
   SwitchStyle,
+  InputStyle,
   CanvasEventHandlers,
   CssFlexDirection,
   CssFlexWrap,
@@ -28,6 +29,7 @@ import type {
   CssObjectFit,
   ReferrerPolicy,
 } from "./types";
+import type { ChangeEvent, FocusEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { resolveInstruction } from "./resolve-instruction";
 import { Children, isValidElement, type ReactNode, type JSX } from "react";
 
@@ -48,6 +50,8 @@ const EVENT_KEYS = [
   "onMouseUp",
   "onMouseEnter",
   "onMouseLeave",
+  "onTouchStart",
+  "onTouchEnd",
 ] as const;
 
 /** Extract CanvasEventHandlers from props. Returns undefined when none are set. */
@@ -579,11 +583,93 @@ export function Image(props: ImageProps): CanvasElement {
 
 export const Avatar = stub("Avatar");
 
-// Interactive (DOM overlay)
-export const Input = stub("Input");
+/** Props for the Checkbox canvas component (headless container). */
+export interface CheckboxProps extends CanvasEventHandlers {
+  checked: boolean;
+  disabled?: boolean;
+  children?: ReactNode;
+}
+
+/** Canvas checkbox component. Headless container — children provide visuals. */
+export function Checkbox(props: CheckboxProps): CanvasElement {
+  const resolved: RenderInstruction[] = [];
+  if (props.children != null) {
+    Children.forEach(props.children, (child) => {
+      if (isValidElement(child)) {
+        resolved.push(resolveInstruction(child));
+      }
+    });
+  }
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "checkbox",
+    checked: props.checked,
+    ...(props.disabled !== undefined && { disabled: props.disabled }),
+    children: resolved,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
+/** Props for the Input canvas component (DOM overlay). */
+export interface InputProps extends CanvasEventHandlers {
+  /** HTML input type attribute. @default "text" */
+  type?: string;
+  value?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  readOnly?: boolean;
+  onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+  onFocus?: (e: FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: ReactKeyboardEvent<HTMLInputElement>) => void;
+  style?: Partial<InputStyle>;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+}
+
+function pickInputStyle(props: InputProps): Partial<InputStyle> {
+  const { style, fontSize, fontFamily, color, backgroundColor, borderColor, borderWidth, borderRadius } = props;
+  return {
+    ...style,
+    ...(fontSize !== undefined && { fontSize }),
+    ...(fontFamily !== undefined && { fontFamily }),
+    ...(color !== undefined && { color }),
+    ...(backgroundColor !== undefined && { backgroundColor }),
+    ...(borderColor !== undefined && { borderColor }),
+    ...(borderWidth !== undefined && { borderWidth }),
+    ...(borderRadius !== undefined && { borderRadius }),
+  };
+}
+
+/** Canvas input component. Renders a DOM overlay <input> positioned by Taffy layout. */
+export function Input(props: InputProps): CanvasElement {
+  const style = pickInputStyle(props);
+  const _handlers = pickEventHandlers(props);
+  const _domHandlers: Record<string, unknown> = {};
+  if (props.onChange) _domHandlers.onChange = props.onChange;
+  if (props.onFocus) _domHandlers.onFocus = props.onFocus;
+  if (props.onBlur) _domHandlers.onBlur = props.onBlur;
+  if (props.onKeyDown) _domHandlers.onKeyDown = props.onKeyDown;
+  return {
+    type: "input",
+    ...(props.type !== undefined && { inputType: props.type }),
+    ...(props.value !== undefined && { value: props.value }),
+    ...(props.placeholder !== undefined && { placeholder: props.placeholder }),
+    ...(props.disabled !== undefined && { disabled: props.disabled }),
+    ...(props.readOnly !== undefined && { readOnly: props.readOnly }),
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(Object.keys(_domHandlers).length > 0 && { _domHandlers }),
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
 export const NumberInput = stub("NumberInput");
 export const Select = stub("Select");
-export const Checkbox = stub("Checkbox");
 
 /** Props for the Switch canvas component. */
 export interface SwitchProps extends CanvasEventHandlers {

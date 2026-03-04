@@ -13,6 +13,8 @@ import { chipCellRenderer } from "./chip";
 import { linkCellRenderer } from "./link";
 import { imageCellRenderer } from "./image";
 import { switchCellRenderer } from "./switch";
+import { checkboxCellRenderer } from "./checkbox";
+import { inputCellRenderer } from "./input";
 
 // Re-export types for public API
 export type { CellRenderContext, CellRenderer, InstructionLike } from "./types";
@@ -59,6 +61,8 @@ export function createCellRendererRegistry(
   registry.register(linkCellRenderer);
   registry.register(imageCellRenderer);
   registry.register(switchCellRenderer);
+  registry.register(checkboxCellRenderer);
+  registry.register(inputCellRenderer);
   if (userRenderers) {
     for (const r of userRenderers) {
       registry.register(r);
@@ -82,3 +86,5 @@ export { chipCellRenderer } from "./chip";
 export { linkCellRenderer } from "./link";
 export { imageCellRenderer } from "./image";
 export { switchCellRenderer } from "./switch";
+export { checkboxCellRenderer } from "./checkbox";
+export { inputCellRenderer } from "./input";
