@@ -886,7 +886,9 @@ describe("Canvas components", () => {
 
     it("preserves user onClick while wrapping with onChange logic", () => {
       let userClickCalled = false;
-      const userOnClick = () => { userClickCalled = true; };
+      const userOnClick = () => {
+        userClickCalled = true;
+      };
       const onChange = (_v: number) => {};
       const result = ProgressBar({ value: 50, onClick: userOnClick, onChange }) as any;
       expect(result._handlers).toBeDefined();

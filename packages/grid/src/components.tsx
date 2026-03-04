@@ -379,7 +379,16 @@ export interface ProgressBarProps extends CanvasEventHandlers {
 }
 
 function pickProgressBarStyle(props: ProgressBarProps): Partial<ProgressBarStyle> {
-  const { style, color, backgroundColor, borderRadius, height, showLabel, labelColor, labelFontSize } = props;
+  const {
+    style,
+    color,
+    backgroundColor,
+    borderRadius,
+    height,
+    showLabel,
+    labelColor,
+    labelFontSize,
+  } = props;
   return {
     ...style,
     ...(color !== undefined && { color }),
