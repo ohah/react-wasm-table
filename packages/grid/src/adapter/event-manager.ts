@@ -596,13 +596,11 @@ export class EventManager {
 
         const resizeCol = this.findResizeHandle(x, y);
         handlers.onResizeHover?.(resizeCol !== -1 ? resizeCol : null);
-        if (handlers.onCellHover) {
-          if (resizeCol !== -1) {
-            handlers.onCellHover(null);
-          } else {
-            const rowHit = findCell(x, y, this.rowLayouts);
-            handlers.onCellHover(rowHit ?? null);
-          }
+        // Skip onCellHover when resize handle is hovered to avoid
+        // resetting cursor that onResizeHover just set to "col-resize".
+        if (resizeCol === -1 && handlers.onCellHover) {
+          const rowHit = findCell(x, y, this.rowLayouts);
+          handlers.onCellHover(rowHit ?? null);
         }
       },
       { signal },
