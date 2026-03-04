@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, ChangeEvent, FocusEvent, KeyboardEvent } from "react";
 import type { GridInstance } from "./grid-instance";
 
 // ── CSS value types ──────────────────────────────────────────────────
@@ -257,6 +257,10 @@ export interface CanvasEventHandlers {
   onMouseUp?: (event: GridCellEvent) => void;
   onMouseEnter?: (event: GridCellEvent) => void;
   onMouseLeave?: (event: GridCellEvent) => void;
+  /** Fires on touchstart when this component's cell is touched. */
+  onTouchStart?: (event: GridCellEvent) => void;
+  /** Fires on touchend when this component's cell is tapped. */
+  onTouchEnd?: (event: GridCellEvent) => void;
 }
 
 /** Touch event types exposed to users. */
@@ -508,6 +512,8 @@ export type RenderInstruction =
   | (LinkInstruction & InstructionEventMixin)
   | (ImageInstruction & InstructionEventMixin)
   | (SwitchInstruction & InstructionEventMixin)
+  | (CheckboxInstruction & InstructionEventMixin)
+  | (InputInstruction & InstructionEventMixin)
   | (StubInstruction & InstructionEventMixin);
 
 /** Table cell content: ReactNode or RenderInstruction. Use for Td children so flexRender return type is valid. */
@@ -625,6 +631,61 @@ export interface SwitchInstruction {
   checked: boolean;
   disabled?: boolean;
   style?: Partial<SwitchStyle>;
+}
+
+/** A checkbox instruction (headless container — children provide visuals). */
+export interface CheckboxInstruction {
+  type: "checkbox";
+  checked: boolean;
+  disabled?: boolean;
+  children: RenderInstruction[];
+}
+
+/** Styling for input cells. */
+export interface InputStyle {
+  /** Font size in px. @default 13 */
+  fontSize: number;
+  /** Font family. @default "system-ui, sans-serif" */
+  fontFamily: string;
+  /** Text color. @default "#333" */
+  color: string;
+  /** Background color. @default "#fff" */
+  backgroundColor: string;
+  /** Border color. @default "#d1d5db" */
+  borderColor: string;
+  /** Border width in px. @default 1 */
+  borderWidth: number;
+  /** Border radius in px. @default 4 */
+  borderRadius: number;
+}
+
+/** An input instruction (DOM overlay). */
+export interface InputInstruction {
+  type: "input";
+  /** HTML input type attribute. @default "text" */
+  inputType?: string;
+  value?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  readOnly?: boolean;
+  style?: Partial<InputStyle>;
+  _domHandlers?: {
+    onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+    onFocus?: (e: FocusEvent<HTMLInputElement>) => void;
+    onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
+    onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
+  };
+}
+
+/** Descriptor for a DOM overlay element positioned by Taffy layout. */
+export interface DomOverlayDescriptor {
+  /** Unique key for React reconciliation (e.g., "row:col"). */
+  key: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  instruction: InputInstruction;
 }
 
 /** CSS object-fit values for image rendering. */

@@ -33,6 +33,8 @@ export type {
   LinkProps,
   ImageProps,
   SwitchProps,
+  CheckboxProps,
+  InputProps,
   StubProps,
 } from "./components";
 export {
@@ -258,6 +260,8 @@ export {
   linkCellRenderer,
   imageCellRenderer,
   switchCellRenderer,
+  checkboxCellRenderer,
+  inputCellRenderer,
 } from "./renderer/components";
 export type { CellRenderer, CellRenderContext } from "./renderer/components";
 
@@ -320,6 +324,10 @@ export type {
   ImageStyle,
   SwitchInstruction,
   SwitchStyle,
+  CheckboxInstruction,
+  InputInstruction,
+  InputStyle,
+  DomOverlayDescriptor,
   CssObjectFit,
   ReferrerPolicy,
   RenderInstruction,
