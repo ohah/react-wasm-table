@@ -1288,7 +1288,7 @@ describe("EventManager", () => {
       expect(onCellHover.mock.calls[0]![0]).toEqual({ row: 0, col: 0 });
     });
 
-    it("fires onCellHover(null) when over resize handle", () => {
+    it("skips onCellHover when over resize handle to preserve col-resize cursor", () => {
       const onCellHover = mock((_coord: CellCoord | null) => {});
       const onResizeHover = mock((_colIndex: number | null) => {});
       const headerLayouts = [makeLayout(0, 0, 0, 0, 200, 40)];
@@ -1300,11 +1300,10 @@ describe("EventManager", () => {
         new MouseEvent("mousemove", { clientX: 200, clientY: 20, buttons: 0, bubbles: true }),
       );
 
-      // resize handle found → onCellHover(null) + onResizeHover(colIndex)
+      // resize handle found → onResizeHover fires, onCellHover is NOT called
+      // (to avoid resetting cursor that onResizeHover set to "col-resize")
       expect(onResizeHover).toHaveBeenCalled();
-      if (onCellHover.mock.calls.length > 0) {
-        expect(onCellHover.mock.calls[onCellHover.mock.calls.length - 1]![0]).toBeNull();
-      }
+      expect(onCellHover).not.toHaveBeenCalled();
     });
 
     it("fires onCanvasEvent mousemove with hitTest on hover", () => {
