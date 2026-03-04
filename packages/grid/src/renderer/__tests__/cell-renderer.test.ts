@@ -80,6 +80,52 @@ function mockCtx() {
   } as unknown as CanvasRenderingContext2D;
 }
 
+/** Mock computeChildLayout that respects flexDirection and gap from the encoded input. */
+function defaultMockComputeChildLayout(input: Float32Array): Float32Array {
+  const flexDir = input[2]!; // 0=row, 1=column, 2=row-reverse, 3=column-reverse
+  const gap = input[3]!;
+  const childCount = input[10]!;
+  const result = new Float32Array(childCount * 4);
+  const isColumn = flexDir === 1 || flexDir === 3;
+  const isReverse = flexDir === 2 || flexDir === 3;
+
+  // Compute positions in visual order, then map back to child index
+  const sizes: { w: number; h: number }[] = [];
+  for (let i = 0; i < childCount; i++) {
+    sizes.push({ w: input[11 + i * 2]!, h: input[11 + i * 2 + 1]! });
+  }
+
+  // Compute positions for each child (positions[i] = position of child i)
+  const positions: number[] = [];
+  if (isReverse) {
+    // Reverse: last child gets pos=0, first child gets largest pos
+    let pos = 0;
+    for (let i = childCount - 1; i >= 0; i--) {
+      positions[i] = pos;
+      pos += (isColumn ? sizes[i]!.h : sizes[i]!.w) + gap;
+    }
+  } else {
+    let pos = 0;
+    for (let i = 0; i < childCount; i++) {
+      positions[i] = pos;
+      pos += (isColumn ? sizes[i]!.h : sizes[i]!.w) + gap;
+    }
+  }
+
+  for (let i = 0; i < childCount; i++) {
+    if (isColumn) {
+      result[i * 4] = 0;
+      result[i * 4 + 1] = positions[i]!;
+    } else {
+      result[i * 4] = positions[i]!;
+      result[i * 4 + 1] = 0;
+    }
+    result[i * 4 + 2] = sizes[i]!.w;
+    result[i * 4 + 3] = sizes[i]!.h;
+  }
+  return result;
+}
+
 function makeContext(overrides?: Partial<CellRenderContext>): CellRenderContext {
   const buf = buildBuf([[0, 0, 10, 40, 200, 36]]);
   return {
@@ -88,6 +134,7 @@ function makeContext(overrides?: Partial<CellRenderContext>): CellRenderContext 
     cellIdx: 0,
     theme: defaultTheme,
     registry: createCellRendererRegistry(),
+    computeChildLayout: defaultMockComputeChildLayout,
     ...overrides,
   };
 }
@@ -416,35 +463,12 @@ describe("custom renderer dispatch", () => {
 
 // ── WASM composite layout path ────────────────────────────────────────
 
-/** Mock computeChildLayout that returns children stacked in a row with no gap. */
-function mockComputeChildLayout(input: Float32Array): Float32Array {
-  const childCount = input[10]!;
-  const result = new Float32Array(childCount * 4);
-  let x = 0;
-  for (let i = 0; i < childCount; i++) {
-    const w = input[11 + i * 2]!;
-    const h = input[11 + i * 2 + 1]!;
-    result[i * 4] = x; // x
-    result[i * 4 + 1] = 0; // y
-    result[i * 4 + 2] = w; // width
-    result[i * 4 + 3] = h; // height
-    x += w;
-  }
-  return result;
-}
-
-describe("flexCellRenderer with WASM path", () => {
-  it("uses computeChildLayout when provided", () => {
-    const computeFn = mock(mockComputeChildLayout);
+describe("flexCellRenderer WASM layout", () => {
+  it("calls computeChildLayout for children", () => {
+    const computeFn = mock(defaultMockComputeChildLayout);
     const context = makeContext({ computeChildLayout: computeFn });
     flexCellRenderer.draw({ type: "flex", children: [{ type: "text", value: "A" }] }, context);
     expect(computeFn).toHaveBeenCalledTimes(1);
-    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
-  });
-
-  it("falls back to JS layout when computeChildLayout is undefined", () => {
-    const context = makeContext();
-    flexCellRenderer.draw({ type: "flex", children: [{ type: "text", value: "A" }] }, context);
     expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
   });
 
@@ -452,7 +476,7 @@ describe("flexCellRenderer with WASM path", () => {
     let capturedInput: Float32Array | null = null;
     const computeFn = mock((input: Float32Array) => {
       capturedInput = new Float32Array(input);
-      return mockComputeChildLayout(input);
+      return defaultMockComputeChildLayout(input);
     });
     const context = makeContext({ computeChildLayout: computeFn });
     flexCellRenderer.draw(
@@ -480,9 +504,9 @@ describe("flexCellRenderer with WASM path", () => {
   });
 });
 
-describe("boxCellRenderer with WASM path", () => {
-  it("uses computeChildLayout when provided", () => {
-    const computeFn = mock(mockComputeChildLayout);
+describe("boxCellRenderer WASM layout", () => {
+  it("calls computeChildLayout for children", () => {
+    const computeFn = mock(defaultMockComputeChildLayout);
     const context = makeContext({ computeChildLayout: computeFn });
     boxCellRenderer.draw(
       {
@@ -496,21 +520,8 @@ describe("boxCellRenderer with WASM path", () => {
     expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
   });
 
-  it("falls back to JS layout without computeChildLayout", () => {
-    const context = makeContext();
-    boxCellRenderer.draw(
-      {
-        type: "box",
-        padding: 4,
-        children: [{ type: "text", value: "inside" }],
-      },
-      context,
-    );
-    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
-  });
-
   it("propagates computeChildLayout to nested children", () => {
-    const computeFn = mock(mockComputeChildLayout);
+    const computeFn = mock(defaultMockComputeChildLayout);
     const context = makeContext({ computeChildLayout: computeFn });
     boxCellRenderer.draw(
       {
@@ -532,6 +543,21 @@ describe("boxCellRenderer with WASM path", () => {
 });
 
 // ── imageCellRenderer tests ────────────────────────────────────────────
+
+// Ensure globalThis.Image exists for tests that exercise getOrLoadImage()
+if (typeof (globalThis as any).Image === "undefined") {
+  (globalThis as any).Image = class MockImage {
+    src = "";
+    crossOrigin: string | null = null;
+    referrerPolicy = "";
+    decoding = "";
+    fetchPriority = "";
+    naturalWidth = 0;
+    naturalHeight = 0;
+    onload: ((ev: unknown) => void) | null = null;
+    onerror: ((ev: unknown) => void) | null = null;
+  };
+}
 
 import { _getImageCache } from "../components/image";
 import type { ImageCacheEntry, ImageLike } from "../components/image";
@@ -971,7 +997,7 @@ describe("stackCellRenderer", () => {
     expect(calls[1][0]).toBe("B");
   });
 
-  it("renders children in column direction (JS fallback)", () => {
+  it("renders children in column direction", () => {
     const context = makeContext();
     stackCellRenderer.draw(
       {
@@ -1009,7 +1035,7 @@ describe("stackCellRenderer", () => {
   });
 
   it("uses WASM path when computeChildLayout is provided", () => {
-    const computeFn = mock(mockComputeChildLayout);
+    const computeFn = mock(defaultMockComputeChildLayout);
     const context = makeContext({ computeChildLayout: computeFn });
     stackCellRenderer.draw(
       {
@@ -1103,7 +1129,7 @@ describe("checkboxCellRenderer", () => {
   });
 
   it("uses WASM path when computeChildLayout is provided", () => {
-    const computeFn = mock(mockComputeChildLayout);
+    const computeFn = mock(defaultMockComputeChildLayout);
     const context = makeContext({ computeChildLayout: computeFn });
     checkboxCellRenderer.draw(
       {
@@ -1374,9 +1400,11 @@ describe("flexCellRenderer column and alignment", () => {
     );
     expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
     const calls = (context.ctx.fillText as any).mock.calls;
-    // reversed order
-    expect(calls[0][0]).toBe("Second");
-    expect(calls[1][0]).toBe("First");
+    // WASM iterates children in order; Taffy positions them reversed
+    expect(calls[0][0]).toBe("First");
+    expect(calls[1][0]).toBe("Second");
+    // First child should be placed to the right of Second
+    expect(calls[0][1]).toBeGreaterThan(calls[1][1]);
   });
 
   it("renders in column-reverse direction", () => {
@@ -1394,8 +1422,11 @@ describe("flexCellRenderer column and alignment", () => {
     );
     expect(context.ctx.fillText).toHaveBeenCalledTimes(2);
     const calls = (context.ctx.fillText as any).mock.calls;
-    expect(calls[0][0]).toBe("B");
-    expect(calls[1][0]).toBe("A");
+    // WASM iterates children in order; Taffy positions them reversed
+    expect(calls[0][0]).toBe("A");
+    expect(calls[1][0]).toBe("B");
+    // First child (A) should be placed below Second (B)
+    expect(calls[0][2]).toBeGreaterThan(calls[1][2]);
   });
 
   it("applies justify=end for row direction", () => {

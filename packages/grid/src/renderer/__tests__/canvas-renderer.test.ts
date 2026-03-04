@@ -67,6 +67,23 @@ function mockCtx() {
   } as unknown as CanvasRenderingContext2D;
 }
 
+/** Simple mock computeChildLayout: places children sequentially at x=0, y=0 with their measured sizes. */
+function mockComputeChildLayout(input: Float32Array): Float32Array {
+  const childCount = input[10]!;
+  const result = new Float32Array(childCount * 4);
+  let offset = 0;
+  for (let i = 0; i < childCount; i++) {
+    const w = input[11 + i * 2]!;
+    const h = input[11 + i * 2 + 1]!;
+    result[i * 4] = offset;  // x
+    result[i * 4 + 1] = 0;  // y
+    result[i * 4 + 2] = w;  // width
+    result[i * 4 + 3] = h;  // height
+    offset += w + 4; // gap
+  }
+  return result;
+}
+
 function mockCanvas(ctx: CanvasRenderingContext2D) {
   const canvas = document.createElement("canvas");
   canvas.getBoundingClientRect = () =>
@@ -433,7 +450,7 @@ describe("CanvasRenderer", () => {
         type: "flex",
         children: [{ type: "text", value: "Flex child" }],
       });
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry);
+      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry, mockComputeChildLayout);
 
       const fillTextCalls = (ctx.fillText as any).mock.calls;
       expect(fillTextCalls.length).toBe(1);
@@ -447,7 +464,7 @@ describe("CanvasRenderer", () => {
         type: "flex",
         children: [{ type: "badge", value: "OK", style: { backgroundColor: "#0f0" } }],
       });
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry);
+      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry, mockComputeChildLayout);
 
       expect(ctx.roundRect).toHaveBeenCalled();
     });

@@ -1,4 +1,33 @@
 import { describe, expect, it, mock } from "bun:test";
+
+// Polyfill DOM globals for non-browser test environment
+if (typeof globalThis.MouseEvent === "undefined") {
+  (globalThis as any).MouseEvent = class MockMouseEvent {
+    type: string;
+    clientX: number;
+    constructor(type: string, init?: { clientX?: number }) {
+      this.type = type;
+      this.clientX = init?.clientX ?? 0;
+    }
+  };
+}
+if (typeof globalThis.window === "undefined") {
+  const listeners = new Map<string, Set<Function>>();
+  (globalThis as any).window = {
+    addEventListener(type: string, fn: Function) {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type)!.add(fn);
+    },
+    removeEventListener(type: string, fn: Function) {
+      listeners.get(type)?.delete(fn);
+    },
+    dispatchEvent(event: any) {
+      const fns = listeners.get(event.type);
+      if (fns) for (const fn of fns) fn(event);
+    },
+  };
+}
+
 import React from "react";
 import {
   Text,
@@ -1069,7 +1098,7 @@ describe("ProgressBar with onChange handlers", () => {
     const ctx = mockCtx();
     progressBarCellRenderer.draw(
       { type: "progressbar", value: 50 },
-      { ctx, buf, cellIdx: 0, theme: defaultTheme, registry: createCellRendererRegistry() },
+      { ctx, buf, cellIdx: 0, theme: defaultTheme, registry: createCellRendererRegistry(), computeChildLayout: (input: Float32Array) => new Float32Array(0) },
     );
   }
 
