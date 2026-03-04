@@ -23,3 +23,4 @@ export { TanStackExpanding } from "./Expanding";
 export { TanStackEditing } from "./Editing";
 export { TanStackStreaming } from "./Streaming";
 export { TanStackCanvasEvents } from "./CanvasEvents";
+export { TanStackCanvasRadio } from "./CanvasRadio";

@@ -90,6 +90,7 @@ import {
   TanStackEditing,
   TanStackStreaming,
   TanStackCanvasEvents,
+  TanStackCanvasRadio,
 } from "./pages/tanstack";
 import { FpsCounter } from "./components/FpsCounter";
 
@@ -149,7 +150,7 @@ export function App() {
           <Route path="/tanstack/canvas-image" element={<CanvasImage />} />
           <Route path="/tanstack/canvas-switch" element={<CanvasSwitch />} />
           <Route path="/tanstack/canvas-checkbox" element={<CanvasCheckbox />} />
-          <Route path="/tanstack/canvas-radio" element={<CanvasRadio />} />
+          <Route path="/tanstack/canvas-radio" element={<TanStackCanvasRadio />} />
           <Route path="/tanstack/canvas-input" element={<CanvasInput />} />
           <Route path="/tanstack/canvas-events" element={<TanStackCanvasEvents />} />
           <Route path="/tanstack/grid-template" element={<GridTemplate />} />
