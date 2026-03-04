@@ -690,7 +690,7 @@ export function useRenderLoop({
           const overlays: DomOverlayDescriptor[] = [];
           for (let i = headerCount; i < cellCount; i++) {
             const inst = getInstruction(i);
-            if (inst && inst.type === "input") {
+            if (inst && (inst.type === "input" || inst.type === "select")) {
               const row = readCellRow(layoutBuf, i);
               const col = readCellCol(layoutBuf, i);
               overlays.push({
