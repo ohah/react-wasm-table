@@ -14,6 +14,8 @@ import {
   Chip,
   Link,
   Image,
+  Checkbox,
+  Input,
 } from "../components";
 import { resolveInstruction } from "../resolve-instruction";
 import type {
@@ -30,6 +32,8 @@ import type {
   ChipInstruction,
   LinkInstruction,
   ImageInstruction,
+  CheckboxInstruction,
+  InputInstruction,
 } from "../types";
 
 describe("Canvas components", () => {
@@ -688,6 +692,125 @@ describe("Canvas components", () => {
       }) as any;
       expect(result._handlers).toBeDefined();
       expect(result._handlers.onClick).toBe(onClick);
+    });
+  });
+
+  describe("Checkbox", () => {
+    it("returns a CheckboxInstruction when called directly", () => {
+      const result = Checkbox({ checked: true }) as RenderInstruction;
+      expect(result.type).toBe("checkbox");
+      if (result.type === "checkbox") {
+        expect(result.checked).toBe(true);
+        expect(result.children).toEqual([]);
+      }
+    });
+
+    it("returns a CheckboxInstruction via JSX + resolveInstruction", () => {
+      const element = (
+        <Checkbox checked={false}>
+          <Text value="label" />
+        </Checkbox>
+      );
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("checkbox");
+      if (result.type === "checkbox") {
+        expect(result.checked).toBe(false);
+        expect(result.children).toHaveLength(1);
+        expect(result.children[0]!.type).toBe("text");
+      }
+    });
+
+    it("includes disabled when provided", () => {
+      const result = Checkbox({ checked: false, disabled: true }) as RenderInstruction;
+      if (result.type === "checkbox") {
+        expect(result.disabled).toBe(true);
+      }
+    });
+
+    it("omits disabled when not provided", () => {
+      const result = Checkbox({ checked: true }) as RenderInstruction;
+      if (result.type === "checkbox") {
+        expect(result.disabled).toBeUndefined();
+      }
+    });
+
+    it("attaches event handlers via _handlers", () => {
+      const onClick = () => {};
+      const result = Checkbox({ checked: true, onClick }) as any;
+      expect(result._handlers).toBeDefined();
+      expect(result._handlers.onClick).toBe(onClick);
+    });
+  });
+
+  describe("Input", () => {
+    it("returns an InputInstruction when called directly", () => {
+      const result = Input({ value: "hello" }) as RenderInstruction;
+      expect(result.type).toBe("input");
+      if (result.type === "input") {
+        expect(result.value).toBe("hello");
+      }
+    });
+
+    it("returns an InputInstruction via JSX + resolveInstruction", () => {
+      const element = <Input value="test" placeholder="Enter..." />;
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("input");
+      if (result.type === "input") {
+        expect(result.value).toBe("test");
+        expect(result.placeholder).toBe("Enter...");
+      }
+    });
+
+    it("maps type prop to inputType", () => {
+      const result = Input({ type: "email" }) as RenderInstruction;
+      if (result.type === "input") {
+        expect(result.inputType).toBe("email");
+      }
+    });
+
+    it("includes disabled and readOnly when provided", () => {
+      const result = Input({ disabled: true, readOnly: true }) as RenderInstruction;
+      if (result.type === "input") {
+        expect(result.disabled).toBe(true);
+        expect(result.readOnly).toBe(true);
+      }
+    });
+
+    it("omits optional props when not provided", () => {
+      const result = Input({}) as RenderInstruction;
+      if (result.type === "input") {
+        expect(result.inputType).toBeUndefined();
+        expect(result.value).toBeUndefined();
+        expect(result.placeholder).toBeUndefined();
+        expect(result.disabled).toBeUndefined();
+        expect(result.readOnly).toBeUndefined();
+      }
+    });
+
+    it("attaches DOM handlers in _domHandlers", () => {
+      const onChange = () => {};
+      const onFocus = () => {};
+      const result = Input({ onChange, onFocus }) as any;
+      expect(result._domHandlers).toBeDefined();
+      expect(result._domHandlers.onChange).toBe(onChange);
+      expect(result._domHandlers.onFocus).toBe(onFocus);
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Input({
+        style: { fontSize: 14, color: "gray" },
+        color: "red",
+      }) as RenderInstruction;
+      if (result.type === "input") {
+        expect(result.style).toEqual({ fontSize: 14, color: "red" });
+      }
+    });
+
+    it("omits style when no style properties given", () => {
+      const result = Input({ value: "plain" }) as RenderInstruction;
+      if (result.type === "input") {
+        expect(result.style).toBeUndefined();
+      }
     });
   });
 
