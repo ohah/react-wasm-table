@@ -5,7 +5,9 @@
 mod convert;
 mod types;
 
-use convert::{convert_column, convert_container, convert_filter_value, decode_align, decode_justify};
+use convert::{
+    convert_column, convert_container, convert_filter_value, decode_align, decode_justify,
+};
 use types::{JsColumnFilter, JsColumnLayout, JsContainerLayout, JsSortConfig, JsViewport};
 
 use react_wasm_table_core::columnar_store::ColumnarStore;
