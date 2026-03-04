@@ -515,6 +515,7 @@ export type RenderInstruction =
   | (SwitchInstruction & InstructionEventMixin)
   | (CheckboxInstruction & InstructionEventMixin)
   | (RadioInstruction & InstructionEventMixin)
+  | (LabelInstruction & InstructionEventMixin)
   | (InputInstruction & InstructionEventMixin)
   | (StubInstruction & InstructionEventMixin);
 
@@ -654,20 +655,67 @@ export interface SwitchInstruction {
   style?: Partial<SwitchStyle>;
 }
 
-/** A checkbox instruction (headless container — children provide visuals). */
+/** Styling for checkbox cells. */
+export interface CheckboxStyle {
+  /** Checkbox box size in px. @default 16 */
+  size: number;
+  /** Unchecked border color. @default "#d1d5db" */
+  borderColor: string;
+  /** Checked background color. @default "#3b82f6" */
+  checkedColor: string;
+  /** Checkmark color. @default "#fff" */
+  checkColor: string;
+  /** Border radius in px. @default 3 */
+  borderRadius: number;
+  /** Border width in px. @default 2 */
+  borderWidth: number;
+}
+
+/** A checkbox instruction — self-drawing with optional children (e.g. Label). */
 export interface CheckboxInstruction {
   type: "checkbox";
   checked: boolean;
   disabled?: boolean;
+  style?: Partial<CheckboxStyle>;
   children: RenderInstruction[];
 }
 
-/** A radio button instruction (headless container — children provide visuals). */
+/** Styling for radio cells. */
+export interface RadioStyle {
+  /** Radio circle size in px. @default 16 */
+  size: number;
+  /** Unchecked border color. @default "#d1d5db" */
+  borderColor: string;
+  /** Checked color (border + inner dot). @default "#3b82f6" */
+  checkedColor: string;
+  /** Border width in px. @default 2 */
+  borderWidth: number;
+}
+
+/** A radio button instruction — self-drawing with optional children (e.g. Label). */
 export interface RadioInstruction {
   type: "radio";
   checked: boolean;
   disabled?: boolean;
+  style?: Partial<RadioStyle>;
   children: RenderInstruction[];
+}
+
+/** Styling for label cells. */
+export interface LabelStyle {
+  /** Text color. @default theme.cellColor */
+  color: string;
+  /** Font size in px. @default theme.fontSize */
+  fontSize: number;
+  /** Font weight. @default "normal" */
+  fontWeight: string;
+}
+
+/** A label instruction (like Text but with pointer cursor). */
+export interface LabelInstruction {
+  type: "label";
+  value: string;
+  style?: Partial<LabelStyle>;
 }
 
 /** Styling for input cells. */
