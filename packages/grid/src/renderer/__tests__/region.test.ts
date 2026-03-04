@@ -154,15 +154,37 @@ describe("buildRegions", () => {
 });
 
 describe("buildRowRegions", () => {
-  it("returns single center region when no pinning", () => {
+  it("returns header + center regions when no pinning", () => {
     const result = buildRowRegions(800, 600, 40, 36, 50, 0, 0, 100);
-    expect(result.regions).toHaveLength(1);
-    expect(result.regions[0]!.name).toBe("center");
-    expect(result.regions[0]!.translateY).toBe(-50);
+    expect(result.regions).toHaveLength(2);
+    const header = result.regions.find((r) => r.name === "header")!;
+    expect(header.clipRect).toEqual([0, 0, 800, 40]);
+    expect(header.translateY).toBe(0);
+    const center = result.regions.find((r) => r.name === "center")!;
+    expect(center.clipRect).toEqual([0, 40, 800, 560]);
+    expect(center.translateY).toBe(0);
     expect(result.topHeight).toBe(0);
-    expect(result.centerHeight).toBe(600);
+    expect(result.centerHeight).toBe(560);
     expect(result.bottomHeight).toBe(0);
     expect(result.scrollableCount).toBe(100);
+  });
+
+  it("non-pinning center region clips below header (no translateY)", () => {
+    // scrollTop=200 should NOT affect translateY for non-pinning
+    const result = buildRowRegions(800, 600, 40, 36, 200, 0, 0, 100);
+    const center = result.regions.find((r) => r.name === "center")!;
+    // Center starts at headerHeight=40, height = 600-40 = 560
+    expect(center.clipRect).toEqual([0, 40, 800, 560]);
+    expect(center.translateY).toBe(0);
+  });
+
+  it("non-pinning header region prevents data cells from overlapping header", () => {
+    const result = buildRowRegions(800, 600, 40, 36, 0, 0, 0, 100);
+    const header = result.regions.find((r) => r.name === "header")!;
+    // Header clip ends at headerHeight=40, so data cells at y>=40 are excluded
+    expect(header.clipRect[1]).toBe(0);
+    expect(header.clipRect[3]).toBe(40);
+    expect(header.translateY).toBe(0);
   });
 
   it("creates header+top+center+bottom regions with both pinned", () => {

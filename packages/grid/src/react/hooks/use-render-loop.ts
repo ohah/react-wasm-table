@@ -486,11 +486,11 @@ export function useRenderLoop({
 
         const filteredCount = viewIndices.length;
 
-        if (hasRowPinning && pinnedTop + pinnedBottom < filteredCount) {
-          const scrollableCount = filteredCount - pinnedTop - pinnedBottom;
-          const topHeight = pinnedTop * effectiveRowHeight;
-          const bottomHeight = pinnedBottom * effectiveRowHeight;
-          const centerHeight = Math.max(0, height - headerHeight - topHeight - bottomHeight);
+        // Always build row regions so the center clip excludes the header area.
+        // When row pinning is active, also handles top/bottom pinned regions.
+        const shouldBuildRowRegions =
+          !hasRowPinning || (hasRowPinning && pinnedTop + pinnedBottom < filteredCount);
+        if (shouldBuildRowRegions) {
           rowRegionLayout = buildRowRegions(
             width,
             height,
@@ -501,6 +501,12 @@ export function useRenderLoop({
             pinnedBottom,
             filteredCount,
           );
+        }
+        if (hasRowPinning && pinnedTop + pinnedBottom < filteredCount) {
+          const scrollableCount = filteredCount - pinnedTop - pinnedBottom;
+          const topHeight = pinnedTop * effectiveRowHeight;
+          const bottomHeight = pinnedBottom * effectiveRowHeight;
+          const centerHeight = Math.max(0, height - headerHeight - topHeight - bottomHeight);
           const scrollContentHeight = scrollableCount * effectiveRowHeight;
           syncScrollBarContentSize(vScrollbarRef.current, scrollContentHeight, "vertical");
           const maxScrollY = Math.max(0, scrollContentHeight - centerHeight);
