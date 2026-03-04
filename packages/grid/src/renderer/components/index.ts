@@ -40,7 +40,7 @@ export class CellRendererRegistry {
 }
 
 /**
- * Create a CellRendererRegistry pre-loaded with the 14 built-in renderers.
+ * Create a CellRendererRegistry pre-loaded with the 16 built-in renderers.
  * Optional `userRenderers` are merged on top — same type overrides built-in.
  */
 export function createCellRendererRegistry(
