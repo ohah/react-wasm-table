@@ -1,6 +1,6 @@
 # Canvas Components
 
-Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering. Implemented: Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag, Image, Input, Checkbox, Radio, Switch, ProgressBar.
+Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering. Implemented: Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag, Image, Input, Checkbox, Radio, Label, Switch, ProgressBar.
 
 ---
 
@@ -171,23 +171,49 @@ Canvas-drawn text input with border, placeholder, and disabled state support.
 
 ### Checkbox
 
-Composite container that uses `computeChildLayout` to arrange children (e.g. a check indicator + label) in a horizontal row with center alignment.
+Self-drawing checkbox component. Draws a 16×16 rounded square with a checkmark when checked. Children (e.g. `Label`) are rendered to the right of the checkbox indicator.
 
-| Prop       | Type            | Default | Description        |
-| ---------- | --------------- | ------- | ------------------ |
-| `checked`  | `boolean`       | —       | Checked state      |
-| `disabled` | `boolean`       | `false` | Disabled state     |
-| `children` | `Instruction[]` | `[]`    | Child instructions |
+| Prop       | Type                     | Default | Description                              |
+| ---------- | ------------------------ | ------- | ---------------------------------------- |
+| `checked`  | `boolean`                | —       | Checked state                            |
+| `disabled` | `boolean`                | `false` | Disabled state                           |
+| `style`    | `Partial<CheckboxStyle>` | —       | size, borderColor, checkedColor, checkColor, borderRadius, borderWidth |
+| `children` | `Instruction[]`          | `[]`    | Child instructions (e.g. Label)          |
+
+```tsx
+<Checkbox checked={done} onClick={toggle}>
+  <Label value="Accept terms" />
+</Checkbox>
+```
 
 ### Radio
 
-Composite container identical to Checkbox in layout behavior. Uses `computeChildLayout` to arrange children in a horizontal row with center alignment. Visually distinguished by the consumer's children (e.g. a circle indicator instead of a square).
+Self-drawing radio button component. Draws a 16×16 circle with an inner filled dot when checked. Children (e.g. `Label`) are rendered to the right of the radio indicator.
 
-| Prop       | Type            | Default | Description        |
-| ---------- | --------------- | ------- | ------------------ |
-| `checked`  | `boolean`       | —       | Selected state     |
-| `disabled` | `boolean`       | `false` | Disabled state     |
-| `children` | `Instruction[]` | `[]`    | Child instructions |
+| Prop       | Type                  | Default | Description                              |
+| ---------- | --------------------- | ------- | ---------------------------------------- |
+| `checked`  | `boolean`             | —       | Selected state                           |
+| `disabled` | `boolean`             | `false` | Disabled state                           |
+| `style`    | `Partial<RadioStyle>` | —       | size, borderColor, checkedColor, borderWidth |
+| `children` | `Instruction[]`       | `[]`    | Child instructions (e.g. Label)          |
+
+```tsx
+<Radio checked={selected} onClick={select}>
+  <Label value="Option A" />
+</Radio>
+```
+
+### Label
+
+Text component with pointer cursor, designed to be used as a child of Checkbox or Radio. Draws text identically to `Text` but sets the cursor to "pointer".
+
+| Prop       | Type                  | Default        | Description |
+| ---------- | --------------------- | -------------- | ----------- |
+| `value`    | `string`              | —              | Label text  |
+| `style`    | `Partial<LabelStyle>` | —              | color, fontSize, fontWeight |
+| `color`    | `string`              | theme.cellColor | Text color  |
+| `fontSize` | `number`              | theme.fontSize  | Font size   |
+| `fontWeight` | `string`            | `"normal"`     | Font weight |
 
 ### Switch
 
