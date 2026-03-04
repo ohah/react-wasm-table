@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import React from "react";
 import {
   Text,
@@ -16,8 +16,18 @@ import {
   Image,
   Checkbox,
   Input,
+  Switch,
+  Icon,
+  Avatar,
+  NumberInput,
+  Select,
+  DatePicker,
+  Dropdown,
 } from "../components";
 import { resolveInstruction } from "../resolve-instruction";
+import { progressBarCellRenderer } from "../renderer/components/progressbar";
+import { createCellRendererRegistry } from "../renderer/components";
+import type { Theme } from "../types";
 import type {
   RenderInstruction,
   TextInstruction,
@@ -35,6 +45,7 @@ import type {
   CheckboxInstruction,
   InputInstruction,
   ProgressBarInstruction,
+  SwitchInstruction,
 } from "../types";
 
 describe("Canvas components", () => {
@@ -815,6 +826,39 @@ describe("Canvas components", () => {
     });
   });
 
+  describe("Switch", () => {
+    it("returns SwitchInstruction with type 'switch'", () => {
+      const result = resolveInstruction(Switch({ checked: true }));
+      expect(result).not.toBeNull();
+      expect((result as any).type).toBe("switch");
+      expect((result as any).checked).toBe(true);
+    });
+
+    it("passes disabled prop", () => {
+      const result = resolveInstruction(Switch({ checked: false, disabled: true }));
+      expect((result as any).disabled).toBe(true);
+    });
+
+    it("applies style props", () => {
+      const result = resolveInstruction(
+        Switch({
+          checked: true,
+          trackColor: "#ccc",
+          activeTrackColor: "#10b981",
+          thumbColor: "#fff",
+          width: 44,
+          height: 24,
+        }),
+      );
+      const s = (result as any).style;
+      expect(s.trackColor).toBe("#ccc");
+      expect(s.activeTrackColor).toBe("#10b981");
+      expect(s.thumbColor).toBe("#fff");
+      expect(s.width).toBe(44);
+      expect(s.height).toBe(24);
+    });
+  });
+
   describe("ProgressBar", () => {
     it("returns a ProgressBarInstruction when called directly", () => {
       const result = ProgressBar({ value: 75, max: 100, color: "blue" }) as RenderInstruction;
@@ -896,6 +940,271 @@ describe("Canvas components", () => {
       // The internal onClick wraps the user onClick — both should exist
       // (We can't fully test the call without a full GridCellEvent, but handler must be a function)
     });
+  });
+});
+
+describe("stub components", () => {
+  it("Icon returns a StubInstruction with component 'Icon'", () => {
+    const result = Icon({ color: "red", size: 24 }) as any;
+    expect(result.type).toBe("stub");
+    expect(result.component).toBe("Icon");
+    expect(result.props).toEqual({ color: "red", size: 24 });
+  });
+
+  it("Avatar returns a StubInstruction with component 'Avatar'", () => {
+    const result = Avatar({ src: "https://example.com/avatar.png" }) as any;
+    expect(result.type).toBe("stub");
+    expect(result.component).toBe("Avatar");
+    expect(result.props).toEqual({ src: "https://example.com/avatar.png" });
+  });
+
+  it("NumberInput returns a StubInstruction with component 'NumberInput'", () => {
+    const result = NumberInput({ min: 0, max: 100 }) as any;
+    expect(result.type).toBe("stub");
+    expect(result.component).toBe("NumberInput");
+    expect(result.props).toEqual({ min: 0, max: 100 });
+  });
+
+  it("Select returns a StubInstruction with component 'Select'", () => {
+    const result = Select({ options: ["a", "b"] }) as any;
+    expect(result.type).toBe("stub");
+    expect(result.component).toBe("Select");
+    expect(result.props).toEqual({ options: ["a", "b"] });
+  });
+
+  it("DatePicker returns a StubInstruction with component 'DatePicker'", () => {
+    const result = DatePicker({ format: "YYYY-MM-DD" }) as any;
+    expect(result.type).toBe("stub");
+    expect(result.component).toBe("DatePicker");
+    expect(result.props).toEqual({ format: "YYYY-MM-DD" });
+  });
+
+  it("Dropdown returns a StubInstruction with component 'Dropdown'", () => {
+    const result = Dropdown({ items: [1, 2, 3] }) as any;
+    expect(result.type).toBe("stub");
+    expect(result.component).toBe("Dropdown");
+    expect(result.props).toEqual({ items: [1, 2, 3] });
+  });
+
+  it("stub merges style with rest props (rest overrides style)", () => {
+    const result = Icon({ style: { color: "blue", size: 16 }, color: "red" }) as any;
+    expect(result.type).toBe("stub");
+    expect(result.component).toBe("Icon");
+    expect(result.props).toEqual({ color: "red", size: 16 });
+  });
+
+  it("stub returns undefined props when no props given", () => {
+    const result = Icon({}) as any;
+    expect(result.type).toBe("stub");
+    expect(result.component).toBe("Icon");
+    expect(result.props).toBeUndefined();
+  });
+});
+
+describe("ProgressBar with onChange handlers", () => {
+  // Helper to populate the bar geometry cache by drawing a progressbar cell
+  const defaultTheme: Theme = {
+    headerBackground: "#f5f5f5",
+    headerColor: "#333",
+    headerFontSize: 13,
+    cellBackground: "#fff",
+    cellColor: "#333",
+    fontSize: 13,
+    borderColor: "#e0e0e0",
+    borderWidth: 0.5,
+    borderStyle: "solid",
+    selectedBackground: "#1976d2",
+    fontFamily: "system-ui, sans-serif",
+  };
+
+  function buildBuf(cells: [number, number, number, number, number, number][]): Float32Array {
+    const stride = 16;
+    const buf = new Float32Array(cells.length * stride);
+    for (let i = 0; i < cells.length; i++) {
+      const [row, col, x, y, w, h] = cells[i]!;
+      const off = i * stride;
+      buf[off] = row;
+      buf[off + 1] = col;
+      buf[off + 2] = x;
+      buf[off + 3] = y;
+      buf[off + 4] = w;
+      buf[off + 5] = h;
+    }
+    return buf;
+  }
+
+  function mockCtx() {
+    return {
+      font: "",
+      fillStyle: "",
+      strokeStyle: "",
+      lineWidth: 0,
+      textBaseline: "",
+      textAlign: "",
+      globalAlpha: 1,
+      scale: mock(() => {}),
+      clearRect: mock(() => {}),
+      fillRect: mock(() => {}),
+      strokeRect: mock(() => {}),
+      beginPath: mock(() => {}),
+      moveTo: mock(() => {}),
+      lineTo: mock(() => {}),
+      stroke: mock(() => {}),
+      measureText: mock(() => ({ width: 40 })),
+      fillText: mock(() => {}),
+      roundRect: mock(() => {}),
+      rect: mock(() => {}),
+      fill: mock(() => {}),
+      save: mock(() => {}),
+      restore: mock(() => {}),
+      clip: mock(() => {}),
+      drawImage: mock(() => {}),
+      arc: mock(() => {}),
+    } as unknown as CanvasRenderingContext2D;
+  }
+
+  /** Populate barGeometryCache for a cell at row,col by drawing a progressbar */
+  function populateBarCache(row: number, col: number) {
+    const buf = buildBuf([[row, col, 10, 40, 200, 36]]);
+    const ctx = mockCtx();
+    progressBarCellRenderer.draw(
+      { type: "progressbar", value: 50 },
+      { ctx, buf, cellIdx: 0, theme: defaultTheme, registry: createCellRendererRegistry() },
+    );
+  }
+
+  function makeCellEvent(contentX: number, row: number, col: number) {
+    let defaultPrevented = false;
+    return {
+      cell: { row, col },
+      contentX,
+      contentY: 50,
+      viewportX: contentX,
+      viewportY: 50,
+      nativeEvent: new MouseEvent("click", { clientX: contentX }),
+      preventDefault: () => {
+        defaultPrevented = true;
+      },
+      get defaultPrevented() {
+        return defaultPrevented;
+      },
+    } as any;
+  }
+
+  it("creates instruction with onClick handler when onChange is set", () => {
+    const onChange = (_v: number) => {};
+    const result = ProgressBar({ value: 50, onChange }) as any;
+    expect(result).not.toBeNull();
+    expect(result._handlers?.onClick).toBeDefined();
+  });
+
+  it("creates instruction with onMouseDown handler when onChange is set", () => {
+    const onChange = (_v: number) => {};
+    const result = ProgressBar({ value: 50, onChange }) as any;
+    expect(result._handlers?.onMouseDown).toBeDefined();
+  });
+
+  it("does not have internal handlers when onChange is not set", () => {
+    const result = ProgressBar({ value: 50 }) as any;
+    expect(result._handlers).toBeUndefined();
+  });
+
+  it("defaults max to 100", () => {
+    const result = ProgressBar({ value: 50 }) as any;
+    expect(result.max).toBeUndefined();
+  });
+
+  it("includes max when explicitly provided", () => {
+    const result = ProgressBar({ value: 7, max: 10 }) as any;
+    expect(result.max).toBe(10);
+  });
+
+  it("onClick handler computes value from contentX and calls onChange", () => {
+    populateBarCache(5, 2);
+    const values: number[] = [];
+    const onChange = (v: number) => values.push(v);
+    const result = ProgressBar({ value: 50, onChange }) as any;
+    const event = makeCellEvent(110, 5, 2);
+    result._handlers.onClick(event);
+    expect(values.length).toBe(1);
+    expect(values[0]).toBeGreaterThanOrEqual(0);
+    expect(values[0]).toBeLessThanOrEqual(100);
+  });
+
+  it("onClick handler returns current value when no bar geometry", () => {
+    const values: number[] = [];
+    const onChange = (v: number) => values.push(v);
+    const result = ProgressBar({ value: 75, onChange }) as any;
+    // Use a row/col that hasn't been cached
+    const event = makeCellEvent(110, 999, 999);
+    result._handlers.onClick(event);
+    expect(values[0]).toBe(75);
+  });
+
+  it("onClick handler calls user onClick before onChange", () => {
+    populateBarCache(6, 3);
+    const calls: string[] = [];
+    const userOnClick = () => calls.push("userClick");
+    const onChange = () => calls.push("onChange");
+    const result = ProgressBar({ value: 50, onClick: userOnClick, onChange }) as any;
+    result._handlers.onClick(makeCellEvent(110, 6, 3));
+    expect(calls).toEqual(["userClick", "onChange"]);
+  });
+
+  it("onMouseDown handler computes initial ratio and calls onChange", () => {
+    populateBarCache(7, 0);
+    const values: number[] = [];
+    const onChange = (v: number) => values.push(v);
+    const result = ProgressBar({ value: 50, onChange }) as any;
+    const event = makeCellEvent(60, 7, 0);
+    result._handlers.onMouseDown(event);
+    expect(values.length).toBe(1);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it("onMouseDown handler returns early when no bar geometry", () => {
+    const values: number[] = [];
+    const onChange = (v: number) => values.push(v);
+    const result = ProgressBar({ value: 50, onChange }) as any;
+    const event = makeCellEvent(60, 888, 888);
+    result._handlers.onMouseDown(event);
+    // userOnMouseDown may still be called but onChange should not (no geo)
+    expect(values.length).toBe(0);
+  });
+
+  it("onMouseDown handler calls user onMouseDown before processing", () => {
+    populateBarCache(8, 1);
+    const calls: string[] = [];
+    const userOnMouseDown = () => calls.push("userMouseDown");
+    const onChange = () => calls.push("onChange");
+    const result = ProgressBar({ value: 50, onMouseDown: userOnMouseDown, onChange }) as any;
+    result._handlers.onMouseDown(makeCellEvent(60, 8, 1));
+    expect(calls[0]).toBe("userMouseDown");
+    expect(calls[1]).toBe("onChange");
+  });
+
+  it("onMouseDown handler registers mousemove/mouseup and updates via drag", () => {
+    populateBarCache(9, 0);
+    const values: number[] = [];
+    const onChange = (v: number) => values.push(v);
+    const result = ProgressBar({ value: 50, onChange }) as any;
+    const event = makeCellEvent(110, 9, 0);
+    result._handlers.onMouseDown(event);
+    const initialCount = values.length;
+
+    // Simulate mouse move
+    const moveEvent = new MouseEvent("mousemove", { clientX: 150 });
+    window.dispatchEvent(moveEvent);
+    expect(values.length).toBeGreaterThan(initialCount);
+
+    // Simulate mouse up — should remove listeners
+    const upEvent = new MouseEvent("mouseup");
+    window.dispatchEvent(upEvent);
+    const countAfterUp = values.length;
+
+    // Further moves should not trigger onChange
+    window.dispatchEvent(new MouseEvent("mousemove", { clientX: 200 }));
+    expect(values.length).toBe(countAfterUp);
   });
 });
 
