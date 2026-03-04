@@ -149,7 +149,8 @@ export function Grid({
   const vScrollbarRef = useRef<HTMLDivElement>(null);
   const hScrollbarRef = useRef<HTMLDivElement>(null);
 
-  // DOM overlay input ref tracking (for IME composition + Tab navigation)
+  // Tab navigation for DOM overlay inputs
+  const pendingInputFocusRef = useRef<{ col: number; edge: "top" | "bottom" } | null>(null);
   const inputRefsMap = useRef<Map<string, HTMLInputElement>>(new Map());
 
   // Streaming: effectiveTotalRows drives scrollbar height and viewRowCountRef
@@ -576,6 +577,105 @@ export function Grid({
     scrollLeftRef,
   );
 
+  // Scroll horizontally to ensure the given column's input is visible
+  const ensureColumnVisible = useCallback(
+    (col: number) => {
+      const overlay = domOverlays.find(
+        (d) => parseInt(d.key.split(":")[1] ?? "0", 10) === col,
+      );
+      if (!overlay) return;
+      const sl = scrollLeftRef.current;
+      const leftEdge = overlay.x - sl;
+      const rightEdge = leftEdge + overlay.width;
+      if (leftEdge < 0) {
+        scrollLeftRef.current = overlay.x;
+        invalidate();
+      } else if (rightEdge > width) {
+        scrollLeftRef.current = overlay.x + overlay.width - width;
+        invalidate();
+      }
+    },
+    [domOverlays, width, invalidate],
+  );
+
+  // Resolve pending focus after scroll: find the target input by edge + column
+  useEffect(() => {
+    const p = pendingInputFocusRef.current;
+    if (!p) return;
+    const candidates = domOverlays.filter(
+      (d) => parseInt(d.key.split(":")[1] ?? "0", 10) === p.col,
+    );
+    if (candidates.length === 0) return;
+    const target =
+      p.edge === "top"
+        ? candidates.reduce((a, b) => (a.y < b.y ? a : b))
+        : candidates.reduce((a, b) => (a.y > b.y ? a : b));
+    const el = inputRefsMap.current.get(target.key);
+    if (el) {
+      pendingInputFocusRef.current = null;
+      ensureColumnVisible(p.col);
+      el.focus();
+    }
+  }, [domOverlays, ensureColumnVisible]);
+
+  // Tab navigation handler for DOM overlay inputs
+  const handleOverlayTab = useCallback(
+    (currentKey: string, shiftKey: boolean) => {
+      // Extract unique Input column indices from visible overlays, sorted
+      const inputCols = [
+        ...new Set(domOverlays.map((d) => parseInt(d.key.split(":")[1] ?? "0", 10))),
+      ].sort((a, b) => a - b);
+      if (inputCols.length === 0) return;
+
+      const parts = currentKey.split(":");
+      const curViewportRow = parseInt(parts[0] ?? "0", 10);
+      const curCol = parseInt(parts[1] ?? "0", 10);
+      const colIdx = inputCols.indexOf(curCol);
+      if (colIdx < 0) return; // Guard: current column not in input list
+
+      let targetViewportRow: number;
+      let targetCol: number;
+
+      if (!shiftKey) {
+        if (colIdx < inputCols.length - 1) {
+          targetViewportRow = curViewportRow;
+          targetCol = inputCols[colIdx + 1]!;
+        } else {
+          targetViewportRow = curViewportRow + 1;
+          targetCol = inputCols[0]!;
+        }
+      } else {
+        if (colIdx > 0) {
+          targetViewportRow = curViewportRow;
+          targetCol = inputCols[colIdx - 1]!;
+        } else {
+          targetViewportRow = curViewportRow - 1;
+          targetCol = inputCols[inputCols.length - 1]!;
+        }
+      }
+
+      // If target is already visible, focus directly
+      const targetKey = `${targetViewportRow}:${targetCol}`;
+      const existingEl = inputRefsMap.current.get(targetKey);
+      if (existingEl) {
+        ensureColumnVisible(targetCol);
+        existingEl.focus();
+        return;
+      }
+
+      // Target not visible — scroll vertically and set pending focus
+      const dataRowOffset = targetViewportRow - curViewportRow; // +1 or -1
+      const targetDataRow = visStartRef.current + (curViewportRow - headerRowCount) + dataRowOffset;
+      if (targetDataRow < 0 || targetDataRow >= data.length) return;
+      pendingInputFocusRef.current = {
+        col: targetCol,
+        edge: dataRowOffset < 0 ? "top" : "bottom",
+      };
+      scrollToRow(targetDataRow);
+    },
+    [domOverlays, headerRowCount, scrollToRow, ensureColumnVisible, data.length],
+  );
+
   // Scrollbar visibility
   const totalContentHeight = data.length * rowHeight + totalHeaderHeight;
   const needsVerticalScroll = totalContentHeight > height;
@@ -672,7 +772,14 @@ export function Grid({
                   onChange={inst._domHandlers?.onChange}
                   onFocus={inst._domHandlers?.onFocus}
                   onBlur={inst._domHandlers?.onBlur}
-                  onKeyDown={inst._domHandlers?.onKeyDown}
+                  onKeyDown={(e) => {
+                    if (e.key === "Tab" && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      handleOverlayTab(d.key, e.shiftKey);
+                      return;
+                    }
+                    inst._domHandlers?.onKeyDown?.(e);
+                  }}
                   onWheel={(e) => {
                     canvasRef.current?.dispatchEvent(new WheelEvent("wheel", e.nativeEvent));
                   }}
