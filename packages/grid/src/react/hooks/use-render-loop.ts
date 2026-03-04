@@ -6,6 +6,7 @@ import type {
   CellBorderConfig,
   SelectionStyle,
   AfterDrawContext,
+  DomOverlayDescriptor,
   CssDisplay,
   CssFlexDirection,
   CssFlexWrap,
@@ -212,6 +213,9 @@ export function useRenderLoop({
   >(null);
   const cellRendererRegistryRef = useRef(cellRendererRegistry);
   cellRendererRegistryRef.current = cellRendererRegistry;
+
+  // DOM overlay descriptors for Input components (updated each frame)
+  const domOverlaysRef = useRef<DomOverlayDescriptor[]>([]);
 
   // Ref-wrap onVisibleRangeChange to avoid effect restarts
   const onVisibleRangeChangeRef = useRef(onVisibleRangeChange);
@@ -676,6 +680,25 @@ export function useRenderLoop({
             return undefined;
           };
 
+          // Collect DOM overlay descriptors for Input instructions
+          const overlays: DomOverlayDescriptor[] = [];
+          for (let i = headerCount; i < cellCount; i++) {
+            const inst = getInstruction(i);
+            if (inst && inst.type === "input") {
+              const row = readCellRow(layoutBuf, i);
+              const col = readCellCol(layoutBuf, i);
+              overlays.push({
+                key: `${row}:${col}`,
+                x: readCellX(layoutBuf, i),
+                y: readCellY(layoutBuf, i),
+                width: readCellWidth(layoutBuf, i),
+                height: readCellHeight(layoutBuf, i),
+                instruction: inst,
+              });
+            }
+          }
+          domOverlaysRef.current = overlays;
+
           // Build per-cell border config map (only when overrides exist)
           let borderConfigMap: Map<number, CellBorderConfig> | undefined;
           const hasColumnBorder = columns.some(
@@ -934,5 +957,5 @@ export function useRenderLoop({
     parsedBorderStyles,
   ]);
 
-  return { invalidate, getInstructionForCellRef, cellRendererRegistryRef };
+  return { invalidate, getInstructionForCellRef, cellRendererRegistryRef, domOverlaysRef };
 }

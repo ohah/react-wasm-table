@@ -20,6 +20,7 @@ import { useEventAttachment } from "./hooks/use-event-attachment";
 import { useColumnResize } from "./hooks/use-column-resize";
 import { useColumnDnD } from "./hooks/use-column-dnd";
 import { useRenderLoop } from "./hooks/use-render-loop";
+import { useDomOverlays } from "./hooks/use-dom-overlays";
 import { useStreaming } from "./hooks/use-streaming";
 
 const DEFAULT_ROW_HEIGHT = 36;
@@ -472,6 +473,7 @@ export function Grid({
     invalidate: renderInvalidate,
     getInstructionForCellRef,
     cellRendererRegistryRef,
+    domOverlaysRef,
   } = useRenderLoop({
     engine,
     memoryBridgeRef,
@@ -563,6 +565,12 @@ export function Grid({
     cellRendererRegistryRef,
   });
 
+  // DOM overlays (Input components)
+  // y-coordinates from WASM layout buffer are already viewport-relative (virtual scroll).
+  // Only x-coordinates need scrollLeft adjustment (content-space → viewport-space).
+  const { overlays: domOverlays, scrollLeft: overlayScrollLeft } =
+    useDomOverlays(domOverlaysRef, scrollLeftRef);
+
   // Scrollbar visibility
   const totalContentHeight = data.length * rowHeight + totalHeaderHeight;
   const needsVerticalScroll = totalContentHeight > height;
@@ -629,6 +637,62 @@ export function Grid({
             onScrollChange={handleHScrollChange}
             style={showVerticalScrollbar ? { width: `calc(100% - 17px)` } : undefined}
           />
+        )}
+        {domOverlays.length > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              pointerEvents: "none",
+              overflow: "hidden",
+              zIndex: 5,
+            }}
+          >
+            {domOverlays.map((d) => {
+              const inst = d.instruction;
+              const s = inst.style;
+              return (
+                <input
+                  key={d.key}
+                  type={inst.inputType ?? "text"}
+                  value={inst.value ?? ""}
+                  placeholder={inst.placeholder}
+                  disabled={inst.disabled}
+                  readOnly={inst.readOnly}
+                  onChange={inst._domHandlers?.onChange}
+                  onFocus={inst._domHandlers?.onFocus}
+                  onBlur={inst._domHandlers?.onBlur}
+                  onKeyDown={inst._domHandlers?.onKeyDown}
+                  onWheel={(e) => {
+                    canvasRef.current?.dispatchEvent(new WheelEvent("wheel", e.nativeEvent));
+                  }}
+                  style={{
+                    position: "absolute",
+                    left: d.x - overlayScrollLeft,
+                    top: d.y,
+                    width: d.width,
+                    height: d.height,
+                    pointerEvents: "auto",
+                    boxSizing: "border-box",
+                    padding: "2px 6px",
+                    fontSize: s?.fontSize ?? 13,
+                    fontFamily: s?.fontFamily ?? "system-ui, sans-serif",
+                    color: s?.color ?? "#333",
+                    backgroundColor: s?.backgroundColor ?? "#fff",
+                    borderColor: s?.borderColor ?? "#d1d5db",
+                    borderWidth: s?.borderWidth ?? 1,
+                    borderStyle: "solid",
+                    borderRadius: s?.borderRadius ?? 4,
+                    outline: "none",
+                    opacity: inst.disabled ? 0.5 : 1,
+                  }}
+                />
+              );
+            })}
+          </div>
         )}
         {editorPortal}
         {!columnsProp && children}
