@@ -11,6 +11,17 @@ import {
   readCellPaddingLeft,
 } from "../../adapter/layout-reader";
 
+/** Cache parsed Path2D instances to avoid re-parsing SVG path strings every frame. */
+const pathCache = new Map<string, Path2D>();
+function getCachedPath(d: string): Path2D {
+  let p = pathCache.get(d);
+  if (!p) {
+    p = new Path2D(d);
+    pathCache.set(d, p);
+  }
+  return p;
+}
+
 export const iconCellRenderer: CellRenderer<IconInstruction> = {
   type: "icon",
   draw(instruction, { ctx, buf, cellIdx, theme }) {
@@ -40,7 +51,7 @@ export const iconCellRenderer: CellRenderer<IconInstruction> = {
     ctx.translate(iconX, iconY);
     ctx.scale(scale, scale);
 
-    const path2d = new Path2D(instruction.path);
+    const path2d = getCachedPath(instruction.path);
     ctx.fillStyle = color;
     ctx.fill(path2d);
 

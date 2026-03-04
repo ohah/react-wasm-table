@@ -651,14 +651,19 @@ export interface IconProps extends CanvasEventHandlers {
   style?: Partial<IconStyle>;
 }
 
+function pickIconStyle(props: IconProps): Partial<IconStyle> {
+  const { style, size, color, viewBox } = props;
+  return {
+    ...style,
+    ...(size !== undefined && { size }),
+    ...(color !== undefined && { color }),
+    ...(viewBox !== undefined && { viewBox }),
+  };
+}
+
 /** Canvas icon component. Renders an SVG path on canvas. Returns an IconInstruction. */
 export function Icon(props: IconProps): CanvasElement {
-  const style: Partial<IconStyle> = {
-    ...props.style,
-    ...(props.size !== undefined && { size: props.size }),
-    ...(props.color !== undefined && { color: props.color }),
-    ...(props.viewBox !== undefined && { viewBox: props.viewBox }),
-  };
+  const style = pickIconStyle(props);
   const _handlers = pickEventHandlers(props);
   return {
     type: "icon",
