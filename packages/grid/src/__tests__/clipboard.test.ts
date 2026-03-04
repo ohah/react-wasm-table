@@ -168,6 +168,62 @@ describe("copyToClipboard", () => {
     expect(out).toContain("Status");
     expect(out).toContain("Alice");
   });
+
+  it("getText fallback returns header text for header rows (row < headerRowCount)", () => {
+    const table = makeTable();
+    // When selection includes row 0 (which is the header row in unified indexing),
+    // getText should return header labels
+    const out = copyToClipboard(table, { minRow: 0, maxRow: 0, minCol: 0, maxCol: 2 });
+    expect(out).toBe("Name\tAge\tStatus");
+  });
+
+  it("getText fallback returns column id when header is not a string", () => {
+    // Create a table where one column has a non-string header
+    const fnHeaderColumns = [
+      helper.accessor("name", { header: () => "Name" as any }),
+      helper.accessor("age", { header: "Age" }),
+    ];
+    const state = {
+      sorting: [] as any[],
+      columnFilters: [] as any[],
+      globalFilter: "",
+    };
+    const table = buildGridInstance({
+      data,
+      columns: fnHeaderColumns,
+      state,
+      onSortingChange: () => {},
+      onColumnFiltersChange: () => {},
+      onGlobalFilterChange: () => {},
+      onColumnPinningChange: () => {},
+    });
+    const out = copyToClipboard(table, { minRow: 0, maxRow: 0, minCol: 0, maxCol: 1 });
+    // For the first column, header is a function, so fallback to column id "name"
+    expect(out).toBe("name\tAge");
+  });
+
+  it("includes headers in HTML format", () => {
+    const table = makeTable();
+    const out = copyToClipboard(
+      table,
+      { minRow: 1, maxRow: 1, minCol: 0, maxCol: 2 },
+      { format: "html", includeHeaders: true },
+    );
+    expect(out).toContain("<table>");
+    expect(out).toContain("<tr><td>Name</td><td>Age</td><td>Status</td></tr>");
+    expect(out).toContain("Alice");
+  });
+
+  it("includes headers in CSV format", () => {
+    const table = makeTable();
+    const out = copyToClipboard(
+      table,
+      { minRow: 1, maxRow: 1, minCol: 0, maxCol: 2 },
+      { format: "csv", includeHeaders: true },
+    );
+    expect(out).toContain("Name,Age,Status");
+    expect(out).toContain("Alice,30,active");
+  });
 });
 
 // ── pasteFromClipboard ──────────────────────────────────────────────

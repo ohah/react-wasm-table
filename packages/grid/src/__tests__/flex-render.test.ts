@@ -60,4 +60,10 @@ describe("flexRender", () => {
     const result = flexRender(fn, {});
     expect(result).toEqual({ type: "text", value: "42" });
   });
+
+  it("returns null for unsupported Comp type (not string, function, null, or undefined)", () => {
+    // Force an unsupported type past TypeScript to cover the final return null fallback
+    const result = flexRender(42 as any, {});
+    expect(result).toBeNull();
+  });
 });
