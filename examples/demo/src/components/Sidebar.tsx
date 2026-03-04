@@ -32,6 +32,8 @@ const sections = [
       { to: "/canvas-link", label: "Canvas: Link" },
       { to: "/canvas-image", label: "Canvas: Image" },
       { to: "/canvas-switch", label: "Canvas: Switch" },
+      { to: "/canvas-checkbox", label: "Canvas: Checkbox" },
+      { to: "/canvas-input", label: "Canvas: Input" },
       { to: "/canvas-events", label: "Canvas: Events" },
       { to: "/custom-renderer", label: "Custom Renderer" },
       { to: "/layers", label: "Layer System" },
