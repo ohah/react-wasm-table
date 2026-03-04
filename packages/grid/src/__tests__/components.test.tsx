@@ -45,6 +45,7 @@ import {
   Image,
   Checkbox,
   Radio,
+  Label,
   Input,
   Switch,
   Icon,
@@ -783,6 +784,36 @@ describe("Canvas components", () => {
       expect(result._handlers).toBeDefined();
       expect(result._handlers.onClick).toBe(onClick);
     });
+
+    it("includes style when provided", () => {
+      const result = Checkbox({
+        checked: true,
+        style: { size: 20, checkedColor: "red" },
+      }) as RenderInstruction;
+      if (result.type === "checkbox") {
+        expect(result.style).toEqual({ size: 20, checkedColor: "red" });
+      }
+    });
+
+    it("omits style when not provided", () => {
+      const result = Checkbox({ checked: true }) as RenderInstruction;
+      if (result.type === "checkbox") {
+        expect(result.style).toBeUndefined();
+      }
+    });
+
+    it("resolves Label children via JSX", () => {
+      const element = (
+        <Checkbox checked={true}>
+          <Label value="Accept terms" />
+        </Checkbox>
+      );
+      const result = resolveInstruction(element);
+      if (result.type === "checkbox") {
+        expect(result.children).toHaveLength(1);
+        expect(result.children[0]!.type).toBe("label");
+      }
+    });
   });
 
   describe("Radio", () => {
@@ -827,6 +858,80 @@ describe("Canvas components", () => {
     it("attaches event handlers via _handlers", () => {
       const onClick = () => {};
       const result = Radio({ checked: true, onClick }) as any;
+      expect(result._handlers).toBeDefined();
+      expect(result._handlers.onClick).toBe(onClick);
+    });
+
+    it("includes style when provided", () => {
+      const result = Radio({
+        checked: true,
+        style: { size: 20, checkedColor: "green" },
+      }) as RenderInstruction;
+      if (result.type === "radio") {
+        expect(result.style).toEqual({ size: 20, checkedColor: "green" });
+      }
+    });
+
+    it("omits style when not provided", () => {
+      const result = Radio({ checked: true }) as RenderInstruction;
+      if (result.type === "radio") {
+        expect(result.style).toBeUndefined();
+      }
+    });
+
+    it("resolves Label children via JSX", () => {
+      const element = (
+        <Radio checked={false}>
+          <Label value="Option A" />
+        </Radio>
+      );
+      const result = resolveInstruction(element);
+      if (result.type === "radio") {
+        expect(result.children).toHaveLength(1);
+        expect(result.children[0]!.type).toBe("label");
+      }
+    });
+  });
+
+  describe("Label", () => {
+    it("returns a LabelInstruction when called directly", () => {
+      const result = Label({ value: "hello" }) as RenderInstruction;
+      expect(result.type).toBe("label");
+      if (result.type === "label") {
+        expect(result.value).toBe("hello");
+      }
+    });
+
+    it("returns a LabelInstruction via JSX + resolveInstruction", () => {
+      const element = <Label value="test" />;
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("label");
+      if (result.type === "label") {
+        expect(result.value).toBe("test");
+      }
+    });
+
+    it("omits style when no style properties given", () => {
+      const result = Label({ value: "plain" }) as RenderInstruction;
+      if (result.type === "label") {
+        expect(result.style).toBeUndefined();
+      }
+    });
+
+    it("accepts style object; individual props override", () => {
+      const result = Label({
+        value: "styled",
+        style: { color: "gray", fontSize: 14 },
+        color: "red",
+      }) as RenderInstruction;
+      if (result.type === "label") {
+        expect(result.style).toEqual({ color: "red", fontSize: 14 });
+      }
+    });
+
+    it("attaches event handlers via _handlers", () => {
+      const onClick = () => {};
+      const result = Label({ value: "click me", onClick }) as any;
       expect(result._handlers).toBeDefined();
       expect(result._handlers.onClick).toBe(onClick);
     });
