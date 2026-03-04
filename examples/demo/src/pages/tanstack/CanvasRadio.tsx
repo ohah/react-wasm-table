@@ -21,9 +21,31 @@ const helper = createColumnHelper<Row>();
 const PLANS = ["Free", "Basic", "Pro", "Enterprise"];
 
 const USERS = [
-  "Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Grace", "Hank",
-  "Ivy", "Jack", "Kate", "Leo", "Mia", "Nick", "Olivia", "Paul",
-  "Quinn", "Rose", "Sam", "Tina", "Uma", "Victor", "Wendy", "Xander", "Yuki",
+  "Alice",
+  "Bob",
+  "Charlie",
+  "Diana",
+  "Eve",
+  "Frank",
+  "Grace",
+  "Hank",
+  "Ivy",
+  "Jack",
+  "Kate",
+  "Leo",
+  "Mia",
+  "Nick",
+  "Olivia",
+  "Paul",
+  "Quinn",
+  "Rose",
+  "Sam",
+  "Tina",
+  "Uma",
+  "Victor",
+  "Wendy",
+  "Xander",
+  "Yuki",
 ];
 
 function generateData(): Row[] {
@@ -89,9 +111,7 @@ export function TanStackCanvasRadio() {
                   if (disabled) return;
                   addLog("onClick", plan, e);
                   const rowIndex = info.row.index;
-                  setData((prev) =>
-                    prev.map((r, i) => (i === rowIndex ? { ...r, plan } : r)),
-                  );
+                  setData((prev) => prev.map((r, i) => (i === rowIndex ? { ...r, plan } : r)));
                 }}
                 onMouseEnter={(e) => addLog("onMouseEnter", plan, e)}
                 onMouseLeave={(e) => addLog("onMouseLeave", plan, e)}
@@ -144,10 +164,14 @@ export function TanStackCanvasRadio() {
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <section ref={ref} style={{ marginBottom: 32, flex: 1, minWidth: 400 }}>
-          <h2 style={{ fontSize: 16, marginBottom: 8 }}>
-            Plan Selection ({data.length} users)
-          </h2>
-          <Table table={table} width={Math.min(width || 550, 600)} height={400} rowHeight={36} overflowY="auto" />
+          <h2 style={{ fontSize: 16, marginBottom: 8 }}>Plan Selection ({data.length} users)</h2>
+          <Table
+            table={table}
+            width={Math.min(width || 550, 600)}
+            height={400}
+            rowHeight={36}
+            overflowY="auto"
+          />
         </section>
 
         <section style={{ minWidth: 260, maxWidth: 360 }}>

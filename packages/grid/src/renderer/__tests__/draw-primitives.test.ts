@@ -663,7 +663,7 @@ describe("measureInstructionWidth", () => {
     ).toBe(44);
   });
 
-  it("returns 60 for checkbox", () => {
+  it("returns 22 for checkbox with no children (size 16 + gap 6)", () => {
     const ctx = mockCtx();
     expect(
       measureInstructionWidth(
@@ -671,7 +671,7 @@ describe("measureInstructionWidth", () => {
         { type: "checkbox", checked: false, children: [] } as any,
         DEFAULT_THEME,
       ),
-    ).toBe(60);
+    ).toBe(22);
   });
 
   it("returns 120 for input", () => {

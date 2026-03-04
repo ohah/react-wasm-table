@@ -177,9 +177,9 @@ describe("CellRendererRegistry", () => {
 });
 
 describe("createCellRendererRegistry", () => {
-  it("creates registry with 17 built-in renderers", () => {
+  it("creates registry with 19 built-in renderers", () => {
     const registry = createCellRendererRegistry();
-    expect(registry.size).toBe(17);
+    expect(registry.size).toBe(19);
     expect(registry.get("text")).toBe(textCellRenderer);
     expect(registry.get("badge")).toBe(badgeCellRenderer);
     expect(registry.get("sparkline")).toBe(sparklineCellRenderer);
@@ -191,7 +191,7 @@ describe("createCellRendererRegistry", () => {
   it("merges user renderers on top of built-ins", () => {
     const custom: CellRenderer<{ type: "progress" }> = { type: "progress", draw: mock(() => {}) };
     const registry = createCellRendererRegistry([custom]);
-    expect(registry.size).toBe(18);
+    expect(registry.size).toBe(20);
     expect(registry.get("progress")).toBe(custom);
     // Built-ins still present
     expect(registry.get("text")).toBe(textCellRenderer);
@@ -200,14 +200,14 @@ describe("createCellRendererRegistry", () => {
   it("user renderer overrides built-in with same type", () => {
     const customText: CellRenderer = { type: "text", draw: mock(() => {}) };
     const registry = createCellRendererRegistry([customText]);
-    expect(registry.size).toBe(17);
+    expect(registry.size).toBe(19);
     expect(registry.get("text")).toBe(customText);
     expect(registry.get("text")).not.toBe(textCellRenderer);
   });
 
   it("handles empty user renderers array", () => {
     const registry = createCellRendererRegistry([]);
-    expect(registry.size).toBe(17);
+    expect(registry.size).toBe(19);
   });
 });
 
