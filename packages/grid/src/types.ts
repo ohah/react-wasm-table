@@ -507,6 +507,7 @@ export type RenderInstruction =
   | (StackInstruction & InstructionEventMixin)
   | (ColorInstruction & InstructionEventMixin)
   | (TagInstruction & InstructionEventMixin)
+  | (ProgressBarInstruction & InstructionEventMixin)
   | (RatingInstruction & InstructionEventMixin)
   | (ChipInstruction & InstructionEventMixin)
   | (LinkInstruction & InstructionEventMixin)
@@ -560,6 +561,25 @@ export interface TagInstruction {
   type: "tag";
   value: string;
   style?: Partial<TagStyle>;
+}
+
+/** Styling for progress bar cells. */
+export interface ProgressBarStyle {
+  color: string;
+  backgroundColor: string;
+  borderRadius: number;
+  height: number;
+  showLabel: boolean;
+  labelColor: string;
+  labelFontSize: number;
+}
+
+/** A progress bar instruction. */
+export interface ProgressBarInstruction {
+  type: "progressbar";
+  value: number;
+  max?: number;
+  style?: Partial<ProgressBarStyle>;
 }
 
 /** Styling for rating cells. */

@@ -34,6 +34,7 @@ import type {
   ImageInstruction,
   CheckboxInstruction,
   InputInstruction,
+  ProgressBarInstruction,
 } from "../types";
 
 describe("Canvas components", () => {
@@ -814,42 +815,84 @@ describe("Canvas components", () => {
     });
   });
 
-  describe("Stub components", () => {
-    it("ProgressBar returns a StubInstruction", () => {
-      const result = ProgressBar({
+  describe("ProgressBar", () => {
+    it("returns a ProgressBarInstruction when called directly", () => {
+      const result = ProgressBar({ value: 75, max: 100, color: "blue" }) as RenderInstruction;
+      const expected: ProgressBarInstruction = {
+        type: "progressbar",
         value: 75,
         max: 100,
-        color: "blue",
-      }) as RenderInstruction;
-      const expected: StubInstruction = {
-        type: "stub",
-        component: "ProgressBar",
-        props: { value: 75, max: 100, color: "blue" },
+        style: { color: "blue" },
       };
       expect(result).toEqual(expected);
     });
 
-    it("stub via JSX + resolveInstruction", () => {
+    it("returns a ProgressBarInstruction via JSX + resolveInstruction", () => {
       const element = <ProgressBar value={50} />;
       const result = resolveInstruction(element);
-      expect(result.type).toBe("stub");
-      if (result.type === "stub") {
-        expect(result.component).toBe("ProgressBar");
+      expect(result.type).toBe("progressbar");
+      if (result.type === "progressbar") {
+        expect(result.value).toBe(50);
       }
     });
 
-    it("stub merges style with rest; rest overrides style", () => {
+    it("omits style when no style properties given", () => {
+      const result = ProgressBar({ value: 30 }) as RenderInstruction;
+      expect(result).toEqual({ type: "progressbar", value: 30 });
+      expect((result as ProgressBarInstruction).style).toBeUndefined();
+    });
+
+    it("accepts style object; individual props override", () => {
       const result = ProgressBar({
-        style: { color: "gray" },
-        value: 50,
-        color: "blue",
+        value: 60,
+        style: { color: "gray", height: 10 },
+        color: "red",
       }) as RenderInstruction;
-      const expected: StubInstruction = {
-        type: "stub",
-        component: "ProgressBar",
-        props: { color: "blue", value: 50 },
+      const expected: ProgressBarInstruction = {
+        type: "progressbar",
+        value: 60,
+        style: { color: "red", height: 10 },
       };
       expect(result).toEqual(expected);
+    });
+
+    it("includes max when specified", () => {
+      const result = ProgressBar({ value: 7, max: 10 }) as RenderInstruction;
+      if (result.type === "progressbar") {
+        expect(result.max).toBe(10);
+      }
+    });
+
+    it("includes _onChange in instruction when onChange is provided", () => {
+      const onChange = (_v: number) => {};
+      const result = ProgressBar({ value: 50, onChange }) as any;
+      expect(result._onChange).toBe(onChange);
+    });
+
+    it("creates internal onClick and onMouseDown handlers when onChange is provided", () => {
+      const onChange = (_v: number) => {};
+      const result = ProgressBar({ value: 50, onChange }) as any;
+      expect(result._handlers).toBeDefined();
+      expect(typeof result._handlers.onClick).toBe("function");
+      expect(typeof result._handlers.onMouseDown).toBe("function");
+    });
+
+    it("does not create _onChange or internal handlers when onChange is not provided", () => {
+      const result = ProgressBar({ value: 50 }) as any;
+      expect(result._onChange).toBeUndefined();
+      // _handlers should be undefined when no event handlers at all
+      expect(result._handlers).toBeUndefined();
+    });
+
+    it("preserves user onClick while wrapping with onChange logic", () => {
+      let userClickCalled = false;
+      const userOnClick = () => { userClickCalled = true; };
+      const onChange = (_v: number) => {};
+      const result = ProgressBar({ value: 50, onClick: userOnClick, onChange }) as any;
+      expect(result._handlers).toBeDefined();
+      expect(typeof result._handlers.onClick).toBe("function");
+      // The internal onClick wraps the user onClick — both should exist
+      // (We can't fully test the call without a full GridCellEvent, but handler must be a function)
     });
   });
 });

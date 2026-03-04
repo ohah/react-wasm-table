@@ -35,6 +35,7 @@ export type {
   SwitchProps,
   CheckboxProps,
   InputProps,
+  ProgressBarProps,
   StubProps,
 } from "./components";
 export {
@@ -262,6 +263,7 @@ export {
   switchCellRenderer,
   checkboxCellRenderer,
   inputCellRenderer,
+  progressBarCellRenderer,
 } from "./renderer/components";
 export type { CellRenderer, CellRenderContext } from "./renderer/components";
 
@@ -327,6 +329,8 @@ export type {
   CheckboxInstruction,
   InputInstruction,
   InputStyle,
+  ProgressBarInstruction,
+  ProgressBarStyle,
   DomOverlayDescriptor,
   CssObjectFit,
   ReferrerPolicy,
