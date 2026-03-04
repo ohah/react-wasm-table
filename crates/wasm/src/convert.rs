@@ -4,10 +4,10 @@ use crate::types::{
     JsGridTrackList, JsGridTrackSize, JsRect,
 };
 use react_wasm_table_core::layout::{
-    Align, AlignValue, BoxSizingValue, ColumnLayout, ContainerLayout, DimensionValue,
-    DisplayValue, FlexDirectionValue, FlexWrapValue, GridAutoFlowValue, GridLineValue,
-    GridPlacementValue, LengthAutoValue, LengthValue, OverflowValue, PositionValue, RectValue,
-    RepeatValue, TrackListItem, TrackSizeValue,
+    Align, AlignValue, BoxSizingValue, ColumnLayout, ContainerLayout, DimensionValue, DisplayValue,
+    FlexDirectionValue, FlexWrapValue, GridAutoFlowValue, GridLineValue, GridPlacementValue,
+    LengthAutoValue, LengthValue, OverflowValue, PositionValue, RectValue, RepeatValue,
+    TrackListItem, TrackSizeValue,
 };
 use react_wasm_table_core::types::FilterValue;
 
