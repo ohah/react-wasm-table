@@ -75,10 +75,10 @@ function mockComputeChildLayout(input: Float32Array): Float32Array {
   for (let i = 0; i < childCount; i++) {
     const w = input[11 + i * 2]!;
     const h = input[11 + i * 2 + 1]!;
-    result[i * 4] = offset;  // x
-    result[i * 4 + 1] = 0;  // y
-    result[i * 4 + 2] = w;  // width
-    result[i * 4 + 3] = h;  // height
+    result[i * 4] = offset; // x
+    result[i * 4 + 1] = 0; // y
+    result[i * 4 + 2] = w; // width
+    result[i * 4 + 3] = h; // height
     offset += w + 4; // gap
   }
   return result;
@@ -450,7 +450,16 @@ describe("CanvasRenderer", () => {
         type: "flex",
         children: [{ type: "text", value: "Flex child" }],
       });
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry, mockComputeChildLayout);
+      renderer.drawRowsFromBuffer(
+        buf,
+        0,
+        1,
+        getInstruction,
+        defaultTheme,
+        36,
+        registry,
+        mockComputeChildLayout,
+      );
 
       const fillTextCalls = (ctx.fillText as any).mock.calls;
       expect(fillTextCalls.length).toBe(1);
@@ -464,7 +473,16 @@ describe("CanvasRenderer", () => {
         type: "flex",
         children: [{ type: "badge", value: "OK", style: { backgroundColor: "#0f0" } }],
       });
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry, mockComputeChildLayout);
+      renderer.drawRowsFromBuffer(
+        buf,
+        0,
+        1,
+        getInstruction,
+        defaultTheme,
+        36,
+        registry,
+        mockComputeChildLayout,
+      );
 
       expect(ctx.roundRect).toHaveBeenCalled();
     });
