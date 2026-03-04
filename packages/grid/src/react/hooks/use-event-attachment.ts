@@ -345,6 +345,21 @@ export function useEventAttachment({
             viewportX: coords.viewportX,
             viewportY: coords.viewportY,
           };
+          // Component-level onTouchStart
+          if (hitTest.type === "cell" && hitTest.cell) {
+            const instruction = getInstructionForCellRef?.current?.(
+              hitTest.cell.row,
+              hitTest.cell.col,
+            );
+            if (instruction?._handlers?.onTouchStart) {
+              const cellEvent = createGridCellEvent(
+                new MouseEvent("touchstart"),
+                hitTest.cell,
+                coords,
+              );
+              instruction._handlers.onTouchStart(cellEvent);
+            }
+          }
           const event = createGridTouchEvent(
             "touchstart",
             native,
@@ -383,6 +398,21 @@ export function useEventAttachment({
             viewportX: coords.viewportX,
             viewportY: coords.viewportY,
           };
+          // Component-level onTouchEnd
+          if (hitTest.type === "cell" && hitTest.cell) {
+            const instruction = getInstructionForCellRef?.current?.(
+              hitTest.cell.row,
+              hitTest.cell.col,
+            );
+            if (instruction?._handlers?.onTouchEnd) {
+              const cellEvent = createGridCellEvent(
+                new MouseEvent("touchend"),
+                hitTest.cell,
+                coords,
+              );
+              instruction._handlers.onTouchEnd(cellEvent);
+            }
+          }
           const event = createGridTouchEvent(
             "touchend",
             native,
