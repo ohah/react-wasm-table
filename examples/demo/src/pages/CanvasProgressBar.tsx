@@ -41,7 +41,13 @@ export function CanvasProgressBar() {
         size: 160,
         padding: [0, 12],
         cell: (info) => (
-          <ProgressBar value={info.getValue()} max={100} height={14} borderRadius={7} color="#ff9800" />
+          <ProgressBar
+            value={info.getValue()}
+            max={100}
+            height={14}
+            borderRadius={7}
+            color="#ff9800"
+          />
         ),
       }),
       helper.accessor("score", {
@@ -135,7 +141,13 @@ export function CanvasProgressBar() {
         <p style={{ marginBottom: 8, color: "#666" }}>
           Click or drag the progress bars below to change values interactively.
         </p>
-        <Grid data={editableData} columns={editableColumns} width={640} height={460} rowHeight={40} />
+        <Grid
+          data={editableData}
+          columns={editableColumns}
+          width={640}
+          height={460}
+          rowHeight={40}
+        />
       </section>
     </>
   );
