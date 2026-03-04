@@ -1,7 +1,15 @@
 import { useState, useMemo, useCallback } from "react";
 import { Grid, createColumnHelper, Input } from "@ohah/react-wasm-table";
 
-type Row = { id: number; name: string; email: string; role: string; department: string; phone: string; note: string };
+type Row = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  phone: string;
+  note: string;
+};
 const helper = createColumnHelper<Row>();
 
 const btnBase: React.CSSProperties = {
@@ -211,7 +219,14 @@ export function CanvasInput() {
           }}
         >
           {JSON.stringify(
-            data.map((r) => ({ name: r.name, email: r.email, role: r.role, department: r.department, phone: r.phone, note: r.note })),
+            data.map((r) => ({
+              name: r.name,
+              email: r.email,
+              role: r.role,
+              department: r.department,
+              phone: r.phone,
+              note: r.note,
+            })),
             null,
             2,
           )}

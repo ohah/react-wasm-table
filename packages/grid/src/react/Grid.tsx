@@ -580,9 +580,7 @@ export function Grid({
   // Scroll horizontally to ensure the given column's input is visible
   const ensureColumnVisible = useCallback(
     (col: number) => {
-      const overlay = domOverlays.find(
-        (d) => parseInt(d.key.split(":")[1] ?? "0", 10) === col,
-      );
+      const overlay = domOverlays.find((d) => parseInt(d.key.split(":")[1] ?? "0", 10) === col);
       if (!overlay) return;
       const sl = scrollLeftRef.current;
       const leftEdge = overlay.x - sl;
