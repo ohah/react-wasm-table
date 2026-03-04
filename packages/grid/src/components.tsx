@@ -785,6 +785,9 @@ export interface InputProps extends CanvasEventHandlers {
   placeholder?: string;
   disabled?: boolean;
   readOnly?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
   onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
   onFocus?: (e: FocusEvent<HTMLInputElement>) => void;
   onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
@@ -838,6 +841,9 @@ export function Input(props: InputProps): CanvasElement {
     ...(props.placeholder !== undefined && { placeholder: props.placeholder }),
     ...(props.disabled !== undefined && { disabled: props.disabled }),
     ...(props.readOnly !== undefined && { readOnly: props.readOnly }),
+    ...(props.min !== undefined && { min: props.min }),
+    ...(props.max !== undefined && { max: props.max }),
+    ...(props.step !== undefined && { step: props.step }),
     style: Object.keys(style).length > 0 ? style : undefined,
     ...(Object.keys(_domHandlers).length > 0 && { _domHandlers }),
     ...(_handlers && { _handlers }),

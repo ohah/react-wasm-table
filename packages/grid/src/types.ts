@@ -745,6 +745,9 @@ export interface InputInstruction {
   placeholder?: string;
   disabled?: boolean;
   readOnly?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
   style?: Partial<InputStyle>;
   _domHandlers?: {
     onChange?: (e: ChangeEvent<HTMLInputElement>) => void;

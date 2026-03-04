@@ -162,12 +162,17 @@ When an image fails to load and `alt` is provided, the alt text is rendered cent
 
 Canvas-drawn text input with border, placeholder, and disabled state support.
 
-| Prop          | Type      | Default | Description                                                                          |
-| ------------- | --------- | ------- | ------------------------------------------------------------------------------------ |
-| `value`       | `string`  | `""`    | Current text value                                                                   |
-| `placeholder` | `string`  | `""`    | Placeholder text                                                                     |
-| `disabled`    | `boolean` | `false` | Disabled state                                                                       |
-| `style`       | `object`  | —       | fontSize, fontFamily, color, backgroundColor, borderColor, borderWidth, borderRadius |
+| Prop          | Type      | Default  | Description                                                                          |
+| ------------- | --------- | -------- | ------------------------------------------------------------------------------------ |
+| `type`        | `string`  | `"text"` | HTML input type (e.g. `"text"`, `"number"`, `"email"`)                               |
+| `value`       | `string`  | `""`     | Current text value                                                                   |
+| `placeholder` | `string`  | `""`     | Placeholder text                                                                     |
+| `disabled`    | `boolean` | `false`  | Disabled state                                                                       |
+| `readOnly`    | `boolean` | `false`  | Read-only state                                                                      |
+| `min`         | `number`  | —        | Minimum value (for `type="number"`)                                                  |
+| `max`         | `number`  | —        | Maximum value (for `type="number"`)                                                  |
+| `step`        | `number`  | —        | Step increment (for `type="number"`)                                                 |
+| `style`       | `object`  | —        | fontSize, fontFamily, color, backgroundColor, borderColor, borderWidth, borderRadius |
 
 ### Checkbox
 
@@ -250,12 +255,11 @@ These components are **exported and usable in JSX**, but the renderer only draws
 
 ### Interactive (DOM overlay)
 
-| Component       | Intended use     |
-| --------------- | ---------------- |
-| **NumberInput** | Number input.    |
-| **Select**      | Dropdown select. |
-| **DatePicker**  | Date picker.     |
-| **Dropdown**    | Dropdown menu.   |
+| Component      | Intended use     |
+| -------------- | ---------------- |
+| **Select**     | Dropdown select. |
+| **DatePicker** | Date picker.     |
+| **Dropdown**   | Dropdown menu.   |
 
 ---
 
