@@ -14,6 +14,7 @@ import { linkCellRenderer } from "./link";
 import { imageCellRenderer } from "./image";
 import { switchCellRenderer } from "./switch";
 import { checkboxCellRenderer } from "./checkbox";
+import { radioCellRenderer } from "./radio";
 import { inputCellRenderer } from "./input";
 import { progressBarCellRenderer } from "./progressbar";
 
@@ -41,7 +42,7 @@ export class CellRendererRegistry {
 }
 
 /**
- * Create a CellRendererRegistry pre-loaded with the 17 built-in renderers.
+ * Create a CellRendererRegistry pre-loaded with the 18 built-in renderers.
  * Optional `userRenderers` are merged on top — same type overrides built-in.
  */
 export function createCellRendererRegistry(
@@ -63,6 +64,7 @@ export function createCellRendererRegistry(
   registry.register(imageCellRenderer);
   registry.register(switchCellRenderer);
   registry.register(checkboxCellRenderer);
+  registry.register(radioCellRenderer);
   registry.register(inputCellRenderer);
   registry.register(progressBarCellRenderer);
   if (userRenderers) {
@@ -89,5 +91,6 @@ export { linkCellRenderer } from "./link";
 export { imageCellRenderer } from "./image";
 export { switchCellRenderer } from "./switch";
 export { checkboxCellRenderer } from "./checkbox";
+export { radioCellRenderer } from "./radio";
 export { inputCellRenderer } from "./input";
 export { progressBarCellRenderer } from "./progressbar";

@@ -1,6 +1,6 @@
 # Canvas Components
 
-Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering. Implemented: Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag, Image.
+Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering. Implemented: Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag, Image, Input, Checkbox, Radio, Switch, ProgressBar.
 
 ---
 
@@ -156,19 +156,66 @@ When an image fails to load and `alt` is provided, the alt text is rendered cent
 
 ---
 
-## 5. Stub components
+## 5. Implemented interactive components
 
-Icon, ProgressBar, Input, etc. are stubs (placeholder instructions). They use the same pattern: optional `style` + individual prop merging (individual overrides), and `ReactNode` children where applicable. When implemented, each stub can expose a typed style surface like Text/Badge/Flex.
+### Input
+
+Canvas-drawn text input with border, placeholder, and disabled state support.
+
+| Prop          | Type      | Default | Description                                                                          |
+| ------------- | --------- | ------- | ------------------------------------------------------------------------------------ |
+| `value`       | `string`  | `""`    | Current text value                                                                   |
+| `placeholder` | `string`  | `""`    | Placeholder text                                                                     |
+| `disabled`    | `boolean` | `false` | Disabled state                                                                       |
+| `style`       | `object`  | —       | fontSize, fontFamily, color, backgroundColor, borderColor, borderWidth, borderRadius |
+
+### Checkbox
+
+Composite container that uses `computeChildLayout` to arrange children (e.g. a check indicator + label) in a horizontal row with center alignment.
+
+| Prop       | Type            | Default | Description        |
+| ---------- | --------------- | ------- | ------------------ |
+| `checked`  | `boolean`       | —       | Checked state      |
+| `disabled` | `boolean`       | `false` | Disabled state     |
+| `children` | `Instruction[]` | `[]`    | Child instructions |
+
+### Radio
+
+Composite container identical to Checkbox in layout behavior. Uses `computeChildLayout` to arrange children in a horizontal row with center alignment. Visually distinguished by the consumer's children (e.g. a circle indicator instead of a square).
+
+| Prop       | Type            | Default | Description        |
+| ---------- | --------------- | ------- | ------------------ |
+| `checked`  | `boolean`       | —       | Selected state     |
+| `disabled` | `boolean`       | `false` | Disabled state     |
+| `children` | `Instruction[]` | `[]`    | Child instructions |
+
+### Switch
+
+Animated toggle switch with easing transitions. Tracks per-cell animation state for smooth checked/unchecked transitions.
+
+| Prop       | Type      | Default | Description                                                                                           |
+| ---------- | --------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| `checked`  | `boolean` | —       | Checked state                                                                                         |
+| `disabled` | `boolean` | `false` | Disabled state                                                                                        |
+| `style`    | `object`  | —       | trackColor, activeTrackColor, thumbColor, width, height, transitionDuration, transitionTimingFunction |
+
+### ProgressBar
+
+Horizontal progress bar with optional percentage label. Caches bar geometry for click/drag editing support.
+
+| Prop    | Type     | Default | Description                                                                        |
+| ------- | -------- | ------- | ---------------------------------------------------------------------------------- |
+| `value` | `number` | —       | Current value                                                                      |
+| `max`   | `number` | `100`   | Maximum value                                                                      |
+| `style` | `object` | —       | color, backgroundColor, borderRadius, height, showLabel, labelColor, labelFontSize |
 
 ---
 
-## Planned components (stub)
+## 6. Stub components
 
-These components are **exported and usable in JSX**, but the renderer only draws a placeholder (e.g. `[ProgressBar]`). They return a `StubInstruction`; props (including `style`) are stored and will apply when a real renderer is added.
+These components are **exported and usable in JSX**, but the renderer only draws a placeholder (e.g. `[Icon]`). They return a `StubInstruction`; props (including `style`) are stored and will apply when a real renderer is added.
 
 ### Data display
-
-Display-only; no DOM overlay. Canvas drawing only.
 
 | Component  | Intended use          |
 | ---------- | --------------------- |
@@ -177,18 +224,12 @@ Display-only; no DOM overlay. Canvas drawing only.
 
 ### Interactive (DOM overlay)
 
-These require **DOM overlays** over the canvas (e.g. for editing or user control). The grid already has an editor layer; these stubs reserve the component names for future overlay UI.
-
-| Component       | Intended use                                                                |
-| --------------- | --------------------------------------------------------------------------- |
-| **ProgressBar** | Progress bar: canvas display + `<input type="range">` overlay when editing. |
-| **Input**       | Text input.                                                                 |
-| **NumberInput** | Number input.                                                               |
-| **Select**      | Dropdown select.                                                            |
-| **Checkbox**    | Checkbox.                                                                   |
-| **Switch**      | Toggle switch.                                                              |
-| **DatePicker**  | Date picker.                                                                |
-| **Dropdown**    | Dropdown menu.                                                              |
+| Component       | Intended use     |
+| --------------- | ---------------- |
+| **NumberInput** | Number input.    |
+| **Select**      | Dropdown select. |
+| **DatePicker**  | Date picker.     |
+| **Dropdown**    | Dropdown menu.   |
 
 ---
 

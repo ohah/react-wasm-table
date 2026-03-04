@@ -717,6 +717,33 @@ export function Checkbox(props: CheckboxProps): CanvasElement {
   } as CanvasElement;
 }
 
+/** Props for the Radio canvas component (headless container). */
+export interface RadioProps extends CanvasEventHandlers {
+  checked: boolean;
+  disabled?: boolean;
+  children?: ReactNode;
+}
+
+/** Canvas radio button component. Headless container — children provide visuals. */
+export function Radio(props: RadioProps): CanvasElement {
+  const resolved: RenderInstruction[] = [];
+  if (props.children != null) {
+    Children.forEach(props.children, (child) => {
+      if (isValidElement(child)) {
+        resolved.push(resolveInstruction(child));
+      }
+    });
+  }
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "radio",
+    checked: props.checked,
+    ...(props.disabled !== undefined && { disabled: props.disabled }),
+    children: resolved,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
 /** Props for the Input canvas component (DOM overlay). */
 export interface InputProps extends CanvasEventHandlers {
   /** HTML input type attribute. @default "text" */

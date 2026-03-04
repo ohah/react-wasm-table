@@ -33,6 +33,7 @@ const sections = [
       { to: "/canvas-image", label: "Canvas: Image" },
       { to: "/canvas-switch", label: "Canvas: Switch" },
       { to: "/canvas-checkbox", label: "Canvas: Checkbox" },
+      { to: "/canvas-radio", label: "Canvas: Radio" },
       { to: "/canvas-input", label: "Canvas: Input" },
       { to: "/canvas-events", label: "Canvas: Events" },
       { to: "/custom-renderer", label: "Custom Renderer" },
