@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Grid, createColumnHelper, Input } from "@ohah/react-wasm-table";
 
-type Row = { id: number; name: string; email: string; role: string };
+type Row = { id: number; name: string; email: string; role: string; department: string; phone: string; note: string };
 const helper = createColumnHelper<Row>();
 
 const btnBase: React.CSSProperties = {
@@ -43,6 +43,7 @@ const NAMES = [
 ];
 
 const ROLES = ["Engineer", "Designer", "PM", "QA", "DevOps"];
+const DEPTS = ["Frontend", "Backend", "Infra", "Data", "Mobile"];
 
 function generatePeople(): Row[] {
   return NAMES.map((name, i) => ({
@@ -50,6 +51,9 @@ function generatePeople(): Row[] {
     name,
     email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
     role: ROLES[i % ROLES.length]!,
+    department: DEPTS[i % DEPTS.length]!,
+    phone: `010-${String(1000 + i).slice(1)}-${String(5000 + i).slice(1)}`,
+    note: "",
   }));
 }
 
@@ -57,12 +61,9 @@ export function CanvasInput() {
   const [data, setData] = useState(generatePeople);
   const [disabled, setDisabled] = useState(false);
 
-  const handleChange = useCallback(
-    (rowIndex: number, field: keyof Row, value: string) => {
-      setData((prev) => prev.map((r, i) => (i === rowIndex ? { ...r, [field]: value } : r)));
-    },
-    [],
-  );
+  const handleChange = useCallback((rowIndex: number, field: keyof Row, value: string) => {
+    setData((prev) => prev.map((r, i) => (i === rowIndex ? { ...r, [field]: value } : r)));
+  }, []);
 
   const columns = useMemo(
     () => [
@@ -108,6 +109,46 @@ export function CanvasInput() {
           />
         ),
       }),
+      helper.display({
+        id: "deptInput",
+        header: "Department",
+        size: 150,
+        cell: (info) => (
+          <Input
+            value={info.row.original.department}
+            placeholder="Dept..."
+            disabled={disabled}
+            onChange={(e) => handleChange(info.row.index, "department", e.target.value)}
+          />
+        ),
+      }),
+      helper.display({
+        id: "phoneInput",
+        header: "Phone",
+        size: 160,
+        cell: (info) => (
+          <Input
+            type="tel"
+            value={info.row.original.phone}
+            placeholder="010-0000-0000"
+            disabled={disabled}
+            onChange={(e) => handleChange(info.row.index, "phone", e.target.value)}
+          />
+        ),
+      }),
+      helper.display({
+        id: "noteInput",
+        header: "Note",
+        size: 200,
+        cell: (info) => (
+          <Input
+            value={info.row.original.note}
+            placeholder="memo..."
+            disabled={disabled}
+            onChange={(e) => handleChange(info.row.index, "note", e.target.value)}
+          />
+        ),
+      }),
     ],
     [disabled, handleChange],
   );
@@ -146,7 +187,15 @@ export function CanvasInput() {
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>
           Editable Grid ({data.length} rows — scroll to see all)
         </h2>
-        <Grid data={data} columns={columns} width={670} height={400} rowHeight={40} overflowY="auto" />
+        <Grid
+          data={data}
+          columns={columns}
+          width={670}
+          height={400}
+          rowHeight={40}
+          overflowX="auto"
+          overflowY="auto"
+        />
       </section>
 
       <section>
@@ -162,7 +211,7 @@ export function CanvasInput() {
           }}
         >
           {JSON.stringify(
-            data.map((r) => ({ name: r.name, email: r.email, role: r.role })),
+            data.map((r) => ({ name: r.name, email: r.email, role: r.role, department: r.department, phone: r.phone, note: r.note })),
             null,
             2,
           )}
