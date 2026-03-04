@@ -916,7 +916,16 @@ export interface SelectProps extends CanvasEventHandlers {
 }
 
 function pickSelectStyle(props: SelectProps): Partial<SelectStyle> {
-  const { style, fontSize, fontFamily, color, backgroundColor, borderColor, borderWidth, borderRadius } = props;
+  const {
+    style,
+    fontSize,
+    fontFamily,
+    color,
+    backgroundColor,
+    borderColor,
+    borderWidth,
+    borderRadius,
+  } = props;
   return {
     ...style,
     ...(fontSize !== undefined && { fontSize }),

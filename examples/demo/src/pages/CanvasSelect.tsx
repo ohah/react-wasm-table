@@ -28,10 +28,26 @@ const btnActive: React.CSSProperties = {
 };
 
 const NAMES = [
-  "Alice Kim", "Bob Lee", "Charlie Park", "Diana Choi", "Eve Hong",
-  "Frank Yoo", "Grace Shin", "Henry Kang", "Iris Moon", "Jack Oh",
-  "Kate Ryu", "Leo Jang", "Mia Han", "Noah Bae", "Olivia Jung",
-  "Paul Seo", "Quinn Im", "Ryan Hwang", "Sara Ahn", "Tom Song",
+  "Alice Kim",
+  "Bob Lee",
+  "Charlie Park",
+  "Diana Choi",
+  "Eve Hong",
+  "Frank Yoo",
+  "Grace Shin",
+  "Henry Kang",
+  "Iris Moon",
+  "Jack Oh",
+  "Kate Ryu",
+  "Leo Jang",
+  "Mia Han",
+  "Noah Bae",
+  "Olivia Jung",
+  "Paul Seo",
+  "Quinn Im",
+  "Ryan Hwang",
+  "Sara Ahn",
+  "Tom Song",
 ];
 
 const ROLE_OPTIONS = [
