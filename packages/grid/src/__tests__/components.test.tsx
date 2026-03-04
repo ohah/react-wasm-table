@@ -50,7 +50,6 @@ import {
   Switch,
   Icon,
   Avatar,
-  NumberInput,
   Select,
   DatePicker,
   Dropdown,
@@ -1150,11 +1149,11 @@ describe("Canvas components", () => {
 });
 
 describe("stub components", () => {
-  it("Icon returns a StubInstruction with component 'Icon'", () => {
-    const result = Icon({ color: "red", size: 24 }) as any;
-    expect(result.type).toBe("stub");
-    expect(result.component).toBe("Icon");
-    expect(result.props).toEqual({ color: "red", size: 24 });
+  it("Icon returns an IconInstruction with path and style", () => {
+    const result = Icon({ path: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", color: "red", size: 24 }) as any;
+    expect(result.type).toBe("icon");
+    expect(result.path).toBe("M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z");
+    expect(result.style).toEqual({ color: "red", size: 24 });
   });
 
   it("Avatar returns a StubInstruction with component 'Avatar'", () => {
@@ -1164,18 +1163,12 @@ describe("stub components", () => {
     expect(result.props).toEqual({ src: "https://example.com/avatar.png" });
   });
 
-  it("NumberInput returns a StubInstruction with component 'NumberInput'", () => {
-    const result = NumberInput({ min: 0, max: 100 }) as any;
-    expect(result.type).toBe("stub");
-    expect(result.component).toBe("NumberInput");
-    expect(result.props).toEqual({ min: 0, max: 100 });
-  });
-
-  it("Select returns a StubInstruction with component 'Select'", () => {
-    const result = Select({ options: ["a", "b"] }) as any;
-    expect(result.type).toBe("stub");
-    expect(result.component).toBe("Select");
-    expect(result.props).toEqual({ options: ["a", "b"] });
+  it("Select returns a SelectInstruction with options", () => {
+    const opts = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
+    const result = Select({ options: opts, value: "a" }) as any;
+    expect(result.type).toBe("select");
+    expect(result.options).toEqual(opts);
+    expect(result.value).toBe("a");
   });
 
   it("DatePicker returns a StubInstruction with component 'DatePicker'", () => {
@@ -1193,16 +1186,16 @@ describe("stub components", () => {
   });
 
   it("stub merges style with rest props (rest overrides style)", () => {
-    const result = Icon({ style: { color: "blue", size: 16 }, color: "red" }) as any;
+    const result = Avatar({ style: { color: "blue", size: 16 }, color: "red" }) as any;
     expect(result.type).toBe("stub");
-    expect(result.component).toBe("Icon");
+    expect(result.component).toBe("Avatar");
     expect(result.props).toEqual({ color: "red", size: 16 });
   });
 
   it("stub returns undefined props when no props given", () => {
-    const result = Icon({}) as any;
+    const result = Avatar({}) as any;
     expect(result.type).toBe("stub");
-    expect(result.component).toBe("Icon");
+    expect(result.component).toBe("Avatar");
     expect(result.props).toBeUndefined();
   });
 });
