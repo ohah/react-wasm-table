@@ -47,6 +47,56 @@ describe("evaluateTimingFunction", () => {
       prev = val;
     }
   });
+
+  it("evaluates all preset timing functions at multiple points", () => {
+    const names: Array<"ease" | "ease-in" | "ease-out" | "ease-in-out"> = [
+      "ease",
+      "ease-in",
+      "ease-out",
+      "ease-in-out",
+    ];
+    for (const name of names) {
+      for (let p = 0.1; p <= 0.9; p += 0.1) {
+        const val = evaluateTimingFunction(name, p);
+        expect(val).toBeGreaterThanOrEqual(0);
+        expect(val).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it("is monotonically non-decreasing for all presets", () => {
+    const names: Array<"ease" | "ease-in" | "ease-out" | "ease-in-out"> = [
+      "ease-in",
+      "ease-out",
+      "ease-in-out",
+    ];
+    for (const name of names) {
+      let prev = 0;
+      for (let p = 0; p <= 1; p += 0.02) {
+        const val = evaluateTimingFunction(name, p);
+        expect(val).toBeGreaterThanOrEqual(prev - 1e-9);
+        prev = val;
+      }
+    }
+  });
+
+  it("returns correct values near boundaries for ease", () => {
+    const nearZero = evaluateTimingFunction("ease", 0.001);
+    expect(nearZero).toBeGreaterThan(0);
+    expect(nearZero).toBeLessThan(0.01);
+
+    const nearOne = evaluateTimingFunction("ease", 0.999);
+    expect(nearOne).toBeGreaterThan(0.99);
+    expect(nearOne).toBeLessThan(1);
+  });
+
+  it("handles very small progress values", () => {
+    for (const name of ["ease", "ease-in", "ease-out", "ease-in-out"] as const) {
+      const val = evaluateTimingFunction(name, 0.0001);
+      expect(val).toBeGreaterThanOrEqual(0);
+      expect(val).toBeLessThan(0.01);
+    }
+  });
 });
 
 describe("parseHex", () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { buildRegions } from "../region";
+import { buildRegions, buildRowRegions, contentToViewportX } from "../region";
+import type { RegionLayout } from "../region";
 import type { PinningInfo } from "../../resolve-columns";
 import { LAYOUT_STRIDE } from "../../adapter/layout-reader";
 
@@ -149,5 +150,122 @@ describe("buildRegions", () => {
     const result = buildRegions(400, 300, 0, buf, 5, pinning);
 
     expect(result.totalContentWidth).toBe(500);
+  });
+});
+
+describe("buildRowRegions", () => {
+  it("returns single center region when no pinning", () => {
+    const result = buildRowRegions(800, 600, 40, 36, 50, 0, 0, 100);
+    expect(result.regions).toHaveLength(1);
+    expect(result.regions[0]!.name).toBe("center");
+    expect(result.regions[0]!.translateY).toBe(-50);
+    expect(result.topHeight).toBe(0);
+    expect(result.centerHeight).toBe(600);
+    expect(result.bottomHeight).toBe(0);
+    expect(result.scrollableCount).toBe(100);
+  });
+
+  it("creates header+top+center+bottom regions with both pinned", () => {
+    // canvas=600h, header=40, rowHeight=36, pinnedTop=2, pinnedBottom=1, total=10
+    const result = buildRowRegions(800, 600, 40, 36, 100, 2, 1, 10);
+    expect(result.topHeight).toBe(72); // 2*36
+    expect(result.bottomHeight).toBe(36); // 1*36
+    expect(result.scrollableCount).toBe(7); // 10-2-1
+    expect(result.centerHeight).toBe(600 - 40 - 72 - 36); // 452
+
+    const names = result.regions.map((r) => r.name);
+    expect(names).toContain("header");
+    expect(names).toContain("top");
+    expect(names).toContain("center");
+    expect(names).toContain("bottom");
+  });
+
+  it("header region has translateY=0", () => {
+    const result = buildRowRegions(800, 600, 40, 36, 100, 1, 0, 10);
+    const header = result.regions.find((r) => r.name === "header")!;
+    expect(header.translateY).toBe(0);
+    expect(header.clipRect).toEqual([0, 0, 800, 40]);
+  });
+
+  it("top pinned region has translateY=0", () => {
+    const result = buildRowRegions(800, 600, 40, 36, 100, 2, 0, 10);
+    const top = result.regions.find((r) => r.name === "top")!;
+    expect(top.translateY).toBe(0);
+    expect(top.clipRect).toEqual([0, 40, 800, 72]);
+  });
+
+  it("center region uses -scrollTop as translateY", () => {
+    const result = buildRowRegions(800, 600, 40, 36, 100, 1, 0, 10);
+    const center = result.regions.find((r) => r.name === "center")!;
+    expect(center.translateY).toBe(-100);
+  });
+
+  it("bottom pinned region calculates correct translateY", () => {
+    const result = buildRowRegions(800, 600, 40, 36, 0, 0, 1, 10);
+    const bottom = result.regions.find((r) => r.name === "bottom")!;
+    // firstBottomContentY = 40 + (0 + 9) * 36 = 40 + 324 = 364
+    // translateY = 600 - 36 - 364 = 200
+    expect(bottom.clipRect).toEqual([0, 564, 800, 36]);
+  });
+
+  it("handles only top pinning", () => {
+    const result = buildRowRegions(800, 600, 40, 36, 50, 2, 0, 10);
+    const names = result.regions.map((r) => r.name);
+    expect(names).toContain("header");
+    expect(names).toContain("top");
+    expect(names).toContain("center");
+    expect(names).not.toContain("bottom");
+  });
+
+  it("handles only bottom pinning", () => {
+    const result = buildRowRegions(800, 600, 40, 36, 50, 0, 2, 10);
+    const names = result.regions.map((r) => r.name);
+    expect(names).toContain("header");
+    expect(names).toContain("center");
+    expect(names).toContain("bottom");
+    expect(names).not.toContain("top");
+  });
+});
+
+describe("contentToViewportX", () => {
+  it("returns contentX directly when in left frozen region", () => {
+    const layout: RegionLayout = {
+      regions: [],
+      leftWidth: 100,
+      rightWidth: 100,
+      totalContentWidth: 500,
+    };
+    expect(contentToViewportX(50, layout, 200, 600)).toBe(50);
+  });
+
+  it("returns scrolled position for center region", () => {
+    const layout: RegionLayout = {
+      regions: [],
+      leftWidth: 100,
+      rightWidth: 100,
+      totalContentWidth: 500,
+    };
+    expect(contentToViewportX(200, layout, 50, 600)).toBe(150); // 200 - 50
+  });
+
+  it("maps right frozen region to viewport right edge", () => {
+    const layout: RegionLayout = {
+      regions: [],
+      leftWidth: 100,
+      rightWidth: 100,
+      totalContentWidth: 500,
+    };
+    // contentX >= 500-100 = 400, so right region
+    expect(contentToViewportX(450, layout, 50, 600)).toBe(450 - 500 + 600); // 550
+  });
+
+  it("treats as center when rightWidth is 0", () => {
+    const layout: RegionLayout = {
+      regions: [],
+      leftWidth: 100,
+      rightWidth: 0,
+      totalContentWidth: 500,
+    };
+    expect(contentToViewportX(300, layout, 50, 600)).toBe(250); // 300 - 50
   });
 });

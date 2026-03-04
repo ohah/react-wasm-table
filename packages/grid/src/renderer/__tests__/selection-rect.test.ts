@@ -189,4 +189,29 @@ describe("computeSelectionRect", () => {
     // header col0 (y:0,h:40) + data r0c0 (y:40,h:36) + data r1c0 (y:76,h:36)
     expect(result).toEqual({ x: 0, y: 0, width: 100, height: 112 });
   });
+
+  it("adjusts header cell to leaf row with multi-level headers (hrc > 1)", () => {
+    const buf = buildBuffer([
+      { row: 0, col: 0, x: 0, y: 0, w: 100, h: 80 }, // header with totalHeight=80 (2 levels)
+      { row: 0, col: 1, x: 100, y: 0, w: 100, h: 80 },
+      { row: 1, col: 0, x: 0, y: 80, w: 100, h: 36 }, // data
+      { row: 1, col: 1, x: 100, y: 80, w: 100, h: 36 },
+    ]);
+
+    const result = computeSelectionRect(
+      buf,
+      2,
+      4,
+      {
+        minRow: 0,
+        maxRow: 0,
+        minCol: 0,
+        maxCol: 0,
+      },
+      2,
+    ); // headerRowCount=2
+
+    // perRowH = 80/2 = 40, cy = 0 + (2-1)*40 = 40, ch = 40
+    expect(result).toEqual({ x: 0, y: 40, width: 100, height: 40 });
+  });
 });
