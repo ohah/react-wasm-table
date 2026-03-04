@@ -44,7 +44,12 @@ export const linkCellRenderer: CellRenderer<LinkInstruction> = {
     const textY = y + padTop + contentH / 2;
     const maxWidth = w - padLeft - padRight;
 
-    ctx.fillText(instruction.value, textX, textY, maxWidth);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+
+    ctx.fillText(instruction.value, textX, textY);
 
     if (underline) {
       const textWidth = Math.min(ctx.measureText(instruction.value).width, maxWidth);
@@ -56,5 +61,7 @@ export const linkCellRenderer: CellRenderer<LinkInstruction> = {
       ctx.lineWidth = 1;
       ctx.stroke();
     }
+
+    ctx.restore();
   },
 };

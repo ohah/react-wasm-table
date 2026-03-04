@@ -43,6 +43,10 @@ function mockCtx() {
     roundRect: mock(() => {}),
     fill: mock(() => {}),
     closePath: mock(() => {}),
+    save: mock(() => {}),
+    restore: mock(() => {}),
+    rect: mock(() => {}),
+    clip: mock(() => {}),
   } as unknown as CanvasRenderingContext2D;
 }
 
@@ -103,7 +107,7 @@ describe("drawTextCellFromBuffer", () => {
     expect(ctx.fillStyle).toBe("#333");
     expect(ctx.textBaseline).toBe("middle");
     expect(ctx.textAlign).toBe("left");
-    expect(ctx.fillText).toHaveBeenCalledWith("Hello", 10, 38, 200); // x=10, y=20+36/2=38
+    expect(ctx.fillText).toHaveBeenCalledWith("Hello", 10, 38); // x=10, y=20+36/2=38
   });
 
   it("draws center-aligned text", () => {
@@ -114,7 +118,7 @@ describe("drawTextCellFromBuffer", () => {
 
     expect(ctx.textAlign).toBe("center");
     // textX = x + (w/2) = 10 + 100 = 110
-    expect(ctx.fillText).toHaveBeenCalledWith("Center", 110, 38, 200);
+    expect(ctx.fillText).toHaveBeenCalledWith("Center", 110, 38);
   });
 
   it("draws right-aligned text", () => {
@@ -125,7 +129,7 @@ describe("drawTextCellFromBuffer", () => {
 
     expect(ctx.textAlign).toBe("right");
     // textX = x + w = 10 + 200 = 210
-    expect(ctx.fillText).toHaveBeenCalledWith("Right", 210, 38, 200);
+    expect(ctx.fillText).toHaveBeenCalledWith("Right", 210, 38);
   });
 
   it("applies custom style overrides", () => {
@@ -151,8 +155,7 @@ describe("drawTextCellFromBuffer", () => {
 
     // textX = x + padLeft = 10 + 12 = 22
     // textY = y + padTop + (h - padTop - padBottom) / 2 = 20 + 4 + (36-4-4)/2 = 20 + 4 + 14 = 38
-    // maxWidth = w - padLeft - padRight = 200 - 12 - 8 = 180
-    expect(ctx.fillText).toHaveBeenCalledWith("Padded", 22, 38, 180);
+    expect(ctx.fillText).toHaveBeenCalledWith("Padded", 22, 38);
   });
 
   it("center-aligned with padding", () => {
@@ -163,7 +166,7 @@ describe("drawTextCellFromBuffer", () => {
 
     // textX = x + padLeft + (w - padLeft - padRight) / 2 = 0 + 10 + (200-10-10)/2 = 10 + 90 = 100
     expect(ctx.textAlign).toBe("center");
-    expect(ctx.fillText).toHaveBeenCalledWith("CP", 100, 18, 180);
+    expect(ctx.fillText).toHaveBeenCalledWith("CP", 100, 18);
   });
 
   it("right-aligned with padding", () => {
@@ -174,7 +177,7 @@ describe("drawTextCellFromBuffer", () => {
 
     // textX = x + w - padRight = 0 + 200 - 16 = 184
     expect(ctx.textAlign).toBe("right");
-    expect(ctx.fillText).toHaveBeenCalledWith("RP", 184, 18, 184);
+    expect(ctx.fillText).toHaveBeenCalledWith("RP", 184, 18);
   });
 
   it("extraPadRight reduces available width for left-aligned text", () => {
@@ -184,9 +187,8 @@ describe("drawTextCellFromBuffer", () => {
     drawTextCellFromBuffer(ctx, buf, 0, "Hello", undefined, 25);
 
     // textX unchanged (left-aligned) = 10
-    // maxWidth = 200 - 0 - 25 = 175
     expect(ctx.textAlign).toBe("left");
-    expect(ctx.fillText).toHaveBeenCalledWith("Hello", 10, 38, 175);
+    expect(ctx.fillText).toHaveBeenCalledWith("Hello", 10, 38);
   });
 
   it("extraPadRight shifts right-aligned text leftward", () => {
@@ -196,9 +198,8 @@ describe("drawTextCellFromBuffer", () => {
     drawTextCellFromBuffer(ctx, buf, 0, "Right", undefined, 25);
 
     // textX = x + w - padRight = 10 + 200 - 25 = 185
-    // maxWidth = 200 - 0 - 25 = 175
     expect(ctx.textAlign).toBe("right");
-    expect(ctx.fillText).toHaveBeenCalledWith("Right", 185, 38, 175);
+    expect(ctx.fillText).toHaveBeenCalledWith("Right", 185, 38);
   });
 
   it("extraPadRight shifts center-aligned text leftward", () => {
@@ -208,9 +209,8 @@ describe("drawTextCellFromBuffer", () => {
     drawTextCellFromBuffer(ctx, buf, 0, "Center", undefined, 25);
 
     // textX = 0 + 0 + (200 - 0 - 25) / 2 = 87.5
-    // maxWidth = 200 - 0 - 25 = 175
     expect(ctx.textAlign).toBe("center");
-    expect(ctx.fillText).toHaveBeenCalledWith("Center", 87.5, 18, 175);
+    expect(ctx.fillText).toHaveBeenCalledWith("Center", 87.5, 18);
   });
 
   it("extraPadRight combines with existing padding", () => {
@@ -222,9 +222,8 @@ describe("drawTextCellFromBuffer", () => {
 
     // effective padRight = 8 + 25 = 33
     // textX = 10 + 200 - 33 = 177
-    // maxWidth = 200 - 12 - 33 = 155
     expect(ctx.textAlign).toBe("right");
-    expect(ctx.fillText).toHaveBeenCalledWith("Both", 177, 38, 155);
+    expect(ctx.fillText).toHaveBeenCalledWith("Both", 177, 38);
   });
 });
 
@@ -506,7 +505,8 @@ describe("linkCellRenderer", () => {
     );
 
     expect(ctx.fillText).toHaveBeenCalled();
-    expect(ctx.beginPath).not.toHaveBeenCalled();
+    // stroke should not be called (no underline line drawn)
+    expect(ctx.stroke).not.toHaveBeenCalled();
   });
 
   it("applies custom link style", () => {
