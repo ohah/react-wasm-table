@@ -149,6 +149,9 @@ export function Grid({
   const vScrollbarRef = useRef<HTMLDivElement>(null);
   const hScrollbarRef = useRef<HTMLDivElement>(null);
 
+  // DOM overlay input ref tracking (for IME composition + Tab navigation)
+  const inputRefsMap = useRef<Map<string, HTMLInputElement>>(new Map());
+
   // Streaming: effectiveTotalRows drives scrollbar height and viewRowCountRef
   const { effectiveTotalRows, checkAndFetch } = useStreaming({
     data,
@@ -568,8 +571,10 @@ export function Grid({
   // DOM overlays (Input components)
   // y-coordinates from WASM layout buffer are already viewport-relative (virtual scroll).
   // Only x-coordinates need scrollLeft adjustment (content-space → viewport-space).
-  const { overlays: domOverlays, scrollLeft: overlayScrollLeft } =
-    useDomOverlays(domOverlaysRef, scrollLeftRef);
+  const { overlays: domOverlays, scrollLeft: overlayScrollLeft } = useDomOverlays(
+    domOverlaysRef,
+    scrollLeftRef,
+  );
 
   // Scrollbar visibility
   const totalContentHeight = data.length * rowHeight + totalHeaderHeight;
@@ -655,8 +660,10 @@ export function Grid({
               const inst = d.instruction;
               const s = inst.style;
               return (
-                <input
+                <OverlayInput
                   key={d.key}
+                  overlayKey={d.key}
+                  inputRefsMap={inputRefsMap}
                   type={inst.inputType ?? "text"}
                   value={inst.value ?? ""}
                   placeholder={inst.placeholder}
@@ -698,5 +705,58 @@ export function Grid({
         {!columnsProp && children}
       </div>
     </GridContext.Provider>
+  );
+}
+
+/**
+ * Wrapper for DOM overlay <input> that handles IME composition correctly.
+ * Prevents 자소 분리 (character decomposition) during Korean/CJK input
+ * by maintaining local state during composition.
+ */
+function OverlayInput({
+  overlayKey,
+  inputRefsMap,
+  value,
+  onChange,
+  onKeyDown,
+  ...rest
+}: {
+  overlayKey: string;
+  inputRefsMap: React.RefObject<Map<string, HTMLInputElement>>;
+  value: string;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value">) {
+  const elRef = useRef<HTMLInputElement | null>(null);
+  const composingRef = useRef(false);
+  const prevValueRef = useRef(value);
+
+  // Sync external value → DOM imperatively (skip during IME composition)
+  if (value !== prevValueRef.current) {
+    prevValueRef.current = value;
+    if (!composingRef.current && elRef.current) {
+      elRef.current.value = value;
+    }
+  }
+
+  return (
+    <input
+      {...rest}
+      ref={(el) => {
+        elRef.current = el;
+        if (el) {
+          inputRefsMap.current.set(overlayKey, el);
+        } else {
+          inputRefsMap.current.delete(overlayKey);
+        }
+      }}
+      defaultValue={value}
+      onChange={onChange}
+      onCompositionStart={() => {
+        composingRef.current = true;
+      }}
+      onCompositionEnd={() => {
+        composingRef.current = false;
+      }}
+      onKeyDown={onKeyDown}
+    />
   );
 }
