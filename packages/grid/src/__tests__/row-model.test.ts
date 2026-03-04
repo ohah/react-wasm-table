@@ -352,6 +352,22 @@ describe("Row getIsExpanded / toggleExpanded", () => {
     const next = typeof captured === "function" ? captured({ "0": true }) : captured;
     expect(next).toEqual({ "0": false });
   });
+
+  it("toggleExpanded when expanded=true collapses this row into a record", () => {
+    let captured: ExpandedUpdater | undefined;
+    const row = buildRow(data, 0, 0, columns, {
+      expanded: true,
+      onExpandedChange: (u) => {
+        captured = u;
+      },
+    });
+    row.toggleExpanded();
+    expect(captured).toBeDefined();
+    // Evaluate the updater — prev is `true` (all expanded)
+    const next = typeof captured === "function" ? captured(true) : captured;
+    // Should produce { "0": false } (toggling off this row from "all expanded")
+    expect(next).toEqual({ "0": false });
+  });
 });
 
 describe("buildExpandedRowModel", () => {
@@ -617,6 +633,52 @@ describe("buildGroupedRowModel", () => {
     expect(leaves).toHaveLength(2);
     expect(leaves[0]!.original.name).toBe("Alice");
     expect(leaves[1]!.original.name).toBe("Charlie");
+  });
+
+  it("passes modelOptions to leaf rows when provided", () => {
+    const model = buildGroupedRowModel(data, null, columns, ["status"], undefined, {
+      visibleColumns: undefined,
+      table: undefined,
+    });
+    // Grouped model should still work; leaf rows under the active group
+    const activeGroup = model.rows[0]!;
+    expect(activeGroup.subRows).toHaveLength(2);
+    expect(activeGroup.subRows[0]!.original.name).toBe("Alice");
+  });
+
+  it("group row getAllCellValues returns values for all accessor columns", () => {
+    const aggFns: Record<string, AggregationFn<Person>> = {
+      age: (_colId, leafRows) => {
+        let sum = 0;
+        for (const r of leafRows) sum += r.getValue("age") as number;
+        return sum;
+      },
+    };
+    const model = buildGroupedRowModel(data, null, columns, ["status"], aggFns);
+    const activeGroup = model.rows[0]!;
+    const cellValues = activeGroup.getAllCellValues();
+    expect(cellValues.status).toBe("active");
+    expect(cellValues.age).toBe(65); // Alice(30) + Charlie(35)
+    expect(cellValues.name).toBeUndefined(); // no aggregation for name
+  });
+
+  it("buildAccessorMap handles nested group columns", () => {
+    const groupedColumns: GridColumnDef<Person, any>[] = [
+      {
+        header: "Info",
+        columns: [
+          helper.accessor("name", { header: "Name" }),
+          helper.accessor("age", { header: "Age" }),
+        ],
+      } as any,
+      helper.accessor("status", { header: "Status" }),
+    ];
+    const model = buildGroupedRowModel(data, null, groupedColumns, ["status"]);
+    // Should still correctly access name/age from nested columns
+    const activeGroup = model.rows[0]!;
+    expect(activeGroup.getValue("status")).toBe("active");
+    expect(activeGroup.subRows[0]!.getValue("name")).toBe("Alice");
+    expect(activeGroup.subRows[0]!.getValue("age")).toBe(30);
   });
 });
 
