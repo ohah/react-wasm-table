@@ -44,6 +44,7 @@ import {
   Link,
   Image,
   Checkbox,
+  Radio,
   Input,
   Switch,
   Icon,
@@ -72,6 +73,7 @@ import type {
   LinkInstruction,
   ImageInstruction,
   CheckboxInstruction,
+  RadioInstruction,
   InputInstruction,
   ProgressBarInstruction,
   SwitchInstruction,
@@ -778,6 +780,53 @@ describe("Canvas components", () => {
     it("attaches event handlers via _handlers", () => {
       const onClick = () => {};
       const result = Checkbox({ checked: true, onClick }) as any;
+      expect(result._handlers).toBeDefined();
+      expect(result._handlers.onClick).toBe(onClick);
+    });
+  });
+
+  describe("Radio", () => {
+    it("returns a RadioInstruction when called directly", () => {
+      const result = Radio({ checked: true }) as RenderInstruction;
+      expect(result.type).toBe("radio");
+      if (result.type === "radio") {
+        expect(result.checked).toBe(true);
+        expect(result.children).toEqual([]);
+      }
+    });
+
+    it("returns a RadioInstruction via JSX + resolveInstruction", () => {
+      const element = (
+        <Radio checked={false}>
+          <Text value="label" />
+        </Radio>
+      );
+      const result = resolveInstruction(element);
+      expect(result.type).toBe("radio");
+      if (result.type === "radio") {
+        expect(result.checked).toBe(false);
+        expect(result.children).toHaveLength(1);
+        expect(result.children[0]!.type).toBe("text");
+      }
+    });
+
+    it("includes disabled when provided", () => {
+      const result = Radio({ checked: false, disabled: true }) as RenderInstruction;
+      if (result.type === "radio") {
+        expect(result.disabled).toBe(true);
+      }
+    });
+
+    it("omits disabled when not provided", () => {
+      const result = Radio({ checked: true }) as RenderInstruction;
+      if (result.type === "radio") {
+        expect(result.disabled).toBeUndefined();
+      }
+    });
+
+    it("attaches event handlers via _handlers", () => {
+      const onClick = () => {};
+      const result = Radio({ checked: true, onClick }) as any;
       expect(result._handlers).toBeDefined();
       expect(result._handlers.onClick).toBe(onClick);
     });

@@ -514,6 +514,7 @@ export type RenderInstruction =
   | (ImageInstruction & InstructionEventMixin)
   | (SwitchInstruction & InstructionEventMixin)
   | (CheckboxInstruction & InstructionEventMixin)
+  | (RadioInstruction & InstructionEventMixin)
   | (InputInstruction & InstructionEventMixin)
   | (StubInstruction & InstructionEventMixin);
 
@@ -656,6 +657,14 @@ export interface SwitchInstruction {
 /** A checkbox instruction (headless container — children provide visuals). */
 export interface CheckboxInstruction {
   type: "checkbox";
+  checked: boolean;
+  disabled?: boolean;
+  children: RenderInstruction[];
+}
+
+/** A radio button instruction (headless container — children provide visuals). */
+export interface RadioInstruction {
+  type: "radio";
   checked: boolean;
   disabled?: boolean;
   children: RenderInstruction[];
