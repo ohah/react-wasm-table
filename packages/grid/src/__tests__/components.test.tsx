@@ -1007,6 +1007,29 @@ describe("Canvas components", () => {
         expect(result.style).toBeUndefined();
       }
     });
+
+    it("includes min, max, step when provided", () => {
+      const result = Input({
+        type: "number",
+        min: 0,
+        max: 100,
+        step: 5,
+      }) as RenderInstruction;
+      if (result.type === "input") {
+        expect(result.min).toBe(0);
+        expect(result.max).toBe(100);
+        expect(result.step).toBe(5);
+      }
+    });
+
+    it("omits min, max, step when not provided", () => {
+      const result = Input({}) as RenderInstruction;
+      if (result.type === "input") {
+        expect(result.min).toBeUndefined();
+        expect(result.max).toBeUndefined();
+        expect(result.step).toBeUndefined();
+      }
+    });
   });
 
   describe("Switch", () => {

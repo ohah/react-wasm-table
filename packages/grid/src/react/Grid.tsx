@@ -767,6 +767,9 @@ export function Grid({
                   placeholder={inst.placeholder}
                   disabled={inst.disabled}
                   readOnly={inst.readOnly}
+                  min={inst.min}
+                  max={inst.max}
+                  step={inst.step}
                   onChange={inst._domHandlers?.onChange}
                   onFocus={inst._domHandlers?.onFocus}
                   onBlur={inst._domHandlers?.onBlur}
