@@ -42,6 +42,8 @@ export const BASE_TO_TANSTACK: Record<string, string> = {
   "/canvas-link": "/tanstack/canvas-link",
   "/canvas-image": "/tanstack/canvas-image",
   "/canvas-switch": "/tanstack/canvas-switch",
+  "/canvas-checkbox": "/tanstack/canvas-checkbox",
+  "/canvas-input": "/tanstack/canvas-input",
   "/canvas-events": "/tanstack/canvas-events",
   // Grid / Flex / Box
   "/grid-template": "/tanstack/grid-template",
