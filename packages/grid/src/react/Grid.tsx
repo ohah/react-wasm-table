@@ -149,9 +149,9 @@ export function Grid({
   const vScrollbarRef = useRef<HTMLDivElement>(null);
   const hScrollbarRef = useRef<HTMLDivElement>(null);
 
-  // Tab navigation for DOM overlay inputs
+  // Tab navigation for DOM overlay inputs/selects
   const pendingInputFocusRef = useRef<{ col: number; edge: "top" | "bottom" } | null>(null);
-  const inputRefsMap = useRef<Map<string, HTMLInputElement>>(new Map());
+  const inputRefsMap = useRef<Map<string, HTMLInputElement | HTMLSelectElement>>(new Map());
 
   // Streaming: effectiveTotalRows drives scrollbar height and viewRowCountRef
   const { effectiveTotalRows, checkAndFetch } = useStreaming({
@@ -778,9 +778,16 @@ export function Grid({
                 opacity: inst.disabled ? 0.5 : 1,
               };
               if (inst.type === "select") {
+                const selectStyle: React.CSSProperties = {
+                  ...baseStyle,
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                };
                 return (
                   <OverlaySelect
                     key={d.key}
+                    overlayKey={d.key}
+                    inputRefsMap={inputRefsMap}
                     value={inst.value ?? ""}
                     options={inst.options}
                     placeholder={inst.placeholder}
@@ -793,11 +800,18 @@ export function Grid({
                     onChange={inst._domHandlers?.onChange}
                     onFocus={inst._domHandlers?.onFocus}
                     onBlur={inst._domHandlers?.onBlur}
-                    onKeyDown={inst._domHandlers?.onKeyDown}
+                    onKeyDown={(e) => {
+                      if (e.key === "Tab" && !e.nativeEvent.isComposing) {
+                        e.preventDefault();
+                        handleOverlayTab(d.key, e.shiftKey);
+                        return;
+                      }
+                      inst._domHandlers?.onKeyDown?.(e);
+                    }}
                     onWheel={(e) => {
                       canvasRef.current?.dispatchEvent(new WheelEvent("wheel", e.nativeEvent));
                     }}
-                    style={baseStyle}
+                    style={selectStyle}
                   />
                 );
               }
@@ -855,7 +869,7 @@ function OverlayInput({
   ...rest
 }: {
   overlayKey: string;
-  inputRefsMap: React.RefObject<Map<string, HTMLInputElement>>;
+  inputRefsMap: React.RefObject<Map<string, HTMLInputElement | HTMLSelectElement>>;
   value: string;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value">) {
   const elRef = useRef<HTMLInputElement | null>(null);
@@ -900,36 +914,49 @@ function OverlayInput({
  * React does not set el.value on every frame, preventing spurious change events.
  */
 function OverlaySelect({
+  overlayKey,
+  inputRefsMap,
   value,
   options,
   placeholder,
   onChange,
   ...rest
 }: {
+  overlayKey: string;
+  inputRefsMap: React.RefObject<Map<string, HTMLInputElement | HTMLSelectElement>>;
   value: string;
   options: { value: string; label: string }[];
   placeholder?: string;
 } & Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "value">) {
   const elRef = useRef<HTMLSelectElement | null>(null);
-  const prevValueRef = useRef(value);
+  // Map empty value with placeholder to sentinel so it selects the placeholder <option>
+  const effectiveValue = !value && placeholder ? "__placeholder__" : value;
+  const prevValueRef = useRef(effectiveValue);
 
   // Sync external value → DOM imperatively
-  if (value !== prevValueRef.current) {
-    prevValueRef.current = value;
+  if (effectiveValue !== prevValueRef.current) {
+    prevValueRef.current = effectiveValue;
     if (elRef.current) {
-      elRef.current.value = value;
+      elRef.current.value = effectiveValue;
     }
   }
 
   return (
     <select
       {...rest}
-      ref={elRef}
-      defaultValue={value}
+      ref={(el) => {
+        elRef.current = el;
+        if (el) {
+          inputRefsMap.current.set(overlayKey, el);
+        } else {
+          inputRefsMap.current.delete(overlayKey);
+        }
+      }}
+      defaultValue={effectiveValue}
       onChange={onChange}
     >
       {placeholder && (
-        <option value="" disabled>
+        <option value="__placeholder__" disabled hidden>
           {placeholder}
         </option>
       )}

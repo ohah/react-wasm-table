@@ -34,8 +34,9 @@ export const selectCellRenderer: CellRenderer<SelectInstruction> = {
 
     const contentW = w - padL - padR;
     const contentH = h - padT - padB;
-    const selectH = Math.min(contentH - 4, fontSize + 12);
-    const selectW = contentW - 4;
+    const selectH = Math.max(0, Math.min(contentH - 4, fontSize + 12));
+    const selectW = Math.max(0, contentW - 4);
+    if (selectW === 0 || selectH === 0) return;
     const selectX = x + padL + 2;
     const selectY = y + padT + (contentH - selectH) / 2;
 
