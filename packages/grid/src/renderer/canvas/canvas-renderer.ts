@@ -177,7 +177,6 @@ export class CanvasRenderer {
             label,
             cellX + (cellW - handleReserved * (rowIdx === isLeafRow ? 1 : 0)) / 2,
             rowY + cellH / 2,
-            textW > 0 ? textW : undefined,
           );
           ctx.restore();
         }

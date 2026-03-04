@@ -160,7 +160,12 @@ export const imageCellRenderer: CellRenderer<ImageInstruction> = {
         ctx.fillStyle = "#999";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(instruction.alt, contentX + contentW / 2, contentY + contentH / 2, contentW);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(contentX, contentY, contentW, contentH);
+        ctx.clip();
+        ctx.fillText(instruction.alt, contentX + contentW / 2, contentY + contentH / 2);
+        ctx.restore();
       }
       return;
     }

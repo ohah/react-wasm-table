@@ -37,14 +37,21 @@ export const ratingCellRenderer: CellRenderer<RatingInstruction> = {
     const contentH = h - padTop - padBottom;
     const textY = y + padTop + contentH / 2;
 
-    // Draw filled stars
+    // Clip to cell bounds and draw stars
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+
     let curX = x + padLeft;
     for (let i = 0; i < max; i++) {
       ctx.fillStyle = i < filled ? color : emptyColor;
-      const ch = stars[i]!;
+      const ch = stars[i] ?? "☆";
       ctx.textAlign = "left";
-      ctx.fillText(ch, curX, textY, w - padLeft - padRight);
+      ctx.fillText(ch, curX, textY);
       curX += ctx.measureText(ch).width;
     }
+
+    ctx.restore();
   },
 };

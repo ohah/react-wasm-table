@@ -304,7 +304,6 @@ describe("boxCellRenderer", () => {
       "inside",
       expect.any(Number),
       expect.any(Number),
-      expect.any(Number),
     );
   });
 
@@ -352,7 +351,6 @@ describe("boxCellRenderer", () => {
       "Flex child",
       expect.any(Number),
       expect.any(Number),
-      expect.any(Number),
     );
   });
 
@@ -384,7 +382,6 @@ describe("boxCellRenderer", () => {
     );
     expect(context.ctx.fillText).toHaveBeenCalledWith(
       "padded",
-      expect.any(Number),
       expect.any(Number),
       expect.any(Number),
     );
@@ -435,7 +432,6 @@ describe("flexCellRenderer", () => {
     // stub child is drawn as [X] placeholder
     expect(context.ctx.fillText).toHaveBeenCalledWith(
       "[X]",
-      expect.any(Number),
       expect.any(Number),
       expect.any(Number),
     );
@@ -1114,7 +1110,7 @@ describe("checkboxCellRenderer", () => {
     expect(context.ctx.restore).toHaveBeenCalled();
   });
 
-  it("does not call save/restore when not disabled", () => {
+  it("does not set globalAlpha when not disabled", () => {
     const context = makeContext();
     checkboxCellRenderer.draw(
       {
@@ -1124,8 +1120,9 @@ describe("checkboxCellRenderer", () => {
       },
       context,
     );
-    expect(context.ctx.save).not.toHaveBeenCalled();
-    expect(context.ctx.restore).not.toHaveBeenCalled();
+    // save/restore may be called by child text rendering (clip),
+    // but globalAlpha should not be changed when not disabled
+    expect(context.ctx.globalAlpha).toBe(1);
   });
 
   it("uses WASM path when computeChildLayout is provided", () => {
