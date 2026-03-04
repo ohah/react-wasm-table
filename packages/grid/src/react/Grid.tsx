@@ -785,9 +785,15 @@ export function Grid({
                     options={inst.options}
                     placeholder={inst.placeholder}
                     disabled={inst.disabled}
+                    multiple={inst.multiple}
+                    size={inst.size}
+                    name={inst.name}
+                    required={inst.required}
+                    autoFocus={inst.autoFocus}
                     onChange={inst._domHandlers?.onChange}
                     onFocus={inst._domHandlers?.onFocus}
                     onBlur={inst._domHandlers?.onBlur}
+                    onKeyDown={inst._domHandlers?.onKeyDown}
                     onWheel={(e) => {
                       canvasRef.current?.dispatchEvent(new WheelEvent("wheel", e.nativeEvent));
                     }}

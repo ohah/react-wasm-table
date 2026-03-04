@@ -886,9 +886,20 @@ export interface SelectProps extends CanvasEventHandlers {
   options: { value: string; label: string }[];
   disabled?: boolean;
   placeholder?: string;
+  /** Allow multiple selections. @default false */
+  multiple?: boolean;
+  /** Number of visible options (HTML size attribute). */
+  size?: number;
+  /** Form field name. */
+  name?: string;
+  /** Mark as required. */
+  required?: boolean;
+  /** Auto-focus on mount. */
+  autoFocus?: boolean;
   onChange?: (e: ChangeEvent<HTMLSelectElement>) => void;
   onFocus?: (e: FocusEvent<HTMLSelectElement>) => void;
   onBlur?: (e: FocusEvent<HTMLSelectElement>) => void;
+  onKeyDown?: (e: ReactKeyboardEvent<HTMLSelectElement>) => void;
   style?: Partial<SelectStyle>;
   fontSize?: number;
   fontFamily?: string;
@@ -921,12 +932,18 @@ export function Select(props: SelectProps): CanvasElement {
   if (props.onChange) _domHandlers.onChange = props.onChange;
   if (props.onFocus) _domHandlers.onFocus = props.onFocus;
   if (props.onBlur) _domHandlers.onBlur = props.onBlur;
+  if (props.onKeyDown) _domHandlers.onKeyDown = props.onKeyDown;
   return {
     type: "select",
     ...(props.value !== undefined && { value: props.value }),
     options: props.options,
     ...(props.disabled !== undefined && { disabled: props.disabled }),
     ...(props.placeholder !== undefined && { placeholder: props.placeholder }),
+    ...(props.multiple !== undefined && { multiple: props.multiple }),
+    ...(props.size !== undefined && { size: props.size }),
+    ...(props.name !== undefined && { name: props.name }),
+    ...(props.required !== undefined && { required: props.required }),
+    ...(props.autoFocus !== undefined && { autoFocus: props.autoFocus }),
     style: Object.keys(style).length > 0 ? style : undefined,
     ...(Object.keys(_domHandlers).length > 0 && { _domHandlers }),
     ...(_handlers && { _handlers }),

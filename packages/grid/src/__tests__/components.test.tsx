@@ -1148,27 +1148,168 @@ describe("Canvas components", () => {
   });
 });
 
-describe("stub components", () => {
-  it("Icon returns an IconInstruction with path and style", () => {
-    const result = Icon({ path: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", color: "red", size: 24 }) as any;
+describe("Icon component", () => {
+  it("returns an IconInstruction with path", () => {
+    const result = Icon({ path: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" }) as any;
     expect(result.type).toBe("icon");
     expect(result.path).toBe("M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z");
-    expect(result.style).toEqual({ color: "red", size: 24 });
   });
 
+  it("applies individual style props (size, color, viewBox)", () => {
+    const result = Icon({ path: "M0 0h24v24H0z", size: 32, color: "#e53935", viewBox: 48 }) as any;
+    expect(result.style).toEqual({ size: 32, color: "#e53935", viewBox: 48 });
+  });
+
+  it("merges style prop with individual overrides", () => {
+    const result = Icon({
+      path: "M0 0h24v24H0z",
+      style: { size: 16, color: "blue" },
+      color: "red",
+    }) as any;
+    expect(result.style.color).toBe("red");
+    expect(result.style.size).toBe(16);
+  });
+
+  it("returns undefined style when no style props given", () => {
+    const result = Icon({ path: "M0 0h24v24H0z" }) as any;
+    expect(result.style).toBeUndefined();
+  });
+
+  it("attaches canvas event handlers", () => {
+    const onClick = mock(() => {});
+    const result = Icon({ path: "M0 0h24v24H0z", onClick }) as any;
+    expect(result._handlers).toBeDefined();
+    expect(result._handlers.onClick).toBe(onClick);
+  });
+});
+
+describe("Select component", () => {
+  const opts = [
+    { value: "a", label: "Alpha" },
+    { value: "b", label: "Beta" },
+  ];
+
+  it("returns a SelectInstruction with options", () => {
+    const result = Select({ options: opts }) as any;
+    expect(result.type).toBe("select");
+    expect(result.options).toEqual(opts);
+  });
+
+  it("passes value", () => {
+    const result = Select({ options: opts, value: "b" }) as any;
+    expect(result.value).toBe("b");
+  });
+
+  it("passes placeholder", () => {
+    const result = Select({ options: opts, placeholder: "Choose..." }) as any;
+    expect(result.placeholder).toBe("Choose...");
+  });
+
+  it("passes disabled", () => {
+    const result = Select({ options: opts, disabled: true }) as any;
+    expect(result.disabled).toBe(true);
+  });
+
+  it("passes multiple", () => {
+    const result = Select({ options: opts, multiple: true }) as any;
+    expect(result.multiple).toBe(true);
+  });
+
+  it("passes size (HTML select size attribute)", () => {
+    const result = Select({ options: opts, size: 5 }) as any;
+    expect(result.size).toBe(5);
+  });
+
+  it("passes name", () => {
+    const result = Select({ options: opts, name: "role" }) as any;
+    expect(result.name).toBe("role");
+  });
+
+  it("passes required", () => {
+    const result = Select({ options: opts, required: true }) as any;
+    expect(result.required).toBe(true);
+  });
+
+  it("passes autoFocus", () => {
+    const result = Select({ options: opts, autoFocus: true }) as any;
+    expect(result.autoFocus).toBe(true);
+  });
+
+  it("attaches _domHandlers (onChange, onFocus, onBlur, onKeyDown)", () => {
+    const onChange = mock(() => {});
+    const onFocus = mock(() => {});
+    const onBlur = mock(() => {});
+    const onKeyDown = mock(() => {});
+    const result = Select({ options: opts, onChange, onFocus, onBlur, onKeyDown }) as any;
+    expect(result._domHandlers.onChange).toBe(onChange);
+    expect(result._domHandlers.onFocus).toBe(onFocus);
+    expect(result._domHandlers.onBlur).toBe(onBlur);
+    expect(result._domHandlers.onKeyDown).toBe(onKeyDown);
+  });
+
+  it("omits _domHandlers when no handlers given", () => {
+    const result = Select({ options: opts }) as any;
+    expect(result._domHandlers).toBeUndefined();
+  });
+
+  it("applies individual style props", () => {
+    const result = Select({
+      options: opts,
+      fontSize: 16,
+      fontFamily: "monospace",
+      color: "#000",
+      backgroundColor: "#eee",
+      borderColor: "#ccc",
+      borderWidth: 2,
+      borderRadius: 8,
+    }) as any;
+    expect(result.style).toEqual({
+      fontSize: 16,
+      fontFamily: "monospace",
+      color: "#000",
+      backgroundColor: "#eee",
+      borderColor: "#ccc",
+      borderWidth: 2,
+      borderRadius: 8,
+    });
+  });
+
+  it("merges style prop with individual overrides", () => {
+    const result = Select({
+      options: opts,
+      style: { fontSize: 14, color: "blue" },
+      color: "red",
+    }) as any;
+    expect(result.style.color).toBe("red");
+    expect(result.style.fontSize).toBe(14);
+  });
+
+  it("omits undefined optional props from instruction", () => {
+    const result = Select({ options: opts }) as any;
+    expect(result.value).toBeUndefined();
+    expect(result.disabled).toBeUndefined();
+    expect(result.placeholder).toBeUndefined();
+    expect(result.multiple).toBeUndefined();
+    expect(result.name).toBeUndefined();
+    expect(result.required).toBeUndefined();
+    expect(result.autoFocus).toBeUndefined();
+    expect(result.style).toBeUndefined();
+  });
+
+  it("attaches canvas event handlers", () => {
+    const onClick = mock(() => {});
+    const result = Select({ options: opts, onClick }) as any;
+    expect(result._handlers).toBeDefined();
+    expect(result._handlers.onClick).toBe(onClick);
+  });
+});
+
+describe("stub components", () => {
   it("Avatar returns a StubInstruction with component 'Avatar'", () => {
     const result = Avatar({ src: "https://example.com/avatar.png" }) as any;
     expect(result.type).toBe("stub");
     expect(result.component).toBe("Avatar");
     expect(result.props).toEqual({ src: "https://example.com/avatar.png" });
-  });
-
-  it("Select returns a SelectInstruction with options", () => {
-    const opts = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
-    const result = Select({ options: opts, value: "a" }) as any;
-    expect(result.type).toBe("select");
-    expect(result.options).toEqual(opts);
-    expect(result.value).toBe("a");
   });
 
   it("DatePicker returns a StubInstruction with component 'DatePicker'", () => {
