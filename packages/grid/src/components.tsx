@@ -14,6 +14,7 @@ import type {
   ImageStyle,
   SwitchStyle,
   InputStyle,
+  ProgressBarStyle,
   CanvasEventHandlers,
   CssFlexDirection,
   CssFlexWrap,
@@ -30,7 +31,9 @@ import type {
   ReferrerPolicy,
 } from "./types";
 import type { ChangeEvent, FocusEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { GridCellEvent } from "./types";
 import { resolveInstruction } from "./resolve-instruction";
+import { getBarGeometry } from "./renderer/components/progressbar";
 import { Children, isValidElement, type ReactNode, type JSX } from "react";
 
 /**
@@ -359,9 +362,104 @@ export function Stack(props: StackProps): CanvasElement {
   } as CanvasElement;
 }
 
-// Layout
-// Data display
-export const ProgressBar = stub("ProgressBar");
+/** Props for the ProgressBar canvas component. Individual props override style. */
+export interface ProgressBarProps extends CanvasEventHandlers {
+  value: number;
+  max?: number;
+  style?: Partial<ProgressBarStyle>;
+  color?: string;
+  backgroundColor?: string;
+  borderRadius?: number;
+  height?: number;
+  showLabel?: boolean;
+  labelColor?: string;
+  labelFontSize?: number;
+  /** Called when the user clicks or drags to change the value. */
+  onChange?: (value: number) => void;
+}
+
+function pickProgressBarStyle(props: ProgressBarProps): Partial<ProgressBarStyle> {
+  const { style, color, backgroundColor, borderRadius, height, showLabel, labelColor, labelFontSize } = props;
+  return {
+    ...style,
+    ...(color !== undefined && { color }),
+    ...(backgroundColor !== undefined && { backgroundColor }),
+    ...(borderRadius !== undefined && { borderRadius }),
+    ...(height !== undefined && { height }),
+    ...(showLabel !== undefined && { showLabel }),
+    ...(labelColor !== undefined && { labelColor }),
+    ...(labelFontSize !== undefined && { labelFontSize }),
+  };
+}
+
+/** Canvas progress bar component. Returns a ProgressBarInstruction. */
+export function ProgressBar(props: ProgressBarProps): CanvasElement {
+  const style = pickProgressBarStyle(props);
+  const max = props.max ?? 100;
+  const { onChange } = props;
+
+  let _handlers: CanvasEventHandlers | undefined;
+
+  if (onChange) {
+    // Helper: compute value from contentX using cached geometry
+    const computeValue = (contentX: number, cell: { row: number; col: number }): number => {
+      const geo = getBarGeometry(`${cell.row},${cell.col}`);
+      if (!geo) return props.value;
+      const ratio = Math.max(0, Math.min(1, (contentX - geo.barX) / geo.barW));
+      return Math.round(ratio * max);
+    };
+
+    const userOnClick = props.onClick;
+    const userOnMouseDown = props.onMouseDown;
+
+    const onClick = (e: GridCellEvent) => {
+      userOnClick?.(e);
+      onChange(computeValue(e.contentX, e.cell));
+    };
+
+    const onMouseDown = (e: GridCellEvent) => {
+      userOnMouseDown?.(e);
+      e.preventDefault();
+
+      const geo = getBarGeometry(`${e.cell.row},${e.cell.col}`);
+      if (!geo) return;
+
+      const initialRatio = Math.max(0, Math.min(1, (e.contentX - geo.barX) / geo.barW));
+      onChange(Math.round(initialRatio * max));
+
+      const initialClientX = e.nativeEvent.clientX;
+      const barW = geo.barW;
+
+      const onMove = (me: MouseEvent) => {
+        const delta = (me.clientX - initialClientX) / barW;
+        const newRatio = Math.max(0, Math.min(1, initialRatio + delta));
+        onChange(Math.round(newRatio * max));
+      };
+
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
+
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    };
+
+    // Start from user handlers, then override onClick/onMouseDown
+    _handlers = { ...pickEventHandlers(props), onClick, onMouseDown };
+  } else {
+    _handlers = pickEventHandlers(props);
+  }
+
+  return {
+    type: "progressbar",
+    value: props.value,
+    ...(props.max !== undefined && { max: props.max }),
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+    ...(onChange && { _onChange: onChange }),
+  } as CanvasElement;
+}
 
 /** Props for the Color canvas component. */
 export interface ColorProps extends CanvasEventHandlers {

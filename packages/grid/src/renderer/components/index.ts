@@ -15,6 +15,7 @@ import { imageCellRenderer } from "./image";
 import { switchCellRenderer } from "./switch";
 import { checkboxCellRenderer } from "./checkbox";
 import { inputCellRenderer } from "./input";
+import { progressBarCellRenderer } from "./progressbar";
 
 // Re-export types for public API
 export type { CellRenderContext, CellRenderer, InstructionLike } from "./types";
@@ -40,7 +41,7 @@ export class CellRendererRegistry {
 }
 
 /**
- * Create a CellRendererRegistry pre-loaded with the 16 built-in renderers.
+ * Create a CellRendererRegistry pre-loaded with the 17 built-in renderers.
  * Optional `userRenderers` are merged on top — same type overrides built-in.
  */
 export function createCellRendererRegistry(
@@ -63,6 +64,7 @@ export function createCellRendererRegistry(
   registry.register(switchCellRenderer);
   registry.register(checkboxCellRenderer);
   registry.register(inputCellRenderer);
+  registry.register(progressBarCellRenderer);
   if (userRenderers) {
     for (const r of userRenderers) {
       registry.register(r);
@@ -88,3 +90,4 @@ export { imageCellRenderer } from "./image";
 export { switchCellRenderer } from "./switch";
 export { checkboxCellRenderer } from "./checkbox";
 export { inputCellRenderer } from "./input";
+export { progressBarCellRenderer } from "./progressbar";
