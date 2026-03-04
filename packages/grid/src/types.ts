@@ -781,11 +781,17 @@ export interface SelectInstruction {
   options: { value: string; label: string }[];
   disabled?: boolean;
   placeholder?: string;
+  multiple?: boolean;
+  size?: number;
+  name?: string;
+  required?: boolean;
+  autoFocus?: boolean;
   style?: Partial<SelectStyle>;
   _domHandlers?: {
     onChange?: (e: ChangeEvent<HTMLSelectElement>) => void;
     onFocus?: (e: FocusEvent<HTMLSelectElement>) => void;
     onBlur?: (e: FocusEvent<HTMLSelectElement>) => void;
+    onKeyDown?: (e: KeyboardEvent<HTMLSelectElement>) => void;
   };
 }
 
