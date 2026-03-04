@@ -15,7 +15,6 @@ import {
   measureInstructionHeight,
   makeSubCellBuf,
   encodeCompositeInput,
-  FLEX_CHILD_HEIGHT,
 } from "./shared";
 
 export const stackCellRenderer: CellRenderer<StackInstruction> = {
@@ -46,55 +45,27 @@ export const stackCellRenderer: CellRenderer<StackInstruction> = {
       childHeights.push(measureInstructionHeight(ctx, child));
     }
 
-    if (computeChildLayout) {
-      const input = encodeCompositeInput(
-        contentW,
-        contentH,
-        direction,
-        gap,
-        "center",
-        "start",
-        [0, 0, 0, 0],
-        childWidths,
-        childHeights,
-      );
-      const positions = computeChildLayout(input);
-      for (let i = 0; i < children.length; i++) {
-        const child = children[i]!;
-        const px = positions[i * 4]!;
-        const py = positions[i * 4 + 1]!;
-        const pw = positions[i * 4 + 2]!;
-        const ph = positions[i * 4 + 3]!;
-        const subBuf = makeSubCellBuf(cellX + padL + px, cellY + padT + py, pw, ph);
-        const subContext = { ...context, buf: subBuf, cellIdx: 0 };
-        registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
-      }
-    } else {
-      const isRow = direction === "row";
-      if (isRow) {
-        let x = cellX + padL;
-        const childHeight = Math.min(contentH, FLEX_CHILD_HEIGHT);
-        const childY = cellY + padT + (contentH - childHeight) / 2;
-        for (let i = 0; i < children.length; i++) {
-          const child = children[i]!;
-          const w = childWidths[i] ?? 0;
-          const subBuf = makeSubCellBuf(x, childY, w, childHeight);
-          const subContext = { ...context, buf: subBuf, cellIdx: 0 };
-          registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
-          x += w + gap;
-        }
-      } else {
-        let y = cellY + padT;
-        for (let i = 0; i < children.length; i++) {
-          const child = children[i]!;
-          const w = childWidths[i] ?? contentW;
-          const h = childHeights[i] ?? FLEX_CHILD_HEIGHT;
-          const subBuf = makeSubCellBuf(cellX + padL, y, w, h);
-          const subContext = { ...context, buf: subBuf, cellIdx: 0 };
-          registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
-          y += h + gap;
-        }
-      }
+    const input = encodeCompositeInput(
+      contentW,
+      contentH,
+      direction,
+      gap,
+      "center",
+      "start",
+      [0, 0, 0, 0],
+      childWidths,
+      childHeights,
+    );
+    const positions = computeChildLayout(input);
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i]!;
+      const px = positions[i * 4]!;
+      const py = positions[i * 4 + 1]!;
+      const pw = positions[i * 4 + 2]!;
+      const ph = positions[i * 4 + 3]!;
+      const subBuf = makeSubCellBuf(cellX + padL + px, cellY + padT + py, pw, ph);
+      const subContext = { ...context, buf: subBuf, cellIdx: 0 };
+      registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
     }
   },
 };
