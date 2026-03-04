@@ -67,6 +67,8 @@ function mockCtx() {
   } as unknown as CanvasRenderingContext2D;
 }
 
+const noopLayout = (_input: Float32Array) => new Float32Array(0);
+
 /** Simple mock computeChildLayout: places children sequentially at x=0, y=0 with their measured sizes. */
 function mockComputeChildLayout(input: Float32Array): Float32Array {
   const childCount = input[10]!;
@@ -391,7 +393,16 @@ describe("CanvasRenderer", () => {
         type: "text",
         value: `cell${cellIdx}`,
       });
-      renderer.drawRowsFromBuffer(buf, 0, 2, getInstruction, defaultTheme, 36, registry);
+      renderer.drawRowsFromBuffer(
+        buf,
+        0,
+        2,
+        getInstruction,
+        defaultTheme,
+        36,
+        noopLayout,
+        registry,
+      );
 
       // Should draw row backgrounds (2 rows)
       // fillRect called for each row bg
@@ -408,7 +419,16 @@ describe("CanvasRenderer", () => {
         value: "Active",
         style: { backgroundColor: "#4caf50", color: "#fff" },
       });
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry);
+      renderer.drawRowsFromBuffer(
+        buf,
+        0,
+        1,
+        getInstruction,
+        defaultTheme,
+        36,
+        noopLayout,
+        registry,
+      );
 
       expect(ctx.beginPath).toHaveBeenCalled();
       expect(ctx.roundRect).toHaveBeenCalled();
@@ -421,7 +441,16 @@ describe("CanvasRenderer", () => {
         type: "sparkline",
         data: [10, 20, 15, 25, 30],
       });
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry);
+      renderer.drawRowsFromBuffer(
+        buf,
+        0,
+        1,
+        getInstruction,
+        defaultTheme,
+        36,
+        noopLayout,
+        registry,
+      );
 
       expect(ctx.beginPath).toHaveBeenCalled();
       expect(ctx.moveTo).toHaveBeenCalled();
@@ -436,7 +465,16 @@ describe("CanvasRenderer", () => {
         type: "stub",
         component: "Chart",
       });
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry);
+      renderer.drawRowsFromBuffer(
+        buf,
+        0,
+        1,
+        getInstruction,
+        defaultTheme,
+        36,
+        noopLayout,
+        registry,
+      );
 
       const fillTextCalls = (ctx.fillText as any).mock.calls;
       expect(fillTextCalls.length).toBe(1);
@@ -457,8 +495,8 @@ describe("CanvasRenderer", () => {
         getInstruction,
         defaultTheme,
         36,
-        registry,
         mockComputeChildLayout,
+        registry,
       );
 
       const fillTextCalls = (ctx.fillText as any).mock.calls;
@@ -480,8 +518,8 @@ describe("CanvasRenderer", () => {
         getInstruction,
         defaultTheme,
         36,
-        registry,
         mockComputeChildLayout,
+        registry,
       );
 
       expect(ctx.roundRect).toHaveBeenCalled();
@@ -494,7 +532,16 @@ describe("CanvasRenderer", () => {
         type: "flex",
         children: [],
       });
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry);
+      renderer.drawRowsFromBuffer(
+        buf,
+        0,
+        1,
+        getInstruction,
+        defaultTheme,
+        36,
+        noopLayout,
+        registry,
+      );
       // Should not draw anything for empty flex
       expect(ctx.fillText).not.toHaveBeenCalled();
     });
@@ -503,7 +550,16 @@ describe("CanvasRenderer", () => {
       renderer.attach(canvas);
       const buf = buildBuf([[0, 0, 0, 40, 200, 36]]);
       const getInstruction = () => undefined;
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, registry);
+      renderer.drawRowsFromBuffer(
+        buf,
+        0,
+        1,
+        getInstruction,
+        defaultTheme,
+        36,
+        noopLayout,
+        registry,
+      );
       expect(ctx.fillText).not.toHaveBeenCalled();
     });
 
@@ -516,6 +572,7 @@ describe("CanvasRenderer", () => {
         () => undefined,
         defaultTheme,
         36,
+        noopLayout,
         registry,
       );
       expect(ctx.fillRect).not.toHaveBeenCalled();
@@ -528,7 +585,16 @@ describe("CanvasRenderer", () => {
       const custom: CellRenderer = { type: "progress", draw: drawFn };
       const customRegistry = createCellRendererRegistry([custom]);
       const getInstruction = (): RenderInstruction => ({ type: "progress", value: 0.75 }) as any;
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, customRegistry);
+      renderer.drawRowsFromBuffer(
+        buf,
+        0,
+        1,
+        getInstruction,
+        defaultTheme,
+        36,
+        noopLayout,
+        customRegistry,
+      );
       expect(drawFn).toHaveBeenCalledTimes(1);
     });
 
@@ -540,7 +606,7 @@ describe("CanvasRenderer", () => {
         value: "Hello",
       });
       // No registry passed → nothing drawn (but no error)
-      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36);
+      renderer.drawRowsFromBuffer(buf, 0, 1, getInstruction, defaultTheme, 36, noopLayout);
       expect(ctx.fillText).not.toHaveBeenCalled();
     });
   });

@@ -224,8 +224,8 @@ export class CanvasRenderer {
     getInstruction: (cellIdx: number) => RenderInstruction | undefined,
     theme: Theme,
     rowHeight: number,
-    rendererRegistry?: CellRendererRegistry,
     computeChildLayout: (input: Float32Array) => Float32Array,
+    rendererRegistry?: CellRendererRegistry,
     invalidate?: () => void,
   ): void {
     const ctx = this.ctx;

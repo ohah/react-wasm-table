@@ -103,8 +103,8 @@ export function dataLayer(): GridLayer {
         ctx._getInstruction,
         ctx.theme,
         ctx.rowHeight,
-        ctx._cellRendererRegistry,
         ctx._computeChildLayout,
+        ctx._cellRendererRegistry,
         ctx._invalidate,
       );
     },
