@@ -62,7 +62,12 @@ export function drawTextCellFromBuffer(
     textX = x + padLeft;
   }
 
-  ctx.fillText(text, textX, textY, w - padLeft - padRight);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.fillText(text, textX, textY);
+  ctx.restore();
 }
 
 /** Draw a badge reading layout from a Float32Array buffer. */
