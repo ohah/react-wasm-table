@@ -1,4 +1,11 @@
 import { describe, expect, it, mock } from "bun:test";
+
+// Polyfill Path2D for non-browser test environment
+if (typeof globalThis.Path2D === "undefined") {
+  (globalThis as any).Path2D = class MockPath2D {
+    constructor(public path?: string) {}
+  };
+}
 import {
   CellRendererRegistry,
   createCellRendererRegistry,
@@ -14,6 +21,8 @@ import {
 } from "../components";
 import { checkboxCellRenderer } from "../components/checkbox";
 import { inputCellRenderer } from "../components/input";
+import { iconCellRenderer } from "../components/icon";
+import { selectCellRenderer } from "../components/select";
 import { progressBarCellRenderer, getBarGeometry } from "../components/progressbar";
 import type { CellRenderer, CellRenderContext } from "../components";
 import type { Theme, RenderInstruction } from "../../types";
@@ -77,6 +86,8 @@ function mockCtx() {
     clip: mock(() => {}),
     drawImage: mock(() => {}),
     arc: mock(() => {}),
+    translate: mock(() => {}),
+    closePath: mock(() => {}),
   } as unknown as CanvasRenderingContext2D;
 }
 
@@ -177,9 +188,9 @@ describe("CellRendererRegistry", () => {
 });
 
 describe("createCellRendererRegistry", () => {
-  it("creates registry with 19 built-in renderers", () => {
+  it("creates registry with 21 built-in renderers", () => {
     const registry = createCellRendererRegistry();
-    expect(registry.size).toBe(19);
+    expect(registry.size).toBe(21);
     expect(registry.get("text")).toBe(textCellRenderer);
     expect(registry.get("badge")).toBe(badgeCellRenderer);
     expect(registry.get("sparkline")).toBe(sparklineCellRenderer);
@@ -191,7 +202,7 @@ describe("createCellRendererRegistry", () => {
   it("merges user renderers on top of built-ins", () => {
     const custom: CellRenderer<{ type: "progress" }> = { type: "progress", draw: mock(() => {}) };
     const registry = createCellRendererRegistry([custom]);
-    expect(registry.size).toBe(20);
+    expect(registry.size).toBe(22);
     expect(registry.get("progress")).toBe(custom);
     // Built-ins still present
     expect(registry.get("text")).toBe(textCellRenderer);
@@ -200,14 +211,14 @@ describe("createCellRendererRegistry", () => {
   it("user renderer overrides built-in with same type", () => {
     const customText: CellRenderer = { type: "text", draw: mock(() => {}) };
     const registry = createCellRendererRegistry([customText]);
-    expect(registry.size).toBe(19);
+    expect(registry.size).toBe(21);
     expect(registry.get("text")).toBe(customText);
     expect(registry.get("text")).not.toBe(textCellRenderer);
   });
 
   it("handles empty user renderers array", () => {
     const registry = createCellRendererRegistry([]);
-    expect(registry.size).toBe(19);
+    expect(registry.size).toBe(21);
   });
 });
 
@@ -1247,6 +1258,188 @@ describe("inputCellRenderer", () => {
     inputCellRenderer.draw({ type: "input", value: "" }, context);
     expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
     expect((context.ctx.fillText as any).mock.calls[0][0]).toBe("");
+  });
+});
+
+// ── iconCellRenderer tests ─────────────────────────────────────────────
+
+describe("iconCellRenderer", () => {
+  it("has type 'icon'", () => {
+    expect(iconCellRenderer.type).toBe("icon");
+  });
+
+  it("is registered in default registry", () => {
+    const registry = createCellRendererRegistry();
+    expect(registry.get("icon")).toBe(iconCellRenderer);
+  });
+
+  it("draws icon using fill with Path2D", () => {
+    const context = makeContext();
+    iconCellRenderer.draw(
+      { type: "icon", path: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" },
+      context,
+    );
+    expect(context.ctx.save).toHaveBeenCalled();
+    expect(context.ctx.scale).toHaveBeenCalled();
+    expect(context.ctx.fill).toHaveBeenCalled();
+    expect(context.ctx.restore).toHaveBeenCalled();
+  });
+
+  it("applies custom color", () => {
+    const context = makeContext();
+    iconCellRenderer.draw(
+      { type: "icon", path: "M0 0h24v24H0z", style: { color: "#e53935" } },
+      context,
+    );
+    expect(context.ctx.fillStyle).toBe("#e53935");
+  });
+
+  it("uses theme cellColor as default color", () => {
+    const context = makeContext();
+    iconCellRenderer.draw({ type: "icon", path: "M0 0h24v24H0z" }, context);
+    expect(context.ctx.fillStyle).toBe(defaultTheme.cellColor);
+  });
+
+  it("applies custom size via scale", () => {
+    const context = makeContext();
+    iconCellRenderer.draw(
+      { type: "icon", path: "M0 0h24v24H0z", style: { size: 48, viewBox: 24 } },
+      context,
+    );
+    // scale = size/viewBox = 48/24 = 2
+    expect((context.ctx.scale as any).mock.calls[0]).toEqual([2, 2]);
+  });
+
+  it("uses default size 24 and viewBox 24 (scale=1)", () => {
+    const context = makeContext();
+    iconCellRenderer.draw({ type: "icon", path: "M0 0h24v24H0z" }, context);
+    expect((context.ctx.scale as any).mock.calls[0]).toEqual([1, 1]);
+  });
+});
+
+// ── selectCellRenderer tests ──────────────────────────────────────────
+
+describe("selectCellRenderer", () => {
+  it("has type 'select'", () => {
+    expect(selectCellRenderer.type).toBe("select");
+  });
+
+  it("has cursor 'pointer'", () => {
+    expect(selectCellRenderer.cursor).toBe("pointer");
+  });
+
+  it("is registered in default registry", () => {
+    const registry = createCellRendererRegistry();
+    expect(registry.get("select")).toBe(selectCellRenderer);
+  });
+
+  it("draws select background, border, and dropdown arrow", () => {
+    const context = makeContext();
+    selectCellRenderer.draw(
+      {
+        type: "select",
+        value: "a",
+        options: [
+          { value: "a", label: "Option A" },
+          { value: "b", label: "Option B" },
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.beginPath).toHaveBeenCalled();
+    expect(context.ctx.roundRect).toHaveBeenCalled();
+    expect(context.ctx.fill).toHaveBeenCalled();
+    expect(context.ctx.stroke).toHaveBeenCalled();
+    // Dropdown arrow (triangle)
+    expect(context.ctx.moveTo).toHaveBeenCalled();
+    expect(context.ctx.lineTo).toHaveBeenCalled();
+  });
+
+  it("draws selected option label", () => {
+    const context = makeContext();
+    selectCellRenderer.draw(
+      {
+        type: "select",
+        value: "b",
+        options: [
+          { value: "a", label: "Alpha" },
+          { value: "b", label: "Beta" },
+        ],
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+    expect((context.ctx.fillText as any).mock.calls[0][0]).toBe("Beta");
+  });
+
+  it("draws placeholder text when no value matches", () => {
+    const context = makeContext();
+    // Track fillStyle at the moment fillText is called
+    let fillStyleAtFillText = "";
+    (context.ctx.fillText as any).mockImplementation(() => {
+      fillStyleAtFillText = context.ctx.fillStyle as string;
+    });
+    selectCellRenderer.draw(
+      {
+        type: "select",
+        options: [{ value: "a", label: "A" }],
+        placeholder: "Choose...",
+      },
+      context,
+    );
+    expect(context.ctx.fillText).toHaveBeenCalledTimes(1);
+    expect((context.ctx.fillText as any).mock.calls[0][0]).toBe("Choose...");
+    expect(fillStyleAtFillText).toBe("#9ca3af");
+  });
+
+  it("applies disabled state with globalAlpha=0.5", () => {
+    const context = makeContext();
+    selectCellRenderer.draw(
+      {
+        type: "select",
+        value: "a",
+        options: [{ value: "a", label: "A" }],
+        disabled: true,
+      },
+      context,
+    );
+    expect(context.ctx.save).toHaveBeenCalled();
+    expect(context.ctx.restore).toHaveBeenCalled();
+  });
+
+  it("applies custom style overrides", () => {
+    const context = makeContext();
+    selectCellRenderer.draw(
+      {
+        type: "select",
+        value: "a",
+        options: [{ value: "a", label: "A" }],
+        style: {
+          fontSize: 16,
+          color: "#ff0000",
+          borderColor: "#000",
+          borderWidth: 2,
+        },
+      },
+      context,
+    );
+    expect(context.ctx.font).toContain("16px");
+    expect(context.ctx.strokeStyle).toBe("#000");
+    expect(context.ctx.lineWidth).toBe(2);
+  });
+
+  it("skips border stroke when borderWidth is 0", () => {
+    const context = makeContext();
+    selectCellRenderer.draw(
+      {
+        type: "select",
+        value: "a",
+        options: [{ value: "a", label: "A" }],
+        style: { borderWidth: 0 },
+      },
+      context,
+    );
+    expect(context.ctx.stroke).not.toHaveBeenCalled();
   });
 });
 
