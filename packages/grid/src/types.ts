@@ -517,6 +517,8 @@ export type RenderInstruction =
   | (RadioInstruction & InstructionEventMixin)
   | (LabelInstruction & InstructionEventMixin)
   | (InputInstruction & InstructionEventMixin)
+  | (IconInstruction & InstructionEventMixin)
+  | (SelectInstruction & InstructionEventMixin)
   | (StubInstruction & InstructionEventMixin);
 
 /** Table cell content: ReactNode or RenderInstruction. Use for Td children so flexRender return type is valid. */
@@ -736,6 +738,57 @@ export interface InputStyle {
   borderRadius: number;
 }
 
+/** Styling for icon cells. */
+export interface IconStyle {
+  /** Icon size in px. @default 24 */
+  size: number;
+  /** Icon fill color. @default theme.cellColor */
+  color: string;
+  /** SVG viewBox size (assumes square viewBox). @default 24 */
+  viewBox: number;
+}
+
+/** An icon instruction (renders SVG path on canvas). */
+export interface IconInstruction {
+  type: "icon";
+  /** SVG path data string (d attribute). */
+  path: string;
+  style?: Partial<IconStyle>;
+}
+
+/** Styling for select cells. */
+export interface SelectStyle {
+  /** Font size in px. @default 13 */
+  fontSize: number;
+  /** Font family. @default "system-ui, sans-serif" */
+  fontFamily: string;
+  /** Text color. @default "#333" */
+  color: string;
+  /** Background color. @default "#fff" */
+  backgroundColor: string;
+  /** Border color. @default "#d1d5db" */
+  borderColor: string;
+  /** Border width in px. @default 1 */
+  borderWidth: number;
+  /** Border radius in px. @default 4 */
+  borderRadius: number;
+}
+
+/** A select instruction (DOM overlay). */
+export interface SelectInstruction {
+  type: "select";
+  value?: string;
+  options: { value: string; label: string }[];
+  disabled?: boolean;
+  placeholder?: string;
+  style?: Partial<SelectStyle>;
+  _domHandlers?: {
+    onChange?: (e: ChangeEvent<HTMLSelectElement>) => void;
+    onFocus?: (e: FocusEvent<HTMLSelectElement>) => void;
+    onBlur?: (e: FocusEvent<HTMLSelectElement>) => void;
+  };
+}
+
 /** An input instruction (DOM overlay). */
 export interface InputInstruction {
   type: "input";
@@ -765,7 +818,7 @@ export interface DomOverlayDescriptor {
   y: number;
   width: number;
   height: number;
-  instruction: InputInstruction;
+  instruction: InputInstruction | SelectInstruction;
 }
 
 /** CSS object-fit values for image rendering. */

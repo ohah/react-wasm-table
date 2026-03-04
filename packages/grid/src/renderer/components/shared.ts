@@ -113,6 +113,12 @@ export function measureInstructionWidth(
   if (instruction.type === "input") {
     return 120;
   }
+  if (instruction.type === "icon") {
+    return instruction.style?.size ?? 24;
+  }
+  if (instruction.type === "select") {
+    return 120;
+  }
   if (
     instruction.type === "stub" ||
     instruction.type === "box" ||
@@ -146,7 +152,9 @@ export function measureInstructionHeight(
     instruction.type === "checkbox" ||
     instruction.type === "radio" ||
     instruction.type === "label" ||
-    instruction.type === "input"
+    instruction.type === "input" ||
+    instruction.type === "icon" ||
+    instruction.type === "select"
     ? FLEX_CHILD_HEIGHT
     : 0;
 }
