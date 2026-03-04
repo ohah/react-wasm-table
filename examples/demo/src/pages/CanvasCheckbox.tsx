@@ -176,7 +176,14 @@ export function CanvasCheckbox() {
           <h2 style={{ fontSize: 16, marginBottom: 8 }}>
             Todo List ({data.length} rows — scroll to see all)
           </h2>
-          <Grid data={data} columns={columns} width={350} height={400} rowHeight={36} overflowY="auto" />
+          <Grid
+            data={data}
+            columns={columns}
+            width={350}
+            height={400}
+            rowHeight={36}
+            overflowY="auto"
+          />
         </section>
 
         <section style={{ minWidth: 260, maxWidth: 360 }}>

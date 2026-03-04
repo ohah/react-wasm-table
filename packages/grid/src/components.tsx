@@ -633,7 +633,16 @@ export interface InputProps extends CanvasEventHandlers {
 }
 
 function pickInputStyle(props: InputProps): Partial<InputStyle> {
-  const { style, fontSize, fontFamily, color, backgroundColor, borderColor, borderWidth, borderRadius } = props;
+  const {
+    style,
+    fontSize,
+    fontFamily,
+    color,
+    backgroundColor,
+    borderColor,
+    borderWidth,
+    borderRadius,
+  } = props;
   return {
     ...style,
     ...(fontSize !== undefined && { fontSize }),
