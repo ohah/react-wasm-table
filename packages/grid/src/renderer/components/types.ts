@@ -9,7 +9,7 @@ export interface CellRenderContext {
   /** Registry to resolve child renderers (e.g. for Flex/Box). Omitted when not drawing from a registry. */
   registry?: CellRendererRegistryLike;
   /** WASM Taffy child layout function. */
-  computeChildLayout?: (input: Float32Array) => Float32Array;
+  computeChildLayout: (input: Float32Array) => Float32Array;
   /** Request next-frame redraw. Used by animated renderers (e.g. Switch transitions). */
   invalidate?: () => void;
 }

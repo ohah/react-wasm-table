@@ -7,7 +7,6 @@ import {
   measureInstructionHeight,
   makeSubCellBuf,
   encodeCompositeInput,
-  FLEX_CHILD_HEIGHT,
 } from "./shared";
 
 export const boxCellRenderer: CellRenderer<BoxInstruction> = {
@@ -60,41 +59,27 @@ export const boxCellRenderer: CellRenderer<BoxInstruction> = {
     const childWidths = children.map((c) => measureInstructionWidth(ctx, c, theme));
     const childHeights = children.map((c) => measureInstructionHeight(ctx, c));
 
-    if (computeChildLayout) {
-      // Box = vertical column layout with no gap, stretch alignment
-      const input = encodeCompositeInput(
-        innerW,
-        innerH,
-        "column",
-        0,
-        "stretch",
-        "start",
-        [0, 0, 0, 0],
-        childWidths,
-        childHeights,
-      );
-      const positions = computeChildLayout(input);
-      for (let i = 0; i < children.length; i++) {
-        const child = children[i]!;
-        const px = positions[i * 4]!;
-        const py = positions[i * 4 + 1]!;
-        const pw = positions[i * 4 + 2]!;
-        const ph = positions[i * 4 + 3]!;
-        const subBuf = makeSubCellBuf(innerX + px, innerY + py, pw, ph);
-        const subContext = { ...context, buf: subBuf, cellIdx: 0 };
-        registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
-      }
-    } else {
-      // Fallback: simple vertical stack (no WASM)
-      let y = innerY;
-      for (let i = 0; i < children.length; i++) {
-        const child = children[i]!;
-        const h = childHeights[i] ?? FLEX_CHILD_HEIGHT;
-        const subBuf = makeSubCellBuf(innerX, y, innerW, h);
-        const subContext = { ...context, buf: subBuf, cellIdx: 0 };
-        registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
-        y += h;
-      }
+    const input = encodeCompositeInput(
+      innerW,
+      innerH,
+      "column",
+      0,
+      "stretch",
+      "start",
+      [0, 0, 0, 0],
+      childWidths,
+      childHeights,
+    );
+    const positions = computeChildLayout(input);
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i]!;
+      const px = positions[i * 4]!;
+      const py = positions[i * 4 + 1]!;
+      const pw = positions[i * 4 + 2]!;
+      const ph = positions[i * 4 + 3]!;
+      const subBuf = makeSubCellBuf(innerX + px, innerY + py, pw, ph);
+      const subContext = { ...context, buf: subBuf, cellIdx: 0 };
+      registry.get((child as RenderInstruction).type)?.draw(child as any, subContext);
     }
   },
 };

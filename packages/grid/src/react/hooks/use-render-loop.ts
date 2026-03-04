@@ -766,9 +766,7 @@ export function useRenderLoop({
             _enableSelection: enableSelection,
             _selection: enableSelection ? selectionManagerRef.current.getNormalized() : null,
             _selectionStyle: selectionStyle,
-            _computeChildLayout: engine.computeCompositeLayout
-              ? (input: Float32Array) => engine.computeCompositeLayout!(input)
-              : undefined,
+            _computeChildLayout: (input: Float32Array) => engine.computeCompositeLayout(input),
             _borderConfigMap: borderConfigMap,
             _headerRowCount: headerRowCount,
             _enableColumnDnD: enableColumnDnD ?? false,

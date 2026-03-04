@@ -1120,7 +1120,7 @@ export interface WasmTableEngine {
   invalidateLayout(): void;
 
   // Composite (in-cell) layout
-  computeCompositeLayout?(input: Float32Array): Float32Array;
+  computeCompositeLayout(input: Float32Array): Float32Array;
 
   // Debug logging (only available when WASM built with debug-log feature)
   enableDebugLog?(): void;

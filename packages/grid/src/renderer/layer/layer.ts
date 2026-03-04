@@ -60,7 +60,7 @@ export interface InternalLayerContext extends LayerContext {
   _enableSelection: boolean;
   _selection: NormalizedRange | null;
   _selectionStyle?: SelectionStyle;
-  _computeChildLayout?: (input: Float32Array) => Float32Array;
+  _computeChildLayout: (input: Float32Array) => Float32Array;
   _borderConfigMap?: Map<number, CellBorderConfig>;
   _headerRowCount: number;
   _enableColumnDnD: boolean;
