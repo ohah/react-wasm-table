@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "rspress dev --port 12330",
+    "dev": "rspress dev --host 0.0.0.0 --port 12308",
     "build": "rspress build",
     "preview": "rspress preview"
   },

@@ -1,5 +1,5 @@
 [
-  { "text": "벤치마크", "link": "/benchmark", "activeMatch": "^/benchmark" },
-  { "text": "가이드", "link": "/guide/getting-started", "activeMatch": "^/guide/" },
-  { "text": "API", "link": "/api/table", "activeMatch": "^/api/" }
+  { "text": "벤치마크", "link": "/benchmark", "activeMatch": "/benchmark" },
+  { "text": "가이드", "link": "/guide/getting-started", "activeMatch": "/guide/" },
+  { "text": "API", "link": "/api/table", "activeMatch": "/api/" }
 ]

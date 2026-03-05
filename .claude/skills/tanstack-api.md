@@ -116,16 +116,16 @@ const columns: GridColumnDef<Person>[] = [...];
 
 | File                                       | Purpose                                                 |
 | ------------------------------------------ | ------------------------------------------------------- |
-| `packages/grid/src/tanstack-types.ts`      | GridColumnDef, CellContext, HeaderContext, SortingState |
-| `packages/grid/src/column-helper.ts`       | createColumnHelper factory                              |
-| `packages/grid/src/resolve-columns.ts`     | GridColumnDef → ColumnProps 변환                        |
-| `packages/grid/src/grid-instance.ts`       | GridInstance, GridColumn (runtime methods)              |
-| `packages/grid/src/use-grid-table.ts`      | React hook (controlled/uncontrolled)                    |
-| `packages/grid/src/build-header-groups.ts` | Multi-level header builder                              |
-| `packages/grid/src/components.tsx`         | Canvas JSX components                                   |
-| `packages/grid/src/resolve-instruction.ts` | ReactElement → RenderInstruction                        |
-| `packages/grid/src/react/Grid.tsx`         | Main Grid component                                     |
-| `packages/grid/src/types.ts`               | Core types (GridProps, ColumnProps, Theme)              |
+| `packages/react-wasm-table/src/tanstack-types.ts`      | GridColumnDef, CellContext, HeaderContext, SortingState |
+| `packages/react-wasm-table/src/column-helper.ts`       | createColumnHelper factory                              |
+| `packages/react-wasm-table/src/resolve-columns.ts`     | GridColumnDef → ColumnProps 변환                        |
+| `packages/react-wasm-table/src/grid-instance.ts`       | GridInstance, GridColumn (runtime methods)              |
+| `packages/react-wasm-table/src/use-grid-table.ts`      | React hook (controlled/uncontrolled)                    |
+| `packages/react-wasm-table/src/build-header-groups.ts` | Multi-level header builder                              |
+| `packages/react-wasm-table/src/components.tsx`         | Canvas JSX components                                   |
+| `packages/react-wasm-table/src/resolve-instruction.ts` | ReactElement → RenderInstruction                        |
+| `packages/react-wasm-table/src/react/Grid.tsx`         | Main Grid component                                     |
+| `packages/react-wasm-table/src/types.ts`               | Core types (GridProps, ColumnProps, Theme)              |
 
 ## Grid Container Props
 

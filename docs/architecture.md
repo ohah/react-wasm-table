@@ -189,7 +189,7 @@ impl TableEngine {
 
 Thin binding layer. All business logic lives in `core`.
 
-### packages/grid/src/adapter (JS)
+### packages/react-wasm-table/src/adapter (JS)
 
 ```typescript
 class ColumnRegistry {
@@ -232,7 +232,7 @@ class EditorManager {
 }
 ```
 
-### packages/grid/src/renderer (JS)
+### packages/react-wasm-table/src/renderer (JS)
 
 ```typescript
 class CanvasRenderer {
@@ -263,7 +263,7 @@ class CanvasRenderer {
 }
 ```
 
-### packages/grid/src/react (Headless Components)
+### packages/react-wasm-table/src/react (Headless Components)
 
 ```tsx
 // Grid: mounts canvas, provides context, runs render loop
