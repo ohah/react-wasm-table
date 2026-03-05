@@ -1304,40 +1304,155 @@ describe("Select component", () => {
   });
 });
 
-describe("stub components", () => {
-  it("Avatar returns a StubInstruction with component 'Avatar'", () => {
+describe("Avatar component", () => {
+  it("returns an AvatarInstruction with src", () => {
     const result = Avatar({ src: "https://example.com/avatar.png" }) as any;
-    expect(result.type).toBe("stub");
-    expect(result.component).toBe("Avatar");
-    expect(result.props).toEqual({ src: "https://example.com/avatar.png" });
+    expect(result.type).toBe("avatar");
+    expect(result.src).toBe("https://example.com/avatar.png");
   });
 
-  it("DatePicker returns a StubInstruction with component 'DatePicker'", () => {
-    const result = DatePicker({ format: "YYYY-MM-DD" }) as any;
-    expect(result.type).toBe("stub");
-    expect(result.component).toBe("DatePicker");
-    expect(result.props).toEqual({ format: "YYYY-MM-DD" });
+  it("returns an AvatarInstruction with name for initials fallback", () => {
+    const result = Avatar({ name: "John Doe" }) as any;
+    expect(result.type).toBe("avatar");
+    expect(result.name).toBe("John Doe");
   });
 
-  it("Dropdown returns a StubInstruction with component 'Dropdown'", () => {
-    const result = Dropdown({ items: [1, 2, 3] }) as any;
-    expect(result.type).toBe("stub");
-    expect(result.component).toBe("Dropdown");
-    expect(result.props).toEqual({ items: [1, 2, 3] });
-  });
-
-  it("stub merges style with rest props (rest overrides style)", () => {
+  it("merges style with individual props (individual overrides style)", () => {
     const result = Avatar({ style: { color: "blue", size: 16 }, color: "red" }) as any;
-    expect(result.type).toBe("stub");
-    expect(result.component).toBe("Avatar");
-    expect(result.props).toEqual({ color: "red", size: 16 });
+    expect(result.type).toBe("avatar");
+    expect(result.style.color).toBe("red");
+    expect(result.style.size).toBe(16);
   });
 
-  it("stub returns undefined props when no props given", () => {
+  it("returns undefined style when no style given", () => {
     const result = Avatar({}) as any;
-    expect(result.type).toBe("stub");
-    expect(result.component).toBe("Avatar");
-    expect(result.props).toBeUndefined();
+    expect(result.type).toBe("avatar");
+    expect(result.style).toBeUndefined();
+  });
+});
+
+describe("DatePicker component", () => {
+  it("returns a DatePickerInstruction with value", () => {
+    const result = DatePicker({ value: "2024-01-15" }) as any;
+    expect(result.type).toBe("datepicker");
+    expect(result.value).toBe("2024-01-15");
+  });
+
+  it("supports min and max date constraints", () => {
+    const result = DatePicker({ min: "2024-01-01", max: "2024-12-31" }) as any;
+    expect(result.min).toBe("2024-01-01");
+    expect(result.max).toBe("2024-12-31");
+  });
+});
+
+describe("Dropdown component", () => {
+  it("returns a DropdownInstruction with options", () => {
+    const options = [
+      { value: "a", label: "Option A" },
+      { value: "b", label: "Option B" },
+    ];
+    const result = Dropdown({ options, value: "a" }) as any;
+    expect(result.type).toBe("dropdown");
+    expect(result.options).toEqual(options);
+    expect(result.value).toBe("a");
+  });
+
+  it("supports placeholder", () => {
+    const result = Dropdown({ options: [], placeholder: "Select..." }) as any;
+    expect(result.placeholder).toBe("Select...");
+  });
+
+  it("passes onChange to instruction", () => {
+    const handler = () => {};
+    const result = Dropdown({ options: [], onChange: handler }) as any;
+    expect(result.onChange).toBe(handler);
+  });
+
+  it("omits onChange when not provided", () => {
+    const result = Dropdown({ options: [] }) as any;
+    expect(result.onChange).toBeUndefined();
+  });
+
+  it("passes maxVisibleItems to style", () => {
+    const result = Dropdown({
+      options: [],
+      maxVisibleItems: 10,
+    }) as any;
+    expect(result.style.maxVisibleItems).toBe(10);
+  });
+
+  it("passes nested option and checkmark styles", () => {
+    const result = Dropdown({
+      options: [],
+      style: {
+        option: { hoverBackgroundColor: "#ff0000", selectedColor: "#00ff00", height: 40 },
+        checkmark: { color: "#0369a1" },
+      },
+    }) as any;
+    expect(result.style.option.hoverBackgroundColor).toBe("#ff0000");
+    expect(result.style.option.selectedColor).toBe("#00ff00");
+    expect(result.style.option.height).toBe(40);
+    expect(result.style.checkmark.color).toBe("#0369a1");
+  });
+
+  it("merges individual props with nested style object", () => {
+    const result = Dropdown({
+      options: [],
+      style: {
+        fontSize: 16,
+        panel: { boxShadow: "0px 4px 12px rgba(0,0,0,0.1)", borderRadius: 8 },
+      },
+      maxVisibleItems: 10,
+    }) as any;
+    expect(result.style.fontSize).toBe(16);
+    expect(result.style.panel.boxShadow).toBe("0px 4px 12px rgba(0,0,0,0.1)");
+    expect(result.style.panel.borderRadius).toBe(8);
+    expect(result.style.maxVisibleItems).toBe(10);
+  });
+
+  it("supports compound children (Panel, Option, Checkmark)", () => {
+    const result = Dropdown({
+      options: [{ value: "a", label: "A" }],
+      value: "a",
+      children: [
+        React.createElement(Dropdown.Panel, { boxShadow: "0px 4px 12px rgba(0,0,0,0.1)", borderRadius: 8 }),
+        React.createElement(Dropdown.Option, { hoverBackgroundColor: "#e0f2fe", selectedColor: "#0369a1" }),
+        React.createElement(Dropdown.Checkmark, { color: "#0369a1" }),
+      ],
+    }) as any;
+    expect(result.type).toBe("dropdown");
+    expect(result.style.panel.boxShadow).toBe("0px 4px 12px rgba(0,0,0,0.1)");
+    expect(result.style.panel.borderRadius).toBe(8);
+    expect(result.style.option.hoverBackgroundColor).toBe("#e0f2fe");
+    expect(result.style.option.selectedColor).toBe("#0369a1");
+    expect(result.style.checkmark.color).toBe("#0369a1");
+  });
+
+  it("merges children config over style prop (children win)", () => {
+    const result = Dropdown({
+      options: [],
+      style: {
+        panel: { borderRadius: 4, boxShadow: "none" },
+        checkmark: { color: "#000" },
+      },
+      children: [
+        React.createElement(Dropdown.Panel, { borderRadius: 12 }),
+        React.createElement(Dropdown.Checkmark, { color: "#f00" }),
+      ],
+    }) as any;
+    // children override style
+    expect(result.style.panel.borderRadius).toBe(12);
+    // style prop preserved when not overridden
+    expect(result.style.panel.boxShadow).toBe("none");
+    expect(result.style.checkmark.color).toBe("#f00");
+  });
+
+  it("works without children (backward compatible)", () => {
+    const result = Dropdown({
+      options: [],
+      style: { option: { hoverBackgroundColor: "#ccc" } },
+    }) as any;
+    expect(result.style.option.hoverBackgroundColor).toBe("#ccc");
   });
 });
 

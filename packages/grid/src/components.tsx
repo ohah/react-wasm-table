@@ -20,6 +20,12 @@ import type {
   IconStyle,
   SelectStyle,
   ProgressBarStyle,
+  AvatarStyle,
+  DatePickerStyle,
+  DropdownStyle,
+  DropdownPanelStyle,
+  DropdownOptionStyle,
+  DropdownCheckmarkStyle,
   CanvasEventHandlers,
   CssFlexDirection,
   CssFlexWrap,
@@ -726,7 +732,49 @@ export function Image(props: ImageProps): CanvasElement {
   } as CanvasElement;
 }
 
-export const Avatar = stub("Avatar");
+/** Props for the Avatar canvas component. */
+export interface AvatarProps extends CanvasEventHandlers {
+  /** Image URL. */
+  src?: string;
+  /** Display name (first letter used as initials fallback). */
+  name?: string;
+  /** Alt text rendered on load error. */
+  alt?: string;
+  style?: Partial<AvatarStyle>;
+  size?: number;
+  backgroundColor?: string;
+  color?: string;
+  fontSize?: number;
+  borderColor?: string;
+  borderWidth?: number;
+}
+
+function pickAvatarStyle(props: AvatarProps): Partial<AvatarStyle> {
+  const { style, size, backgroundColor, color, fontSize, borderColor, borderWidth } = props;
+  return {
+    ...style,
+    ...(size !== undefined && { size }),
+    ...(backgroundColor !== undefined && { backgroundColor }),
+    ...(color !== undefined && { color }),
+    ...(fontSize !== undefined && { fontSize }),
+    ...(borderColor !== undefined && { borderColor }),
+    ...(borderWidth !== undefined && { borderWidth }),
+  };
+}
+
+/** Canvas avatar component. Circular image with initials fallback. */
+export function Avatar(props: AvatarProps): CanvasElement {
+  const style = pickAvatarStyle(props);
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "avatar",
+    ...(props.src !== undefined && { src: props.src }),
+    ...(props.name !== undefined && { name: props.name }),
+    ...(props.alt !== undefined && { alt: props.alt }),
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
 
 /** Props for the Checkbox canvas component. */
 export interface CheckboxProps extends CanvasEventHandlers {
@@ -1016,5 +1064,184 @@ export function Switch(props: SwitchProps): CanvasElement {
   } as CanvasElement;
 }
 
-export const DatePicker = stub("DatePicker");
-export const Dropdown = stub("Dropdown");
+/** Props for the DatePicker canvas component (DOM overlay). */
+export interface DatePickerProps extends CanvasEventHandlers {
+  value?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  min?: string;
+  max?: string;
+  onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+  onFocus?: (e: FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: ReactKeyboardEvent<HTMLInputElement>) => void;
+  style?: Partial<DatePickerStyle>;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+}
+
+function pickDatePickerStyle(props: DatePickerProps): Partial<DatePickerStyle> {
+  const { style, fontSize, fontFamily, color, backgroundColor, borderColor, borderWidth, borderRadius } = props;
+  return {
+    ...style,
+    ...(fontSize !== undefined && { fontSize }),
+    ...(fontFamily !== undefined && { fontFamily }),
+    ...(color !== undefined && { color }),
+    ...(backgroundColor !== undefined && { backgroundColor }),
+    ...(borderColor !== undefined && { borderColor }),
+    ...(borderWidth !== undefined && { borderWidth }),
+    ...(borderRadius !== undefined && { borderRadius }),
+  };
+}
+
+/** Canvas date picker component. Returns a DatePickerInstruction (DOM overlay). */
+export function DatePicker(props: DatePickerProps): CanvasElement {
+  const style = pickDatePickerStyle(props);
+  const _handlers = pickEventHandlers(props);
+  const _domHandlers: Record<string, unknown> = {};
+  if (props.onChange) _domHandlers.onChange = props.onChange;
+  if (props.onFocus) _domHandlers.onFocus = props.onFocus;
+  if (props.onBlur) _domHandlers.onBlur = props.onBlur;
+  if (props.onKeyDown) _domHandlers.onKeyDown = props.onKeyDown;
+  return {
+    type: "datepicker",
+    value: props.value,
+    placeholder: props.placeholder,
+    disabled: props.disabled,
+    min: props.min,
+    max: props.max,
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(Object.keys(_domHandlers).length > 0 && { _domHandlers }),
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
+/** Props for the Dropdown canvas component (canvas-only button with dropdown arrow). */
+export interface DropdownProps extends CanvasEventHandlers {
+  value?: string;
+  options: { value: string; label: string }[];
+  disabled?: boolean;
+  placeholder?: string;
+  /** Called when the user selects an option from the dropdown panel. */
+  onChange?: (value: string) => void;
+  style?: Partial<DropdownStyle>;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+  /** Max visible items before scroll. @default 6 */
+  maxVisibleItems?: number;
+  /** Compound sub-components: Panel, Option, Checkmark. */
+  children?: ReactNode;
+}
+
+function pickDropdownStyle(props: DropdownProps): Partial<DropdownStyle> {
+  const {
+    style,
+    fontSize,
+    fontFamily,
+    color,
+    backgroundColor,
+    borderColor,
+    borderWidth,
+    borderRadius,
+    maxVisibleItems,
+  } = props;
+  return {
+    ...style,
+    ...(fontSize !== undefined && { fontSize }),
+    ...(fontFamily !== undefined && { fontFamily }),
+    ...(color !== undefined && { color }),
+    ...(backgroundColor !== undefined && { backgroundColor }),
+    ...(borderColor !== undefined && { borderColor }),
+    ...(borderWidth !== undefined && { borderWidth }),
+    ...(borderRadius !== undefined && { borderRadius }),
+    ...(maxVisibleItems !== undefined && { maxVisibleItems }),
+  };
+}
+
+// ── Dropdown sub-components (config instructions, not rendered) ──────
+
+/** Config sub-component for Dropdown panel styling. */
+export function DropdownPanel(props: DropdownPanelStyle): CanvasElement {
+  return { type: "__dropdown:panel", ...props } as CanvasElement;
+}
+
+/** Config sub-component for Dropdown option styling. */
+export function DropdownOption(props: DropdownOptionStyle): CanvasElement {
+  return { type: "__dropdown:option", ...props } as CanvasElement;
+}
+
+/** Config sub-component for Dropdown checkmark styling. */
+export function DropdownCheckmark(props: DropdownCheckmarkStyle): CanvasElement {
+  return { type: "__dropdown:checkmark", ...props } as CanvasElement;
+}
+
+/** Canvas dropdown component. Canvas-only button with dropdown arrow and option panel. */
+export function Dropdown(props: DropdownProps): CanvasElement {
+  // Extract config from compound children
+  let panelConfig: DropdownPanelStyle = {};
+  let optionConfig: DropdownOptionStyle = {};
+  let checkmarkConfig: DropdownCheckmarkStyle = {};
+
+  if (props.children != null) {
+    Children.forEach(props.children, (child) => {
+      if (isValidElement(child) && typeof child.type === "function") {
+        const resolved = (child.type as (p: unknown) => unknown)(child.props) as Record<string, unknown>;
+        const t = resolved?.type;
+        if (t === "__dropdown:panel") {
+          const { type: _, ...rest } = resolved;
+          panelConfig = rest as DropdownPanelStyle;
+        } else if (t === "__dropdown:option") {
+          const { type: _, ...rest } = resolved;
+          optionConfig = rest as DropdownOptionStyle;
+        } else if (t === "__dropdown:checkmark") {
+          const { type: _, ...rest } = resolved;
+          checkmarkConfig = rest as DropdownCheckmarkStyle;
+        }
+      }
+    });
+  }
+
+  // Merge: style prop as base, children config overrides
+  const base = pickDropdownStyle(props);
+  const hasPanel = Object.keys(panelConfig).length > 0;
+  const hasOption = Object.keys(optionConfig).length > 0;
+  const hasCheckmark = Object.keys(checkmarkConfig).length > 0;
+
+  const style: Partial<DropdownStyle> = {
+    ...base,
+    ...(hasPanel || base.panel ? { panel: { ...(base.panel as DropdownPanelStyle), ...panelConfig } } : {}),
+    ...(hasOption || base.option
+      ? { option: { ...(base.option as DropdownOptionStyle), ...optionConfig } }
+      : {}),
+    ...(hasCheckmark || base.checkmark
+      ? { checkmark: { ...(base.checkmark as DropdownCheckmarkStyle), ...checkmarkConfig } }
+      : {}),
+  };
+
+  const _handlers = pickEventHandlers(props);
+  return {
+    type: "dropdown",
+    value: props.value,
+    options: props.options,
+    disabled: props.disabled,
+    placeholder: props.placeholder,
+    ...(props.onChange && { onChange: props.onChange }),
+    style: Object.keys(style).length > 0 ? style : undefined,
+    ...(_handlers && { _handlers }),
+  } as CanvasElement;
+}
+
+// Compound component pattern: attach sub-components as static properties
+Dropdown.Panel = DropdownPanel;
+Dropdown.Option = DropdownOption;
+Dropdown.Checkmark = DropdownCheckmark;
