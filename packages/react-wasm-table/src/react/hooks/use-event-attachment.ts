@@ -333,7 +333,8 @@ export function useEventAttachment({
           }
         },
         onHeaderMouseDown: handlers.handleHeaderMouseDown
-          ? (colIndex, _native, coords) => handlers.handleHeaderMouseDown!(colIndex, coords.viewportX)
+          ? (colIndex, _native, coords) =>
+              handlers.handleHeaderMouseDown!(colIndex, coords.viewportX)
           : undefined,
         onColumnDnDMove: handlers.handleColumnDnDMove,
         onColumnDnDEnd: handlers.handleColumnDnDEnd,

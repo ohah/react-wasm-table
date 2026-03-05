@@ -203,7 +203,11 @@ export function TanStackCanvasRadio() {
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "var(--demo-muted-fg, #999)", textAlign: "center" }}>No events yet</div>
+              <div
+                style={{ padding: 16, color: "var(--demo-muted-fg, #999)", textAlign: "center" }}
+              >
+                No events yet
+              </div>
             )}
             {logs.map((log) => (
               <div

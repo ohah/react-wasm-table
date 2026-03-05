@@ -104,7 +104,14 @@ export function CanvasAvatar() {
         </div>
       </div>
 
-      <Grid data={data} columns={columns} width={400} height={260} rowHeight={48} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+      <Grid
+        data={data}
+        columns={columns}
+        width={400}
+        height={260}
+        rowHeight={48}
+        theme={isDark ? DARK_THEME : LIGHT_THEME}
+      />
     </>
   );
 }

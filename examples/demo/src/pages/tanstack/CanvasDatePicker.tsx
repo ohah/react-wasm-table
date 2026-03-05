@@ -67,7 +67,13 @@ export function TanStackCanvasDatePicker() {
       </p>
 
       <div ref={ref}>
-        <Table table={table} width={Math.min(width || 440, 500)} height={280} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+        <Table
+          table={table}
+          width={Math.min(width || 440, 500)}
+          height={280}
+          rowHeight={40}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+        />
       </div>
 
       <h3 style={{ marginTop: 16 }}>Current values:</h3>

@@ -825,8 +825,10 @@ describe("useEventAttachment (renderHook)", () => {
 
       const attachedHandlers = em.attach.mock.calls[0]![1];
       expect(attachedHandlers.onHeaderMouseDown).toBeDefined();
-      attachedHandlers.onHeaderMouseDown!(2);
-      expect(handleHeaderMouseDown).toHaveBeenCalledWith(2);
+      const mockNative = {} as MouseEvent;
+      const mockCoords = { contentX: 0, contentY: 0, viewportX: 150, viewportY: 10 };
+      attachedHandlers.onHeaderMouseDown!(2, mockNative, mockCoords);
+      expect(handleHeaderMouseDown).toHaveBeenCalledWith(2, 150);
     });
 
     it("passes DnD handlers through", () => {
