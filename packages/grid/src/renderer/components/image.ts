@@ -43,7 +43,7 @@ interface LoadImageOptions {
   fetchPriority?: "high" | "low" | "auto";
 }
 
-function getOrLoadImage(src: string, opts?: LoadImageOptions): ImageCacheEntry | null {
+export function getOrLoadImage(src: string, opts?: LoadImageOptions): ImageCacheEntry | null {
   let entry = imageCache.get(src);
   if (entry) return entry;
 
