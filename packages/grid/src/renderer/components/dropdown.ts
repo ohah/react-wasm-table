@@ -26,12 +26,7 @@ export function parseBoxShadow(
 
   // Match: <offsetX> <offsetY> [<blur>] <color>
   // Color can be a named color, #hex, rgb(...), rgba(...), hsl(...), hsla(...)
-  const colorPatterns = [
-    /rgba?\([^)]*\)/,
-    /hsla?\([^)]*\)/,
-    /#[0-9a-fA-F]{3,8}/,
-    /[a-zA-Z]+/,
-  ];
+  const colorPatterns = [/rgba?\([^)]*\)/, /hsla?\([^)]*\)/, /#[0-9a-fA-F]{3,8}/, /[a-zA-Z]+/];
 
   let colorStr = "";
   let rest = s;

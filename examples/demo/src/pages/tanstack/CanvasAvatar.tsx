@@ -54,13 +54,7 @@ export function TanStackCanvasAvatar() {
         header: "Avatar",
         size: 60,
         padding: [4, 8],
-        cell: (info) => (
-          <Avatar
-            src={info.getValue()}
-            name={info.row.original.name}
-            size={size}
-          />
-        ),
+        cell: (info) => <Avatar src={info.getValue()} name={info.row.original.name} size={size} />,
       }),
       helper.accessor("name", { header: "Name", size: 150, padding: [0, 8] }),
       helper.accessor("role", { header: "Role", size: 100, padding: [0, 8] }),
@@ -92,12 +86,7 @@ export function TanStackCanvasAvatar() {
       </div>
 
       <div ref={ref}>
-        <Table
-          table={table}
-          width={Math.min(width || 400, 500)}
-          height={360}
-          rowHeight={48}
-        />
+        <Table table={table} width={Math.min(width || 400, 500)} height={360} rowHeight={48} />
       </div>
     </>
   );

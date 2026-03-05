@@ -15,9 +15,7 @@ export function CanvasDatePicker() {
 
   const handleChange = useCallback(
     (rowIdx: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      setData((prev) =>
-        prev.map((r, i) => (i === rowIdx ? { ...r, date: e.target.value } : r)),
-      );
+      setData((prev) => prev.map((r, i) => (i === rowIdx ? { ...r, date: e.target.value } : r)));
     },
     [],
   );

@@ -1086,7 +1086,16 @@ export interface DatePickerProps extends CanvasEventHandlers {
 }
 
 function pickDatePickerStyle(props: DatePickerProps): Partial<DatePickerStyle> {
-  const { style, fontSize, fontFamily, color, backgroundColor, borderColor, borderWidth, borderRadius } = props;
+  const {
+    style,
+    fontSize,
+    fontFamily,
+    color,
+    backgroundColor,
+    borderColor,
+    borderWidth,
+    borderRadius,
+  } = props;
   return {
     ...style,
     ...(fontSize !== undefined && { fontSize }),
@@ -1195,7 +1204,10 @@ export function Dropdown(props: DropdownProps): CanvasElement {
   if (props.children != null) {
     Children.forEach(props.children, (child) => {
       if (isValidElement(child) && typeof child.type === "function") {
-        const resolved = (child.type as (p: unknown) => unknown)(child.props) as Record<string, unknown>;
+        const resolved = (child.type as (p: unknown) => unknown)(child.props) as Record<
+          string,
+          unknown
+        >;
         const t = resolved?.type;
         if (t === "__dropdown:panel") {
           const { type: _, ...rest } = resolved;
@@ -1219,7 +1231,9 @@ export function Dropdown(props: DropdownProps): CanvasElement {
 
   const style: Partial<DropdownStyle> = {
     ...base,
-    ...(hasPanel || base.panel ? { panel: { ...(base.panel as DropdownPanelStyle), ...panelConfig } } : {}),
+    ...(hasPanel || base.panel
+      ? { panel: { ...(base.panel as DropdownPanelStyle), ...panelConfig } }
+      : {}),
     ...(hasOption || base.option
       ? { option: { ...(base.option as DropdownOptionStyle), ...optionConfig } }
       : {}),

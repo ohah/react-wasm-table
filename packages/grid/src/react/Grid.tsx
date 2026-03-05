@@ -820,13 +820,19 @@ export function Grid({
                 );
               }
               // Input or DatePicker (both render as <input>)
-              const ii = inst as import("../types").InputInstruction | import("../types").DatePickerInstruction;
+              const ii = inst as
+                | import("../types").InputInstruction
+                | import("../types").DatePickerInstruction;
               return (
                 <OverlayInput
                   key={d.key}
                   overlayKey={d.key}
                   inputRefsMap={inputRefsMap}
-                  type={ii.type === "datepicker" ? "date" : (ii as import("../types").InputInstruction).inputType ?? "text"}
+                  type={
+                    ii.type === "datepicker"
+                      ? "date"
+                      : ((ii as import("../types").InputInstruction).inputType ?? "text")
+                  }
                   value={ii.value ?? ""}
                   placeholder={ii.placeholder}
                   disabled={ii.disabled}

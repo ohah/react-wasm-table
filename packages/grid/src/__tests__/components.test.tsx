@@ -1415,8 +1415,14 @@ describe("Dropdown component", () => {
       options: [{ value: "a", label: "A" }],
       value: "a",
       children: [
-        React.createElement(Dropdown.Panel, { boxShadow: "0px 4px 12px rgba(0,0,0,0.1)", borderRadius: 8 }),
-        React.createElement(Dropdown.Option, { hoverBackgroundColor: "#e0f2fe", selectedColor: "#0369a1" }),
+        React.createElement(Dropdown.Panel, {
+          boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
+          borderRadius: 8,
+        }),
+        React.createElement(Dropdown.Option, {
+          hoverBackgroundColor: "#e0f2fe",
+          selectedColor: "#0369a1",
+        }),
         React.createElement(Dropdown.Checkmark, { color: "#0369a1" }),
       ],
     }) as any;

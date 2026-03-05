@@ -30,9 +30,7 @@ export function TanStackCanvasDatePicker() {
 
   const handleChange = useCallback(
     (rowIdx: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      setData((prev) =>
-        prev.map((r, i) => (i === rowIdx ? { ...r, date: e.target.value } : r)),
-      );
+      setData((prev) => prev.map((r, i) => (i === rowIdx ? { ...r, date: e.target.value } : r)));
     },
     [],
   );
@@ -67,12 +65,7 @@ export function TanStackCanvasDatePicker() {
       </p>
 
       <div ref={ref}>
-        <Table
-          table={table}
-          width={Math.min(width || 440, 500)}
-          height={280}
-          rowHeight={40}
-        />
+        <Table table={table} width={Math.min(width || 440, 500)} height={280} rowHeight={40} />
       </div>
 
       <h3 style={{ marginTop: 16 }}>Current values:</h3>
