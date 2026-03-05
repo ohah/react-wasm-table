@@ -287,7 +287,7 @@ impl TableEngine {
         let total_count = self.columnar.row_count;
         let col_count = columns.len();
 
-        let header_row_count: usize = 1;
+        let header_row_count: usize = vp.header_row_count.max(1);
 
         if pinned_top > 0 || pinned_bottom > 0 {
             // Row pinning path: three segments (top, middle visible, bottom)
