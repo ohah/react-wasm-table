@@ -188,6 +188,12 @@ export const Example = () => (
 );
 ```
 
-## 스텁 컴포넌트 (예정)
+## 인터랙티브 컴포넌트
 
-JSX에서 사용 가능하지만 렌더러는 플레이스홀더만 그립니다: Avatar, DatePicker, Dropdown. 실제 렌더러 추가 시를 위해 `style` 등 props를 받습니다.
+아래 컴포넌트는 사용자 상호작용을 위해 DOM 오버레이와 통합됩니다:
+
+| 컴포넌트       | 설명                                          | 주요 props                                              |
+| -------------- | --------------------------------------------- | ------------------------------------------------------- |
+| **Avatar**     | 이미지 또는 이니셜이 있는 원형 아바타         | `value`, `src?`, `size?`, `borderRadius?`, `color?`     |
+| **DatePicker** | DOM 오버레이 피커가 있는 날짜 입력             | `value`, `onChange?`, `format?`, `style?`                |
+| **Dropdown**   | DOM 오버레이 드롭다운이 있는 선택 입력         | `value`, `options`, `onChange?`, `style?`                |
