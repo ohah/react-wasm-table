@@ -15,6 +15,7 @@ import {
   type SortingState,
   type ColumnSizingState,
 } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Person = {
   firstName: string;
@@ -76,117 +77,74 @@ function generatePeople(count: number): Person[] {
 
 const helper = createColumnHelper<Person>();
 
-const columns = [
-  helper.accessor("firstName", {
-    header: "First Name",
-    size: 140,
-    enableSorting: true,
-    enableResizing: true,
-    padding: [0, 8],
-  }),
-  helper.accessor("lastName", {
-    header: "Last Name",
-    size: 140,
-    enableSorting: true,
-    enableResizing: true,
-    padding: [0, 8],
-  }),
-  helper.accessor("age", {
-    header: "Age",
-    size: 80,
-    enableSorting: true,
-    enableResizing: true,
-    align: "right",
-    padding: [0, 8],
-    cell: (info) => <Text value={String(info.getValue())} fontWeight="bold" />,
-  }),
-  helper.accessor("department", {
-    header: "Department",
-    size: 140,
-    enableSorting: true,
-    enableResizing: true,
-    padding: [0, 8],
-    cell: (info) => (
-      <Badge value={info.getValue()} color="#333" backgroundColor="#e3f2fd" borderRadius={4} />
-    ),
-  }),
-  helper.accessor("status", {
-    header: "Status",
-    size: 100,
-    enableSorting: true,
-    enableResizing: true,
-    padding: [0, 8],
-    cell: (info) => {
-      const v = info.getValue();
-      const bg = v === "Active" ? "#4caf50" : v === "On Leave" ? "#ff9800" : "#9e9e9e";
-      return <Badge value={v} color="white" backgroundColor={bg} borderRadius={4} />;
-    },
-  }),
-  helper.accessor("salary", {
-    header: "Salary",
-    size: 120,
-    enableSorting: true,
-    enableResizing: true,
-    align: "right",
-    padding: [0, 8],
-    cell: (info) => (
-      <Text
-        value={`$${info.getValue().toLocaleString()}`}
-        fontWeight="bold"
-        color={info.getValue() > 100000 ? "#2e7d32" : "#333"}
-      />
-    ),
-  }),
-];
-
-const codeExample = `import {
-  Table, useReactTable, flexRender,
-  createColumnHelper, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td,
-} from "@ohah/react-wasm-table";
-
-const [sorting, setSorting] = useState([]);
-const [columnSizing, setColumnSizing] = useState({});
-
-const table = useReactTable({
-  data,
-  columns,
-  getCoreRowModel: getCoreRowModel(),
-  state: { sorting, columnSizing },
-  // TanStack updater pattern: pass useState setter directly
-  onSortingChange: setSorting,
-  onColumnSizingChange: setColumnSizing,
-});
-
-<Table table={table} width={800} height={500}>
-  <Thead>
-    {table.getHeaderGroups().map(hg => (
-      <Tr key={hg.id}>
-        {hg.headers.map(h => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map(row => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map(cell => (
-          <Td key={cell.id}>
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`;
-
 export function TableApiDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generatePeople(10_000), []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
+
+  const columns = useMemo(() => [
+    helper.accessor("firstName", {
+      header: "First Name",
+      size: 140,
+      enableSorting: true,
+      enableResizing: true,
+      padding: [0, 8],
+    }),
+    helper.accessor("lastName", {
+      header: "Last Name",
+      size: 140,
+      enableSorting: true,
+      enableResizing: true,
+      padding: [0, 8],
+    }),
+    helper.accessor("age", {
+      header: "Age",
+      size: 80,
+      enableSorting: true,
+      enableResizing: true,
+      align: "right",
+      padding: [0, 8],
+      cell: (info) => <Text value={String(info.getValue())} fontWeight="bold" />,
+    }),
+    helper.accessor("department", {
+      header: "Department",
+      size: 140,
+      enableSorting: true,
+      enableResizing: true,
+      padding: [0, 8],
+      cell: (info) => (
+        <Badge value={info.getValue()} color={isDark ? "#e0e0e0" : "#333"} backgroundColor={isDark ? "#1e3a5f" : "#e3f2fd"} borderRadius={4} />
+      ),
+    }),
+    helper.accessor("status", {
+      header: "Status",
+      size: 100,
+      enableSorting: true,
+      enableResizing: true,
+      padding: [0, 8],
+      cell: (info) => {
+        const v = info.getValue();
+        const bg = v === "Active" ? "#4caf50" : v === "On Leave" ? "#ff9800" : "#9e9e9e";
+        return <Badge value={v} color="white" backgroundColor={bg} borderRadius={4} />;
+      },
+    }),
+    helper.accessor("salary", {
+      header: "Salary",
+      size: 120,
+      enableSorting: true,
+      enableResizing: true,
+      align: "right",
+      padding: [0, 8],
+      cell: (info) => (
+        <Text
+          value={`$${info.getValue().toLocaleString()}`}
+          fontWeight="bold"
+          color={info.getValue() > 100000 ? "#2e7d32" : (isDark ? "#e0e0e0" : "#333")}
+        />
+      ),
+    }),
+  ], [isDark]);
 
   const table = useReactTable({
     data,
@@ -277,7 +235,7 @@ export function TableApiDemo() {
         </p>
       )}
 
-      <Table table={table} width={960} height={500}>
+      <Table table={table} width={960} height={500} theme={isDark ? DARK_THEME : LIGHT_THEME}>
         <Thead>
           {table.getHeaderGroups().map((hg) => (
             <Tr key={hg.id}>
@@ -303,21 +261,6 @@ export function TableApiDemo() {
         </Tbody>
       </Table>
 
-      <details style={{ marginTop: 16 }}>
-        <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 14 }}>View Code</summary>
-        <pre
-          style={{
-            background: "#f5f5f5",
-            padding: 12,
-            borderRadius: 4,
-            fontSize: 12,
-            overflow: "auto",
-            maxHeight: 520,
-          }}
-        >
-          {codeExample}
-        </pre>
-      </details>
     </>
   );
 }
