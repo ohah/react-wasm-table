@@ -519,6 +519,9 @@ export type RenderInstruction =
   | (InputInstruction & InstructionEventMixin)
   | (IconInstruction & InstructionEventMixin)
   | (SelectInstruction & InstructionEventMixin)
+  | (AvatarInstruction & InstructionEventMixin)
+  | (DatePickerInstruction & InstructionEventMixin)
+  | (DropdownInstruction & InstructionEventMixin)
   | (StubInstruction & InstructionEventMixin);
 
 /** Table cell content: ReactNode or RenderInstruction. Use for Td children so flexRender return type is valid. */
@@ -824,7 +827,7 @@ export interface DomOverlayDescriptor {
   y: number;
   width: number;
   height: number;
-  instruction: InputInstruction | SelectInstruction;
+  instruction: InputInstruction | SelectInstruction | DatePickerInstruction;
 }
 
 /** CSS object-fit values for image rendering. */
@@ -871,6 +874,158 @@ export interface ImageInstruction {
   /** Fetch priority hint. */
   fetchPriority?: "high" | "low" | "auto";
   style?: Partial<ImageStyle>;
+}
+
+// ── Avatar ─────────────────────────────────────────────────────────────
+
+/** Styling for avatar cells. */
+export interface AvatarStyle {
+  /** Avatar size in px. @default 40 */
+  size: number;
+  /** Background color for initials fallback. @default "#e5e7eb" */
+  backgroundColor: string;
+  /** Text color for initials. @default "#374151" */
+  color: string;
+  /** Font size for initials in px. @default 16 */
+  fontSize: number;
+  /** Border color. */
+  borderColor: string;
+  /** Border width in px. @default 0 */
+  borderWidth: number;
+}
+
+/** An avatar instruction (circular image with initials fallback). */
+export interface AvatarInstruction {
+  type: "avatar";
+  /** Image URL. */
+  src?: string;
+  /** Display name (first letter used as initials fallback). */
+  name?: string;
+  /** Alt text rendered on load error. */
+  alt?: string;
+  style?: Partial<AvatarStyle>;
+}
+
+// ── DatePicker ─────────────────────────────────────────────────────────
+
+/** Styling for date picker cells. */
+export interface DatePickerStyle {
+  /** Font size in px. @default 13 */
+  fontSize: number;
+  /** Font family. @default "system-ui, sans-serif" */
+  fontFamily: string;
+  /** Text color. @default "#333" */
+  color: string;
+  /** Background color. @default "#fff" */
+  backgroundColor: string;
+  /** Border color. @default "#d1d5db" */
+  borderColor: string;
+  /** Border width in px. @default 1 */
+  borderWidth: number;
+  /** Border radius in px. @default 4 */
+  borderRadius: number;
+}
+
+/** A date picker instruction (DOM overlay). */
+export interface DatePickerInstruction {
+  type: "datepicker";
+  value?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  min?: string;
+  max?: string;
+  style?: Partial<DatePickerStyle>;
+  _domHandlers?: {
+    onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+    onFocus?: (e: FocusEvent<HTMLInputElement>) => void;
+    onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
+    onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
+  };
+}
+
+// ── Dropdown ───────────────────────────────────────────────────────────
+
+/** Styling for dropdown cells. */
+/** CSS-like style for dropdown panel (popover/listbox). */
+export interface DropdownPanelStyle {
+  /** @default inherited from DropdownStyle.backgroundColor */
+  backgroundColor?: string;
+  /** @default inherited from DropdownStyle.borderColor */
+  borderColor?: string;
+  /** @default inherited from DropdownStyle.borderRadius */
+  borderRadius?: number;
+  /** CSS box-shadow shorthand. @default "0px 2px 8px rgba(0,0,0,0.15)" */
+  boxShadow?: string;
+  /** Inner padding in px. @default 4 */
+  padding?: number;
+  /** @default 100 */
+  minWidth?: number;
+}
+
+/** CSS-like style for dropdown option items. */
+export interface DropdownOptionStyle {
+  /** Item height in px. @default 30 */
+  height?: number;
+  /** Text color when selected. @default "#1d4ed8" */
+  selectedColor?: string;
+  /** Font weight when selected. @default "600" */
+  selectedFontWeight?: string;
+  /** Background on hover. @default "#f3f4f6" */
+  hoverBackgroundColor?: string;
+  /** Border radius on hover highlight. @default 3 */
+  hoverBorderRadius?: number;
+}
+
+/** Style for the checkmark indicator. */
+export interface DropdownCheckmarkStyle {
+  /** Checkmark character. @default "✓" */
+  content?: string;
+  /** @default "#3b82f6" */
+  color?: string;
+}
+
+export interface DropdownStyle {
+  // ── Trigger (root) — CSS 호환 ─────
+  /** Font size in px. @default 13 */
+  fontSize: number;
+  /** Font family. @default "system-ui, sans-serif" */
+  fontFamily: string;
+  /** Text color. @default "#333" */
+  color: string;
+  /** Background color. @default "#fff" */
+  backgroundColor: string;
+  /** Border color. @default "#d1d5db" */
+  borderColor: string;
+  /** Border width in px. @default 1 */
+  borderWidth: number;
+  /** Border radius in px. @default 4 */
+  borderRadius: number;
+  /** Trigger background when panel is open. @default "#f0f4ff" */
+  activeBackgroundColor: string;
+  /** Trigger border when panel is open. @default "#3b82f6" */
+  activeBorderColor: string;
+  /** Max visible items before scroll. @default 6 */
+  maxVisibleItems: number;
+
+  // ── Sub-element styles ─────
+  /** Panel (popover/listbox) style. */
+  panel: DropdownPanelStyle;
+  /** Option item style. */
+  option: DropdownOptionStyle;
+  /** Checkmark indicator style. */
+  checkmark: DropdownCheckmarkStyle;
+}
+
+/** A dropdown instruction (canvas-only button with dropdown arrow). */
+export interface DropdownInstruction {
+  type: "dropdown";
+  value?: string;
+  options: { value: string; label: string }[];
+  disabled?: boolean;
+  placeholder?: string;
+  style?: Partial<DropdownStyle>;
+  /** Called when the user selects an option from the dropdown panel. */
+  onChange?: (value: string) => void;
 }
 
 // ── Theme ──────────────────────────────────────────────────────────────

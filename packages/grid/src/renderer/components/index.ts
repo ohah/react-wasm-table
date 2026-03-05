@@ -20,6 +20,9 @@ import { inputCellRenderer } from "./input";
 import { iconCellRenderer } from "./icon";
 import { selectCellRenderer } from "./select";
 import { progressBarCellRenderer } from "./progressbar";
+import { avatarCellRenderer } from "./avatar";
+import { datepickerCellRenderer } from "./datepicker";
+import { dropdownCellRenderer } from "./dropdown";
 
 // Re-export types for public API
 export type { CellRenderContext, CellRenderer, InstructionLike } from "./types";
@@ -45,7 +48,7 @@ export class CellRendererRegistry {
 }
 
 /**
- * Create a CellRendererRegistry pre-loaded with the 21 built-in renderers.
+ * Create a CellRendererRegistry pre-loaded with the 24 built-in renderers.
  * Optional `userRenderers` are merged on top — same type overrides built-in.
  */
 export function createCellRendererRegistry(
@@ -73,6 +76,9 @@ export function createCellRendererRegistry(
   registry.register(iconCellRenderer);
   registry.register(selectCellRenderer);
   registry.register(progressBarCellRenderer);
+  registry.register(avatarCellRenderer);
+  registry.register(datepickerCellRenderer);
+  registry.register(dropdownCellRenderer);
   if (userRenderers) {
     for (const r of userRenderers) {
       registry.register(r);
@@ -103,3 +109,6 @@ export { inputCellRenderer } from "./input";
 export { iconCellRenderer } from "./icon";
 export { selectCellRenderer } from "./select";
 export { progressBarCellRenderer } from "./progressbar";
+export { avatarCellRenderer } from "./avatar";
+export { datepickerCellRenderer } from "./datepicker";
+export { dropdownCellRenderer } from "./dropdown";
