@@ -14,12 +14,7 @@ const columns = [
     header: "Text",
     size: 220,
     cell: (info) => (
-      <Text
-        value={info.getValue()}
-        color="#1a1a1a"
-        fontSize={13}
-        fontWeight="bold"
-      />
+      <Text value={info.getValue()} color="#1a1a1a" fontSize={13} fontWeight="bold" />
     ),
   }),
 ];
@@ -31,8 +26,17 @@ const columns = [
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td, createColumnHelper, Text,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  createColumnHelper,
+  Text,
 } from "@ohah/react-wasm-table";
 
 const helper = createColumnHelper<{ name: string }>();

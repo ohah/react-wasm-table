@@ -17,7 +17,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -213,7 +214,8 @@ export function CanvasInput() {
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Current Data</h2>
         <pre
           style={{
-            background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
+            background: "var(--demo-code-bg)",
+            color: "var(--demo-code-fg)",
             padding: 12,
             borderRadius: 6,
             fontSize: 12,

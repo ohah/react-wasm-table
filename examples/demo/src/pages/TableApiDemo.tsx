@@ -83,68 +83,76 @@ export function TableApiDemo() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
 
-  const columns = useMemo(() => [
-    helper.accessor("firstName", {
-      header: "First Name",
-      size: 140,
-      enableSorting: true,
-      enableResizing: true,
-      padding: [0, 8],
-    }),
-    helper.accessor("lastName", {
-      header: "Last Name",
-      size: 140,
-      enableSorting: true,
-      enableResizing: true,
-      padding: [0, 8],
-    }),
-    helper.accessor("age", {
-      header: "Age",
-      size: 80,
-      enableSorting: true,
-      enableResizing: true,
-      align: "right",
-      padding: [0, 8],
-      cell: (info) => <Text value={String(info.getValue())} fontWeight="bold" />,
-    }),
-    helper.accessor("department", {
-      header: "Department",
-      size: 140,
-      enableSorting: true,
-      enableResizing: true,
-      padding: [0, 8],
-      cell: (info) => (
-        <Badge value={info.getValue()} color={isDark ? "#e0e0e0" : "#333"} backgroundColor={isDark ? "#1e3a5f" : "#e3f2fd"} borderRadius={4} />
-      ),
-    }),
-    helper.accessor("status", {
-      header: "Status",
-      size: 100,
-      enableSorting: true,
-      enableResizing: true,
-      padding: [0, 8],
-      cell: (info) => {
-        const v = info.getValue();
-        const bg = v === "Active" ? "#4caf50" : v === "On Leave" ? "#ff9800" : "#9e9e9e";
-        return <Badge value={v} color="white" backgroundColor={bg} borderRadius={4} />;
-      },
-    }),
-    helper.accessor("salary", {
-      header: "Salary",
-      size: 120,
-      enableSorting: true,
-      enableResizing: true,
-      align: "right",
-      padding: [0, 8],
-      cell: (info) => (
-        <Text
-          value={`$${info.getValue().toLocaleString()}`}
-          fontWeight="bold"
-          color={info.getValue() > 100000 ? "#2e7d32" : (isDark ? "#e0e0e0" : "#333")}
-        />
-      ),
-    }),
-  ], [isDark]);
+  const columns = useMemo(
+    () => [
+      helper.accessor("firstName", {
+        header: "First Name",
+        size: 140,
+        enableSorting: true,
+        enableResizing: true,
+        padding: [0, 8],
+      }),
+      helper.accessor("lastName", {
+        header: "Last Name",
+        size: 140,
+        enableSorting: true,
+        enableResizing: true,
+        padding: [0, 8],
+      }),
+      helper.accessor("age", {
+        header: "Age",
+        size: 80,
+        enableSorting: true,
+        enableResizing: true,
+        align: "right",
+        padding: [0, 8],
+        cell: (info) => <Text value={String(info.getValue())} fontWeight="bold" />,
+      }),
+      helper.accessor("department", {
+        header: "Department",
+        size: 140,
+        enableSorting: true,
+        enableResizing: true,
+        padding: [0, 8],
+        cell: (info) => (
+          <Badge
+            value={info.getValue()}
+            color={isDark ? "#e0e0e0" : "#333"}
+            backgroundColor={isDark ? "#1e3a5f" : "#e3f2fd"}
+            borderRadius={4}
+          />
+        ),
+      }),
+      helper.accessor("status", {
+        header: "Status",
+        size: 100,
+        enableSorting: true,
+        enableResizing: true,
+        padding: [0, 8],
+        cell: (info) => {
+          const v = info.getValue();
+          const bg = v === "Active" ? "#4caf50" : v === "On Leave" ? "#ff9800" : "#9e9e9e";
+          return <Badge value={v} color="white" backgroundColor={bg} borderRadius={4} />;
+        },
+      }),
+      helper.accessor("salary", {
+        header: "Salary",
+        size: 120,
+        enableSorting: true,
+        enableResizing: true,
+        align: "right",
+        padding: [0, 8],
+        cell: (info) => (
+          <Text
+            value={`$${info.getValue().toLocaleString()}`}
+            fontWeight="bold"
+            color={info.getValue() > 100000 ? "#2e7d32" : isDark ? "#e0e0e0" : "#333"}
+          />
+        ),
+      }),
+    ],
+    [isDark],
+  );
 
   const table = useReactTable({
     data,
@@ -260,7 +268,6 @@ export function TableApiDemo() {
             ))}
         </Tbody>
       </Table>
-
     </>
   );
 }

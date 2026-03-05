@@ -15,15 +15,22 @@ const [globalFilter, setGlobalFilter] = useState("");
   onColumnFiltersChange={setColumnFilters}
   globalFilter={globalFilter}
   onGlobalFilterChange={setGlobalFilter}
-/>
+/>;
 ```
 
 ## Table API Code
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
   type ColumnFiltersState,
 } from "@ohah/react-wasm-table";
 
@@ -31,7 +38,9 @@ const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 const [globalFilter, setGlobalFilter] = useState("");
 
 const table = useReactTable({
-  data, columns, getCoreRowModel: getCoreRowModel(),
+  data,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
   state: { columnFilters, globalFilter },
   onColumnFiltersChange: setColumnFilters,
   onGlobalFilterChange: setGlobalFilter,
@@ -58,5 +67,5 @@ const table = useReactTable({
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

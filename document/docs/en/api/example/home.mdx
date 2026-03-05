@@ -6,9 +6,22 @@ import { Home } from "demo";
 
 ```tsx
 import {
-  Grid, createColumnHelper, Text, Badge, Tag, Chip, Flex, Stack,
-  ProgressBar, Sparkline, Rating, Color, Switch, Link,
-  type SortingState, type Theme,
+  Grid,
+  createColumnHelper,
+  Text,
+  Badge,
+  Tag,
+  Chip,
+  Flex,
+  Stack,
+  ProgressBar,
+  Sparkline,
+  Rating,
+  Color,
+  Switch,
+  Link,
+  type SortingState,
+  type Theme,
 } from "@ohah/react-wasm-table";
 
 const helper = createColumnHelper<Row>();
@@ -16,7 +29,9 @@ const helper = createColumnHelper<Row>();
 const columns = [
   // Switch — click to toggle
   helper.accessor("isActive", {
-    header: "Switch", size: 65, align: "center",
+    header: "Switch",
+    size: 65,
+    align: "center",
     cell: (info) => (
       <Switch
         checked={info.getValue()}
@@ -28,13 +43,16 @@ const columns = [
 
   // ProgressBar — drag to change value
   helper.accessor("score", {
-    header: "Score", size: 190,
+    header: "Score",
+    size: 190,
     cell: (info) => (
       <Stack direction="row" gap={6}>
         <ProgressBar
-          value={info.getValue()} max={100}
+          value={info.getValue()}
+          max={100}
           color={info.getValue() >= 80 ? "#4caf50" : "#ff9800"}
-          height={10} borderRadius={5}
+          height={10}
+          borderRadius={5}
           onChange={(v) => updateScore(info.row.index, v)}
         />
         <Text value={`${info.getValue()}%`} fontSize={11} />
@@ -44,10 +62,14 @@ const columns = [
 
   // Rating — click to cycle
   helper.accessor("rating", {
-    header: "Rating", size: 110,
+    header: "Rating",
+    size: 110,
     cell: (info) => (
       <Rating
-        value={info.getValue()} max={5} color="#f59e0b" size={15}
+        value={info.getValue()}
+        max={5}
+        color="#f59e0b"
+        size={15}
         onClick={() => cycleRating(info.row.index)}
       />
     ),
@@ -58,14 +80,22 @@ const columns = [
 
 // Dark / Light theme
 const theme: Partial<Theme> = {
-  borderColor: "#e5e7eb", borderWidth: 1, borderStyle: "solid",
-  headerBackground: "#f9fafb", headerColor: "#374151",
+  borderColor: "#e5e7eb",
+  borderWidth: 1,
+  borderStyle: "solid",
+  headerBackground: "#f9fafb",
+  headerColor: "#374151",
 };
 
 <Grid
-  data={data} columns={columns} width={1200} height={700}
-  sorting={sorting} onSortingChange={setSorting}
-  overflowY="scroll" overflowX="scroll"
+  data={data}
+  columns={columns}
+  width={1200}
+  height={700}
+  sorting={sorting}
+  onSortingChange={setSorting}
+  overflowY="scroll"
+  overflowX="scroll"
   theme={isDark ? darkTheme : lightTheme}
-/>
+/>;
 ```

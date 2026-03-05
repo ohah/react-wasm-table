@@ -114,8 +114,8 @@ const columns: GridColumnDef<Person>[] = [...];
 
 ## Key Files
 
-| File                                       | Purpose                                                 |
-| ------------------------------------------ | ------------------------------------------------------- |
+| File                                                   | Purpose                                                 |
+| ------------------------------------------------------ | ------------------------------------------------------- |
 | `packages/react-wasm-table/src/tanstack-types.ts`      | GridColumnDef, CellContext, HeaderContext, SortingState |
 | `packages/react-wasm-table/src/column-helper.ts`       | createColumnHelper factory                              |
 | `packages/react-wasm-table/src/resolve-columns.ts`     | GridColumnDef → ColumnProps 변환                        |

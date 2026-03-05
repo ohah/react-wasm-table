@@ -19,7 +19,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };

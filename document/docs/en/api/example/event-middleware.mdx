@@ -24,7 +24,7 @@ const middleware: EventMiddleware[] = [
   },
 ];
 
-<Grid data={data} columns={columns} eventMiddleware={middleware} />
+<Grid data={data} columns={columns} eventMiddleware={middleware} />;
 ```
 
 ## Table API Code
@@ -38,8 +38,11 @@ const middleware: EventMiddleware[] = [
 ];
 
 const table = useReactTable({
-  data, columns, getCoreRowModel: getCoreRowModel(),
-  state: { sorting }, onSortingChange: setSorting,
+  data,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  state: { sorting },
+  onSortingChange: setSorting,
 });
 
 <Table table={table} width={560} height={480} eventMiddleware={middleware}>
@@ -63,5 +66,5 @@ const table = useReactTable({
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

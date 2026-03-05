@@ -12,8 +12,12 @@ import { TouchEventsDemo } from "demo";
     console.log(e.hitTest, e.touch, e.touchCount);
     e.preventDefault(); // blocks scroll + tap
   }}
-  onTouchMove={(e) => { /* e.touch.contentX, e.touch.contentY */ }}
-  onTouchEnd={(e) => { /* e.touchCount */ }}
+  onTouchMove={(e) => {
+    /* e.touch.contentX, e.touch.contentY */
+  }}
+  onTouchEnd={(e) => {
+    /* e.touchCount */
+  }}
 />
 ```
 
@@ -21,8 +25,15 @@ import { TouchEventsDemo } from "demo";
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
   type GridTouchEvent,
 } from "@ohah/react-wasm-table";
 
@@ -61,5 +72,5 @@ const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() 
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

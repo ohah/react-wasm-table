@@ -61,9 +61,7 @@ const columns = [
   helper.accessor("name", { header: "Name" }),
   helper.accessor("status", {
     header: "Status",
-    cell: ({ getValue }) => (
-      <Badge value={getValue()} backgroundColor="#d1fae5" color="#065f46" />
-    ),
+    cell: ({ getValue }) => <Badge value={getValue()} backgroundColor="#d1fae5" color="#065f46" />,
   }),
   helper.accessor("rating", {
     header: "Rating",
@@ -74,43 +72,43 @@ const columns = [
 
 ## Architecture
 
-| Layer               | Role                                                |
-| ------------------- | --------------------------------------------------- |
-| React Headless API  | Configuration collection (`Grid`, `Column`, hooks)  |
-| JS Adapter          | Column registry, data ingestion, event management   |
-| WASM Core (Rust)    | Columnar store, Taffy layout, virtual scroll, sort  |
-| Canvas Renderer     | Cell drawing, header rendering, grid lines, hit-test|
+| Layer              | Role                                                 |
+| ------------------ | ---------------------------------------------------- |
+| React Headless API | Configuration collection (`Grid`, `Column`, hooks)   |
+| JS Adapter         | Column registry, data ingestion, event management    |
+| WASM Core (Rust)   | Columnar store, Taffy layout, virtual scroll, sort   |
+| Canvas Renderer    | Cell drawing, header rendering, grid lines, hit-test |
 
 ## Canvas Components
 
-| Component     | Description                          |
-| ------------- | ------------------------------------ |
-| Text          | Single-line text                     |
-| Badge         | Pill/chip with background            |
-| Flex          | Taffy-compatible flex container      |
-| Box           | Container with padding/margin/border |
-| Stack         | Row or column layout with gap        |
-| Sparkline     | Inline mini line/area chart          |
-| Color         | Centered square color swatch         |
-| Tag           | Outlined text with border            |
-| Rating        | Star rating (filled/empty)           |
-| Chip          | Filled pill with optional close      |
-| Link          | Clickable text with underline        |
-| Avatar        | Circular avatar (image or initials)  |
-| DatePicker    | Date input with DOM overlay          |
-| Dropdown      | Select input with DOM overlay        |
+| Component  | Description                          |
+| ---------- | ------------------------------------ |
+| Text       | Single-line text                     |
+| Badge      | Pill/chip with background            |
+| Flex       | Taffy-compatible flex container      |
+| Box        | Container with padding/margin/border |
+| Stack      | Row or column layout with gap        |
+| Sparkline  | Inline mini line/area chart          |
+| Color      | Centered square color swatch         |
+| Tag        | Outlined text with border            |
+| Rating     | Star rating (filled/empty)           |
+| Chip       | Filled pill with optional close      |
+| Link       | Clickable text with underline        |
+| Avatar     | Circular avatar (image or initials)  |
+| DatePicker | Date input with DOM overlay          |
+| Dropdown   | Select input with DOM overlay        |
 
 All components support event handlers: `onClick`, `onDoubleClick`, `onMouseDown`, `onMouseUp`, `onMouseEnter`, `onMouseLeave`.
 
 ## Hooks
 
-| Hook             | Description                              |
-| ---------------- | ---------------------------------------- |
-| `useReactTable`  | TanStack-compatible table instance       |
-| `useGridTable`   | Grid-specific table instance             |
-| `useSorting`     | Column sorting state                     |
-| `useFiltering`   | Column/global filtering                  |
-| `useSelection`   | Cell/row selection                       |
+| Hook            | Description                        |
+| --------------- | ---------------------------------- |
+| `useReactTable` | TanStack-compatible table instance |
+| `useGridTable`  | Grid-specific table instance       |
+| `useSorting`    | Column sorting state               |
+| `useFiltering`  | Column/global filtering            |
+| `useSelection`  | Cell/row selection                 |
 
 ## Row Models
 

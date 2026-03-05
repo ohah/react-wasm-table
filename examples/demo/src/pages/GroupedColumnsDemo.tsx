@@ -160,7 +160,6 @@ export function GroupedColumnsDemo() {
           />
         )}
       </div>
-
     </div>
   );
 }

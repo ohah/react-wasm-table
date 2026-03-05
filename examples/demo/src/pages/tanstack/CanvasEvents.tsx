@@ -325,7 +325,8 @@ export function TanStackCanvasEvents() {
                 padding: "2px 8px",
                 border: "1px solid var(--demo-border-2)",
                 borderRadius: 4,
-                background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+                background: "var(--demo-card-bg)",
+                color: "var(--demo-panel-fg)",
                 cursor: "pointer",
                 marginLeft: 8,
               }}

@@ -28,7 +28,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -117,7 +118,13 @@ export function CanvasSparkline() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Table (TanStack API)</h2>
-        <Table table={table} width={360} height={500} rowHeight={44} theme={isDark ? DARK_THEME : LIGHT_THEME}>
+        <Table
+          table={table}
+          width={360}
+          height={500}
+          rowHeight={44}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+        >
           <Thead>
             {table.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>

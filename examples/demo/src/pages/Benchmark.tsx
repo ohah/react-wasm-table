@@ -23,8 +23,7 @@ function useDarkMode(): boolean {
   );
   useEffect(() => {
     const el = document.documentElement;
-    const check = () =>
-      setDark(el.classList.contains("rp-dark") || el.classList.contains("dark"));
+    const check = () => setDark(el.classList.contains("rp-dark") || el.classList.contains("dark"));
     check();
     const obs = new MutationObserver(check);
     obs.observe(el, { attributes: true, attributeFilter: ["class"] });
@@ -413,13 +412,7 @@ export function Benchmark() {
 
 // ── Helpers ──
 
-function PhaseIndicator({
-  variant,
-  text,
-}: {
-  variant: "wasm" | "tanstack";
-  text: string;
-}) {
+function PhaseIndicator({ variant, text }: { variant: "wasm" | "tanstack"; text: string }) {
   return (
     <div
       style={{
@@ -610,7 +603,14 @@ function MeasureWasmGrid({
   }, [startTime, onComplete]);
 
   return (
-    <div style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden", height }}>
+    <div
+      style={{
+        border: "1px solid var(--demo-border)",
+        borderRadius: 8,
+        overflow: "hidden",
+        height,
+      }}
+    >
       <Grid
         data={data as Record<string, unknown>[]}
         width={width}
@@ -897,9 +897,23 @@ function InteractiveBench({
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
         {enableWasm && (
           <section>
-            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600, color: "var(--demo-panel-fg)" }}>react-wasm-table</h3>
+            <h3
+              style={{
+                fontSize: 14,
+                margin: "0 0 8px",
+                fontWeight: 600,
+                color: "var(--demo-panel-fg)",
+              }}
+            >
+              react-wasm-table
+            </h3>
             <div
-              style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden", height }}
+              style={{
+                border: "1px solid var(--demo-border)",
+                borderRadius: 8,
+                overflow: "hidden",
+                height,
+              }}
             >
               <Grid
                 data={data as Record<string, unknown>[]}
@@ -919,7 +933,14 @@ function InteractiveBench({
         )}
         {enableTanStack && (
           <section>
-            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600, color: "var(--demo-panel-fg)" }}>
+            <h3
+              style={{
+                fontSize: 14,
+                margin: "0 0 8px",
+                fontWeight: 600,
+                color: "var(--demo-panel-fg)",
+              }}
+            >
               @tanstack/react-table
             </h3>
             <TanStackVirtualTable
@@ -1074,15 +1095,20 @@ function SelectDropdown({
                 e.currentTarget.style.backgroundColor = "var(--demo-dropdown-hover-bg)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = opt.value === value ? "var(--demo-dropdown-selected-bg)" : "";
+                e.currentTarget.style.backgroundColor =
+                  opt.value === value ? "var(--demo-dropdown-selected-bg)" : "";
               }}
               style={{
                 padding: "8px 12px",
                 fontSize: 13,
                 cursor: "pointer",
-                backgroundColor: opt.value === value ? "var(--demo-dropdown-selected-bg)" : undefined,
+                backgroundColor:
+                  opt.value === value ? "var(--demo-dropdown-selected-bg)" : undefined,
                 fontWeight: opt.value === value ? 600 : 400,
-                color: opt.value === value ? "var(--demo-dropdown-selected-fg)" : "var(--demo-dropdown-fg)",
+                color:
+                  opt.value === value
+                    ? "var(--demo-dropdown-selected-fg)"
+                    : "var(--demo-dropdown-fg)",
               }}
             >
               {opt.label}
@@ -1206,7 +1232,9 @@ function CheckDropdown({
               >
                 {item.checked ? "✓" : ""}
               </span>
-              <span style={{ fontWeight: item.checked ? 600 : 400, color: "var(--demo-dropdown-fg)" }}>
+              <span
+                style={{ fontWeight: item.checked ? 600 : 400, color: "var(--demo-dropdown-fg)" }}
+              >
                 {item.label}
               </span>
             </div>

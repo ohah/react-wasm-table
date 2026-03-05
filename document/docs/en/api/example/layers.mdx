@@ -38,20 +38,33 @@ const watermark: GridLayer = {
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td,
-  headerLayer, dataLayer, gridLinesLayer, selectionLayer,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  headerLayer,
+  dataLayer,
+  gridLinesLayer,
+  selectionLayer,
   type GridLayer,
 } from "@ohah/react-wasm-table";
 
-const activeLayers: GridLayer[] = useMemo(() => [
-  headerLayer(),
-  dataLayer(),
-  gridLinesLayer(),
-  rowHighlightLayer(2),   // custom layer
-  selectionLayer(),
-  watermarkLayer(),        // custom layer
-], []);
+const activeLayers: GridLayer[] = useMemo(
+  () => [
+    headerLayer(),
+    dataLayer(),
+    gridLinesLayer(),
+    rowHighlightLayer(2), // custom layer
+    selectionLayer(),
+    watermarkLayer(), // custom layer
+  ],
+  [],
+);
 
 const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
 
@@ -83,5 +96,5 @@ const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() 
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

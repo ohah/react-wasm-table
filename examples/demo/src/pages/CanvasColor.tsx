@@ -10,7 +10,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -113,7 +114,14 @@ export function CanvasColor() {
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
-          <Grid data={data} columns={columns} width={280} height={460} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+          <Grid
+            data={data}
+            columns={columns}
+            width={280}
+            height={460}
+            rowHeight={40}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
+          />
         </section>
 
         <section style={{ minWidth: 260, maxWidth: 360 }}>
@@ -141,7 +149,9 @@ export function CanvasColor() {
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "var(--demo-muted-5)", textAlign: "center" }}>No events yet</div>
+              <div style={{ padding: 16, color: "var(--demo-muted-5)", textAlign: "center" }}>
+                No events yet
+              </div>
             )}
             {logs.map((log) => (
               <div

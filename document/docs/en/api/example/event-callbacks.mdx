@@ -12,17 +12,39 @@ import { EventCallbacks } from "demo";
   onSortingChange={setSorting}
   selection={selection}
   onSelectionChange={setSelection}
-  onCellClick={(e) => { /* e.cell.row, e.cell.col; e.preventDefault() to block */ }}
-  onCellDoubleClick={(e) => { /* e.preventDefault() to block */ }}
-  onHeaderClick={(e) => { /* e.colIndex */ }}
-  onKeyDown={(e) => { /* e.key; e.preventDefault() to block */ }}
-  onCellMouseDown={(e) => { /* e.shiftKey, e.cell */ }}
-  onCellMouseMove={(e) => { /* e.viewportX, e.viewportY */ }}
-  onCellMouseUp={() => { /* drag end */ }}
-  onScroll={(e) => { /* e.deltaY, e.deltaX; e.preventDefault() to block */ }}
-  onCanvasEvent={(e) => { /* e.type, e.hitTest */ }}
-  onBeforeSortChange={(next) => { /* return false to block */ }}
-  onBeforeSelectionChange={(next) => { /* return false to block */ }}
+  onCellClick={(e) => {
+    /* e.cell.row, e.cell.col; e.preventDefault() to block */
+  }}
+  onCellDoubleClick={(e) => {
+    /* e.preventDefault() to block */
+  }}
+  onHeaderClick={(e) => {
+    /* e.colIndex */
+  }}
+  onKeyDown={(e) => {
+    /* e.key; e.preventDefault() to block */
+  }}
+  onCellMouseDown={(e) => {
+    /* e.shiftKey, e.cell */
+  }}
+  onCellMouseMove={(e) => {
+    /* e.viewportX, e.viewportY */
+  }}
+  onCellMouseUp={() => {
+    /* drag end */
+  }}
+  onScroll={(e) => {
+    /* e.deltaY, e.deltaX; e.preventDefault() to block */
+  }}
+  onCanvasEvent={(e) => {
+    /* e.type, e.hitTest */
+  }}
+  onBeforeSortChange={(next) => {
+    /* return false to block */
+  }}
+  onBeforeSelectionChange={(next) => {
+    /* return false to block */
+  }}
 />
 ```
 
@@ -30,8 +52,11 @@ import { EventCallbacks } from "demo";
 
 ```tsx
 const table = useReactTable({
-  data, columns, getCoreRowModel: getCoreRowModel(),
-  state: { sorting }, onSortingChange: setSorting,
+  data,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  state: { sorting },
+  onSortingChange: setSorting,
 });
 
 <Table
@@ -42,17 +67,39 @@ const table = useReactTable({
   onSortingChange={setSorting}
   selection={selection}
   onSelectionChange={setSelection}
-  onCellClick={(e) => { /* e.cell.row, e.cell.col */ }}
-  onCellDoubleClick={(e) => { /* e.preventDefault() to block */ }}
-  onHeaderClick={(e) => { /* e.colIndex */ }}
-  onKeyDown={(e) => { /* e.key */ }}
-  onCellMouseDown={(e) => { /* e.shiftKey, e.cell */ }}
-  onCellMouseMove={(e) => { /* e.viewportX, e.viewportY */ }}
-  onCellMouseUp={() => { /* drag end */ }}
-  onScroll={(e) => { /* e.deltaY, e.deltaX */ }}
-  onCanvasEvent={(e) => { /* e.type, e.hitTest */ }}
-  onBeforeSortChange={(next) => { /* return false to block */ }}
-  onBeforeSelectionChange={(next) => { /* return false to block */ }}
+  onCellClick={(e) => {
+    /* e.cell.row, e.cell.col */
+  }}
+  onCellDoubleClick={(e) => {
+    /* e.preventDefault() to block */
+  }}
+  onHeaderClick={(e) => {
+    /* e.colIndex */
+  }}
+  onKeyDown={(e) => {
+    /* e.key */
+  }}
+  onCellMouseDown={(e) => {
+    /* e.shiftKey, e.cell */
+  }}
+  onCellMouseMove={(e) => {
+    /* e.viewportX, e.viewportY */
+  }}
+  onCellMouseUp={() => {
+    /* drag end */
+  }}
+  onScroll={(e) => {
+    /* e.deltaY, e.deltaX */
+  }}
+  onCanvasEvent={(e) => {
+    /* e.type, e.hitTest */
+  }}
+  onBeforeSortChange={(next) => {
+    /* return false to block */
+  }}
+  onBeforeSelectionChange={(next) => {
+    /* return false to block */
+  }}
 >
   <Thead>
     {table.getHeaderGroups().map((hg) => (
@@ -74,5 +121,5 @@ const table = useReactTable({
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

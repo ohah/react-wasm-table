@@ -22,15 +22,22 @@ const columns = [
   columns={columns}
   data={data}
   height={520}
-/>
+/>;
 ```
 
 ## Table API Code
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
 } from "@ohah/react-wasm-table";
 
 const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
@@ -64,5 +71,5 @@ const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() 
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

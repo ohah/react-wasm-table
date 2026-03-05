@@ -119,7 +119,14 @@ export function CanvasBox() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
-        <Grid data={data} columns={columns} width={900} height={500} rowHeight={48} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+        <Grid
+          data={data}
+          columns={columns}
+          width={900}
+          height={500}
+          rowHeight={48}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+        />
       </section>
     </>
   );

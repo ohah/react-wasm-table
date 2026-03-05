@@ -120,7 +120,11 @@ export function TanStackUseSorting() {
               <select
                 value={maxColumns}
                 onChange={(e) => setMaxColumns(Number(e.target.value))}
-                style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid var(--demo-border-2)" }}
+                style={{
+                  padding: "2px 8px",
+                  borderRadius: 4,
+                  border: "1px solid var(--demo-border-2)",
+                }}
               >
                 <option value={0}>No limit</option>
                 <option value={1}>Max 1</option>
@@ -136,7 +140,8 @@ export function TanStackUseSorting() {
                 padding: "4px 12px",
                 borderRadius: 4,
                 border: "1px solid var(--demo-border-2)",
-                background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+                background: "var(--demo-card-bg)",
+                color: "var(--demo-panel-fg)",
                 cursor: "pointer",
                 fontSize: 13,
               }}
@@ -231,7 +236,13 @@ export function TanStackUseSorting() {
       </p>
       <section style={{ marginBottom: 16 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-        <Table table={tableUncontrolled} width={640} height={440} theme={isDark ? DARK_THEME : LIGHT_THEME} overflowY="scroll">
+        <Table
+          table={tableUncontrolled}
+          width={640}
+          height={440}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+          overflowY="scroll"
+        >
           <Thead>
             {tableUncontrolled.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>

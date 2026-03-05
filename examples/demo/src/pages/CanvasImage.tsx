@@ -48,7 +48,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -222,7 +223,14 @@ export function CanvasImage() {
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 16, marginBottom: 8 }}>Image with Controls</h2>
-          <Grid data={data} columns={columns} width={620} height={460} rowHeight={50} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+          <Grid
+            data={data}
+            columns={columns}
+            width={620}
+            height={460}
+            rowHeight={50}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
+          />
         </section>
 
         <section style={{ marginBottom: 32 }}>
@@ -230,7 +238,14 @@ export function CanvasImage() {
           <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
             When an image fails to load, the <code>alt</code> text is rendered as placeholder.
           </p>
-          <Grid data={data} columns={errorColumns} width={340} height={460} rowHeight={50} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+          <Grid
+            data={data}
+            columns={errorColumns}
+            width={340}
+            height={460}
+            rowHeight={50}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
+          />
         </section>
       </div>
 

@@ -215,7 +215,13 @@ export function TanStackMiddleware() {
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-            <Table table={table} width={560} height={480} theme={isDark ? DARK_THEME : LIGHT_THEME} eventMiddleware={middleware}>
+            <Table
+              table={table}
+              width={560}
+              height={480}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
+              eventMiddleware={middleware}
+            >
               <Thead>
                 {table.getHeaderGroups().map((hg) => (
                   <Tr key={hg.id}>

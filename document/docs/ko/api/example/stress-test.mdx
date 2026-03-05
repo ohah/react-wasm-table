@@ -26,9 +26,18 @@ const [sorting, setSorting] = useState<SortingState>([]);
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td,
-  createColumnHelper, Text, Badge,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  createColumnHelper,
+  Text,
+  Badge,
   type SortingState,
 } from "@ohah/react-wasm-table";
 
@@ -36,17 +45,14 @@ const data = useMemo(() => generateEmployees(1_000_000), []);
 const [sorting, setSorting] = useState<SortingState>([]);
 
 const table = useReactTable({
-  data, columns, getCoreRowModel: getCoreRowModel(),
-  state: { sorting }, onSortingChange: setSorting,
+  data,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  state: { sorting },
+  onSortingChange: setSorting,
 });
 
-<Table
-  table={table}
-  width={size.width}
-  height={size.height}
-  overflowY="scroll"
-  overflowX="scroll"
->
+<Table table={table} width={size.width} height={size.height} overflowY="scroll" overflowX="scroll">
   <Thead>
     {table.getHeaderGroups().map((hg) => (
       <Tr key={hg.id}>
@@ -67,5 +73,5 @@ const table = useReactTable({
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

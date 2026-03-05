@@ -79,7 +79,8 @@ const cardStyle: React.CSSProperties = {
   border: "1px solid var(--demo-border)",
   borderRadius: 6,
   padding: 16,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
 };
 
 // ── Component ─────────────────────────────────────────────────────
@@ -241,7 +242,11 @@ export function FacetedDemo() {
                     <tr>
                       <td
                         colSpan={3}
-                        style={{ padding: "4px 8px", color: "var(--demo-muted-5)", fontStyle: "italic" }}
+                        style={{
+                          padding: "4px 8px",
+                          color: "var(--demo-muted-5)",
+                          fontStyle: "italic",
+                        }}
                       >
                         ... and {uniqueValues.size - 20} more
                       </td>
@@ -253,7 +258,6 @@ export function FacetedDemo() {
           </div>
         ))}
       </div>
-
     </>
   );
 }

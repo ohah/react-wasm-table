@@ -15,7 +15,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -200,7 +201,9 @@ export function CanvasCheckbox() {
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "var(--demo-muted-5)", textAlign: "center" }}>No events yet</div>
+              <div style={{ padding: 16, color: "var(--demo-muted-5)", textAlign: "center" }}>
+                No events yet
+              </div>
             )}
             {logs.map((log) => (
               <div

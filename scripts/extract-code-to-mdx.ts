@@ -15,31 +15,31 @@ const MDX_KO_DIR = path.resolve("document/docs/ko/api/example");
 function findDemoFile(mdxName: string): string | null {
   // MDX name conventions: canvas-badge.mdx → CanvasBadge.tsx, table-api.mdx → TableApiDemo.tsx
   const mappings: Record<string, string> = {
-    "home": "Home.tsx",
+    home: "Home.tsx",
     "table-api": "TableApiDemo.tsx",
     "tanstack-api": "TanStackApi.tsx",
-    "selection": "Selection.tsx",
+    selection: "Selection.tsx",
     "use-sorting": "UseSortingDemo.tsx",
     "use-filtering": "UseFilteringDemo.tsx",
     "use-selection": "UseSelectionDemo.tsx",
     "column-features": "ColumnFeatures.tsx",
     "column-pinning": "ColumnPinningDemo.tsx",
     "column-dnd-row-pinning": "ColumnDnDAndRowPinningDemo.tsx",
-    "expanding": "ExpandingDemo.tsx",
+    expanding: "ExpandingDemo.tsx",
     "event-callbacks": "EventCallbacks.tsx",
     "event-middleware": "MiddlewareDemo.tsx",
-    "clipboard": "ClipboardDemo.tsx",
-    "export": "ExportDemo.tsx",
+    clipboard: "ClipboardDemo.tsx",
+    export: "ExportDemo.tsx",
     "layout-cache": "LayoutCacheDemo.tsx",
-    "layers": "LayerDemo.tsx",
+    layers: "LayerDemo.tsx",
     "on-after-draw": "OnAfterDrawDemo.tsx",
     "custom-renderer": "CustomRendererDemo.tsx",
     "touch-events": "TouchEventsDemo.tsx",
-    "composition": "HookCompositionDemo.tsx",
+    composition: "HookCompositionDemo.tsx",
     "hooks-overview": "HooksOverview.tsx",
     "stress-test": "StressTest.tsx",
-    "streaming": "StreamingDemo.tsx",
-    "scrollbar": "Scrollbar.tsx",
+    streaming: "StreamingDemo.tsx",
+    scrollbar: "Scrollbar.tsx",
     "adapter-di": "AdapterDIDemo.tsx",
     "canvas-text": "CanvasText.tsx",
     "canvas-badge": "CanvasBadge.tsx",
@@ -61,18 +61,18 @@ function findDemoFile(mdxName: string): string | null {
     "flex-direction": "FlexDirection.tsx",
     "flex-grow": "FlexGrow.tsx",
     "flex-wrap": "FlexWrap.tsx",
-    "gap": "Gap.tsx",
+    gap: "Gap.tsx",
     "grid-template": "GridTemplate.tsx",
     "justify-content": "JustifyContent.tsx",
-    "margin": "Margin.tsx",
-    "overflow": "Overflow.tsx",
-    "padding": "Padding.tsx",
-    "position": "Position.tsx",
+    margin: "Margin.tsx",
+    overflow: "Overflow.tsx",
+    padding: "Padding.tsx",
+    position: "Position.tsx",
     "border-style": "BorderStyleDemo.tsx",
-    "editing": "EditingDemo.tsx",
-    "pagination": "PaginationDemo.tsx",
-    "grouping": "GroupingDemo.tsx",
-    "faceted": "FacetedDemo.tsx",
+    editing: "EditingDemo.tsx",
+    pagination: "PaginationDemo.tsx",
+    grouping: "GroupingDemo.tsx",
+    faceted: "FacetedDemo.tsx",
     "grouped-columns": "GroupedColumnsDemo.tsx",
   };
   return mappings[mdxName] ?? null;
@@ -95,7 +95,7 @@ function extractCodeFromDemo(filePath: string): string | null {
   if (preMatches.length > 0) {
     // Use the longest match (most likely the actual code example)
     const longest = preMatches.reduce((a, b) =>
-      (a[1]?.length ?? 0) >= (b[1]?.length ?? 0) ? a : b
+      (a[1]?.length ?? 0) >= (b[1]?.length ?? 0) ? a : b,
     );
     const code = longest[1]?.trim();
     if (code && code.length > 30) return code;
@@ -105,7 +105,7 @@ function extractCodeFromDemo(filePath: string): string | null {
   const shortPreMatches = [...content.matchAll(/<pre[\s\S]*?>\s*\{`([\s\S]*?)`\}\s*<\/pre>/g)];
   if (shortPreMatches.length > 0) {
     const longest = shortPreMatches.reduce((a, b) =>
-      (a[1]?.length ?? 0) >= (b[1]?.length ?? 0) ? a : b
+      (a[1]?.length ?? 0) >= (b[1]?.length ?? 0) ? a : b,
     );
     const code = longest[1]?.trim();
     if (code && code.length > 20) {

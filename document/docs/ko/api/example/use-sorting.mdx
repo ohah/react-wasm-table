@@ -15,23 +15,33 @@ const [sorting, setSorting] = useState<SortingState>([]);
   onBeforeSortChange={(next) => {
     if (next.length > maxColumns) return false;
   }}
-/>
+/>;
 ```
 
 ## Table API Code
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
   type SortingState,
 } from "@ohah/react-wasm-table";
 
 const [sorting, setSorting] = useState<SortingState>([]);
 
 const table = useReactTable({
-  data, columns, getCoreRowModel: getCoreRowModel(),
-  state: { sorting }, onSortingChange: setSorting,
+  data,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  state: { sorting },
+  onSortingChange: setSorting,
 });
 
 <Table
@@ -63,5 +73,5 @@ const table = useReactTable({
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

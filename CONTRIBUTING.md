@@ -40,16 +40,16 @@ react-wasm-table/
 
 ## Scripts
 
-| Command              | Description                      |
-| -------------------- | -------------------------------- |
-| `bun run build`      | Build WASM + library             |
-| `bun run dev:demo`   | Start demo dev server            |
-| `bun run dev:docs`   | Start docs dev server            |
-| `bun run test`       | Run JS/TS tests                  |
-| `bun run test:rust`  | Run Rust tests                   |
-| `bun run test:e2e`   | Run Playwright E2E tests         |
-| `bun run lint:all`   | Run oxlint + clippy              |
-| `bun run format:all` | Format with oxfmt + cargo fmt    |
+| Command              | Description                   |
+| -------------------- | ----------------------------- |
+| `bun run build`      | Build WASM + library          |
+| `bun run dev:demo`   | Start demo dev server         |
+| `bun run dev:docs`   | Start docs dev server         |
+| `bun run test`       | Run JS/TS tests               |
+| `bun run test:rust`  | Run Rust tests                |
+| `bun run test:e2e`   | Run Playwright E2E tests      |
+| `bun run lint:all`   | Run oxlint + clippy           |
+| `bun run format:all` | Format with oxfmt + cargo fmt |
 
 ## Code Quality
 

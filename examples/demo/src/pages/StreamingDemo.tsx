@@ -400,7 +400,9 @@ export function StreamingDemo() {
       {/* Grid */}
       <div ref={containerRef} style={{ width: "100%" }}>
         {size.width > 0 && (
-          <div style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden" }}>
+          <div
+            style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden" }}
+          >
             <Grid
               data={data as Record<string, unknown>[]}
               columns={columns}
@@ -441,7 +443,6 @@ export function StreamingDemo() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

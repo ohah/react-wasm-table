@@ -48,8 +48,11 @@ helper.accessor("salary", {
 });
 
 const table = useReactTable({
-  data, columns, getCoreRowModel: getCoreRowModel(),
-  state: { sorting }, onSortingChange: setSorting,
+  data,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  state: { sorting },
+  onSortingChange: setSorting,
 });
 
 <Table table={table} width={560} height={480}>
@@ -73,5 +76,5 @@ const table = useReactTable({
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

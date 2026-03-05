@@ -80,7 +80,8 @@ const btnBase: React.CSSProperties = {
   padding: "3px 8px",
   borderRadius: 4,
   border: "1px solid var(--demo-border-2)",
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 11,
 };
@@ -135,7 +136,14 @@ export function TanStackColumnPinning() {
         reorder columns. Pinned columns stay fixed while scrolling horizontally. The grid uses 7
         columns (930px total) in a 700px viewport to ensure horizontal scrolling.
       </p>
-      <div style={{ marginBottom: 16, padding: 12, background: "var(--demo-panel-bg)", borderRadius: 6 }}>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: 12,
+          background: "var(--demo-panel-bg)",
+          borderRadius: 6,
+        }}
+      >
         <strong style={{ fontSize: 13 }}>Pin Controls</strong>
         <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
           {ALL_COLUMN_IDS.map((colId) => {
@@ -206,7 +214,8 @@ export function TanStackColumnPinning() {
       </section>
       <pre
         style={{
-          background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
+          background: "var(--demo-code-bg)",
+          color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 11,

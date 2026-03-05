@@ -304,7 +304,9 @@ export function EventCallbacks() {
               Clear
             </button>
           </div>
-          {log.length === 0 && <div style={{ color: "var(--demo-muted)" }}>Click cells or headers...</div>}
+          {log.length === 0 && (
+            <div style={{ color: "var(--demo-muted)" }}>Click cells or headers...</div>
+          )}
           {log.map((entry) => (
             <div key={entry.id} style={{ marginBottom: 2 }}>
               <span style={{ color: entry.blocked ? "#f44" : "#4ec9b0" }}>
