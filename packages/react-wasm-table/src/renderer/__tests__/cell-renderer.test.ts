@@ -59,8 +59,11 @@ function buildBuf(cells: [number, number, number, number, number, number][]): Fl
   return buf;
 }
 
+const mockCanvasEl = {} as HTMLCanvasElement;
+
 function mockCtx() {
   return {
+    canvas: mockCanvasEl,
     font: "",
     fillStyle: "",
     strokeStyle: "",
@@ -1537,14 +1540,14 @@ describe("progressBarCellRenderer", () => {
     const context = makeContext();
     progressBarCellRenderer.draw({ type: "progressbar", value: 50 }, context);
     // Buffer has row=0, col=0
-    const geo = getBarGeometry("0,0");
+    const geo = getBarGeometry("0,0", mockCanvasEl);
     expect(geo).toBeDefined();
     expect(geo!.barX).toBeGreaterThan(0);
     expect(geo!.barW).toBeGreaterThan(0);
   });
 
   it("getBarGeometry returns undefined for uncached key", () => {
-    expect(getBarGeometry("999,999")).toBeUndefined();
+    expect(getBarGeometry("999,999", mockCanvasEl)).toBeUndefined();
   });
 });
 

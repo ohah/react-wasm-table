@@ -26,12 +26,21 @@ interface AnimState {
   timingFunction: TimingFunction;
 }
 
-/** Module-level animation state map. Key = "row:col". */
-const animationMap = new Map<string, AnimState>();
+/** Per-canvas animation state map. Outer key = canvas element, inner key = "row:col". */
+const animationMaps = new WeakMap<HTMLCanvasElement, Map<string, AnimState>>();
+
+function getAnimationMap(canvas: HTMLCanvasElement): Map<string, AnimState> {
+  let map = animationMaps.get(canvas);
+  if (!map) {
+    map = new Map();
+    animationMaps.set(canvas, map);
+  }
+  return map;
+}
 
 /** @internal Exposed for testing only. */
-export function _getAnimationMap(): Map<string, AnimState> {
-  return animationMap;
+export function _getAnimationMap(canvas: HTMLCanvasElement): Map<string, AnimState> {
+  return getAnimationMap(canvas);
 }
 
 export const switchCellRenderer: CellRenderer<SwitchInstruction> = {
@@ -70,6 +79,7 @@ export const switchCellRenderer: CellRenderer<SwitchInstruction> = {
     let progress: number;
 
     const canAnimate = duration > 0 && invalidate !== undefined;
+    const animationMap = getAnimationMap(ctx.canvas);
     const existing = animationMap.get(key);
 
     if (!existing) {

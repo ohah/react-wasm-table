@@ -13,12 +13,30 @@ import {
   readCellCol,
 } from "../../adapter/layout-reader";
 
-/** Cached bar geometry per cell, keyed by "row,col". */
-const barGeometryCache = new Map<string, { barX: number; barW: number }>();
+/** Per-canvas bar geometry cache. Outer key = canvas element, inner key = "row,col". */
+const barGeometryCaches = new WeakMap<
+  HTMLCanvasElement,
+  Map<string, { barX: number; barW: number }>
+>();
 
-/** Retrieve cached bar geometry for a cell. */
-export function getBarGeometry(key: string): { barX: number; barW: number } | undefined {
-  return barGeometryCache.get(key);
+function getBarGeometryCache(
+  canvas: HTMLCanvasElement,
+): Map<string, { barX: number; barW: number }> {
+  let map = barGeometryCaches.get(canvas);
+  if (!map) {
+    map = new Map();
+    barGeometryCaches.set(canvas, map);
+  }
+  return map;
+}
+
+/** Retrieve cached bar geometry for a cell on the given canvas. */
+export function getBarGeometry(
+  key: string,
+  canvas?: HTMLCanvasElement | null,
+): { barX: number; barW: number } | undefined {
+  if (!canvas) return undefined;
+  return barGeometryCaches.get(canvas)?.get(key);
 }
 
 export const progressBarCellRenderer: CellRenderer<ProgressBarInstruction> = {
@@ -62,9 +80,9 @@ export const progressBarCellRenderer: CellRenderer<ProgressBarInstruction> = {
     const barW = contentW - labelW;
     const barY = y + padTop + (contentH - barHeight) / 2;
 
-    // Cache bar geometry for click/drag editing
+    // Cache bar geometry for click/drag editing (scoped per canvas)
     const cacheKey = `${readCellRow(buf, cellIdx)},${readCellCol(buf, cellIdx)}`;
-    barGeometryCache.set(cacheKey, { barX: contentX, barW });
+    getBarGeometryCache(ctx.canvas).set(cacheKey, { barX: contentX, barW });
 
     // Background bar
     ctx.beginPath();

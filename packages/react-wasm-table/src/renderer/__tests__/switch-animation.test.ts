@@ -37,8 +37,11 @@ function buildBuf(cells: [number, number, number, number, number, number][]): Fl
   return buf;
 }
 
+const mockCanvasEl = {} as HTMLCanvasElement;
+
 function mockCtx() {
   return {
+    canvas: mockCanvasEl,
     font: "",
     fillStyle: "",
     strokeStyle: "",
@@ -81,7 +84,7 @@ function makeContext(overrides?: Partial<CellRenderContext>): CellRenderContext 
 }
 
 beforeEach(() => {
-  _getAnimationMap().clear();
+  _getAnimationMap(mockCanvasEl).clear();
 });
 
 describe("switch animation", () => {
@@ -406,7 +409,7 @@ describe("switch animation", () => {
       // Since we track fillStyle as a simple property, check its value after draw
       // The last fillStyle will be thumbColor (#fff), the one before that is the track color
       // We can't easily track intermediate assignments, so let's check the animation map state instead
-      const animMap = _getAnimationMap();
+      const animMap = _getAnimationMap(mockCanvasEl);
       const state = animMap.get("1:0");
       expect(state).toBeDefined();
       expect(state!.targetChecked).toBe(true);

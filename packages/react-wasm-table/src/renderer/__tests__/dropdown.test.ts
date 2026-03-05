@@ -47,8 +47,9 @@ function buildBuf(cells: [number, number, number, number, number, number][]): Fl
   return buf;
 }
 
-function mockCtx() {
+function mockCtx(canvas: HTMLCanvasElement = mockCanvas) {
   return {
+    canvas,
     font: "",
     fillStyle: "",
     strokeStyle: "",
@@ -86,9 +87,11 @@ function makeContext(ctx: CanvasRenderingContext2D, buf: Float32Array): CellRend
 }
 
 const defaultStyle: ResolvedPanelStyle = resolveDropdownPanelStyle();
+const mockCanvas = {} as HTMLCanvasElement;
 
 function basePanelState(overrides?: Partial<DropdownPanelState>): DropdownPanelState {
   return {
+    canvas: mockCanvas,
     key: "1:0",
     options: [
       { value: "a", label: "Alpha" },

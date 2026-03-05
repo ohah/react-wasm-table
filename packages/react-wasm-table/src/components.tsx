@@ -421,9 +421,17 @@ export function ProgressBar(props: ProgressBarProps): CanvasElement {
   let _handlers: CanvasEventHandlers | undefined;
 
   if (onChange) {
+    // Helper: extract canvas element from native event target
+    const getCanvas = (e: GridCellEvent) =>
+      e.nativeEvent.target instanceof HTMLCanvasElement ? e.nativeEvent.target : null;
+
     // Helper: compute value from contentX using cached geometry
-    const computeValue = (contentX: number, cell: { row: number; col: number }): number => {
-      const geo = getBarGeometry(`${cell.row},${cell.col}`);
+    const computeValue = (
+      contentX: number,
+      cell: { row: number; col: number },
+      canvas: HTMLCanvasElement | null,
+    ): number => {
+      const geo = getBarGeometry(`${cell.row},${cell.col}`, canvas);
       if (!geo) return props.value;
       const ratio = Math.max(0, Math.min(1, (contentX - geo.barX) / geo.barW));
       return Math.round(ratio * max);
@@ -434,14 +442,15 @@ export function ProgressBar(props: ProgressBarProps): CanvasElement {
 
     const onClick = (e: GridCellEvent) => {
       userOnClick?.(e);
-      onChange(computeValue(e.contentX, e.cell));
+      onChange(computeValue(e.contentX, e.cell, getCanvas(e)));
     };
 
     const onMouseDown = (e: GridCellEvent) => {
       userOnMouseDown?.(e);
       e.preventDefault();
 
-      const geo = getBarGeometry(`${e.cell.row},${e.cell.col}`);
+      const canvas = getCanvas(e);
+      const geo = getBarGeometry(`${e.cell.row},${e.cell.col}`, canvas);
       if (!geo) return;
 
       const initialRatio = Math.max(0, Math.min(1, (e.contentX - geo.barX) / geo.barW));

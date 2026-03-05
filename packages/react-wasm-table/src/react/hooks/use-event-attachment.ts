@@ -205,16 +205,18 @@ export function useEventAttachment({
             if (instruction?.type === "dropdown" && !instruction.disabled) {
               const dropdownInst = instruction as import("../../types").DropdownInstruction;
               const cellKey = `${coord.row}:${coord.col}`;
-              const current = getDropdownPanelState();
+              const canvas = canvasRef.current;
+              const current = getDropdownPanelState(canvas ?? undefined);
               if (current?.key === cellKey) {
                 // Toggle off (close)
                 closeDropdownPanel();
                 invalidate?.();
-              } else {
+              } else if (canvas) {
                 // Open panel — read cached trigger rect
                 const triggerRect = _getTriggerRectMap().get(cellKey);
                 if (triggerRect && dropdownInst.options.length > 0) {
                   openDropdownPanel({
+                    canvas,
                     key: cellKey,
                     options: dropdownInst.options,
                     value: dropdownInst.value,
@@ -347,7 +349,7 @@ export function useEventAttachment({
           }
 
           // ── Dropdown panel event handling ──────────────────────────
-          const panelState = getDropdownPanelState();
+          const panelState = getDropdownPanelState(canvasRef.current ?? undefined);
           if (panelState) {
             const sL = scrollLeftRef?.current ?? 0;
             const sT = scrollTopRef?.current ?? 0;
