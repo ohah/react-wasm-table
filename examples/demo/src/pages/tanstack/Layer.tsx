@@ -21,7 +21,7 @@ import {
   readCellRow,
   readCellY,
 } from "@ohah/react-wasm-table";
-import { CodeSnippet } from "../../components/CodeSnippet";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type RowData = { name: string; department: string; revenue: number; status: string };
 function generateData(count: number): RowData[] {
@@ -100,6 +100,7 @@ const DEFAULT_TOGGLES = [
 ];
 
 export function TanStackLayer() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateData(200), []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selection, setSelection] = useState<NormalizedRange | null>(null);
@@ -135,7 +136,7 @@ export function TanStackLayer() {
   return (
     <>
       <h1>Layer System</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         useReactTable + Table with layers prop (header, data, gridLines, rowHighlight, selection,
         watermark).
       </p>
@@ -161,6 +162,7 @@ export function TanStackLayer() {
           table={table}
           width={560}
           height={520}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
           layers={activeLayers}
           selection={selection}
           onSelectionChange={setSelection}
@@ -187,39 +189,6 @@ export function TanStackLayer() {
           </Tbody>
         </Table>
       </div>
-      <CodeSnippet>{`const activeLayers: GridLayer[] = useMemo(() => {
-  const layers = [];
-  if (enabledSet.has("header")) layers.push(headerLayer());
-  if (enabledSet.has("data")) layers.push(dataLayer());
-  if (enabledSet.has("gridLines")) layers.push(gridLinesLayer());
-  if (enabledSet.has("rowHighlight")) layers.push(rowHighlightLayer(2));
-  if (enabledSet.has("selection")) layers.push(selectionLayer());
-  if (enabledSet.has("watermark")) layers.push(watermarkLayer());
-  return layers;
-}, [enabledSet]);
-
-<Table table={table} width={560} height={520} layers={activeLayers} selection={selection} onSelectionChange={setSelection}>
-  <Thead>
-    {table.getHeaderGroups().map((hg) => (
-      <Tr key={hg.id}>
-        {hg.headers.map((h) => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}</CodeSnippet>
     </>
   );
 }

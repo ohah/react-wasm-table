@@ -17,7 +17,7 @@ import {
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
 import { reorderColumnsBy } from "../../components/DemoTableTanStack";
-import { CodeSnippet } from "../../components/CodeSnippet";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Employee = {
   id: number;
@@ -65,8 +65,8 @@ const ALL_COLUMN_IDS = ["id", "name", "department", "salary", "performanceScore"
 const btnBase: React.CSSProperties = {
   padding: "6px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 12,
 };
@@ -79,11 +79,12 @@ const btnActive: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   marginBottom: 20,
   padding: 14,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 8,
 };
 
 export function TanStackColumnDnDAndRowPinning() {
+  const isDark = useDarkMode();
   const data = useMemo(
     () => generateEmployees(200) as (Record<string, unknown> & { id: number })[],
     [],
@@ -129,14 +130,14 @@ export function TanStackColumnDnDAndRowPinning() {
   return (
     <>
       <h1>Column DnD & Row Pinning</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 20 }}>
         <strong>Column DnD:</strong> Drag headers to reorder columns. <strong>Row Pinning:</strong>{" "}
         Pin specific rows to the top or bottom (state API only; rendering to be applied).
       </p>
 
       <div style={sectionStyle}>
         <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Column DnD Reorder</h2>
-        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#666" }}>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "var(--demo-muted)" }}>
           Drag a header with the mouse; a ghost follows the cursor and a blue vertical line shows
           the drop position. Releasing updates the column order.
         </p>
@@ -155,7 +156,7 @@ export function TanStackColumnDnDAndRowPinning() {
 
       <div style={sectionStyle}>
         <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Row Pinning (state)</h2>
-        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#666" }}>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "var(--demo-muted)" }}>
           Pin rows to the top or bottom. Specify row IDs via getRowId and control with rowPinning
           state.
         </p>
@@ -204,6 +205,7 @@ export function TanStackColumnDnDAndRowPinning() {
           table={table}
           width={700}
           height={500}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
           enableColumnDnD
           columnOrder={columnOrder}
           onColumnOrderChange={setColumnOrder}
@@ -240,7 +242,7 @@ export function TanStackColumnDnDAndRowPinning() {
         <pre
           style={{
             margin: 0,
-            background: "#f5f5f5",
+            background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
             padding: 12,
             borderRadius: 4,
             fontSize: 11,
@@ -250,43 +252,6 @@ export function TanStackColumnDnDAndRowPinning() {
           {JSON.stringify({ columnOrder, columnPinning, rowPinning, sorting }, null, 2)}
         </pre>
       </div>
-      <CodeSnippet>{`const [columnOrder, setColumnOrder] = useState([]);
-const [columnPinning, setColumnPinning] = useState({ left: [], right: [] });
-const [rowPinning, setRowPinning] = useState({ top: [], bottom: [] });
-
-const table = useReactTable({
-  data,
-  columns: reorderColumnsBy(columnDefs, columnOrder),
-  getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => String(row.id),
-  state: { columnOrder, columnPinning, rowPinning },
-  onColumnOrderChange: setColumnOrder,
-  onColumnPinningChange: setColumnPinning,
-  onRowPinningChange: setRowPinning,
-});
-
-<Table table={table} width={560} height={480} enableColumnDnD rowPinning={rowPinning} getRowId={getRowId}>
-  <Thead>
-    {table.getHeaderGroups().map((hg) => (
-      <Tr key={hg.id}>
-        {hg.headers.map((h) => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}</CodeSnippet>
     </>
   );
 }

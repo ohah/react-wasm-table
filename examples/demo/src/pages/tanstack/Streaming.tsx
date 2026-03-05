@@ -14,6 +14,7 @@ import {
   Badge,
 } from "@ohah/react-wasm-table";
 import { useContainerSize } from "../../useContainerSize";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Employee = {
   id: number;
@@ -220,6 +221,7 @@ type TimingEntry = {
 };
 
 export function TanStackStreaming() {
+  const isDark = useDarkMode();
   const [totalCount, setTotalCount] = useState(100_000);
   const [batchSize, setBatchSize] = useState(200);
   const [latency, setLatency] = useState(50);
@@ -301,7 +303,7 @@ export function TanStackStreaming() {
       <h2 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700 }}>
         Streaming Data — TanStack API
       </h2>
-      <p style={{ margin: "0 0 16px", color: "#666", fontSize: 14 }}>
+      <p style={{ margin: "0 0 16px", color: "var(--demo-muted)", fontSize: 14 }}>
         Same infinite-scroll streaming demo using <code>useReactTable</code> +{" "}
         <code>{"<Table>"}</code> API. Scroll down to trigger <code>onFetchMore</code>.
       </p>
@@ -390,7 +392,7 @@ export function TanStackStreaming() {
             />
           </div>
         </div>
-        <div style={{ color: "#888" }}>{progress.toFixed(1)}%</div>
+        <div style={{ color: "var(--demo-muted-4)" }}>{progress.toFixed(1)}%</div>
         {isFetching && (
           <div
             style={{
@@ -413,11 +415,12 @@ export function TanStackStreaming() {
       {/* Table (TanStack API) */}
       <div ref={containerRef} style={{ width: "100%" }}>
         {size.width > 0 && (
-          <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden" }}>
+          <div style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden" }}>
             <Table
               table={table}
               width={gridWidth}
               height={500}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
               totalCount={totalCount}
               onFetchMore={handleFetchMore}
               fetchAhead={batchSize}
@@ -461,7 +464,7 @@ export function TanStackStreaming() {
             style={{
               maxHeight: 200,
               overflow: "auto",
-              backgroundColor: "#f5f5f5",
+              backgroundColor: "var(--demo-code-bg)",
               borderRadius: 8,
               padding: "8px 12px",
               fontSize: 12,
@@ -478,47 +481,6 @@ export function TanStackStreaming() {
         </div>
       )}
 
-      {/* Usage example */}
-      <div style={{ marginTop: 24 }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 14, fontWeight: 600 }}>Usage (TanStack API)</h3>
-        <pre
-          style={{
-            backgroundColor: "#f5f5f5",
-            borderRadius: 8,
-            padding: 16,
-            fontSize: 13,
-            overflow: "auto",
-            lineHeight: 1.6,
-          }}
-        >
-          {`const [data, setData] = useState<Row[]>(initialBatch);
-
-const table = useReactTable({
-  data,
-  columns,
-  getCoreRowModel: getCoreRowModel(),
-});
-
-const handleFetchMore = useCallback((startIndex: number, count: number) => {
-  fetchFromServer(startIndex, count).then(newRows => {
-    setData(prev => [...prev, ...newRows]);
-  });
-}, []);
-
-<Table
-  table={table}
-  width={800}
-  height={600}
-  totalCount={100_000}           // Total row count (drives scrollbar)
-  onFetchMore={handleFetchMore}  // Called when nearing unloaded rows
-  fetchAhead={100}               // Rows to fetch ahead (default: 100)
-  overflowY="scroll"
->
-  <Thead>...</Thead>
-  <Tbody>...</Tbody>
-</Table>`}
-        </pre>
-      </div>
     </div>
   );
 }
@@ -534,15 +496,15 @@ function TimingStats({ timings }: { timings: TimingEntry[] }) {
 
   const statStyle: React.CSSProperties = {
     padding: "4px 12px",
-    backgroundColor: "#fff",
+    backgroundColor: "var(--demo-card-bg)",
     borderRadius: 6,
-    border: "1px solid #e0e0e0",
+    border: "1px solid var(--demo-border)",
     textAlign: "center",
     minWidth: 80,
   };
   const labelStyle: React.CSSProperties = {
     fontSize: 10,
-    color: "#888",
+    color: "var(--demo-muted-4)",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   };
@@ -618,16 +580,16 @@ function LabeledSelect<T extends number>({
 }) {
   return (
     <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-      <span style={{ fontWeight: 600, color: "#555" }}>{label}:</span>
+      <span style={{ fontWeight: 600, color: "var(--demo-muted-2)" }}>{label}:</span>
       <select
         value={value}
         onChange={(e) => onChange(Number(e.target.value) as T)}
         style={{
           padding: "5px 8px",
           fontSize: 13,
-          border: "1px solid #d0d0d0",
+          border: "1px solid var(--demo-border-2)",
           borderRadius: 6,
-          backgroundColor: "#fff",
+          backgroundColor: "var(--demo-card-bg)",
         }}
       >
         {options.map((opt) => (

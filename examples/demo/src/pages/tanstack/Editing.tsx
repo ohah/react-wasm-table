@@ -15,6 +15,7 @@ import {
 } from "@ohah/react-wasm-table";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 interface Person {
   name: string;
@@ -100,6 +101,7 @@ interface EditLog {
 }
 
 export function TanStackEditing() {
+  const isDark = useDarkMode();
   const [data, setData] = useState<Person[]>(INITIAL_DATA);
   const [editLog, setEditLog] = useState<EditLog[]>([]);
   const [editTrigger, setEditTrigger] = useState<"click" | "dblclick">("dblclick");
@@ -223,7 +225,7 @@ export function TanStackEditing() {
 
       <section style={{ marginBottom: 16 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-        <Table table={table} width={600} height={300} meta={meta} editTrigger={editTrigger}>
+        <Table table={table} width={600} height={300} theme={isDark ? DARK_THEME : LIGHT_THEME} meta={meta} editTrigger={editTrigger}>
           <Thead>
             {table.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>
@@ -251,9 +253,9 @@ export function TanStackEditing() {
         style={{
           marginTop: 24,
           padding: 16,
-          background: "#f9f9f9",
+          background: "var(--demo-panel-bg)",
           borderRadius: 4,
-          border: "1px solid #e0e0e0",
+          border: "1px solid var(--demo-border)",
         }}
       >
         <h3 style={{ margin: "0 0 8px", fontSize: 14 }}>Native HTML inputs (for comparison)</h3>
@@ -264,7 +266,7 @@ export function TanStackEditing() {
           <label style={{ fontSize: 13 }}>
             Input B: <input type="text" defaultValue="World" style={{ padding: "4px 8px" }} />
           </label>
-          <span style={{ fontSize: 12, color: "#999" }}>
+          <span style={{ fontSize: 12, color: "var(--demo-muted-5)" }}>
             Click A then click B — focus moves immediately, no value lost
           </span>
         </div>
@@ -286,13 +288,13 @@ export function TanStackEditing() {
               overflow: "auto",
               fontSize: 13,
               fontFamily: "monospace",
-              background: "#f5f5f5",
+              background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
               padding: 8,
               borderRadius: 4,
             }}
           >
             {editLog.length === 0 ? (
-              <span style={{ color: "#999" }}>No edits yet</span>
+              <span style={{ color: "var(--demo-muted-5)" }}>No edits yet</span>
             ) : (
               editLog.map((log) => (
                 <div key={log.timestamp}>
@@ -311,7 +313,7 @@ export function TanStackEditing() {
               maxHeight: 200,
               overflow: "auto",
               fontSize: 12,
-              background: "#f5f5f5",
+              background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
               padding: 8,
               borderRadius: 4,
               margin: 0,

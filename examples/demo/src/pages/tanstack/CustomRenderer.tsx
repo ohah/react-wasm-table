@@ -15,7 +15,7 @@ import {
   type SortingState,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../../data";
-import { CodeSnippet } from "../../components/CodeSnippet";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -65,6 +65,7 @@ const columns = [
 ];
 
 export function TanStackCustomRenderer() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as SmallRow[], []);
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -83,7 +84,7 @@ export function TanStackCustomRenderer() {
         Register custom <code>CellRenderer</code> instances via the <code>cellRenderers</code> prop.
         Built-in types (text, badge, stub, flex) can also be overridden.
       </p>
-      <Table table={table} width={560} height={480}>
+      <Table table={table} width={560} height={480} theme={isDark ? DARK_THEME : LIGHT_THEME}>
         <Thead>
           {table.getHeaderGroups().map((hg) => (
             <Tr key={hg.id}>
@@ -105,38 +106,6 @@ export function TanStackCustomRenderer() {
           ))}
         </Tbody>
       </Table>
-      <CodeSnippet>{`// column.cell with React canvas components (Badge, Text)
-helper.accessor("dept", {
-  cell: (info) => <Badge value={info.getValue()} color="#333" backgroundColor="#e0e0e0" borderRadius={4} />,
-});
-helper.accessor("salary", {
-  cell: (info) => (
-    <Text value={\`$\${info.getValue().toLocaleString()}\`} fontWeight="bold" color={info.getValue() > 85000 ? "#2e7d32" : "#333"} />
-  ),
-});
-
-<Table table={table} width={560} height={480}>
-  <Thead>
-    {table.getHeaderGroups().map((hg) => (
-      <Tr key={hg.id}>
-        {hg.headers.map((h) => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}</CodeSnippet>
     </>
   );
 }

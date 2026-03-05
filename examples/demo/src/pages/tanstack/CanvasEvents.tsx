@@ -20,6 +20,7 @@ import {
   type GridCellEvent,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Row = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<Row>();
@@ -35,6 +36,7 @@ interface LogEntry {
 let logId = 0;
 
 export function TanStackCanvasEvents() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as Row[], []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -239,7 +241,7 @@ export function TanStackCanvasEvents() {
 
   /** Render a TanStack Table component */
   const renderTable = (table: ReturnType<typeof useReactTable<Row>>, w: number, h: number) => (
-    <Table table={table} width={w} height={h}>
+    <Table table={table} width={w} height={h} theme={isDark ? DARK_THEME : LIGHT_THEME}>
       <Thead>
         {table.getHeaderGroups().map((hg) => (
           <Tr key={hg.id}>
@@ -279,7 +281,7 @@ export function TanStackCanvasEvents() {
           {/* Table 1 */}
           <section>
             <h2 style={{ fontSize: 15, marginBottom: 6 }}>1. onClick + preventDefault</h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+            <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
               Link's <code>onClick</code> calls <code>preventDefault()</code> to block URL open.
               Sortable Name column still works.
             </p>
@@ -289,12 +291,12 @@ export function TanStackCanvasEvents() {
           {/* Table 2 */}
           <section>
             <h2 style={{ fontSize: 15, marginBottom: 6 }}>2. onMouseEnter / onMouseLeave</h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+            <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
               Hover over cells.{" "}
               {hoveredCell ? (
                 <strong style={{ color: "#1976d2" }}>Hovered: {hoveredCell}</strong>
               ) : (
-                <span style={{ color: "#999" }}>Not hovering</span>
+                <span style={{ color: "var(--demo-muted-5)" }}>Not hovering</span>
               )}
             </p>
             {renderTable(hoverTable, 430, 200)}
@@ -305,7 +307,7 @@ export function TanStackCanvasEvents() {
             <h2 style={{ fontSize: 15, marginBottom: 6 }}>
               3. Combined (click + dblclick + mousedown + mouseup)
             </h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+            <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
               All events fire in DOM order.
             </p>
             {renderTable(combinedTable, 440, 200)}
@@ -321,9 +323,9 @@ export function TanStackCanvasEvents() {
               style={{
                 fontSize: 12,
                 padding: "2px 8px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--demo-border-2)",
                 borderRadius: 4,
-                background: "#fff",
+                background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
                 cursor: "pointer",
                 marginLeft: 8,
               }}
@@ -335,15 +337,15 @@ export function TanStackCanvasEvents() {
             style={{
               height: 540,
               overflow: "auto",
-              border: "1px solid #e0e0e0",
+              border: "1px solid var(--demo-border)",
               borderRadius: 6,
               fontSize: 12,
               fontFamily: "monospace",
-              background: "#fafafa",
+              background: "var(--demo-panel-bg)",
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>
+              <div style={{ padding: 16, color: "var(--demo-muted-5)", textAlign: "center" }}>
                 Interact with the tables to see events here
               </div>
             )}
@@ -374,9 +376,9 @@ export function TanStackCanvasEvents() {
                 >
                   {log.event}
                 </span>
-                <span style={{ color: "#666" }}>{log.component}</span>
-                <span style={{ color: "#333" }}>"{log.value}"</span>
-                <span style={{ color: "#999" }}>{log.cell}</span>
+                <span style={{ color: "var(--demo-muted)" }}>{log.component}</span>
+                <span style={{ color: "var(--demo-panel-fg)" }}>"{log.value}"</span>
+                <span style={{ color: "var(--demo-muted-5)" }}>{log.cell}</span>
               </div>
             ))}
           </div>

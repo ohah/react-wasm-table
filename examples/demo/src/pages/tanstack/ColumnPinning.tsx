@@ -16,7 +16,7 @@ import {
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
 import { reorderColumnsBy } from "../../components/DemoTableTanStack";
-import { CodeSnippet } from "../../components/CodeSnippet";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Employee = {
   id: number;
@@ -79,8 +79,8 @@ const ALL_COLUMN_IDS = [
 const btnBase: React.CSSProperties = {
   padding: "3px 8px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 11,
 };
@@ -92,6 +92,7 @@ const btnActive: React.CSSProperties = {
 };
 
 export function TanStackColumnPinning() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateEmployees(1000) as Record<string, unknown>[], []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(ALL_COLUMN_IDS);
@@ -129,12 +130,12 @@ export function TanStackColumnPinning() {
   return (
     <>
       <h1>Column Pinning</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         Pin columns to the <strong>left</strong> or <strong>right</strong> edge. Drag headers to
         reorder columns. Pinned columns stay fixed while scrolling horizontally. The grid uses 7
         columns (930px total) in a 700px viewport to ensure horizontal scrolling.
       </p>
-      <div style={{ marginBottom: 16, padding: 12, background: "#f9f9f9", borderRadius: 6 }}>
+      <div style={{ marginBottom: 16, padding: 12, background: "var(--demo-panel-bg)", borderRadius: 6 }}>
         <strong style={{ fontSize: 13 }}>Pin Controls</strong>
         <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
           {ALL_COLUMN_IDS.map((colId) => {
@@ -170,11 +171,12 @@ export function TanStackColumnPinning() {
       </div>
 
       <section style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>TanStack API</h3>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "var(--demo-muted)" }}>TanStack API</h3>
         <Table
           table={table}
           width={700}
           height={520}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
           enableColumnDnD
           columnOrder={columnOrder}
           onColumnOrderChange={setColumnOrder}
@@ -202,45 +204,9 @@ export function TanStackColumnPinning() {
           </Tbody>
         </Table>
       </section>
-      <CodeSnippet>{`const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
-const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({ left: [], right: [] });
-const [sorting, setSorting] = useState<SortingState>([]);
-
-const table = useReactTable({
-  data,
-  columns: reorderColumnsBy(columnDefs, columnOrder),
-  getCoreRowModel: getCoreRowModel(),
-  state: { columnOrder, columnPinning, sorting },
-  onColumnOrderChange: setColumnOrder,
-  onColumnPinningChange: setColumnPinning,
-  onSortingChange: setSorting,
-});
-
-<Table table={table} width={640} height={520} enableColumnDnD>
-  <Thead>
-    {table.getHeaderGroups().map((hg) => (
-      <Tr key={hg.id}>
-        {hg.headers.map((h) => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}</CodeSnippet>
       <pre
         style={{
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 11,

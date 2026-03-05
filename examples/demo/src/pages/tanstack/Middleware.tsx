@@ -15,6 +15,7 @@ import {
   type EventChannel,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -89,6 +90,7 @@ function Toggle({
 }
 
 export function TanStackMiddleware() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData(), []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [log, setLog] = useState<LogEntry[]>([]);
@@ -188,7 +190,7 @@ export function TanStackMiddleware() {
 
       {enableBlocker && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 4 }}>
             Blocked channels (blocker middleware)
           </div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -209,43 +211,11 @@ export function TanStackMiddleware() {
         </div>
       )}
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-          marginBottom: 12,
-        }}
-      >
-        {`const middleware: EventMiddleware[] = [\n`}
-        {enableTimer && `  // Timing middleware — wraps the chain\n`}
-        {enableTimer && `  (channel, event, next) => {\n`}
-        {enableTimer && `    const start = performance.now();\n`}
-        {enableTimer && `    next();\n`}
-        {enableTimer && `    console.log(\`\${channel}: \${performance.now() - start}ms\`);\n`}
-        {enableTimer && `  },\n`}
-        {enableLogger && `  // Logger middleware — logs and passes through\n`}
-        {enableLogger && `  (channel, event, next) => {\n`}
-        {enableLogger && `    console.log("event:", channel);\n`}
-        {enableLogger && `    next();\n`}
-        {enableLogger && `  },\n`}
-        {enableBlocker && `  // Blocker middleware — blocks specific channels\n`}
-        {enableBlocker && `  (channel, event, next) => {\n`}
-        {enableBlocker &&
-          `    if (${JSON.stringify([...blockedChannels])}.includes(channel)) return;\n`}
-        {enableBlocker && `    next();\n`}
-        {enableBlocker && `  },\n`}
-        {`];\n\n`}
-        {`<Table eventMiddleware={middleware} ...>\n  <Thead>...</Thead>\n  <Tbody>...</Tbody>\n</Table>`}
-      </pre>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-            <Table table={table} width={560} height={480} eventMiddleware={middleware}>
+            <Table table={table} width={560} height={480} theme={isDark ? DARK_THEME : LIGHT_THEME} eventMiddleware={middleware}>
               <Thead>
                 {table.getHeaderGroups().map((hg) => (
                   <Tr key={hg.id}>
@@ -292,7 +262,7 @@ export function TanStackMiddleware() {
               display: "flex",
               justifyContent: "space-between",
               marginBottom: 4,
-              color: "#888",
+              color: "var(--demo-muted-4)",
             }}
           >
             <span>Middleware Log</span>
@@ -312,7 +282,7 @@ export function TanStackMiddleware() {
             </button>
           </div>
           {log.length === 0 && (
-            <div style={{ color: "#666" }}>
+            <div style={{ color: "var(--demo-muted)" }}>
               Click cells or headers to see middleware in action...
             </div>
           )}
@@ -328,7 +298,7 @@ export function TanStackMiddleware() {
         </div>
       </div>
 
-      <div style={{ marginTop: 12, fontSize: 13, color: "#555" }}>
+      <div style={{ marginTop: 12, fontSize: 13, color: "var(--demo-muted-2)" }}>
         <strong>Active middleware ({middleware.length}):</strong>{" "}
         {[enableTimer && "Timer", enableLogger && "Logger", enableBlocker && "Blocker"]
           .filter(Boolean)
@@ -338,7 +308,7 @@ export function TanStackMiddleware() {
         )}
       </div>
 
-      <div style={{ marginTop: 8, fontSize: 13, color: "#555" }}>
+      <div style={{ marginTop: 8, fontSize: 13, color: "var(--demo-muted-2)" }}>
         <strong>Tip:</strong> Enable the blocker middleware and block <code>headerClick</code> —
         sorting will stop working because the middleware blocks the event before it reaches the
         internal sort handler.

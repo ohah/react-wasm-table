@@ -15,7 +15,7 @@ import {
   EditorManager,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../../data";
-import { CodeSnippet } from "../../components/CodeSnippet";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -28,6 +28,7 @@ const columns = [
 ];
 
 export function TanStackAdapterDI() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as SmallRow[], []);
   const [useDI, setUseDI] = useState(true);
   const [selectionInfo, setSelectionInfo] = useState("none");
@@ -80,7 +81,7 @@ export function TanStackAdapterDI() {
             onClick={clearSelection}
             style={{
               padding: "4px 12px",
-              border: "1px solid #ccc",
+              border: "1px solid var(--demo-border-2)",
               borderRadius: 4,
               cursor: "pointer",
             }}
@@ -94,6 +95,7 @@ export function TanStackAdapterDI() {
           table={table}
           width={560}
           height={500}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
           eventManager={useDI ? eventManager : undefined}
           selectionManager={useDI ? selectionManager : undefined}
           editorManager={useDI ? editorManager : undefined}
@@ -122,7 +124,7 @@ export function TanStackAdapterDI() {
         <div
           style={{
             padding: 12,
-            background: "#f9f9f9",
+            background: "var(--demo-panel-bg)",
             borderRadius: 4,
             fontSize: 13,
             minWidth: 220,
@@ -131,41 +133,6 @@ export function TanStackAdapterDI() {
           <strong>Selection (from manager):</strong> {selectionInfo}
         </div>
       </div>
-      <CodeSnippet>{`const [eventManager] = useState(() => new EventManager());
-const [selectionManager] = useState(() => new SelectionManager());
-const [editorManager] = useState(() => new EditorManager());
-
-<Table
-  table={table}
-  width={560}
-  height={480}
-  eventManager={useDI ? eventManager : undefined}
-  selectionManager={useDI ? selectionManager : undefined}
-  editorManager={useDI ? editorManager : undefined}
->
-  <Thead>
-    {table.getHeaderGroups().map((hg) => (
-      <Tr key={hg.id}>
-        {hg.headers.map((h) => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>
-
-// Clear selection from outside: selectionManager.clear()`}</CodeSnippet>
     </>
   );
 }

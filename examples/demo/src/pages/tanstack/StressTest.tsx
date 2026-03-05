@@ -16,6 +16,7 @@ import {
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
 import { useContainerSize } from "../../useContainerSize";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 const ROW_COUNT = 1_000_000; // 50k × 20 for stress test
 
@@ -132,6 +133,7 @@ const columns = [
 ];
 
 export function TanStackStressTest() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateEmployees(ROW_COUNT), []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const { ref, size } = useContainerSize(600);
@@ -151,7 +153,7 @@ export function TanStackStressTest() {
         Same grid as Home, with {data.length.toLocaleString()} rows (50k × 20). Initial data
         generation may take a few seconds.
         {sorting.length > 0 && (
-          <span style={{ marginLeft: 8, color: "#666" }}>
+          <span style={{ marginLeft: 8, color: "var(--demo-muted)" }}>
             | Sorted by: {sorting[0]!.id} ({sorting[0]!.desc ? "desc" : "asc"})
           </span>
         )}
@@ -165,6 +167,7 @@ export function TanStackStressTest() {
                 table={table}
                 width={size.width}
                 height={size.height}
+                theme={isDark ? DARK_THEME : LIGHT_THEME}
                 overflowY="scroll"
                 overflowX="scroll"
               >

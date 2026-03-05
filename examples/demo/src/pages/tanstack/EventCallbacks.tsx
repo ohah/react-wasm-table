@@ -14,6 +14,7 @@ import {
   type NormalizedRange,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -69,6 +70,7 @@ function Toggle({
 }
 
 export function TanStackEventCallbacks() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData(), []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selection, setSelection] = useState<NormalizedRange | null>(null);
@@ -139,30 +141,6 @@ export function TanStackEventCallbacks() {
         />
       </div>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {`<Table\n`}
-        {`  onCellClick={(e) => { ${blockCellClick ? "e.preventDefault();" : "/* observe */"} }}\n`}
-        {`  onCellDoubleClick={(e) => { ${blockDblClick ? "e.preventDefault();" : "/* observe */"} }}\n`}
-        {`  onHeaderClick={(e) => { ${blockHeaderClick ? "e.preventDefault();" : "/* observe */"} }}\n`}
-        {`  onKeyDown={(e) => { ${blockKeyDown ? "e.preventDefault();" : "/* observe */"} }}\n`}
-        {`  onCellMouseDown={(e) => { ${blockMouseDown ? "e.preventDefault();" : "/* observe */"} }}\n`}
-        {`  onCellMouseMove={(e) => { /* viewport coords */ }}\n`}
-        {`  onCellMouseUp={() => { /* drag end */ }}\n`}
-        {`  onScroll={(e) => { ${blockScroll ? "e.preventDefault();" : "/* deltaY, deltaX */"} }}\n`}
-        {`  onCanvasEvent={(e) => { /* low-level: e.type, e.hitTest */ }}\n`}
-        {`  onBeforeSortChange={(next) => { ${blockSort ? "return false;" : "/* observe */"} }}\n`}
-        {`  onBeforeSelectionChange={(next) => { ${blockSelection ? "return false;" : "/* observe */"} }}\n`}
-        {`/>`}
-      </pre>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
@@ -171,6 +149,7 @@ export function TanStackEventCallbacks() {
               table={table}
               width={560}
               height={480}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
               sorting={sorting}
               onSortingChange={setSorting}
               selection={selection}
@@ -294,7 +273,7 @@ export function TanStackEventCallbacks() {
               display: "flex",
               justifyContent: "space-between",
               marginBottom: 4,
-              color: "#888",
+              color: "var(--demo-muted-4)",
             }}
           >
             <span>Event Log</span>
@@ -313,7 +292,7 @@ export function TanStackEventCallbacks() {
               Clear
             </button>
           </div>
-          {log.length === 0 && <div style={{ color: "#666" }}>Click cells or headers...</div>}
+          {log.length === 0 && <div style={{ color: "var(--demo-muted)" }}>Click cells or headers...</div>}
           {log.map((entry) => (
             <div key={entry.id} style={{ marginBottom: 2 }}>
               <span style={{ color: entry.blocked ? "#f44" : "#4ec9b0" }}>
@@ -339,7 +318,7 @@ export function TanStackEventCallbacks() {
           flexDirection: "column",
           gap: 8,
           fontSize: 13,
-          color: "#555",
+          color: "var(--demo-muted-2)",
         }}
       >
         <div>

@@ -16,6 +16,7 @@ import {
   type SortingState,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -52,6 +53,7 @@ const columns = [
 const allColumnIds = ["name", "dept", "salary", "score"];
 
 export function TanStackExport() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as SmallRow[], []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [output, setOutput] = useState("");
@@ -130,7 +132,7 @@ export function TanStackExport() {
         <div>
           <section style={{ marginBottom: 16 }}>
             <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-            <Table table={table} width={560} height={480}>
+            <Table table={table} width={560} height={480} theme={isDark ? DARK_THEME : LIGHT_THEME}>
               <Thead>
                 {table.getHeaderGroups().map((hg) => (
                   <Tr key={hg.id}>
@@ -161,7 +163,7 @@ export function TanStackExport() {
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>Format</div>
+            <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 4 }}>Format</div>
             <div style={{ display: "flex", gap: 8 }}>
               {(["csv", "tsv", "json"] as const).map((f) => (
                 <button
@@ -169,7 +171,7 @@ export function TanStackExport() {
                   onClick={() => setFormat(f)}
                   style={{
                     padding: "4px 12px",
-                    border: "1px solid #ccc",
+                    border: "1px solid var(--demo-border-2)",
                     borderRadius: 4,
                     background: format === f ? "#1976d2" : "#fff",
                     color: format === f ? "#fff" : "#333",
@@ -184,7 +186,7 @@ export function TanStackExport() {
           </div>
 
           <div>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>
+            <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 4 }}>
               Columns{" "}
               {selectedColumns.length > 0 ? `(${selectedColumns.length} selected)` : "(all)"}
             </div>
@@ -264,28 +266,6 @@ export function TanStackExport() {
           </div>
         </div>
       </div>
-
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-          marginBottom: 12,
-        }}
-      >
-        {`import { exportTo${format === "json" ? "JSON" : format.toUpperCase()} } from "@ohah/react-wasm-table";
-
-const rowModel = table.getRowModel();
-${
-  format === "json"
-    ? `const result = exportToJSON(rowModel${selectedColumns.length > 0 ? `, { columns: ${JSON.stringify(selectedColumns)} }` : ""});`
-    : `const result = exportTo${format.toUpperCase()}(rowModel, {
-  includeHeaders: ${includeHeaders},
-${selectedColumns.length > 0 ? `  columns: ${JSON.stringify(selectedColumns)},\n` : ""}});`
-}`}
-      </pre>
 
       {output && (
         <pre
