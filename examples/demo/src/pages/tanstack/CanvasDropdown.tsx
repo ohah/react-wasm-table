@@ -52,9 +52,7 @@ export function TanStackCanvasDropdown() {
       { id: ++logId, event: "onChange", value: label, cell: `row ${rowIdx}` },
       ...p.slice(0, 19),
     ]);
-    setData((prev) =>
-      prev.map((r, i) => (i === rowIdx ? { ...r, status: value } : r)),
-    );
+    setData((prev) => prev.map((r, i) => (i === rowIdx ? { ...r, status: value } : r)));
   }, []);
 
   const columns = useMemo(
@@ -96,18 +94,13 @@ export function TanStackCanvasDropdown() {
     <>
       <h1>TanStack: Canvas Dropdown</h1>
       <p>
-        <code>Dropdown</code> via TanStack <code>useReactTable</code>. Canvas-only component — no DOM
-        overlay. Click to open the dropdown panel and select an option.
+        <code>Dropdown</code> via TanStack <code>useReactTable</code>. Canvas-only component — no
+        DOM overlay. Click to open the dropdown panel and select an option.
       </p>
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <div ref={ref} style={{ flex: 1, minWidth: 360 }}>
-          <Table
-            table={table}
-            width={Math.min(width || 440, 500)}
-            height={280}
-            rowHeight={40}
-          />
+          <Table table={table} width={Math.min(width || 440, 500)} height={280} rowHeight={40} />
         </div>
 
         <section style={{ minWidth: 240, maxWidth: 320 }}>
@@ -134,7 +127,12 @@ export function TanStackCanvasDropdown() {
             {logs.map((log) => (
               <div
                 key={log.id}
-                style={{ padding: "4px 10px", borderBottom: "1px solid #f0f0f0", display: "flex", gap: 8 }}
+                style={{
+                  padding: "4px 10px",
+                  borderBottom: "1px solid #f0f0f0",
+                  display: "flex",
+                  gap: 8,
+                }}
               >
                 <span style={{ color: "#1565c0", fontWeight: 600, minWidth: 60 }}>{log.event}</span>
                 <span style={{ color: "#333" }}>{log.value}</span>

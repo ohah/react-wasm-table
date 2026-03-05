@@ -72,9 +72,9 @@ export function CanvasAvatar() {
     <>
       <h1>Canvas: Avatar</h1>
       <p>
-        <code>Avatar</code> draws a circular image or initials fallback. Supports{" "}
-        <code>src</code>, <code>name</code>, <code>size</code>, <code>backgroundColor</code>,{" "}
-        <code>color</code>, <code>borderWidth</code>, <code>borderColor</code>.
+        <code>Avatar</code> draws a circular image or initials fallback. Supports <code>src</code>,{" "}
+        <code>name</code>, <code>size</code>, <code>backgroundColor</code>, <code>color</code>,{" "}
+        <code>borderWidth</code>, <code>borderColor</code>.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 16 }}>

@@ -352,12 +352,14 @@ describe("drawDropdownPanel", () => {
   });
 
   it("draws panel with items", () => {
-    openDropdownPanel(basePanelState({
-      options: [
-        { value: "a", label: "Alpha" },
-        { value: "b", label: "Beta" },
-      ],
-    }));
+    openDropdownPanel(
+      basePanelState({
+        options: [
+          { value: "a", label: "Alpha" },
+          { value: "b", label: "Beta" },
+        ],
+      }),
+    );
 
     const ctx = mockCtx();
     drawDropdownPanel(ctx, 0, 0);
@@ -368,14 +370,16 @@ describe("drawDropdownPanel", () => {
   });
 
   it("uses custom panel style", () => {
-    openDropdownPanel(basePanelState({
-      options: [{ value: "a", label: "Alpha" }],
-      style: resolveDropdownPanelStyle({
-        panel: { boxShadow: "0px 2px 8px rgba(255,0,0,0.5)", backgroundColor: "#ffeedd" },
-        option: { hoverBackgroundColor: "#abcdef" },
-        checkmark: { content: "★", color: "#ff0000" },
+    openDropdownPanel(
+      basePanelState({
+        options: [{ value: "a", label: "Alpha" }],
+        style: resolveDropdownPanelStyle({
+          panel: { boxShadow: "0px 2px 8px rgba(255,0,0,0.5)", backgroundColor: "#ffeedd" },
+          option: { hoverBackgroundColor: "#abcdef" },
+          checkmark: { content: "★", color: "#ff0000" },
+        }),
       }),
-    }));
+    );
 
     const ctx = mockCtx();
     drawDropdownPanel(ctx, 0, 0, 500);
@@ -401,12 +405,14 @@ describe("hitTestDropdownPanel", () => {
   });
 
   it("returns item hit inside panel", () => {
-    openDropdownPanel(basePanelState({
-      options: [
-        { value: "a", label: "Alpha" },
-        { value: "b", label: "Beta" },
-      ],
-    }));
+    openDropdownPanel(
+      basePanelState({
+        options: [
+          { value: "a", label: "Alpha" },
+          { value: "b", label: "Beta" },
+        ],
+      }),
+    );
 
     // Panel is at triggerY + triggerH + 2 = 82, first item at y=82+4=86
     // Item height = 30, so first item covers 86-116, second 116-146
@@ -423,9 +429,11 @@ describe("hitTestDropdownPanel", () => {
   });
 
   it("accounts for scroll offset", () => {
-    openDropdownPanel(basePanelState({
-      options: [{ value: "a", label: "Alpha" }],
-    }));
+    openDropdownPanel(
+      basePanelState({
+        options: [{ value: "a", label: "Alpha" }],
+      }),
+    );
 
     // With scrollTop=50, panel viewport y shifts up by 50
     // Panel content y = 82, viewport y = 82 - 50 = 32
@@ -444,10 +452,12 @@ describe("flip logic", () => {
     // Trigger near bottom: y=450, h=30 → panel would start at 482
     // With 3 items: panelH = 3*30 + 4*2 = 98, panel bottom = 482 + 98 = 580
     // Viewport height = 500 → overflows → should flip above
-    openDropdownPanel(basePanelState({
-      triggerY: 450,
-      triggerH: 30,
-    }));
+    openDropdownPanel(
+      basePanelState({
+        triggerY: 450,
+        triggerH: 30,
+      }),
+    );
 
     // Without viewport height → no flip, panel below
     const hitBelow = hitTestDropdownPanel(150, 490, 0, 0);
@@ -466,10 +476,12 @@ describe("flip logic", () => {
   });
 
   it("does not flip when panel fits below", () => {
-    openDropdownPanel(basePanelState({
-      triggerY: 50,
-      triggerH: 30,
-    }));
+    openDropdownPanel(
+      basePanelState({
+        triggerY: 50,
+        triggerH: 30,
+      }),
+    );
 
     // Panel at y=82, panelH=98, bottom=180, viewport=500 → fits
     const hit = hitTestDropdownPanel(150, 100, 0, 0, 500);
@@ -481,10 +493,12 @@ describe("flip logic", () => {
     // Trigger at y=10, h=30 → panel below at y=42
     // 3 items: panelH=98, bottom=140, viewport=100 → overflows
     // Flipped: y=10-98-2 = -90 → negative → don't flip
-    openDropdownPanel(basePanelState({
-      triggerY: 10,
-      triggerH: 30,
-    }));
+    openDropdownPanel(
+      basePanelState({
+        triggerY: 10,
+        triggerH: 30,
+      }),
+    );
 
     const hit = hitTestDropdownPanel(150, 55, 0, 0, 100);
     expect(hit).not.toBeNull();
@@ -492,15 +506,17 @@ describe("flip logic", () => {
   });
 
   it("uses custom itemHeight for panel size calculation", () => {
-    openDropdownPanel(basePanelState({
-      triggerY: 400,
-      triggerH: 30,
-      options: [
-        { value: "a", label: "Alpha" },
-        { value: "b", label: "Beta" },
-      ],
-      style: resolveDropdownPanelStyle({ option: { height: 20 } }),
-    }));
+    openDropdownPanel(
+      basePanelState({
+        triggerY: 400,
+        triggerH: 30,
+        options: [
+          { value: "a", label: "Alpha" },
+          { value: "b", label: "Beta" },
+        ],
+        style: resolveDropdownPanelStyle({ option: { height: 20 } }),
+      }),
+    );
 
     // 2 items × 20 + 4*2 = 48, panel at y=432, bottom=480, viewport=500 → fits below
     const hit = hitTestDropdownPanel(150, 445, 0, 0, 500);

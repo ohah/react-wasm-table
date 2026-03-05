@@ -21,9 +21,7 @@ export function CanvasDropdown() {
   ]);
 
   const updateStatus = useCallback((rowIdx: number, value: string) => {
-    setData((prev) =>
-      prev.map((r, i) => (i === rowIdx ? { ...r, status: value } : r)),
-    );
+    setData((prev) => prev.map((r, i) => (i === rowIdx ? { ...r, status: value } : r)));
   }, []);
 
   const columns = useMemo(
@@ -55,8 +53,8 @@ export function CanvasDropdown() {
       <h1>Canvas: Dropdown</h1>
       <p>
         <code>Dropdown</code> is a <strong>canvas-only</strong> component with a dropdown panel.
-        Unlike <code>Select</code> (DOM overlay), it renders the option list on canvas.
-        Click to open, select an option, or click outside to close.
+        Unlike <code>Select</code> (DOM overlay), it renders the option list on canvas. Click to
+        open, select an option, or click outside to close.
       </p>
 
       <Grid data={data} columns={columns} width={480} height={200} rowHeight={40} />

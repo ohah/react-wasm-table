@@ -246,43 +246,43 @@ Horizontal progress bar with optional percentage label. Caches bar geometry for 
 
 Canvas-rendered circular avatar with image or initials fallback.
 
-| Prop              | Type     | Default     | Description                                 |
-| ----------------- | -------- | ----------- | ------------------------------------------- |
-| `src`             | `string` | —           | Image URL                                   |
-| `name`            | `string` | —           | Display name (initials fallback)             |
-| `alt`             | `string` | —           | Alt text for load error                      |
-| `size`            | `number` | `40`        | Avatar diameter in px                        |
-| `backgroundColor` | `string` | `"#e5e7eb"` | Background for initials fallback             |
-| `color`           | `string` | `"#374151"` | Text color for initials                      |
-| `fontSize`        | `number` | `16`        | Font size for initials                       |
-| `borderColor`     | `string` | —           | Border color                                 |
-| `borderWidth`     | `number` | `0`         | Border width                                 |
+| Prop              | Type     | Default     | Description                      |
+| ----------------- | -------- | ----------- | -------------------------------- |
+| `src`             | `string` | —           | Image URL                        |
+| `name`            | `string` | —           | Display name (initials fallback) |
+| `alt`             | `string` | —           | Alt text for load error          |
+| `size`            | `number` | `40`        | Avatar diameter in px            |
+| `backgroundColor` | `string` | `"#e5e7eb"` | Background for initials fallback |
+| `color`           | `string` | `"#374151"` | Text color for initials          |
+| `fontSize`        | `number` | `16`        | Font size for initials           |
+| `borderColor`     | `string` | —           | Border color                     |
+| `borderWidth`     | `number` | `0`         | Border width                     |
 
 ## 7. DatePicker component (DOM overlay)
 
 Date input using DOM `<input type="date">` overlay. Canvas preview shows date text and calendar icon.
 
-| Prop          | Type     | Default     | Description              |
-| ------------- | -------- | ----------- | ------------------------ |
-| `value`       | `string` | —           | Date value (YYYY-MM-DD)  |
-| `placeholder` | `string` | —           | Placeholder text         |
-| `disabled`    | `boolean`| `false`     | Disable the input        |
-| `min`         | `string` | —           | Minimum date             |
-| `max`         | `string` | —           | Maximum date             |
-| `onChange`    | `fn`     | —           | Change handler           |
+| Prop          | Type      | Default | Description             |
+| ------------- | --------- | ------- | ----------------------- |
+| `value`       | `string`  | —       | Date value (YYYY-MM-DD) |
+| `placeholder` | `string`  | —       | Placeholder text        |
+| `disabled`    | `boolean` | `false` | Disable the input       |
+| `min`         | `string`  | —       | Minimum date            |
+| `max`         | `string`  | —       | Maximum date            |
+| `onChange`    | `fn`      | —       | Change handler          |
 
 ## 8. Dropdown component (DOM overlay)
 
 Dropdown select using DOM `<select>` overlay. Canvas preview shows selected label and dropdown arrow.
 
-| Prop          | Type                                | Default | Description              |
-| ------------- | ----------------------------------- | ------- | ------------------------ |
-| `value`       | `string`                            | —       | Selected value           |
-| `options`     | `{ value: string; label: string }[]`| —       | Options array (required) |
-| `placeholder` | `string`                            | —       | Placeholder text         |
-| `disabled`    | `boolean`                           | `false` | Disable the select       |
-| `multiple`    | `boolean`                           | `false` | Allow multi-select       |
-| `onChange`    | `fn`                                | —       | Change handler           |
+| Prop          | Type                                 | Default | Description              |
+| ------------- | ------------------------------------ | ------- | ------------------------ |
+| `value`       | `string`                             | —       | Selected value           |
+| `options`     | `{ value: string; label: string }[]` | —       | Options array (required) |
+| `placeholder` | `string`                             | —       | Placeholder text         |
+| `disabled`    | `boolean`                            | `false` | Disable the select       |
+| `multiple`    | `boolean`                            | `false` | Allow multi-select       |
+| `onChange`    | `fn`                                 | —       | Change handler           |
 
 ## 9. Stub components
 
