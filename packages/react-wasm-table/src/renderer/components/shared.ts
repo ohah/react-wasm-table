@@ -49,7 +49,9 @@ export function measureInstructionWidth(
 ): number {
   if (instruction.type === "text") {
     const fontSize = instruction.style?.fontSize ?? theme.fontSize;
-    return measureText(ctx, instruction.value, fontSize, "system-ui, sans-serif");
+    const fontWeight = instruction.style?.fontWeight ?? "normal";
+    ctx.font = `${fontWeight} ${fontSize}px system-ui, sans-serif`;
+    return ctx.measureText(instruction.value).width;
   }
   if (instruction.type === "badge" || instruction.type === "chip") {
     ctx.font = "12px system-ui, sans-serif";
@@ -119,6 +121,9 @@ export function measureInstructionWidth(
   if (instruction.type === "select") {
     return 120;
   }
+  if (instruction.type === "progressbar") {
+    return 60;
+  }
   if (
     instruction.type === "stub" ||
     instruction.type === "box" ||
@@ -154,7 +159,9 @@ export function measureInstructionHeight(
     instruction.type === "label" ||
     instruction.type === "input" ||
     instruction.type === "icon" ||
-    instruction.type === "select"
+    instruction.type === "select" ||
+    instruction.type === "progressbar" ||
+    instruction.type === "switch"
     ? FLEX_CHILD_HEIGHT
     : 0;
 }
