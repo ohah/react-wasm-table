@@ -8,7 +8,7 @@ node_modules/
 
 # WASM build output
 crates/wasm/pkg/
-packages/grid/wasm/
+packages/react-wasm-table/wasm/
 
 # Build output
 dist/

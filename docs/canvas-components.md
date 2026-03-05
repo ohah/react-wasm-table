@@ -292,5 +292,5 @@ No stub components remain. All planned components have been implemented.
 
 ## Adding a new component
 
-1. **Implement**: Add a cell renderer in `packages/grid/src/renderer/components/<name>.ts`, export and register it in `createCellRendererRegistry` in `components/index.ts`, and add the component in `components.tsx` that returns the corresponding instruction type.
+1. **Implement**: Add a cell renderer in `packages/react-wasm-table/src/renderer/components/<name>.ts`, export and register it in `createCellRendererRegistry` in `components/index.ts`, and add the component in `components.tsx` that returns the corresponding instruction type.
 2. **Stub only**: Add a stub in `components.tsx` with `stub("ComponentName")` and document it in the “Planned components” section above. No renderer change until implementation.
