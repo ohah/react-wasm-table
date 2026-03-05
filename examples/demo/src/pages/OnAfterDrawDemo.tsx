@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import { Grid, createColumnHelper, type AfterDrawContext } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 
@@ -32,6 +33,7 @@ const columns = [
 type OverlayMode = "watermark" | "row-highlight" | "crosshair" | "none";
 
 export function OnAfterDrawDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData(), []);
   const [mode, setMode] = useState<OverlayMode>("watermark");
   const [highlightRow, setHighlightRow] = useState(3);
@@ -78,7 +80,7 @@ export function OnAfterDrawDemo() {
                 onClick={() => setMode(m.value)}
                 style={{
                   padding: "4px 12px",
-                  border: "1px solid #ccc",
+                  border: "1px solid var(--demo-border-2)",
                   borderRadius: 4,
                   background: mode === m.value ? "#1976d2" : "#fff",
                   color: mode === m.value ? "#fff" : "#333",
@@ -106,20 +108,6 @@ export function OnAfterDrawDemo() {
         )}
       </div>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {mode === "none"
-          ? `<Grid data={data} columns={columns} width={640} height={520} />`
-          : `<Grid\n  data={data}\n  columns={columns}\n  width={640}\n  height={520}\n  onAfterDraw={({ ctx, width, height, headerHeight, rowHeight, scrollTop }) => {\n    ${mode === "watermark" ? 'ctx.fillText("DRAFT", width / 2, height / 2);' : mode === "row-highlight" ? `const y = headerHeight + row * rowHeight - scrollTop;\n    ctx.fillRect(0, y, width, rowHeight);` : "ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height);"}\n  }}\n/>`}
-      </pre>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
@@ -131,6 +119,7 @@ export function OnAfterDrawDemo() {
               columns={columns}
               onAfterDraw={mode !== "none" ? onAfterDraw : undefined}
               overflowY="scroll"
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
             />
           </section>
         </div>
@@ -138,15 +127,15 @@ export function OnAfterDrawDemo() {
         <div
           style={{
             padding: 12,
-            background: "#f9f9f9",
+            background: "var(--demo-panel-bg)",
             borderRadius: 6,
-            border: "1px solid #eee",
+            border: "1px solid var(--demo-border)",
             fontSize: 13,
             lineHeight: 1.8,
             minWidth: 200,
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: 4, color: "#333" }}>AfterDrawContext</div>
+          <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--demo-panel-fg)" }}>AfterDrawContext</div>
           <div>
             <code>ctx</code>: CanvasRenderingContext2D
           </div>

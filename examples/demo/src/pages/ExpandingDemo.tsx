@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import {
   createColumnHelper,
   useGridTable,
@@ -78,8 +79,8 @@ const columns = [
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -94,7 +95,7 @@ const btnActive: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   marginBottom: 20,
   padding: 12,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 6,
 };
 
@@ -102,20 +103,21 @@ const thStyle: React.CSSProperties = {
   padding: "8px 12px",
   textAlign: "left",
   borderBottom: "2px solid #ddd",
-  background: "#f5f5f5",
+  background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
   fontSize: 13,
   fontWeight: 600,
 };
 
 const tdStyle: React.CSSProperties = {
   padding: "6px 12px",
-  borderBottom: "1px solid #eee",
+  borderBottom: "1px solid var(--demo-border)",
   fontSize: 13,
 };
 
 // ── Component ──────────────────────────────────────────────────────
 
 export function ExpandingDemo() {
+  const isDark = useDarkMode();
   const [expanded, setExpanded] = useState<ExpandedState>({});
 
   const handleExpandedChange = useCallback(
@@ -158,7 +160,7 @@ export function ExpandingDemo() {
           <button style={btnBase} onClick={() => table.resetExpanded()}>
             Reset
           </button>
-          <span style={{ fontSize: 13, color: "#666", marginLeft: 8 }}>
+          <span style={{ fontSize: 13, color: "var(--demo-muted)", marginLeft: 8 }}>
             Visible rows: <strong>{expandedModel.rowCount}</strong>
           </span>
         </div>
@@ -166,7 +168,7 @@ export function ExpandingDemo() {
 
       {/* Tree table */}
       <div
-        style={{ border: "1px solid #ddd", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}
+        style={{ border: "1px solid var(--demo-border)", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}
       >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -224,7 +226,7 @@ export function ExpandingDemo() {
         </div>
         <div style={{ ...sectionStyle, flex: 1 }}>
           <strong>Row Model Info:</strong>
-          <div style={{ marginTop: 4, fontSize: 13, color: "#555" }}>
+          <div style={{ marginTop: 4, fontSize: 13, color: "var(--demo-muted-2)" }}>
             <div>Total visible rows: {expandedModel.rowCount}</div>
             <div>Expandable rows: {expandedModel.rows.filter((r) => r.getCanExpand()).length}</div>
             <div>Leaf rows: {expandedModel.rows.filter((r) => !r.getCanExpand()).length}</div>
@@ -233,39 +235,6 @@ export function ExpandingDemo() {
         </div>
       </div>
 
-      {/* Code snippet */}
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-          marginTop: 16,
-        }}
-      >
-        {`const [expanded, setExpanded] = useState<ExpandedState>({});
-
-const table = useGridTable({
-  data: treeData,
-  columns,
-  getSubRows: (row) => row.children,
-  getExpandedRowModel: getExpandedRowModel(),
-  state: { ..., expanded },
-  onExpandedChange: setExpanded,
-});
-
-const model = table.getExpandedRowModel();
-// model.rows → flat array of visible rows (with depth, subRows, etc.)
-
-// Per-row API:
-// row.depth        → nesting level (0 = root)
-// row.subRows      → child Row objects
-// row.getCanExpand() → has children?
-// row.getIsExpanded() → currently expanded?
-// row.toggleExpanded() → toggle expand/collapse
-// row.getLeafRows()   → all leaf descendants`}
-      </pre>
     </>
   );
 }

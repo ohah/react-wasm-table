@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import {
   Grid,
   createColumnHelper,
@@ -70,20 +71,21 @@ const columns = [
 const sectionStyle: React.CSSProperties = {
   marginBottom: 20,
   padding: 12,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 6,
 };
 
 const cardStyle: React.CSSProperties = {
-  border: "1px solid #e0e0e0",
+  border: "1px solid var(--demo-border)",
   borderRadius: 6,
   padding: 16,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
 };
 
 // ── Component ─────────────────────────────────────────────────────
 
 export function FacetedDemo() {
+  const isDark = useDarkMode();
   const table = useGridTable<Employee>({
     data: rawData,
     columns,
@@ -113,7 +115,7 @@ export function FacetedDemo() {
       </p>
 
       <div style={sectionStyle}>
-        <span style={{ fontSize: 13, color: "#666" }}>
+        <span style={{ fontSize: 13, color: "var(--demo-muted)" }}>
           Dataset: <strong>{rawData.length}</strong> employees across{" "}
           <strong>{table.getFacetedUniqueValues("department").size}</strong> departments
         </span>
@@ -127,6 +129,7 @@ export function FacetedDemo() {
           width={800}
           height={300}
           overflowY="scroll"
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
         />
       </div>
 
@@ -141,7 +144,7 @@ export function FacetedDemo() {
       >
         {facetedData.map(({ colId, uniqueValues, minMax }) => (
           <div key={colId} style={cardStyle}>
-            <h3 style={{ margin: "0 0 12px", fontSize: 15, color: "#333" }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 15, color: "var(--demo-panel-fg)" }}>
               Column: <code>{colId}</code>
             </h3>
 
@@ -162,7 +165,7 @@ export function FacetedDemo() {
             )}
 
             {/* Unique values */}
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: "var(--demo-muted)", marginBottom: 8 }}>
               <strong>{uniqueValues.size}</strong> unique values
             </div>
 
@@ -174,8 +177,8 @@ export function FacetedDemo() {
                       style={{
                         textAlign: "left",
                         padding: "4px 8px",
-                        borderBottom: "1px solid #eee",
-                        color: "#999",
+                        borderBottom: "1px solid var(--demo-border)",
+                        color: "var(--demo-muted-5)",
                       }}
                     >
                       Value
@@ -184,8 +187,8 @@ export function FacetedDemo() {
                       style={{
                         textAlign: "right",
                         padding: "4px 8px",
-                        borderBottom: "1px solid #eee",
-                        color: "#999",
+                        borderBottom: "1px solid var(--demo-border)",
+                        color: "var(--demo-muted-5)",
                       }}
                     >
                       Count
@@ -194,8 +197,8 @@ export function FacetedDemo() {
                       style={{
                         textAlign: "right",
                         padding: "4px 8px",
-                        borderBottom: "1px solid #eee",
-                        color: "#999",
+                        borderBottom: "1px solid var(--demo-border)",
+                        color: "var(--demo-muted-5)",
                         width: 80,
                       }}
                     >
@@ -227,7 +230,7 @@ export function FacetedDemo() {
                             padding: "3px 8px",
                             borderBottom: "1px solid #f5f5f5",
                             textAlign: "right",
-                            color: "#999",
+                            color: "var(--demo-muted-5)",
                           }}
                         >
                           {((count / rawData.length) * 100).toFixed(1)}%
@@ -238,7 +241,7 @@ export function FacetedDemo() {
                     <tr>
                       <td
                         colSpan={3}
-                        style={{ padding: "4px 8px", color: "#999", fontStyle: "italic" }}
+                        style={{ padding: "4px 8px", color: "var(--demo-muted-5)", fontStyle: "italic" }}
                       >
                         ... and {uniqueValues.size - 20} more
                       </td>
@@ -251,35 +254,6 @@ export function FacetedDemo() {
         ))}
       </div>
 
-      {/* Code snippet */}
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {`const table = useGridTable({
-  data,
-  columns,
-  getFacetedRowModel: getFacetedRowModel(),
-});
-
-// Per-column unique values (value → count):
-const deptValues = table.getFacetedUniqueValues("department");
-// Map { "Engineering" => 45, "Product" => 12, ... }
-
-// Per-column min/max (numeric columns only):
-const salaryRange = table.getFacetedMinMaxValues("salary");
-// [40000, 200000] or undefined for non-numeric
-
-// Use cases:
-// - Build filter dropdowns from uniqueValues
-// - Build range sliders from min/max
-// - Show distribution charts`}
-      </pre>
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import {
   Grid,
   createColumnHelper,
@@ -83,6 +84,7 @@ interface EventEntry {
 }
 
 export function HookCompositionDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateEmployees(5000) as Record<string, unknown>[], []);
 
   // Sorting
@@ -186,6 +188,7 @@ export function HookCompositionDemo() {
               onCellClick={onCellClick}
               onHeaderClick={onHeaderClick}
               overflowY="scroll"
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
             />
           </section>
         </div>
@@ -204,7 +207,7 @@ export function HookCompositionDemo() {
                 </div>
               ))
             ) : (
-              <span style={{ color: "#999" }}>No sorting applied</span>
+              <span style={{ color: "var(--demo-muted-5)" }}>No sorting applied</span>
             )}
           </Panel>
 
@@ -223,16 +226,16 @@ export function HookCompositionDemo() {
                 <div>Total: ${selectionSummary.totalSalary.toLocaleString()}</div>
               </>
             ) : (
-              <span style={{ color: "#999" }}>No selection — click and drag cells</span>
+              <span style={{ color: "var(--demo-muted-5)" }}>No selection — click and drag cells</span>
             )}
           </Panel>
 
           {/* Event log */}
           <Panel title="Event Log" flex>
-            {events.length === 0 && <span style={{ color: "#999" }}>Interact with grid...</span>}
+            {events.length === 0 && <span style={{ color: "var(--demo-muted-5)" }}>Interact with grid...</span>}
             {events.map((e) => (
               <div key={e.id} style={{ marginBottom: 1 }}>
-                <span style={{ color: "#888" }}>{e.time}</span>{" "}
+                <span style={{ color: "var(--demo-muted-4)" }}>{e.time}</span>{" "}
                 <span style={{ color: "#4ec9b0" }}>{e.type}</span> <span>{e.detail}</span>
               </div>
             ))}
@@ -256,15 +259,15 @@ function Panel({
     <div
       style={{
         padding: 12,
-        background: "#f9f9f9",
+        background: "var(--demo-panel-bg)",
         borderRadius: 6,
-        border: "1px solid #eee",
+        border: "1px solid var(--demo-border)",
         fontSize: 13,
         lineHeight: 1.6,
         ...(flex ? { flex: 1, overflowY: "auto" } : {}),
       }}
     >
-      <div style={{ fontWeight: 600, marginBottom: 4, color: "#333" }}>{title}</div>
+      <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--demo-panel-fg)" }}>{title}</div>
       {children}
     </div>
   );

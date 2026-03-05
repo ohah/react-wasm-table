@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import {
   Grid,
   createColumnHelper,
@@ -85,8 +86,8 @@ const aggregationFns: Record<string, AggregationFn<Employee>> = {
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -101,13 +102,14 @@ const btnActive: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   marginBottom: 20,
   padding: 12,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 6,
 };
 
 // ── Component ─────────────────────────────────────────────────────
 
 export function GroupingDemo() {
+  const isDark = useDarkMode();
   const [grouping, setGrouping] = useState<GroupingState>(["department"]);
 
   const handleGroupingChange = useCallback(
@@ -144,7 +146,7 @@ export function GroupingDemo() {
 
       {/* Controls */}
       <div style={sectionStyle}>
-        <div style={{ marginBottom: 8, fontSize: 12, color: "#666" }}>Group by:</div>
+        <div style={{ marginBottom: 8, fontSize: 12, color: "var(--demo-muted)" }}>Group by:</div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {GROUPABLE_COLUMNS.map((colId) => (
             <button
@@ -161,7 +163,7 @@ export function GroupingDemo() {
           <button style={btnBase} onClick={() => table.resetGrouping()}>
             Clear
           </button>
-          <span style={{ fontSize: 13, color: "#666", marginLeft: 8 }}>
+          <span style={{ fontSize: 13, color: "var(--demo-muted)", marginLeft: 8 }}>
             Groups: <strong>{model.rowCount}</strong>
           </span>
         </div>
@@ -174,6 +176,7 @@ export function GroupingDemo() {
         width={800}
         height={400}
         overflowY="scroll"
+        theme={isDark ? DARK_THEME : LIGHT_THEME}
       />
 
       {/* State display */}
@@ -184,7 +187,7 @@ export function GroupingDemo() {
         </div>
         <div style={{ ...sectionStyle, flex: 1 }}>
           <strong>Model Info:</strong>
-          <div style={{ marginTop: 4, fontSize: 13, color: "#555" }}>
+          <div style={{ marginTop: 4, fontSize: 13, color: "var(--demo-muted-2)" }}>
             <div>Top-level groups: {model.rowCount}</div>
             <div>
               Total leaf rows:{" "}
@@ -194,43 +197,6 @@ export function GroupingDemo() {
         </div>
       </div>
 
-      {/* Code snippet */}
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {`const [grouping, setGrouping] = useState<GroupingState>(["department"]);
-
-const aggregationFns = {
-  salary: (colId, leafRows) => {
-    let sum = 0;
-    for (const r of leafRows) sum += r.getValue("salary");
-    return Math.round(sum / leafRows.length);
-  },
-  name: (colId, leafRows) => \`\${leafRows.length} employees\`,
-};
-
-const table = useGridTable({
-  data,
-  columns,
-  getGroupedRowModel: getGroupedRowModel(),
-  aggregationFns,
-  state: { ..., grouping },
-  onGroupingChange: setGrouping,
-});
-
-const model = table.getGroupedRowModel();
-// model.rows → group rows with subRows containing leaves
-// row.id          → "group:columnId:value"
-// row.getValue()  → aggregated value or group key
-// row.subRows     → child rows (next group level or leaf rows)
-// row.getLeafRows() → all leaf descendants`}
-      </pre>
     </>
   );
 }

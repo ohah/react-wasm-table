@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, type NormalizedRange } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
 
 export function Selection() {
+  const isDark = useDarkMode();
   const [gridEnabled, setGridEnabled] = useState(true);
   const [salaryEnabled, setSalaryEnabled] = useState(true);
   const [selection, setSelection] = useState<NormalizedRange | null>(null);
@@ -63,11 +65,6 @@ export function Selection() {
         </label>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`<Grid enableSelection={${gridEnabled}} ...>\n`}
-        {`  helper.accessor("salary", { enableSelection: ${salaryEnabled} })`}
-      </pre>
-
       <div style={{ marginBottom: 12 }}>
         <section style={{ marginBottom: 16 }}>
           <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
@@ -79,6 +76,7 @@ export function Selection() {
             enableSelection={gridEnabled}
             selection={selection}
             onSelectionChange={setSelection}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         </section>
       </div>
@@ -86,10 +84,10 @@ export function Selection() {
       <div
         style={{
           padding: 12,
-          background: "#f9f9f9",
+          background: "var(--demo-panel-bg)",
           borderRadius: 4,
           fontSize: 13,
-          color: "#555",
+          color: "var(--demo-muted-2)",
         }}
       >
         <strong>Selection state: </strong>
@@ -98,7 +96,7 @@ export function Selection() {
           : "none"}
       </div>
 
-      <div style={{ marginTop: 24, fontSize: 13, color: "#777", lineHeight: 1.8 }}>
+      <div style={{ marginTop: 24, fontSize: 13, color: "var(--demo-muted-3)", lineHeight: 1.8 }}>
         <p>
           <strong>Grid-level off:</strong> Disables all selection (mouse, keyboard, rendering).
         </p>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import { Grid, createColumnHelper, type CssOverflow } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 
@@ -9,9 +10,9 @@ const options: CssOverflow[] = ["visible", "clip", "hidden", "scroll", "auto"];
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -30,6 +31,7 @@ const columns = [
 ];
 
 export function Overflow() {
+  const isDark = useDarkMode();
   const [overflowXValue, setOverflowXValue] = useState<CssOverflow>("visible");
   const [overflowYValue, setOverflowYValue] = useState<CssOverflow>("visible");
   const data = useMemo(() => generateSmallData(), []);
@@ -76,13 +78,9 @@ export function Overflow() {
         </div>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`<Grid overflowX="${overflowXValue}" overflowY="${overflowYValue}" columns={columns} ...>`}
-      </pre>
-
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
           <Grid
@@ -92,6 +90,7 @@ export function Overflow() {
             overflowX={overflowXValue}
             overflowY={overflowYValue}
             columns={columns}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         </div>
       </div>

@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 
 export function Padding() {
+  const isDark = useDarkMode();
   const [cellPad, setCellPad] = useState(0);
   const [containerPad, setContainerPad] = useState(0);
   const data = useMemo(() => generateSmallData(), []);
@@ -52,19 +54,12 @@ export function Padding() {
         </label>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`helper.accessor("name", { size: 180, padding: ${cellPad} })
-helper.accessor("dept", { size: 120, padding: ${cellPad} })
-
-<Grid padding={${containerPad}} columns={columns} />`}
-      </pre>
-
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
-          <Grid data={data} width={800} height={520} padding={containerPad} columns={columns} />
+          <Grid data={data} width={800} height={520} padding={containerPad} columns={columns} theme={isDark ? DARK_THEME : LIGHT_THEME} />
         </div>
       </div>
     </>

@@ -7,6 +7,7 @@ import {
   type GridHeaderEvent,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -21,6 +22,7 @@ interface LogEntry {
 const MAX_LOG = 80;
 
 export function TouchEventsDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData(), []);
   const [log, setLog] = useState<LogEntry[]>([]);
   const nextId = useRef(0);
@@ -133,7 +135,7 @@ export function TouchEventsDemo() {
         results. Call <code>event.preventDefault()</code> to cancel internal touch handling (scroll,
         tap-to-click, selection drag).
       </p>
-      <p style={{ fontSize: 13, color: "#888" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted-4)" }}>
         Use Chrome DevTools device emulation or a real touch device to test. Mouse events are shown
         too (tap triggers onCellClick).
       </p>
@@ -147,25 +149,6 @@ export function TouchEventsDemo() {
         <Toggle label="Block onTouchMove" checked={blockTouchMove} onChange={setBlockTouchMove} />
         <Toggle label="Block onTouchEnd" checked={blockTouchEnd} onChange={setBlockTouchEnd} />
       </div>
-
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {`<Grid\n`}
-        {`  onTouchStart={(e) => {\n`}
-        {`    console.log(e.hitTest, e.touch, e.touchCount);\n`}
-        {`    ${blockTouchStart ? "e.preventDefault(); // blocks scroll + tap" : "// observe"}\n`}
-        {`  }}\n`}
-        {`  onTouchMove={(e) => { ${blockTouchMove ? "e.preventDefault();" : "/* observe */"} }}\n`}
-        {`  onTouchEnd={(e) => { ${blockTouchEnd ? "e.preventDefault();" : "/* observe */"} }}\n`}
-        {`/>`}
-      </pre>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
@@ -181,6 +164,7 @@ export function TouchEventsDemo() {
               onTouchEnd={onTouchEnd}
               onCellClick={onCellClick}
               onHeaderClick={onHeaderClick}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
             />
           </section>
         </div>
@@ -203,7 +187,7 @@ export function TouchEventsDemo() {
               display: "flex",
               justifyContent: "space-between",
               marginBottom: 4,
-              color: "#888",
+              color: "var(--demo-muted-4)",
             }}
           >
             <span>Touch Event Log</span>
@@ -222,7 +206,7 @@ export function TouchEventsDemo() {
               Clear
             </button>
           </div>
-          {log.length === 0 && <div style={{ color: "#666" }}>Touch the grid...</div>}
+          {log.length === 0 && <div style={{ color: "var(--demo-muted)" }}>Touch the grid...</div>}
           {log.map((entry) => (
             <div key={entry.id} style={{ marginBottom: 2 }}>
               <span style={{ color: entry.blocked ? "#f44" : "#4ec9b0" }}>

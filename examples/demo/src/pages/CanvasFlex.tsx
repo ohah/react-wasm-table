@@ -9,6 +9,7 @@ import {
   type CssAlignItems,
   type CssJustifyContent,
 } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 type Row = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<Row>();
 
@@ -25,9 +26,9 @@ const gapOptions = [0, 4, 8, 12, 16];
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -39,6 +40,7 @@ const btnActive: React.CSSProperties = {
 };
 
 export function CanvasFlex() {
+  const isDark = useDarkMode();
   const [flexDirection, setFlexDirection] = useState<CssFlexDirection>("row");
   const [gap, setGap] = useState(8);
   const [alignItems, setAlignItems] = useState<CssAlignItems>("center");
@@ -164,7 +166,7 @@ export function CanvasFlex() {
         </div>
       </div>
 
-      <h3 style={{ margin: "16px 0 8px", fontSize: 14, color: "#666" }}>Canvas preview</h3>
+      <h3 style={{ margin: "16px 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>Canvas preview</h3>
       <section style={{ marginBottom: 32 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
         <Grid
@@ -173,23 +175,10 @@ export function CanvasFlex() {
           width={440}
           height={480}
           rowHeight={120}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
         />
       </section>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          marginTop: 16,
-          overflow: "auto",
-        }}
-      >
-        {useStyleProp
-          ? `<Flex style={{ flexDirection: "${flexDirection}", gap: ${gap}, alignItems: "${alignItems}", justifyContent: "${justifyContent}" }}>\n  <Badge value={dept} />\n  <Text value={\`#\${index}\`} />\n  <Text value={salary} />\n</Flex>`
-          : `<Flex\n  flexDirection="${flexDirection}"\n  gap={${gap}}\n  alignItems="${alignItems}"\n  justifyContent="${justifyContent}"\n>\n  <Badge value={dept} />\n  <Text value={\`#\${index}\`} />\n  <Text value={salary} />\n</Flex>`}
-      </pre>
     </>
   );
 }

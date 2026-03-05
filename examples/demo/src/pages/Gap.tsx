@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 
@@ -13,6 +14,7 @@ const columns = [
 ];
 
 export function Gap() {
+  const isDark = useDarkMode();
   const [gapValue, setGapValue] = useState(0);
   const data = useMemo(() => generateSmallData(), []);
 
@@ -36,16 +38,12 @@ export function Gap() {
         </label>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`<Grid gap={${gapValue}} columns={columns} ...>`}
-      </pre>
-
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
-          <Grid data={data} width={800} height={520} gap={gapValue} columns={columns} />
+          <Grid data={data} width={800} height={520} gap={gapValue} columns={columns} theme={isDark ? DARK_THEME : LIGHT_THEME} />
         </div>
       </div>
     </>

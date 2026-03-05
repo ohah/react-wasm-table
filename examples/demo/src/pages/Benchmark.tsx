@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Grid, createColumnHelper, Text, Badge } from "@ohah/react-wasm-table";
+import { Grid, createColumnHelper, Text, Badge, type Theme } from "@ohah/react-wasm-table";
 import {
   createColumnHelper as createTanStackColumnHelper,
   useReactTable,
@@ -12,6 +12,35 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { generateEmployees } from "../data";
 import { useContainerSize } from "../useContainerSize";
+
+// -- Dark mode detection (rspress uses .rp-dark, Vite demo uses .dark) --
+function useDarkMode(): boolean {
+  const [dark, setDark] = useState(() =>
+    typeof document !== "undefined"
+      ? document.documentElement.classList.contains("rp-dark") ||
+        document.documentElement.classList.contains("dark")
+      : false,
+  );
+  useEffect(() => {
+    const el = document.documentElement;
+    const check = () =>
+      setDark(el.classList.contains("rp-dark") || el.classList.contains("dark"));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+  return dark;
+}
+
+const DARK_THEME: Partial<Theme> = {
+  headerBackground: "#1e1e1e",
+  headerColor: "#e0e0e0",
+  cellBackground: "#141414",
+  cellColor: "#e0e0e0",
+  borderColor: "#333",
+  selectedBackground: "#1e3a5f",
+};
 
 type Employee = {
   id: number;
@@ -140,6 +169,7 @@ type BenchResult = {
 type Phase = "idle" | "generating" | "measure-wasm" | "measure-tanstack" | "done";
 
 export function Benchmark() {
+  const isDark = useDarkMode();
   const [phase, setPhase] = useState<Phase>("idle");
   const [data, setData] = useState<Employee[] | null>(null);
   const [results, setResults] = useState<BenchResult[]>([]);
@@ -148,6 +178,7 @@ export function Benchmark() {
   const [enableTanStack, setEnableTanStack] = useState(true);
   const [selectedCount, setSelectedCount] = useState(10_000);
   const { ref: containerRef, size } = useContainerSize(400);
+  const gridTheme = isDark ? DARK_THEME : undefined;
 
   const bench = useRef({
     count: 0,
@@ -327,18 +358,18 @@ export function Benchmark() {
 
       {phase === "generating" && (
         <PhaseIndicator
-          bg="#fff3e0"
+          variant="tanstack"
           text={`Generating ${bench.current.count.toLocaleString()} rows…`}
         />
       )}
       {phase === "measure-wasm" && (
-        <PhaseIndicator bg="#e3f2fd" text="Measuring react-wasm-table render…" />
+        <PhaseIndicator variant="wasm" text="Measuring react-wasm-table render…" />
       )}
       {phase === "measure-tanstack" && (
-        <PhaseIndicator bg="#fff3e0" text="Measuring @tanstack/react-table render…" />
+        <PhaseIndicator variant="tanstack" text="Measuring @tanstack/react-table render…" />
       )}
       {queue.length > 0 && (
-        <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>
+        <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 8 }}>
           Remaining: {queue.map((c) => (c >= 1000 ? `${c / 1000}K` : String(c))).join(" → ")}
         </div>
       )}
@@ -353,6 +384,7 @@ export function Benchmark() {
             height={tableHeight}
             startTime={bench.current.startTime}
             onComplete={onWasmDone}
+            theme={gridTheme}
           />
         )}
         {phase === "measure-tanstack" && data && size.width > 0 && (
@@ -371,6 +403,7 @@ export function Benchmark() {
             height={tableHeight}
             enableWasm={bench.current.enableWasm}
             enableTanStack={bench.current.enableTanStack}
+            gridTheme={gridTheme}
           />
         )}
       </div>
@@ -380,12 +413,19 @@ export function Benchmark() {
 
 // ── Helpers ──
 
-function PhaseIndicator({ bg, text }: { bg: string; text: string }) {
+function PhaseIndicator({
+  variant,
+  text,
+}: {
+  variant: "wasm" | "tanstack";
+  text: string;
+}) {
   return (
     <div
       style={{
         padding: "10px 16px",
-        backgroundColor: bg,
+        backgroundColor: `var(--phase-${variant}-bg)`,
+        color: `var(--phase-${variant}-text)`,
         borderRadius: 8,
         marginBottom: 16,
         fontSize: 14,
@@ -408,7 +448,7 @@ function ResultsPanel({ results }: { results: BenchResult[] }) {
     <div style={{ marginBottom: 24 }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginBottom: 20 }}>
         <thead>
-          <tr style={{ borderBottom: "2px solid #ddd" }}>
+          <tr style={{ borderBottom: "2px solid var(--demo-border)" }}>
             <th style={thStyle}>Rows</th>
             <th style={{ ...thStyle, textAlign: "right" }}>Data Gen</th>
             {hasWasm && <th style={{ ...thStyle, textAlign: "right" }}>react-wasm-table</th>}
@@ -423,9 +463,11 @@ function ResultsPanel({ results }: { results: BenchResult[] }) {
                 ? (r.tanStackMs / r.wasmMs).toFixed(1)
                 : "—";
             return (
-              <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+              <tr key={i} style={{ borderBottom: "1px solid var(--demo-border)" }}>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{r.rowCount.toLocaleString()}</td>
-                <td style={{ ...tdStyle, textAlign: "right", color: "#888" }}>{r.dataGenMs}ms</td>
+                <td style={{ ...tdStyle, textAlign: "right", color: "var(--demo-muted-4)" }}>
+                  {r.dataGenMs}ms
+                </td>
                 {hasWasm && (
                   <td style={{ ...tdStyle, textAlign: "right", color: "#2e7d32", fontWeight: 700 }}>
                     {r.wasmMs != null ? `${r.wasmMs}ms` : "—"}
@@ -464,8 +506,18 @@ function ResultsPanel({ results }: { results: BenchResult[] }) {
   );
 }
 
-const thStyle: React.CSSProperties = { padding: "8px 12px", textAlign: "left", fontSize: 13 };
-const tdStyle: React.CSSProperties = { padding: "8px 12px", fontSize: 13 };
+const thStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  textAlign: "left",
+  fontSize: 13,
+  backgroundColor: "var(--demo-code-bg)",
+  color: "var(--demo-code-fg)",
+};
+const tdStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  fontSize: 13,
+  color: "var(--demo-panel-fg)",
+};
 
 function Bar({
   label,
@@ -481,13 +533,21 @@ function Bar({
   const pct = maxMs > 0 ? (ms / maxMs) * 100 : 0;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-      <span style={{ width: 160, fontSize: 12, textAlign: "right", flexShrink: 0, color: "#555" }}>
+      <span
+        style={{
+          width: 160,
+          fontSize: 12,
+          textAlign: "right",
+          flexShrink: 0,
+          color: "var(--demo-muted-2)",
+        }}
+      >
         {label}
       </span>
       <div
         style={{
           flex: 1,
-          backgroundColor: "#e8e8e8",
+          backgroundColor: "var(--demo-code-bg)",
           borderRadius: 4,
           height: 20,
           overflow: "hidden",
@@ -503,7 +563,16 @@ function Bar({
           }}
         />
       </div>
-      <span style={{ width: 70, fontSize: 12, fontWeight: 700, textAlign: "right", flexShrink: 0 }}>
+      <span
+        style={{
+          width: 70,
+          fontSize: 12,
+          fontWeight: 700,
+          textAlign: "right",
+          flexShrink: 0,
+          color: "var(--demo-panel-fg)",
+        }}
+      >
         {ms}ms
       </span>
     </div>
@@ -518,12 +587,14 @@ function MeasureWasmGrid({
   height,
   startTime,
   onComplete,
+  theme,
 }: {
   data: Employee[];
   width: number;
   height: number;
   startTime: number;
   onComplete: (ms: number) => void;
+  theme?: Partial<Theme>;
 }) {
   useEffect(() => {
     let id2 = 0;
@@ -539,7 +610,7 @@ function MeasureWasmGrid({
   }, [startTime, onComplete]);
 
   return (
-    <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", height }}>
+    <div style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden", height }}>
       <Grid
         data={data as Record<string, unknown>[]}
         width={width}
@@ -547,6 +618,7 @@ function MeasureWasmGrid({
         columns={wasmColumns}
         overflowY="scroll"
         overflowX="scroll"
+        theme={theme}
       />
     </div>
   );
@@ -591,12 +663,14 @@ function InteractiveBench({
   height,
   enableWasm,
   enableTanStack,
+  gridTheme,
 }: {
   data: Employee[];
   width: number;
   height: number;
   enableWasm: boolean;
   enableTanStack: boolean;
+  gridTheme?: Partial<Theme>;
 }) {
   const [wasmSorting, setWasmSorting] = useState<SortingState>([]);
   const [tsSorting, setTsSorting] = useState<SortingState>([]);
@@ -763,9 +837,11 @@ function InteractiveBench({
           style={{
             padding: "6px 10px",
             fontSize: 13,
-            border: "1px solid #ccc",
+            border: "1px solid var(--demo-border-2)",
             borderRadius: 6,
             width: 200,
+            backgroundColor: "var(--demo-dropdown-bg)",
+            color: "var(--demo-dropdown-fg)",
           }}
         />
         <button
@@ -783,9 +859,9 @@ function InteractiveBench({
           style={{
             padding: "6px 12px",
             fontSize: 13,
-            color: "#666",
+            color: "var(--demo-muted-2)",
             backgroundColor: "transparent",
-            border: "1px solid #ccc",
+            border: "1px solid var(--demo-border-2)",
             borderRadius: 6,
             cursor: isMeasuring ? "not-allowed" : "pointer",
             opacity: isMeasuring ? 0.5 : 1,
@@ -798,13 +874,13 @@ function InteractiveBench({
       {/* Measuring indicator */}
       {sortPhase !== "idle" && (
         <PhaseIndicator
-          bg="#e3f2fd"
+          variant={sortPhase === "wasm" ? "wasm" : "tanstack"}
           text={`Measuring sort — ${sortPhase === "wasm" ? "react-wasm-table" : "@tanstack/react-table"}…`}
         />
       )}
       {filterPhase !== "idle" && (
         <PhaseIndicator
-          bg="#fff3e0"
+          variant={filterPhase === "wasm" ? "wasm" : "tanstack"}
           text={`Measuring filter — ${filterPhase === "wasm" ? "react-wasm-table" : "@tanstack/react-table"}…`}
         />
       )}
@@ -821,9 +897,9 @@ function InteractiveBench({
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
         {enableWasm && (
           <section>
-            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600 }}>react-wasm-table</h3>
+            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600, color: "var(--demo-panel-fg)" }}>react-wasm-table</h3>
             <div
-              style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden", height }}
+              style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden", height }}
             >
               <Grid
                 data={data as Record<string, unknown>[]}
@@ -836,13 +912,14 @@ function InteractiveBench({
                 onGlobalFilterChange={setWasmFilter}
                 overflowY="scroll"
                 overflowX="scroll"
+                theme={gridTheme}
               />
             </div>
           </section>
         )}
         {enableTanStack && (
           <section>
-            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600 }}>
+            <h3 style={{ fontSize: 14, margin: "0 0 8px", fontWeight: 600, color: "var(--demo-panel-fg)" }}>
               @tanstack/react-table
             </h3>
             <TanStackVirtualTable
@@ -897,9 +974,9 @@ function ghostBtnStyle(isDisabled: boolean): React.CSSProperties {
   return {
     padding: "7px 20px",
     fontSize: 13,
-    color: "#666",
+    color: "var(--demo-muted-2)",
     backgroundColor: "transparent",
-    border: "1px solid #ccc",
+    border: "1px solid var(--demo-border-2)",
     borderRadius: 8,
     cursor: isDisabled ? "not-allowed" : "pointer",
   };
@@ -947,9 +1024,9 @@ function SelectDropdown({
           padding: "7px 28px 7px 12px",
           fontSize: 13,
           fontWeight: 600,
-          border: "1px solid #d0d0d0",
+          border: "1px solid var(--demo-dropdown-border)",
           borderRadius: 8,
-          backgroundColor: "#fff",
+          backgroundColor: "var(--demo-dropdown-bg)",
           cursor: disabled ? "not-allowed" : "pointer",
           opacity: disabled ? 0.5 : 1,
           textAlign: "left",
@@ -964,7 +1041,7 @@ function SelectDropdown({
             top: "50%",
             transform: "translateY(-50%)",
             fontSize: 11,
-            color: "#888",
+            color: "var(--demo-muted-4)",
             pointerEvents: "none",
           }}
         >
@@ -978,8 +1055,8 @@ function SelectDropdown({
             top: "calc(100% + 4px)",
             left: 0,
             minWidth: "100%",
-            backgroundColor: "#fff",
-            border: "1px solid #e0e0e0",
+            backgroundColor: "var(--demo-dropdown-bg)",
+            border: "1px solid var(--demo-border)",
             borderRadius: 8,
             boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
             zIndex: 1000,
@@ -994,18 +1071,18 @@ function SelectDropdown({
                 setOpen(false);
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#f5f5f5";
+                e.currentTarget.style.backgroundColor = "var(--demo-dropdown-hover-bg)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = opt.value === value ? "#e8f0fe" : "";
+                e.currentTarget.style.backgroundColor = opt.value === value ? "var(--demo-dropdown-selected-bg)" : "";
               }}
               style={{
                 padding: "8px 12px",
                 fontSize: 13,
                 cursor: "pointer",
-                backgroundColor: opt.value === value ? "#e8f0fe" : undefined,
+                backgroundColor: opt.value === value ? "var(--demo-dropdown-selected-bg)" : undefined,
                 fontWeight: opt.value === value ? 600 : 400,
-                color: opt.value === value ? "#1976d2" : "#333",
+                color: opt.value === value ? "var(--demo-dropdown-selected-fg)" : "var(--demo-dropdown-fg)",
               }}
             >
               {opt.label}
@@ -1052,9 +1129,9 @@ function CheckDropdown({
           padding: "7px 28px 7px 12px",
           fontSize: 13,
           fontWeight: 600,
-          border: "1px solid #d0d0d0",
+          border: "1px solid var(--demo-dropdown-border)",
           borderRadius: 8,
-          backgroundColor: "#fff",
+          backgroundColor: "var(--demo-dropdown-bg)",
           cursor: disabled ? "not-allowed" : "pointer",
           opacity: disabled ? 0.5 : 1,
           textAlign: "left",
@@ -1069,7 +1146,7 @@ function CheckDropdown({
             top: "50%",
             transform: "translateY(-50%)",
             fontSize: 11,
-            color: "#888",
+            color: "var(--demo-muted-4)",
             pointerEvents: "none",
           }}
         >
@@ -1083,8 +1160,8 @@ function CheckDropdown({
             top: "calc(100% + 4px)",
             left: 0,
             minWidth: 240,
-            backgroundColor: "#fff",
-            border: "1px solid #e0e0e0",
+            backgroundColor: "var(--demo-dropdown-bg)",
+            border: "1px solid var(--demo-border)",
             borderRadius: 8,
             boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
             zIndex: 1000,
@@ -1096,7 +1173,7 @@ function CheckDropdown({
               key={item.key}
               onClick={() => item.onChange(!item.checked)}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#f5f5f5";
+                e.currentTarget.style.backgroundColor = "var(--demo-dropdown-hover-bg)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "";
@@ -1116,8 +1193,8 @@ function CheckDropdown({
                   height: 18,
                   borderRadius: 4,
                   flexShrink: 0,
-                  border: `2px solid ${item.checked ? "#1976d2" : "#ccc"}`,
-                  backgroundColor: item.checked ? "#1976d2" : "#fff",
+                  border: `2px solid ${item.checked ? "#1976d2" : "var(--demo-border-2)"}`,
+                  backgroundColor: item.checked ? "#1976d2" : "var(--demo-dropdown-bg)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1129,7 +1206,9 @@ function CheckDropdown({
               >
                 {item.checked ? "✓" : ""}
               </span>
-              <span style={{ fontWeight: item.checked ? 600 : 400 }}>{item.label}</span>
+              <span style={{ fontWeight: item.checked ? 600 : 400, color: "var(--demo-dropdown-fg)" }}>
+                {item.label}
+              </span>
             </div>
           ))}
         </div>
@@ -1157,11 +1236,11 @@ function TimingDisplay({
         marginBottom: 8,
         fontSize: 13,
         padding: "6px 12px",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "var(--demo-code-bg)",
         borderRadius: 6,
       }}
     >
-      <span style={{ fontWeight: 700, minWidth: 44 }}>{label}</span>
+      <span style={{ fontWeight: 700, minWidth: 44, color: "var(--demo-panel-fg)" }}>{label}</span>
       {wasmMs != null && (
         <span style={{ color: "#2e7d32", fontWeight: 600 }}>react-wasm-table: {wasmMs}ms</span>
       )}
@@ -1210,13 +1289,15 @@ function TanStackVirtualTable({
   return (
     <div
       style={{
-        border: "1px solid #e0e0e0",
+        border: "1px solid var(--demo-border)",
         borderRadius: 8,
         overflow: "hidden",
         height,
         width,
         display: "flex",
         flexDirection: "column",
+        backgroundColor: "var(--demo-panel-bg)",
+        color: "var(--demo-panel-fg)",
       }}
     >
       <table
@@ -1227,7 +1308,7 @@ function TanStackVirtualTable({
           flexShrink: 0,
         }}
       >
-        <thead style={{ backgroundColor: "#f5f5f5" }}>
+        <thead style={{ backgroundColor: "var(--demo-code-bg)" }}>
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
               {hg.headers.map((h) => (
@@ -1238,9 +1319,10 @@ function TanStackVirtualTable({
                     minWidth: (h.column.columnDef.size as number) ?? 100,
                     padding: "8px",
                     textAlign: "left",
-                    borderBottom: "1px solid #e0e0e0",
+                    borderBottom: "1px solid var(--demo-border)",
                     fontSize: 12,
                     fontWeight: 600,
+                    color: "var(--demo-panel-fg)",
                   }}
                 >
                   {flexRender(h.column.columnDef.header, h.getContext())}
@@ -1275,7 +1357,7 @@ function TanStackVirtualTable({
                   height: ROW_HEIGHT,
                   display: "flex",
                   alignItems: "center",
-                  borderBottom: "1px solid #eee",
+                  borderBottom: "1px solid var(--demo-border)",
                   boxSizing: "border-box",
                 }}
               >

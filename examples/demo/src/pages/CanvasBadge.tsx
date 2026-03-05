@@ -1,15 +1,16 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, Badge } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<Row>();
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -28,6 +29,7 @@ const presets: { label: string; color: string; backgroundColor: string }[] = [
 ];
 
 export function CanvasBadge() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as Row[], []);
   const [presetIndex, setPresetIndex] = useState(0);
   const [borderRadius, setBorderRadius] = useState(6);
@@ -94,7 +96,7 @@ export function CanvasBadge() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
-        <Grid data={data} columns={columns} width={360} height={460} rowHeight={40} />
+        <Grid data={data} columns={columns} width={360} height={460} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
       </section>
     </>
   );

@@ -8,6 +8,7 @@ import {
   type NormalizedRange,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -20,6 +21,7 @@ const columns = [
 ];
 
 export function AdapterDIDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData(), []);
 
   // External managers — created once, shared across grids or inspected externally
@@ -75,7 +77,7 @@ export function AdapterDIDemo() {
             onClick={clearSelection}
             style={{
               padding: "4px 12px",
-              border: "1px solid #ccc",
+              border: "1px solid var(--demo-border-2)",
               borderRadius: 4,
               cursor: "pointer",
             }}
@@ -85,39 +87,18 @@ export function AdapterDIDemo() {
         )}
       </div>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {useDI
-          ? `const [selectionManager] = useState(() => new SelectionManager());
-
-// Grid A: full DI (all 3 managers)
-<Grid eventManager={eventManager} selectionManager={selectionManager}
-      editorManager={editorManager} ... />
-
-// Grid B: shared SelectionManager only (selecting in one reflects in both)
-<Grid selectionManager={selectionManager} ... />`
-          : `// Default: each Grid creates internal managers
-<Grid data={data} columns={columns} />`}
-      </pre>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>Grid A</div>
+          <div style={{ fontSize: 12, color: "var(--demo-muted-4)", fontWeight: 600 }}>Grid A</div>
           <Grid
             data={data}
             width={460}
             height={520}
             columns={columns}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
             {...(useDI ? { eventManager, selectionManager, editorManager } : {})}
           />
-          <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>
+          <div style={{ fontSize: 12, color: "var(--demo-muted-4)", fontWeight: 600 }}>
             Grid B (shared SelectionManager)
           </div>
           <Grid
@@ -125,6 +106,7 @@ export function AdapterDIDemo() {
             width={460}
             height={480}
             columns={columns}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
             {...(useDI ? { selectionManager } : {})}
           />
         </div>
@@ -170,7 +152,7 @@ export function AdapterDIDemo() {
               </span>
             </div>
             {useDI && (
-              <div style={{ marginTop: 8, color: "#888", fontSize: 12 }}>
+              <div style={{ marginTop: 8, color: "var(--demo-muted-4)", fontSize: 12 }}>
                 Reading directly from SelectionManager instance
               </div>
             )}
@@ -195,14 +177,14 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
     <div
       style={{
         padding: 12,
-        background: "#f9f9f9",
+        background: "var(--demo-panel-bg)",
         borderRadius: 6,
-        border: "1px solid #eee",
+        border: "1px solid var(--demo-border)",
         fontSize: 13,
         lineHeight: 1.8,
       }}
     >
-      <div style={{ fontWeight: 600, marginBottom: 4, color: "#333" }}>{title}</div>
+      <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--demo-panel-fg)" }}>{title}</div>
       {children}
     </div>
   );

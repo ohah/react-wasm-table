@@ -1,11 +1,13 @@
 import { useState, useMemo, useCallback } from "react";
 import { Grid, createColumnHelper, type NormalizedRange } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
 
 export function UseSelectionDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData(), []);
   const [selection, setSelection] = useState<NormalizedRange | null>(null);
   const [copyLog, setCopyLog] = useState<string[]>([]);
@@ -100,7 +102,7 @@ export function UseSelectionDemo() {
           <select
             value={copyFormat}
             onChange={(e) => setCopyFormat(e.target.value as "tsv" | "json")}
-            style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid #ccc" }}
+            style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid var(--demo-border-2)" }}
           >
             <option value="tsv">TSV (default)</option>
             <option value="json">JSON</option>
@@ -123,27 +125,6 @@ export function UseSelectionDemo() {
         </button>
       </div>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {`<Grid\n`}
-        {`  selection={selection}\n`}
-        {`  onSelectionChange={setSelection}\n`}
-        {guardEnabled
-          ? `  onBeforeSelectionChange={(next) => {\n    if (next && next.maxRow > ${MAX_ROW}) return false;\n  }}\n`
-          : ""}
-        {copyFormat === "json"
-          ? `  onCopy={(tsv) => JSON.stringify(tsv.split("\\n").map(l => l.split("\\t")))}\n`
-          : ""}
-        {`/>`}
-      </pre>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
@@ -157,6 +138,7 @@ export function UseSelectionDemo() {
               onSelectionChange={setSelection}
               onBeforeSelectionChange={onBeforeSelectionChange}
               onCopy={onCopy}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
             />
           </section>
         </div>
@@ -165,7 +147,7 @@ export function UseSelectionDemo() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 13,
               marginBottom: 12,
@@ -180,17 +162,17 @@ export function UseSelectionDemo() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 13,
             }}
           >
             <strong>Copy log:</strong>
             {copyLog.length === 0 && (
-              <div style={{ color: "#999", marginTop: 4 }}>Select cells and press Ctrl/Cmd+C</div>
+              <div style={{ color: "var(--demo-muted-5)", marginTop: 4 }}>Select cells and press Ctrl/Cmd+C</div>
             )}
             {copyLog.map((entry, i) => (
-              <div key={i} style={{ color: "#555", marginTop: 2 }}>
+              <div key={i} style={{ color: "var(--demo-muted-2)", marginTop: 2 }}>
                 {entry}
               </div>
             ))}
@@ -204,8 +186,8 @@ export function UseSelectionDemo() {
 const btnStyle: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };

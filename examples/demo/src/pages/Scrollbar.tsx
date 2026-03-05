@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, type CssOverflow } from "@ohah/react-wasm-table";
 import { generateSmallData, generateEmployees } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const smallHelper = createColumnHelper<SmallRow>();
@@ -41,9 +42,9 @@ const overflowOptions: CssOverflow[] = ["auto", "scroll", "hidden", "visible"];
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -55,6 +56,7 @@ const btnActive: React.CSSProperties = {
 };
 
 export function Scrollbar() {
+  const isDark = useDarkMode();
   const [overflowY, setOverflowY] = useState<CssOverflow>("auto");
   const smallData = useMemo(() => generateSmallData(), []);
   const largeData = useMemo(() => generateEmployees(500), []);
@@ -91,7 +93,7 @@ export function Scrollbar() {
       </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
           <Grid
@@ -100,6 +102,7 @@ export function Scrollbar() {
             height={520}
             overflowY={overflowY}
             columns={smallColumns}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         </div>
       </div>
@@ -112,8 +115,8 @@ export function Scrollbar() {
       </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
-          <Grid data={smallData} width={550} height={520} overflowY="auto" columns={smallColumns} />
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>Canvas (WASM/Taffy)</h3>
+          <Grid data={smallData} width={550} height={520} overflowY="auto" columns={smallColumns} theme={isDark ? DARK_THEME : LIGHT_THEME} />
         </div>
       </div>
 
@@ -124,13 +127,14 @@ export function Scrollbar() {
       </p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>Canvas (WASM/Taffy)</h3>
           <Grid
             data={smallData}
             width={550}
             height={520}
             overflowY="scroll"
             columns={smallColumns}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         </div>
       </div>
@@ -140,13 +144,14 @@ export function Scrollbar() {
       <p>Wide content with many columns in a narrow viewport.</p>
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap", marginBottom: 32 }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>Canvas (WASM/Taffy)</h3>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>Canvas (WASM/Taffy)</h3>
           <Grid
             data={largeData}
             width={600}
             height={520}
             overflowY={overflowY}
             columns={manyColumns}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         </div>
       </div>

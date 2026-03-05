@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import {
   Grid,
   createColumnHelper,
@@ -111,6 +112,7 @@ const DEFAULT_TOGGLES: LayerToggle[] = [
 ];
 
 export function LayerDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateData(200), []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [toggles, setToggles] = useState(DEFAULT_TOGGLES);
@@ -183,13 +185,13 @@ export function LayerDemo() {
                 </span>
               </div>
             ))}
-            {activeLayers.length === 0 && <div style={{ color: "#999" }}>(empty)</div>}
+            {activeLayers.length === 0 && <div style={{ color: "var(--demo-muted-5)" }}>(empty)</div>}
           </div>
         </div>
 
         {/* Grid API */}
         <section style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+          <h3 style={{ fontSize: 14, marginBottom: 8, color: "var(--demo-muted)" }}>Grid API</h3>
           <Grid
             data={data as any}
             width={600}
@@ -199,48 +201,11 @@ export function LayerDemo() {
             onSortingChange={setSorting}
             layers={activeLayers}
             padding={[0, 4]}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         </section>
       </div>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-          marginTop: 16,
-        }}
-      >
-        {`import { headerLayer, dataLayer, gridLinesLayer, selectionLayer } from "@ohah/react-wasm-table";
-
-// Custom watermark layer (viewport space — no scroll translate)
-const watermark: GridLayer = {
-  name: "watermark",
-  space: "viewport",
-  draw({ ctx, width, height }) {
-    ctx.save();
-    ctx.globalAlpha = 0.06;
-    ctx.font = "bold 48px system-ui";
-    ctx.translate(width / 2, height / 2);
-    ctx.rotate(-Math.PI / 6);
-    ctx.fillText("CONFIDENTIAL", 0, 0);
-    ctx.restore();
-  },
-};
-
-<Grid
-  layers={[
-    headerLayer(),
-    dataLayer(),
-    gridLinesLayer(),
-    watermark,         // injected between gridLines and selection
-    selectionLayer(),
-  ]}
-  ...
-/>`}
-      </pre>
     </>
   );
 }

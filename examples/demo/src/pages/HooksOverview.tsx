@@ -1,6 +1,8 @@
 import { Link } from "react-router";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 export function HooksOverview() {
+  const isDark = useDarkMode();
   return (
     <>
       <h1>Hooks Architecture (Phase 0)</h1>
@@ -8,42 +10,6 @@ export function HooksOverview() {
         Grid.tsx is a thin shell that composes 8 independent hooks. Each hook owns a single
         responsibility and can be tested in isolation.
       </p>
-
-      <pre
-        style={{
-          background: "#1e1e1e",
-          color: "#d4d4d4",
-          padding: 16,
-          borderRadius: 6,
-          fontSize: 12,
-          fontFamily: "monospace",
-          lineHeight: 1.6,
-          overflowX: "auto",
-        }}
-      >
-        {`Grid.tsx (thin shell — ~420 lines)
-│
-├─ useWasmEngine        WASM init + MemoryBridge
-│
-├─ useDataIngestion     data[] → WASM columnar store + StringTable
-│
-├─ useSorting           sorting state (controlled/uncontrolled)
-│   └─ onBeforeSortChange guard
-│
-├─ useSelection         SelectionManager + clipboard + handlers
-│   └─ onBeforeSelectionChange guard
-│
-├─ useEditing           EditorManager + double-click handler
-│
-├─ useGridScroll        scroll refs + auto-scroll + clamping
-│
-├─ useEventAttachment   EventManager.attach + callback interception
-│   ├─ onCellClick / onCellDoubleClick
-│   ├─ onHeaderClick
-│   └─ onKeyDown
-│
-└─ useRenderLoop        RAF + WASM layout + Canvas draw`}
-      </pre>
 
       <h2 style={{ marginTop: 32 }}>Demo Pages</h2>
 
@@ -81,7 +47,7 @@ export function HooksOverview() {
       </div>
 
       <h2 style={{ marginTop: 32 }}>Design Principles</h2>
-      <ul style={{ fontSize: 14, lineHeight: 1.8, color: "#555" }}>
+      <ul style={{ fontSize: 14, lineHeight: 1.8, color: "var(--demo-muted-2)" }}>
         <li>
           <strong>Headless first</strong> — Logic and state only, UI decisions are yours
         </li>
@@ -112,7 +78,7 @@ function DemoCard({ to, title, description }: { to: string; title: string; descr
         display: "block",
         padding: 16,
         background: "#f8f9fa",
-        border: "1px solid #e0e0e0",
+        border: "1px solid var(--demo-border)",
         borderRadius: 8,
         textDecoration: "none",
         color: "inherit",
@@ -124,7 +90,7 @@ function DemoCard({ to, title, description }: { to: string; title: string; descr
       <div style={{ fontWeight: 600, fontSize: 15, color: "#1976d2", marginBottom: 4 }}>
         {title}
       </div>
-      <div style={{ fontSize: 13, color: "#666", lineHeight: 1.5 }}>{description}</div>
+      <div style={{ fontSize: 13, color: "var(--demo-muted)", lineHeight: 1.5 }}>{description}</div>
     </Link>
   );
 }
