@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, type CssAlignItems } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 
@@ -16,9 +17,9 @@ const containerOptions: CssAlignItems[] = [
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -30,6 +31,7 @@ const btnActive: React.CSSProperties = {
 };
 
 export function AlignItems() {
+  const isDark = useDarkMode();
   const [alignItemsValue, setAlignItemsValue] = useState<CssAlignItems>("stretch");
   const [alignSelfValue, setAlignSelfValue] = useState<CssAlignItems | "">("");
   const data = useMemo(() => generateSmallData(), []);
@@ -95,17 +97,9 @@ export function AlignItems() {
         </div>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`helper.accessor("name", { size: 180 })
-helper.accessor("dept", { size: 120${alignSelfValue ? `, alignSelf: "${alignSelfValue}"` : ""} })
-helper.accessor("salary", { size: 100 })
-
-<Grid alignItems="${alignItemsValue}" rowHeight={60} columns={columns} />`}
-      </pre>
-
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
           <Grid
@@ -115,6 +109,7 @@ helper.accessor("salary", { size: 100 })
             rowHeight={60}
             alignItems={alignItemsValue}
             columns={columns}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         </div>
       </div>

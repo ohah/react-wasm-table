@@ -6,15 +6,16 @@ import {
   Label,
   type GridCellEvent,
 } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { id: number; task: string; category: string; done: boolean };
 const helper = createColumnHelper<Row>();
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -73,6 +74,7 @@ function generateTodoData(): Row[] {
 }
 
 export function CanvasCheckbox() {
+  const isDark = useDarkMode();
   const [data, setData] = useState(generateTodoData);
   const [disabled, setDisabled] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -169,6 +171,7 @@ export function CanvasCheckbox() {
             height={400}
             rowHeight={36}
             overflowY="auto"
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         </section>
 
@@ -182,22 +185,22 @@ export function CanvasCheckbox() {
               Clear
             </button>
           </h2>
-          <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+          <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
             Click or tap checkboxes. Touch events are logged on mobile.
           </p>
           <div
             style={{
               height: 340,
               overflow: "auto",
-              border: "1px solid #e0e0e0",
+              border: "1px solid var(--demo-border)",
               borderRadius: 6,
               fontSize: 12,
               fontFamily: "monospace",
-              background: "#fafafa",
+              background: "var(--demo-panel-bg)",
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>No events yet</div>
+              <div style={{ padding: 16, color: "var(--demo-muted-5)", textAlign: "center" }}>No events yet</div>
             )}
             {logs.map((log) => (
               <div
@@ -224,8 +227,8 @@ export function CanvasCheckbox() {
                 >
                   {log.event}
                 </span>
-                <span style={{ color: "#333" }}>{log.value}</span>
-                <span style={{ color: "#999" }}>{log.cell}</span>
+                <span style={{ color: "var(--demo-panel-fg)" }}>{log.value}</span>
+                <span style={{ color: "var(--demo-muted-5)" }}>{log.cell}</span>
               </div>
             ))}
           </div>

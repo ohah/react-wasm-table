@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import { Grid, createColumnHelper, type CssJustifyContent } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 
@@ -19,9 +20,9 @@ const options: CssJustifyContent[] = [
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -39,6 +40,7 @@ const columns = [
 ];
 
 export function JustifyContent() {
+  const isDark = useDarkMode();
   const [justify, setJustify] = useState<CssJustifyContent>("start");
   const data = useMemo(() => generateSmallData(), []);
 
@@ -63,17 +65,12 @@ export function JustifyContent() {
         </div>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`<Grid justifyContent="${justify}" width={800} columns={columns} ...>
-// Total column width: 370px < 800px container`}
-      </pre>
-
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
-          <Grid data={data} width={800} height={520} justifyContent={justify} columns={columns} />
+          <Grid data={data} width={800} height={520} justifyContent={justify} columns={columns} theme={isDark ? DARK_THEME : LIGHT_THEME} />
         </div>
       </div>
     </>

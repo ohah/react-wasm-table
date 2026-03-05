@@ -1,11 +1,13 @@
 import { useMemo, useState, useCallback } from "react";
 import { Grid, createColumnHelper, Text, ProgressBar } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<Row>();
 
 export function CanvasProgressBar() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as Row[], []);
 
   const columns = useMemo(
@@ -133,12 +135,12 @@ export function CanvasProgressBar() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Style Variations</h2>
-        <Grid data={data} columns={columns} width={900} height={460} rowHeight={40} />
+        <Grid data={data} columns={columns} width={900} height={460} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
       </section>
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Editable</h2>
-        <p style={{ marginBottom: 8, color: "#666" }}>
+        <p style={{ marginBottom: 8, color: "var(--demo-muted)" }}>
           Click or drag the progress bars below to change values interactively.
         </p>
         <Grid
@@ -147,6 +149,7 @@ export function CanvasProgressBar() {
           width={640}
           height={460}
           rowHeight={40}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
         />
       </section>
     </>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import { Grid, createColumnHelper, type CssDimension } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 
@@ -14,9 +15,9 @@ const BASIS_OPTIONS = [
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -28,6 +29,7 @@ const btnActive: React.CSSProperties = {
 };
 
 export function FlexGrow() {
+  const isDark = useDarkMode();
   const [grow1, setGrow1] = useState(0);
   const [grow2, setGrow2] = useState(1);
   const [shrink, setShrink] = useState(1);
@@ -114,20 +116,12 @@ export function FlexGrow() {
         </div>
       </div>
 
-      <pre style={{ background: "#f5f5f5", padding: 12, borderRadius: 4, fontSize: 13 }}>
-        {`helper.accessor("name", { size: 150, flexGrow: ${grow1} })
-helper.accessor("dept", { flexGrow: ${grow2}, flexBasis: "${basis}" })
-helper.accessor("salary", { size: 300, flexShrink: ${shrink} })
-
-<Grid width={800} columns={columns} />`}
-      </pre>
-
       <div style={{ display: "flex", flexWrap: "wrap" }}>
         <div>
-          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "#666" }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
-          <Grid data={data} width={800} height={520} columns={columns} />
+          <Grid data={data} width={800} height={520} columns={columns} theme={isDark ? DARK_THEME : LIGHT_THEME} />
         </div>
       </div>
     </>

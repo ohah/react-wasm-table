@@ -20,6 +20,7 @@ import {
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
 import { useContainerSize } from "../useContainerSize";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 // ── Data ──────────────────────────────────────────────────────────
 
@@ -90,8 +91,8 @@ const columns = [
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -105,14 +106,14 @@ const btnDisabled: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   marginBottom: 16,
   padding: 12,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 6,
 };
 
 const inputStyle: React.CSSProperties = {
   padding: "6px 10px",
   borderRadius: 4,
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   fontSize: 13,
   width: 200,
 };
@@ -120,6 +121,7 @@ const inputStyle: React.CSSProperties = {
 // ── Component ─────────────────────────────────────────────────────
 
 export function PaginationDemo() {
+  const isDark = useDarkMode();
   // Pagination state
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -230,7 +232,7 @@ export function PaginationDemo() {
             }}
           />
           {globalFilter && (
-            <span style={{ fontSize: 12, color: "#666" }}>Matching rows: {totalRows}</span>
+            <span style={{ fontSize: 12, color: "var(--demo-muted)" }}>Matching rows: {totalRows}</span>
           )}
         </div>
       </div>
@@ -239,7 +241,7 @@ export function PaginationDemo() {
       <div style={sectionStyle}>
         <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div>
-            <label style={{ fontSize: 12, color: "#666", display: "block", marginBottom: 4 }}>
+            <label style={{ fontSize: 12, color: "var(--demo-muted)", display: "block", marginBottom: 4 }}>
               Department (contains)
             </label>
             <div style={{ display: "flex", gap: 4 }}>
@@ -258,7 +260,7 @@ export function PaginationDemo() {
           </div>
 
           <div>
-            <label style={{ fontSize: 12, color: "#666", display: "block", marginBottom: 4 }}>
+            <label style={{ fontSize: 12, color: "var(--demo-muted)", display: "block", marginBottom: 4 }}>
               Min Salary (≥)
             </label>
             <div style={{ display: "flex", gap: 4 }}>
@@ -276,14 +278,14 @@ export function PaginationDemo() {
             </div>
           </div>
 
-          <button style={{ ...btnBase, background: "#f5f5f5", color: "#666" }} onClick={clearAll}>
+          <button style={{ ...btnBase, background: "var(--demo-code-bg)", color: "var(--demo-code-fg)", color: "var(--demo-muted)" }} onClick={clearAll}>
             Clear All
           </button>
         </div>
 
         {/* Active filters display */}
         {(columnFilters.length > 0 || globalFilter) && (
-          <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
+          <div style={{ marginTop: 8, fontSize: 12, color: "var(--demo-panel-fg)" }}>
             <strong>Active:</strong>{" "}
             {globalFilter && (
               <span
@@ -348,7 +350,7 @@ export function PaginationDemo() {
             {">>"}
           </button>
 
-          <span style={{ fontSize: 13, color: "#666", marginLeft: 8 }}>
+          <span style={{ fontSize: 13, color: "var(--demo-muted)", marginLeft: 8 }}>
             Page <strong>{pagination.pageIndex + 1}</strong> of <strong>{pageCount}</strong>
           </span>
 
@@ -364,14 +366,14 @@ export function PaginationDemo() {
             ))}
           </select>
 
-          <span style={{ fontSize: 12, color: "#999", marginLeft: 8 }}>
+          <span style={{ fontSize: 12, color: "var(--demo-muted-5)", marginLeft: 8 }}>
             ({totalRows} rows{columnFilters.length > 0 || globalFilter ? " after filter" : ""})
           </span>
         </div>
 
         {/* Sorting indicator */}
         {sorting.length > 0 && (
-          <div style={{ marginTop: 8, fontSize: 12, color: "#444" }}>
+          <div style={{ marginTop: 8, fontSize: 12, color: "var(--demo-panel-fg)" }}>
             <strong>Sort:</strong>{" "}
             {sorting.map((s) => (
               <span
@@ -403,7 +405,7 @@ export function PaginationDemo() {
         style={{ width: "100%", height: Math.min(pagination.pageSize * 36 + 40, 520) }}
       >
         {size.width > 0 && (
-          <Table table={table} width={size.width} height={size.height} overflowY="scroll">
+          <Table table={table} width={size.width} height={size.height} overflowY="scroll" theme={isDark ? DARK_THEME : LIGHT_THEME}>
             <Thead>
               {table.getHeaderGroups().map((hg) => (
                 <Tr key={hg.id}>
@@ -459,32 +461,6 @@ export function PaginationDemo() {
         </ol>
       </div>
 
-      {/* Code snippet */}
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {`const table = useGridTable({
-  data: rawData,                          // full 500 rows — loaded once
-  columns,
-  getSortedRowModel: getSortedRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
-  getPaginationRowModel: getPaginationRowModel(),
-  state: { sorting, columnFilters, globalFilter, pagination },
-  onSortingChange: setSorting,
-  onColumnFiltersChange: setColumnFilters,
-  onGlobalFilterChange: setGlobalFilter,
-  onPaginationChange: setPagination,
-});
-
-// WASM pipeline: filter → sort → paginate (view_indices only)
-// No JS data slicing — page transitions are O(1) index updates`}
-      </pre>
     </>
   );
 }

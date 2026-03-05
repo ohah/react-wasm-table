@@ -1,15 +1,16 @@
 import { useState, useMemo, useCallback } from "react";
 import { Grid, createColumnHelper, Tag, type GridCellEvent } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<Row>();
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -36,6 +37,7 @@ interface LogEntry {
 let logId = 0;
 
 export function CanvasTag() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as Row[], []);
   const [presetIndex, setPresetIndex] = useState(0);
   const [borderRadius, setBorderRadius] = useState(4);
@@ -114,7 +116,7 @@ export function CanvasTag() {
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
-          <Grid data={data} columns={columns} width={360} height={460} rowHeight={40} />
+          <Grid data={data} columns={columns} width={360} height={460} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
         </section>
 
         <section style={{ minWidth: 260, maxWidth: 360 }}>
@@ -127,22 +129,22 @@ export function CanvasTag() {
               Clear
             </button>
           </h2>
-          <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+          <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
             Click or hover over Tag cells to see events.
           </p>
           <div
             style={{
               height: 400,
               overflow: "auto",
-              border: "1px solid #e0e0e0",
+              border: "1px solid var(--demo-border)",
               borderRadius: 6,
               fontSize: 12,
               fontFamily: "monospace",
-              background: "#fafafa",
+              background: "var(--demo-panel-bg)",
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>No events yet</div>
+              <div style={{ padding: 16, color: "var(--demo-muted-5)", textAlign: "center" }}>No events yet</div>
             )}
             {logs.map((log) => (
               <div
@@ -167,8 +169,8 @@ export function CanvasTag() {
                 >
                   {log.event}
                 </span>
-                <span style={{ color: "#333" }}>"{log.value}"</span>
-                <span style={{ color: "#999" }}>{log.cell}</span>
+                <span style={{ color: "var(--demo-panel-fg)" }}>"{log.value}"</span>
+                <span style={{ color: "var(--demo-muted-5)" }}>{log.cell}</span>
               </div>
             ))}
           </div>

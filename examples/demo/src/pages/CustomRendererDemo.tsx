@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import {
   Grid,
   createColumnHelper,
@@ -136,6 +137,7 @@ const starBadgeRenderer: CellRenderer<StarBadgeInstruction> = {
 const helper = createColumnHelper<TaskRow>();
 
 export function CustomRendererDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateTasks(200), []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [overrideBadge, setOverrideBadge] = useState(false);
@@ -217,41 +219,8 @@ export function CustomRendererDemo() {
         </label>
       </div>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-          marginBottom: 12,
-        }}
-      >
-        {`// Custom ProgressBar renderer
-const progressRenderer: CellRenderer = {
-  type: "progress",
-  draw(instruction, { ctx, buf, cellIdx }) {
-    // Read layout from buffer
-    const x = readCellX(buf, cellIdx);
-    const y = readCellY(buf, cellIdx);
-    const w = readCellWidth(buf, cellIdx);
-    const h = readCellHeight(buf, cellIdx);
-    // Draw progress bar using Canvas 2D API...
-    ctx.fillStyle = "#4caf50";
-    ctx.roundRect(x, y, w * instruction.value, h, 4);
-    ctx.fill();
-  },
-};
-
-// Usage
-<Grid
-  cellRenderers={[progressRenderer]}
-  ...
-/>`}
-      </pre>
-
       <section style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, marginBottom: 8, color: "#666" }}>Grid API</h3>
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: "var(--demo-muted)" }}>Grid API</h3>
         <Grid
           data={data as any}
           width={600}
@@ -261,10 +230,11 @@ const progressRenderer: CellRenderer = {
           onSortingChange={setSorting}
           cellRenderers={cellRenderers}
           padding={[0, 4]}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
         />
       </section>
 
-      <div style={{ marginTop: 12, fontSize: 13, color: "#555" }}>
+      <div style={{ marginTop: 12, fontSize: 13, color: "var(--demo-muted-2)" }}>
         <strong>How it works:</strong> The <code>cellRenderers</code> prop accepts an array of{" "}
         <code>CellRenderer</code> objects. Each has a <code>type</code> string and a{" "}
         <code>draw(instruction, context)</code> method. Custom types are merged with built-ins;

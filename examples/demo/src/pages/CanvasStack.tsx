@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, Stack, Text, Badge, Box } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 import type { StackDirection } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<Row>();
@@ -9,6 +10,7 @@ const helper = createColumnHelper<Row>();
 const directionOptions: StackDirection[] = ["row", "column"];
 
 export function CanvasStack() {
+  const isDark = useDarkMode();
   const [direction, setDirection] = useState<StackDirection>("row");
   const [gap, setGap] = useState(6);
 
@@ -117,7 +119,7 @@ export function CanvasStack() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
-        <Grid data={data} columns={columns} width={780} height={480} rowHeight={44} />
+        <Grid data={data} columns={columns} width={780} height={480} rowHeight={44} theme={isDark ? DARK_THEME : LIGHT_THEME} />
       </section>
     </>
   );

@@ -12,6 +12,7 @@ import {
   createColumnHelper,
   Sparkline,
 } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { name: string; trend: number[] };
 const helper = createColumnHelper<Row>();
@@ -25,9 +26,9 @@ const sampleData: Row[] = [
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -39,6 +40,7 @@ const btnActive: React.CSSProperties = {
 };
 
 export function CanvasSparkline() {
+  const isDark = useDarkMode();
   const [variant, setVariant] = useState<"line" | "area">("line");
   const [color, setColor] = useState("#1565c0");
 
@@ -115,7 +117,7 @@ export function CanvasSparkline() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Table (TanStack API)</h2>
-        <Table table={table} width={360} height={500} rowHeight={44}>
+        <Table table={table} width={360} height={500} rowHeight={44} theme={isDark ? DARK_THEME : LIGHT_THEME}>
           <Thead>
             {table.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>

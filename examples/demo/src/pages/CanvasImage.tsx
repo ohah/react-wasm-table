@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, Image, Text, Stack } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type ObjectFit = "contain" | "cover" | "fill" | "none" | "scale-down";
 
@@ -45,9 +46,9 @@ const helper = createColumnHelper<Row>();
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -61,6 +62,7 @@ const btnActive: React.CSSProperties = {
 const objectFitOptions: ObjectFit[] = ["fill", "contain", "cover", "none", "scale-down"];
 
 export function CanvasImage() {
+  const isDark = useDarkMode();
   const [objectFit, setObjectFit] = useState<ObjectFit>("contain");
   const [borderRadius, setBorderRadius] = useState(0);
   const [opacity, setOpacity] = useState(1);
@@ -220,15 +222,15 @@ export function CanvasImage() {
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 16, marginBottom: 8 }}>Image with Controls</h2>
-          <Grid data={data} columns={columns} width={620} height={460} rowHeight={50} />
+          <Grid data={data} columns={columns} width={620} height={460} rowHeight={50} theme={isDark ? DARK_THEME : LIGHT_THEME} />
         </section>
 
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 16, marginBottom: 8 }}>Error Fallback (alt text)</h2>
-          <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+          <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
             When an image fails to load, the <code>alt</code> text is rendered as placeholder.
           </p>
-          <Grid data={data} columns={errorColumns} width={340} height={460} rowHeight={50} />
+          <Grid data={data} columns={errorColumns} width={340} height={460} rowHeight={50} theme={isDark ? DARK_THEME : LIGHT_THEME} />
         </section>
       </div>
 
@@ -242,7 +244,7 @@ export function CanvasImage() {
           }}
         >
           <thead>
-            <tr style={{ borderBottom: "2px solid #e0e0e0", textAlign: "left" }}>
+            <tr style={{ borderBottom: "2px solid var(--demo-border)", textAlign: "left" }}>
               <th style={{ padding: "6px 8px" }}>Prop</th>
               <th style={{ padding: "6px 8px" }}>Type</th>
               <th style={{ padding: "6px 8px" }}>Description</th>
@@ -270,7 +272,7 @@ export function CanvasImage() {
                 <td style={{ padding: "6px 8px" }}>
                   <code>{prop}</code>
                 </td>
-                <td style={{ padding: "6px 8px", color: "#666" }}>
+                <td style={{ padding: "6px 8px", color: "var(--demo-muted)" }}>
                   <code>{type}</code>
                 </td>
                 <td style={{ padding: "6px 8px" }}>{desc}</td>

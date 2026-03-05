@@ -16,6 +16,7 @@ import {
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
 import { useContainerSize } from "../useContainerSize";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 // ── Data ──────────────────────────────────────────────────────────
 
@@ -37,20 +38,20 @@ const helper = createColumnHelper<Employee>();
 const sectionStyle: React.CSSProperties = {
   marginBottom: 16,
   padding: 12,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 6,
 };
 
 const selectStyle: React.CSSProperties = {
   padding: "6px 10px",
   borderRadius: 4,
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   fontSize: 13,
 };
 
 const labelStyle: React.CSSProperties = {
   fontSize: 12,
-  color: "#666",
+  color: "var(--demo-muted)",
   marginRight: 6,
   fontWeight: 600,
 };
@@ -72,7 +73,7 @@ const themePresets: Record<string, Partial<Theme>> = {
   "Light gray": {
     borderWidth: 1,
     borderStyle: "solid",
-    borderColor: "#e0e0e0",
+    borderColor: "var(--demo-border)",
   },
   "Blue accent": {
     borderWidth: 1,
@@ -158,6 +159,7 @@ const tableColumns = [
 // ── Component ─────────────────────────────────────────────────────
 
 export function BorderStyleDemo() {
+  const isDark = useDarkMode();
   const [selectedPreset, setSelectedPreset] = useState("No borders (default)");
   const { ref: gridRef, size: gridSize } = useContainerSize(400);
   const { ref: tableRef, size: tableSize } = useContainerSize(300);
@@ -196,7 +198,7 @@ export function BorderStyleDemo() {
               ))}
             </select>
           </div>
-          <div style={{ fontSize: 12, color: "#888" }}>
+          <div style={{ fontSize: 12, color: "var(--demo-muted-4)" }}>
             borderWidth: {themeOverrides.borderWidth ?? 0.5}, borderStyle:{" "}
             {themeOverrides.borderStyle ?? "solid"}, borderColor:{" "}
             {themeOverrides.borderColor ?? "#000"}
@@ -206,7 +208,7 @@ export function BorderStyleDemo() {
 
       {/* Example 1: Grid API with theme + column-level border */}
       <h2 style={{ fontSize: 16, marginTop: 24 }}>1. Grid API — Theme + Column-level border</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         The "Department" column has <code>borderColor: "#e53935"</code> (red). Other columns follow
         the theme preset.
       </p>
@@ -217,7 +219,7 @@ export function BorderStyleDemo() {
             columns={gridColumns}
             width={gridSize.width}
             height={gridSize.height}
-            theme={themeOverrides}
+            theme={{ ...(isDark ? DARK_THEME : LIGHT_THEME), ...themeOverrides }}
             overflowY="scroll"
           />
         )}
@@ -225,7 +227,7 @@ export function BorderStyleDemo() {
 
       {/* Example 2: Table API with per-cell border via Td style */}
       <h2 style={{ fontSize: 16, marginTop: 32 }}>2. Table API — Per-cell border via Td style</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         Uses{" "}
         <code>&lt;Td style=&#123;&#123; borderBottom: "2px solid #1976d2" &#125;&#125;&gt;</code> on
         salary cells, and <code>&lt;Tr style=&#123;&#123; border: "none" &#125;&#125;&gt;</code> on
@@ -268,38 +270,6 @@ export function BorderStyleDemo() {
         )}
       </div>
 
-      {/* Code snippet */}
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-          marginTop: 24,
-        }}
-      >
-        {`// 1. Theme-level: global defaults
-<Grid theme={{ borderWidth: 1, borderStyle: "solid", borderColor: "#e0e0e0" }} ... />
-
-// 2. Column-level: override per column
-helper.accessor("department", {
-  header: "Department",
-  borderColor: "#e53935",  // red border for this column
-})
-
-// 3. Cell-level: override per cell via Td style
-<Td style={{ borderBottom: "2px solid #1976d2" }}>
-  {content}
-</Td>
-
-// 4. Row-level: apply to all cells in a row
-<Tr style={{ border: "none" }}>
-  ...
-</Tr>
-
-// Priority: cell > row > column > theme`}
-      </pre>
     </>
   );
 }

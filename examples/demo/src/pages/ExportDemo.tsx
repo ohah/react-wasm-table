@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import {
   Grid,
   createColumnHelper,
@@ -15,6 +16,7 @@ type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
 
 export function ExportDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as SmallRow[], []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [output, setOutput] = useState("");
@@ -134,6 +136,7 @@ export function ExportDemo() {
               columns={columns}
               sorting={sorting}
               onSortingChange={setSorting}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
             />
           </section>
         </div>
@@ -141,7 +144,7 @@ export function ExportDemo() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
           {/* Format selector */}
           <div>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>Format</div>
+            <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 4 }}>Format</div>
             <div style={{ display: "flex", gap: 8 }}>
               {(["csv", "tsv", "json"] as const).map((f) => (
                 <button
@@ -149,7 +152,7 @@ export function ExportDemo() {
                   onClick={() => setFormat(f)}
                   style={{
                     padding: "4px 12px",
-                    border: "1px solid #ccc",
+                    border: "1px solid var(--demo-border-2)",
                     borderRadius: 4,
                     background: format === f ? "#1976d2" : "#fff",
                     color: format === f ? "#fff" : "#333",
@@ -165,7 +168,7 @@ export function ExportDemo() {
 
           {/* Column selection */}
           <div>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>
+            <div style={{ fontSize: 12, color: "var(--demo-muted-4)", marginBottom: 4 }}>
               Columns{" "}
               {selectedColumns.length > 0 ? `(${selectedColumns.length} selected)` : "(all)"}
             </div>
@@ -251,29 +254,6 @@ export function ExportDemo() {
           </div>
         </div>
       </div>
-
-      {/* Code snippet */}
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-          marginBottom: 12,
-        }}
-      >
-        {`import { buildRowModel, exportTo${format.toUpperCase()} } from "@ohah/react-wasm-table";\n\n`}
-        {`const rowModel = buildRowModel(data, null, columns);\n`}
-        {format === "json"
-          ? `const result = exportToJSON(rowModel${selectedColumns.length > 0 ? `, { columns: ${JSON.stringify(selectedColumns)} }` : ""});\n`
-          : `const result = exportTo${format.toUpperCase()}(rowModel, {\n`}
-        {format !== "json" && `  includeHeaders: ${includeHeaders},\n`}
-        {format !== "json" &&
-          selectedColumns.length > 0 &&
-          `  columns: ${JSON.stringify(selectedColumns)},\n`}
-        {format !== "json" && `});\n`}
-      </pre>
 
       {/* Output preview */}
       {output && (

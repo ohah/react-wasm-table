@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import {
   Grid,
   createColumnHelper,
@@ -6,7 +7,6 @@ import {
   type GridColumnDef,
 } from "@ohah/react-wasm-table";
 import { useContainerSize } from "../useContainerSize";
-import { CodeSnippet } from "../components/CodeSnippet";
 
 type Person = {
   firstName: string;
@@ -110,6 +110,7 @@ const flatColumns: GridColumnDef<Person, any>[] = [
 type Level = "flat" | "2-level" | "3-level";
 
 export function GroupedColumnsDemo() {
+  const isDark = useDarkMode();
   const { ref: containerRef, size } = useContainerSize();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [level, setLevel] = useState<Level>("2-level");
@@ -122,7 +123,7 @@ export function GroupedColumnsDemo() {
   return (
     <div>
       <h2>Grouped Columns (Multi-Level Headers)</h2>
-      <p style={{ color: "#666", marginBottom: 16 }}>
+      <p style={{ color: "var(--demo-muted)", marginBottom: 16 }}>
         Multi-level column headers rendered on canvas. Group headers span across their children.
         Sort indicators appear on leaf columns only.
       </p>
@@ -155,78 +156,11 @@ export function GroupedColumnsDemo() {
             headerHeight={headerHeight}
             sorting={sorting}
             onSortingChange={setSorting}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         )}
       </div>
 
-      <CodeSnippet title="2-Level Grouped Columns">
-        {`
-import { Grid, createColumnHelper } from "@ohah/react-wasm-table";
-
-const helper = createColumnHelper<Person>();
-
-const columns = [
-  helper.group({
-    id: "name",
-    header: "Name",
-    columns: [
-      helper.accessor("firstName", { header: "First", size: 120 }),
-      helper.accessor("lastName", { header: "Last", size: 120 }),
-    ],
-  }),
-  helper.group({
-    id: "info",
-    header: "Info",
-    columns: [
-      helper.accessor("age", { header: "Age", size: 80 }),
-      helper.accessor("city", { header: "City", size: 100 }),
-    ],
-  }),
-  // Ungrouped leaf column — renders with rowSpan across all header rows
-  helper.accessor("department", { header: "Department", size: 130 }),
-];
-
-<Grid
-  data={data}
-  columns={columns}
-  width={800}
-  height={500}
-  headerHeight={30}   // per-row height (total = rows × headerHeight)
-  rowHeight={36}
-/>
-        `}
-      </CodeSnippet>
-
-      <CodeSnippet title="3-Level Nested Groups">
-        {`
-const columns = [
-  helper.group({
-    id: "personal",
-    header: "Personal",
-    columns: [
-      helper.group({
-        id: "name",
-        header: "Name",
-        columns: [
-          helper.accessor("firstName", { header: "First", size: 120 }),
-          helper.accessor("lastName", { header: "Last", size: 120 }),
-        ],
-      }),
-      helper.accessor("age", { header: "Age", size: 80 }),
-    ],
-  }),
-  helper.group({
-    id: "work",
-    header: "Work",
-    columns: [
-      helper.accessor("department", { header: "Dept", size: 130 }),
-      helper.accessor("salary", { header: "Salary", size: 120 }),
-    ],
-  }),
-  helper.accessor("status", { header: "Status", size: 100 }),
-];
-        `}
-      </CodeSnippet>
     </div>
   );
 }

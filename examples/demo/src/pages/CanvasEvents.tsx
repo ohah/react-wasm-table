@@ -12,6 +12,7 @@ import {
   type GridCellEvent,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<Row>();
@@ -27,6 +28,7 @@ interface LogEntry {
 let logId = 0;
 
 export function CanvasEvents() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as Row[], []);
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
@@ -225,24 +227,24 @@ export function CanvasEvents() {
           {/* Example 1 */}
           <section>
             <h2 style={{ fontSize: 15, marginBottom: 6 }}>1. onClick</h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+            <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
               Click Text / Link / Chip. Link's <code>preventDefault()</code> blocks URL open.
             </p>
-            <Grid data={data} columns={basicColumns} width={400} height={200} rowHeight={36} />
+            <Grid data={data} columns={basicColumns} width={400} height={200} rowHeight={36} theme={isDark ? DARK_THEME : LIGHT_THEME} />
           </section>
 
           {/* Example 2 */}
           <section>
             <h2 style={{ fontSize: 15, marginBottom: 6 }}>2. onMouseEnter / onMouseLeave</h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+            <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
               Hover over Badge / Tag / Rating cells.{" "}
               {hoveredCell ? (
                 <strong style={{ color: "#1976d2" }}>Hovered: {hoveredCell}</strong>
               ) : (
-                <span style={{ color: "#999" }}>Not hovering</span>
+                <span style={{ color: "var(--demo-muted-5)" }}>Not hovering</span>
               )}
             </p>
-            <Grid data={data} columns={hoverColumns} width={430} height={200} rowHeight={36} />
+            <Grid data={data} columns={hoverColumns} width={430} height={200} rowHeight={36} theme={isDark ? DARK_THEME : LIGHT_THEME} />
           </section>
 
           {/* Example 3 */}
@@ -250,10 +252,10 @@ export function CanvasEvents() {
             <h2 style={{ fontSize: 15, marginBottom: 6 }}>
               3. Combined (click + dblclick + mousedown + mouseup)
             </h2>
-            <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+            <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
               All events fire in DOM order: mousedown &rarr; mouseup &rarr; click &rarr; dblclick.
             </p>
-            <Grid data={data} columns={combinedColumns} width={430} height={200} rowHeight={36} />
+            <Grid data={data} columns={combinedColumns} width={430} height={200} rowHeight={36} theme={isDark ? DARK_THEME : LIGHT_THEME} />
           </section>
         </div>
 
@@ -266,9 +268,9 @@ export function CanvasEvents() {
               style={{
                 fontSize: 12,
                 padding: "2px 8px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--demo-border-2)",
                 borderRadius: 4,
-                background: "#fff",
+                background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
                 cursor: "pointer",
                 marginLeft: 8,
               }}
@@ -280,15 +282,15 @@ export function CanvasEvents() {
             style={{
               height: 540,
               overflow: "auto",
-              border: "1px solid #e0e0e0",
+              border: "1px solid var(--demo-border)",
               borderRadius: 6,
               fontSize: 12,
               fontFamily: "monospace",
-              background: "#fafafa",
+              background: "var(--demo-panel-bg)",
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>
+              <div style={{ padding: 16, color: "var(--demo-muted-5)", textAlign: "center" }}>
                 Interact with the grids to see events here
               </div>
             )}
@@ -319,9 +321,9 @@ export function CanvasEvents() {
                 >
                   {log.event}
                 </span>
-                <span style={{ color: "#666" }}>{log.component}</span>
-                <span style={{ color: "#333" }}>"{log.value}"</span>
-                <span style={{ color: "#999" }}>{log.cell}</span>
+                <span style={{ color: "var(--demo-muted)" }}>{log.component}</span>
+                <span style={{ color: "var(--demo-panel-fg)" }}>"{log.value}"</span>
+                <span style={{ color: "var(--demo-muted-5)" }}>{log.cell}</span>
               </div>
             ))}
           </div>

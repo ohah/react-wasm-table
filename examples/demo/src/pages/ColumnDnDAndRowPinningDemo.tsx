@@ -8,6 +8,7 @@ import {
   type SortingState,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Employee = {
   id: number;
@@ -60,8 +61,8 @@ const ALL_COLUMN_IDS = ["id", "name", "department", "salary", "performanceScore"
 const btnBase: React.CSSProperties = {
   padding: "6px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 12,
 };
@@ -76,11 +77,12 @@ const btnActive: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   marginBottom: 20,
   padding: 14,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 8,
 };
 
 export function ColumnDnDAndRowPinningDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(
     () => generateEmployees(200) as (Record<string, unknown> & { id: number })[],
     [],
@@ -117,7 +119,7 @@ export function ColumnDnDAndRowPinningDemo() {
   return (
     <>
       <h1>Column DnD & Row Pinning</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 20 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 20 }}>
         <strong>Column DnD:</strong> Drag headers to reorder columns. <strong>Row Pinning:</strong>{" "}
         Pin specific rows to the top or bottom (state API only; rendering to be applied).
       </p>
@@ -125,7 +127,7 @@ export function ColumnDnDAndRowPinningDemo() {
       {/* Column DnD */}
       <div style={sectionStyle}>
         <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Column DnD Reorder</h2>
-        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#666" }}>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "var(--demo-muted)" }}>
           Drag a header with the mouse; a ghost follows the cursor and a blue vertical line shows
           the drop position. Releasing updates the column order.
         </p>
@@ -145,7 +147,7 @@ export function ColumnDnDAndRowPinningDemo() {
       {/* Row Pinning */}
       <div style={sectionStyle}>
         <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Row Pinning (state)</h2>
-        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#666" }}>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "var(--demo-muted)" }}>
           Pin rows to the top or bottom. Specify row IDs via getRowId and control with rowPinning
           state.
         </p>
@@ -207,6 +209,7 @@ export function ColumnDnDAndRowPinningDemo() {
           getRowId={getRowId}
           enableColumnDnD
           overflowY="scroll"
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
         />
       </div>
 
@@ -216,7 +219,7 @@ export function ColumnDnDAndRowPinningDemo() {
         <pre
           style={{
             margin: 0,
-            background: "#f5f5f5",
+            background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
             padding: 12,
             borderRadius: 4,
             fontSize: 11,

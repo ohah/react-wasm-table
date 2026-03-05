@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Grid, createColumnHelper, type SortingState } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Employee = {
   id: number;
@@ -49,6 +50,7 @@ const columns = [
 ];
 
 export function UseSortingDemo() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateEmployees(1000) as Record<string, unknown>[], []);
 
   // === Controlled mode ===
@@ -81,7 +83,7 @@ export function UseSortingDemo() {
       </p>
 
       <h2>Controlled Sorting + History</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         Click column headers to sort. The sort state is controlled externally and every change is
         tracked in the history.
       </p>
@@ -94,7 +96,7 @@ export function UseSortingDemo() {
               <select
                 value={maxColumns}
                 onChange={(e) => setMaxColumns(Number(e.target.value))}
-                style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid #ccc" }}
+                style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid var(--demo-border-2)" }}
               >
                 <option value={0}>No limit</option>
                 <option value={1}>Max 1</option>
@@ -109,8 +111,8 @@ export function UseSortingDemo() {
               style={{
                 padding: "4px 12px",
                 borderRadius: 4,
-                border: "1px solid #ccc",
-                background: "#fff",
+                border: "1px solid var(--demo-border-2)",
+                background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
                 cursor: "pointer",
                 fontSize: 13,
               }}
@@ -130,35 +132,17 @@ export function UseSortingDemo() {
               onSortingChange={handleSortingChange}
               onBeforeSortChange={onBeforeSortChange}
               overflowY="scroll"
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
             />
           </section>
         </div>
       </div>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {`const [sorting, setSorting] = useState<SortingState>([]);\n\n`}
-        {`<Grid\n`}
-        {`  sorting={sorting}\n`}
-        {`  onSortingChange={setSorting}\n`}
-        {maxColumns > 0
-          ? `  onBeforeSortChange={(next) => {\n    if (next.length > ${maxColumns}) return false;\n  }}\n`
-          : ""}
-        {`/>`}
-      </pre>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
         <div
           style={{
             padding: 12,
-            background: "#f9f9f9",
+            background: "var(--demo-panel-bg)",
             borderRadius: 4,
             fontSize: 13,
             flex: 1,
@@ -173,7 +157,7 @@ export function UseSortingDemo() {
         <div
           style={{
             padding: 12,
-            background: "#f9f9f9",
+            background: "var(--demo-panel-bg)",
             borderRadius: 4,
             fontSize: 13,
             flex: 1,
@@ -182,9 +166,9 @@ export function UseSortingDemo() {
           }}
         >
           <strong>Sort history ({sortHistory.length}):</strong>
-          {sortHistory.length === 0 && <span style={{ color: "#999" }}> empty</span>}
+          {sortHistory.length === 0 && <span style={{ color: "var(--demo-muted-5)" }}> empty</span>}
           {sortHistory.map((entry, i) => (
-            <div key={i} style={{ color: "#555", marginTop: 2 }}>
+            <div key={i} style={{ color: "var(--demo-muted-2)", marginTop: 2 }}>
               {i + 1}.{" "}
               {entry.length > 0
                 ? entry.map((s) => `${s.id} ${s.desc ? "↓" : "↑"}`).join(", ")
@@ -195,13 +179,13 @@ export function UseSortingDemo() {
       </div>
 
       <h2 style={{ marginTop: 32 }}>Uncontrolled Sorting</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         Without <code>sorting</code> / <code>onSortingChange</code> props, the Grid manages sort
         state internally. Click headers to test.
       </p>
       <section style={{ marginBottom: 16 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
-        <Grid data={data} width={640} height={440} columns={columns} overflowY="scroll" />
+        <Grid data={data} width={640} height={440} columns={columns} overflowY="scroll" theme={isDark ? DARK_THEME : LIGHT_THEME} />
       </section>
     </>
   );

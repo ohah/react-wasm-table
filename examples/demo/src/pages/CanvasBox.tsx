@@ -1,11 +1,13 @@
 import { useMemo } from "react";
 import { Grid, createColumnHelper, Box, Text, Badge, Flex } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<Row>();
 
 export function CanvasBox() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as Row[], []);
 
   const columns = useMemo(
@@ -97,7 +99,7 @@ export function CanvasBox() {
         <code>borderWidth</code>, <code>borderColor</code>, <code>backgroundColor</code>. Children
         are drawn in the content rect in a vertical stack.
       </p>
-      <ul style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <ul style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         <li>
           <strong>Box + Text / Box + Badge</strong> — single child with padding and border
         </li>
@@ -117,7 +119,7 @@ export function CanvasBox() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
-        <Grid data={data} columns={columns} width={900} height={500} rowHeight={48} />
+        <Grid data={data} columns={columns} width={900} height={500} rowHeight={48} theme={isDark ? DARK_THEME : LIGHT_THEME} />
       </section>
     </>
   );

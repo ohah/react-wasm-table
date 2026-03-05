@@ -1,5 +1,6 @@
 import { Column, Grid, type TableMeta } from "@ohah/react-wasm-table";
 import { useCallback, useMemo, useState } from "react";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 interface Person {
   name: string;
@@ -33,6 +34,7 @@ interface EditLog {
 }
 
 export function EditingDemo() {
+  const isDark = useDarkMode();
   const [data, setData] = useState<Person[]>(INITIAL_DATA);
   const [editLog, setEditLog] = useState<EditLog[]>([]);
   const [editTrigger, setEditTrigger] = useState<"click" | "dblclick">("dblclick");
@@ -119,6 +121,7 @@ export function EditingDemo() {
         height={300}
         meta={meta}
         editTrigger={editTrigger}
+        theme={isDark ? DARK_THEME : LIGHT_THEME}
       >
         <Column id="name" header="Name" width={200} editor="text" />
         <Column id="age" header="Age" width={100} editor="number" />
@@ -142,9 +145,9 @@ export function EditingDemo() {
         style={{
           marginTop: 24,
           padding: 16,
-          background: "#f9f9f9",
+          background: "var(--demo-panel-bg)",
           borderRadius: 4,
-          border: "1px solid #e0e0e0",
+          border: "1px solid var(--demo-border)",
         }}
       >
         <h3 style={{ margin: "0 0 8px", fontSize: 14 }}>Native HTML inputs (for comparison)</h3>
@@ -155,7 +158,7 @@ export function EditingDemo() {
           <label style={{ fontSize: 13 }}>
             Input B: <input type="text" defaultValue="World" style={{ padding: "4px 8px" }} />
           </label>
-          <span style={{ fontSize: 12, color: "#999" }}>
+          <span style={{ fontSize: 12, color: "var(--demo-muted-5)" }}>
             Click A then click B — focus moves immediately, no value lost
           </span>
         </div>
@@ -177,13 +180,13 @@ export function EditingDemo() {
               overflow: "auto",
               fontSize: 13,
               fontFamily: "monospace",
-              background: "#f5f5f5",
+              background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
               padding: 8,
               borderRadius: 4,
             }}
           >
             {editLog.length === 0 ? (
-              <span style={{ color: "#999" }}>No edits yet</span>
+              <span style={{ color: "var(--demo-muted-5)" }}>No edits yet</span>
             ) : (
               editLog.map((log) => (
                 <div key={log.timestamp}>
@@ -202,7 +205,7 @@ export function EditingDemo() {
               maxHeight: 200,
               overflow: "auto",
               fontSize: 12,
-              background: "#f5f5f5",
+              background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
               padding: 8,
               borderRadius: 4,
               margin: 0,
