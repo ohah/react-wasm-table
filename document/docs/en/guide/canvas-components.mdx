@@ -189,6 +189,12 @@ export const Example = () => (
 );
 ```
 
-## Stub components (planned)
+## Interactive components
 
-These are exported and usable in JSX but the renderer only draws a placeholder: Avatar, DatePicker, Dropdown. They accept `style` and other props for when real renderers are added.
+The following components integrate with DOM overlays for user interaction:
+
+| Component      | Description                                               | Main props                                              |
+| -------------- | --------------------------------------------------------- | ------------------------------------------------------- |
+| **Avatar**     | Circular avatar with image or initials                    | `value`, `src?`, `size?`, `borderRadius?`, `color?`     |
+| **DatePicker** | Date input with DOM overlay picker                        | `value`, `onChange?`, `format?`, `style?`                |
+| **Dropdown**   | Select input with DOM overlay dropdown                    | `value`, `options`, `onChange?`, `style?`                |
