@@ -103,7 +103,13 @@ export function TanStackCanvasDropdown() {
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <div ref={ref} style={{ flex: 1, minWidth: 360 }}>
-          <Table table={table} width={Math.min(width || 440, 500)} height={280} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+          <Table
+            table={table}
+            width={Math.min(width || 440, 500)}
+            height={280}
+            rowHeight={40}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
+          />
         </div>
 
         <section style={{ minWidth: 240, maxWidth: 320 }}>
@@ -125,7 +131,11 @@ export function TanStackCanvasDropdown() {
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "var(--demo-muted-fg, #999)", textAlign: "center" }}>No events yet</div>
+              <div
+                style={{ padding: 16, color: "var(--demo-muted-fg, #999)", textAlign: "center" }}
+              >
+                No events yet
+              </div>
             )}
             {logs.map((log) => (
               <div

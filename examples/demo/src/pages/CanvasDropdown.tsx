@@ -59,7 +59,14 @@ export function CanvasDropdown() {
         open, select an option, or click outside to close.
       </p>
 
-      <Grid data={data} columns={columns} width={480} height={200} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+      <Grid
+        data={data}
+        columns={columns}
+        width={480}
+        height={200}
+        rowHeight={40}
+        theme={isDark ? DARK_THEME : LIGHT_THEME}
+      />
 
       <h3 style={{ marginTop: 16 }}>Current values:</h3>
       <pre style={{ fontSize: 12 }}>{JSON.stringify(data, null, 2)}</pre>

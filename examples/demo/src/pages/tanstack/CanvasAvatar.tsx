@@ -89,7 +89,13 @@ export function TanStackCanvasAvatar() {
       </div>
 
       <div ref={ref}>
-        <Table table={table} width={Math.min(width || 400, 500)} height={360} rowHeight={48} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+        <Table
+          table={table}
+          width={Math.min(width || 400, 500)}
+          height={360}
+          rowHeight={48}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+        />
       </div>
     </>
   );

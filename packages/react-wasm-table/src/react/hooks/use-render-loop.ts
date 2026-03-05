@@ -890,8 +890,7 @@ export function useRenderLoop({
             if (typeof colDef.header === "string") {
               label = colDef.header;
             } else if (colDef.header) {
-              label =
-                colDef.header({ column: { id: header.column.id, columnDef: colDef } }) ?? "";
+              label = colDef.header({ column: { id: header.column.id, columnDef: colDef } }) ?? "";
             }
             // Add sort indicator
             const sortEntry = sorting.find((s) => s.id === header.column.id);

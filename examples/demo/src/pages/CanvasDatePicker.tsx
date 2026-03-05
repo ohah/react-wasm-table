@@ -51,7 +51,14 @@ export function CanvasDatePicker() {
         The canvas preview shows date text and a calendar icon.
       </p>
 
-      <Grid data={data} columns={columns} width={460} height={200} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+      <Grid
+        data={data}
+        columns={columns}
+        width={460}
+        height={200}
+        rowHeight={40}
+        theme={isDark ? DARK_THEME : LIGHT_THEME}
+      />
 
       <h3 style={{ marginTop: 16 }}>Current values:</h3>
       <pre style={{ fontSize: 12 }}>{JSON.stringify(data, null, 2)}</pre>
