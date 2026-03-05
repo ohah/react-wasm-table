@@ -14,7 +14,7 @@ import {
   type SortingState,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../../data";
-import { CodeSnippet } from "../../components/CodeSnippet";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -34,6 +34,7 @@ interface LogEntry {
 }
 
 export function TanStackTouchEvents() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData() as SmallRow[], []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [log, setLog] = useState<LogEntry[]>([]);
@@ -89,7 +90,7 @@ export function TanStackTouchEvents() {
   return (
     <>
       <h1>Touch Events</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         useReactTable + Table. onTouchStart, onTouchMove, onTouchEnd. Toggle block to
         preventDefault.
       </p>
@@ -124,6 +125,7 @@ export function TanStackTouchEvents() {
           table={table}
           width={560}
           height={480}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
@@ -168,42 +170,6 @@ export function TanStackTouchEvents() {
           ))}
         </div>
       </div>
-      <CodeSnippet>{`const onTouchStart = useCallback((event: GridTouchEvent) => {
-  const ht = event.hitTest;
-  const htDesc = ht.type === "cell" ? \`cell(\${ht.cell!.row},\${ht.cell!.col})\` : ht.type === "header" ? \`header(\${ht.colIndex})\` : ht.type;
-  addLog("onTouchStart", htDesc + " touches=" + event.touchCount, blockTouchStart);
-  if (blockTouchStart) event.preventDefault();
-}, [blockTouchStart, addLog]);
-
-<Table
-  table={table}
-  width={560}
-  height={480}
-  onTouchStart={onTouchStart}
-  onTouchMove={onTouchMove}
-  onTouchEnd={onTouchEnd}
->
-  <Thead>
-    {table.getHeaderGroups().map((hg) => (
-      <Tr key={hg.id}>
-        {hg.headers.map((h) => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}</CodeSnippet>
     </>
   );
 }

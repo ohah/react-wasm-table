@@ -13,6 +13,7 @@ import {
   type SortingState,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Employee = {
   id: number;
@@ -61,6 +62,7 @@ const columns = [
 ];
 
 export function TanStackUseSorting() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateEmployees(1000) as Employee[], []);
 
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -105,7 +107,7 @@ export function TanStackUseSorting() {
       </p>
 
       <h2>Controlled Sorting + History</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         Click column headers to sort. The sort state is controlled externally and every change is
         tracked in the history.
       </p>
@@ -118,7 +120,7 @@ export function TanStackUseSorting() {
               <select
                 value={maxColumns}
                 onChange={(e) => setMaxColumns(Number(e.target.value))}
-                style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid #ccc" }}
+                style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid var(--demo-border-2)" }}
               >
                 <option value={0}>No limit</option>
                 <option value={1}>Max 1</option>
@@ -133,8 +135,8 @@ export function TanStackUseSorting() {
               style={{
                 padding: "4px 12px",
                 borderRadius: 4,
-                border: "1px solid #ccc",
-                background: "#fff",
+                border: "1px solid var(--demo-border-2)",
+                background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
                 cursor: "pointer",
                 fontSize: 13,
               }}
@@ -149,6 +151,7 @@ export function TanStackUseSorting() {
               table={table}
               width={640}
               height={520}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
               onBeforeSortChange={onBeforeSortChange}
               overflowY="scroll"
             >
@@ -181,30 +184,11 @@ export function TanStackUseSorting() {
         </div>
       </div>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-        }}
-      >
-        {`const [sorting, setSorting] = useState<SortingState>([]);\n\n`}
-        {`<Table\n`}
-        {`  table={table}\n`}
-        {`  onSortingChange={setSorting}\n`}
-        {maxColumns > 0
-          ? `  onBeforeSortChange={(next) => {\n    if (next.length > ${maxColumns}) return false;\n  }}\n`
-          : ""}
-        {`>\n  <Thead>...</Thead>\n  <Tbody>...</Tbody>\n</Table>`}
-      </pre>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
         <div
           style={{
             padding: 12,
-            background: "#f9f9f9",
+            background: "var(--demo-panel-bg)",
             borderRadius: 4,
             fontSize: 13,
             flex: 1,
@@ -219,7 +203,7 @@ export function TanStackUseSorting() {
         <div
           style={{
             padding: 12,
-            background: "#f9f9f9",
+            background: "var(--demo-panel-bg)",
             borderRadius: 4,
             fontSize: 13,
             flex: 1,
@@ -228,9 +212,9 @@ export function TanStackUseSorting() {
           }}
         >
           <strong>Sort history ({sortHistory.length}):</strong>
-          {sortHistory.length === 0 && <span style={{ color: "#999" }}> empty</span>}
+          {sortHistory.length === 0 && <span style={{ color: "var(--demo-muted-5)" }}> empty</span>}
           {sortHistory.map((entry, i) => (
-            <div key={i} style={{ color: "#555", marginTop: 2 }}>
+            <div key={i} style={{ color: "var(--demo-muted-2)", marginTop: 2 }}>
               {i + 1}.{" "}
               {entry.length > 0
                 ? entry.map((s) => `${s.id} ${s.desc ? "↓" : "↑"}`).join(", ")
@@ -241,13 +225,13 @@ export function TanStackUseSorting() {
       </div>
 
       <h2 style={{ marginTop: 32 }}>Uncontrolled Sorting</h2>
-      <p style={{ fontSize: 13, color: "#666" }}>
+      <p style={{ fontSize: 13, color: "var(--demo-muted)" }}>
         Without <code>sorting</code> / <code>onSortingChange</code> props, the Table manages sort
         state internally. Click headers to test.
       </p>
       <section style={{ marginBottom: 16 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-        <Table table={tableUncontrolled} width={640} height={440} overflowY="scroll">
+        <Table table={tableUncontrolled} width={640} height={440} theme={isDark ? DARK_THEME : LIGHT_THEME} overflowY="scroll">
           <Thead>
             {tableUncontrolled.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>

@@ -18,7 +18,7 @@ import {
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
 import { reorderColumnsBy } from "../../components/DemoTableTanStack";
-import { CodeSnippet } from "../../components/CodeSnippet";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Employee = {
   id: number;
@@ -66,8 +66,8 @@ const ALL_COLUMN_IDS = ["id", "name", "department", "salary", "performanceScore"
 const btnBase: React.CSSProperties = {
   padding: "3px 10px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 12,
 };
@@ -80,11 +80,12 @@ const btnActive: React.CSSProperties = {
 const sectionStyle: React.CSSProperties = {
   marginBottom: 20,
   padding: 12,
-  background: "#f9f9f9",
+  background: "var(--demo-panel-bg)",
   borderRadius: 6,
 };
 
 export function TanStackColumnFeatures() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateEmployees(500) as Record<string, unknown>[], []);
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(ALL_COLUMN_IDS);
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>({});
@@ -142,7 +143,7 @@ export function TanStackColumnFeatures() {
   const inputStyle: React.CSSProperties = {
     padding: "3px 6px",
     borderRadius: 4,
-    border: "1px solid #ccc",
+    border: "1px solid var(--demo-border-2)",
     fontSize: 12,
     width: 100,
   };
@@ -150,7 +151,7 @@ export function TanStackColumnFeatures() {
   return (
     <>
       <h1>Column Features</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         useReactTable + Table. Order, visibility, sizing, pinning, filtering.
       </p>
 
@@ -246,6 +247,7 @@ export function TanStackColumnFeatures() {
         table={table}
         width={600}
         height={500}
+        theme={isDark ? DARK_THEME : LIGHT_THEME}
         columnOrder={columnOrder}
         onColumnOrderChange={setColumnOrder}
       >
@@ -271,50 +273,10 @@ export function TanStackColumnFeatures() {
         </Tbody>
       </Table>
 
-      <CodeSnippet>{`const [columnOrder, setColumnOrder] = useState([]);
-const [columnVisibility, setColumnVisibility] = useState({});
-const [columnSizing, setColumnSizing] = useState({});
-const [columnPinning, setColumnPinning] = useState({ left: [], right: [] });
-const [columnFilters, setColumnFilters] = useState([]);
-
-const table = useReactTable({
-  data,
-  columns: reorderColumnsBy(columnDefs, columnOrder),
-  getCoreRowModel: getCoreRowModel(),
-  state: { columnOrder, columnVisibility, columnSizing, columnPinning, columnFilters },
-  onColumnOrderChange: setColumnOrder,
-  onColumnVisibilityChange: setColumnVisibility,
-  onColumnSizingChange: setColumnSizing,
-  onColumnPinningChange: setColumnPinning,
-  onColumnFiltersChange: setColumnFilters,
-});
-
-<Table table={table} width={560} height={480} enableColumnDnD>
-  <Thead>
-    {table.getHeaderGroups().map((hg) => (
-      <Tr key={hg.id}>
-        {hg.headers.map((h) => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}</CodeSnippet>
       <pre
         style={{
           marginTop: 16,
-          background: "#f5f5f5",
+          background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
           padding: 12,
           borderRadius: 4,
           fontSize: 11,

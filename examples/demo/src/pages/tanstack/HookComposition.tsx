@@ -16,7 +16,7 @@ import {
   type NormalizedRange,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
-import { CodeSnippet } from "../../components/CodeSnippet";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Employee = {
   id: number;
@@ -85,6 +85,7 @@ interface EventEntry {
 }
 
 export function TanStackHookComposition() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateEmployees(5000) as Record<string, unknown>[], []);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selection, setSelection] = useState<NormalizedRange | null>(null);
@@ -108,7 +109,7 @@ export function TanStackHookComposition() {
   return (
     <>
       <h1>Hook Composition</h1>
-      <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+      <p style={{ fontSize: 14, color: "var(--demo-muted-2)", marginBottom: 16 }}>
         useReactTable + Table. Sorting, selection, event callbacks.
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -117,6 +118,7 @@ export function TanStackHookComposition() {
             table={table}
             width={580}
             height={560}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
             selection={selection}
             onSelectionChange={setSelection}
             onCellClick={() => logEvent("onCellClick", "cell")}
@@ -152,7 +154,7 @@ export function TanStackHookComposition() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 13,
               marginBottom: 12,
@@ -166,7 +168,7 @@ export function TanStackHookComposition() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 13,
               marginBottom: 12,
@@ -177,7 +179,7 @@ export function TanStackHookComposition() {
           <div
             style={{
               padding: 12,
-              background: "#f9f9f9",
+              background: "var(--demo-panel-bg)",
               borderRadius: 4,
               fontSize: 12,
               maxHeight: 320,
@@ -193,47 +195,6 @@ export function TanStackHookComposition() {
           </div>
         </div>
       </div>
-      <CodeSnippet>{`const [sorting, setSorting] = useState<SortingState>([]);
-const [selection, setSelection] = useState<NormalizedRange | null>(null);
-
-const table = useReactTable({
-  data,
-  columns,
-  getCoreRowModel: getCoreRowModel(),
-  state: { sorting },
-  onSortingChange: setSorting,
-});
-
-<Table
-  table={table}
-  width={560}
-  height={480}
-  selection={selection}
-  onSelectionChange={setSelection}
-  onCellClick={() => logEvent("onCellClick", "cell")}
-  onHeaderClick={() => logEvent("onHeaderClick", "header")}
->
-  <Thead>
-    {table.getHeaderGroups().map((hg) => (
-      <Tr key={hg.id}>
-        {hg.headers.map((h) => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}</CodeSnippet>
     </>
   );
 }

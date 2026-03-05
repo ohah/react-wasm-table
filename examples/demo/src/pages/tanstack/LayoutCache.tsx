@@ -15,6 +15,7 @@ import {
   type CssFlexDirection,
 } from "@ohah/react-wasm-table";
 import { generateEmployees } from "../../data";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type SmallRow = {
   name: string;
@@ -96,6 +97,7 @@ const columns = [
 ];
 
 export function TanStackLayoutCache() {
+  const isDark = useDarkMode();
   const data = useMemo(
     () =>
       generateEmployees(10_000).map((r) => ({
@@ -243,14 +245,14 @@ export function TanStackLayoutCache() {
         </button>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "#666" }}>flex-direction:</span>
+          <span style={{ fontSize: 13, color: "var(--demo-muted)" }}>flex-direction:</span>
           {(["row", "column"] as const).map((dir) => (
             <button
               key={dir}
               onClick={() => setFlexDirection(dir)}
               style={{
                 padding: "3px 10px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--demo-border-2)",
                 borderRadius: 4,
                 background: flexDirection === dir ? "#1976d2" : "#fff",
                 color: flexDirection === dir ? "#fff" : "#333",
@@ -264,14 +266,14 @@ export function TanStackLayoutCache() {
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "#666" }}>gap:</span>
+          <span style={{ fontSize: 13, color: "var(--demo-muted)" }}>gap:</span>
           {[0, 4, 8, 16].map((g) => (
             <button
               key={g}
               onClick={() => setGap(g)}
               style={{
                 padding: "3px 10px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--demo-border-2)",
                 borderRadius: 4,
                 background: gap === g ? "#1976d2" : "#fff",
                 color: gap === g ? "#fff" : "#333",
@@ -285,22 +287,6 @@ export function TanStackLayoutCache() {
         </div>
       </div>
 
-      <pre
-        style={{
-          background: "#f5f5f5",
-          padding: 12,
-          borderRadius: 4,
-          fontSize: 12,
-          overflowX: "auto",
-          marginBottom: 12,
-        }}
-      >
-        {`const engineRef = useRef<WasmTableEngine | null>(null);\n\n`}
-        {`// Clear layout cache (forces Taffy recomputation on next frame)\n`}
-        {`engineRef.current?.invalidateLayout();\n\n`}
-        {`<Table engineRef={engineRef} flexDirection="${flexDirection}" gap={${gap}} ...>\n  <Thead>...</Thead>\n  <Tbody>...</Tbody>\n</Table>`}
-      </pre>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div>
           <section style={{ marginBottom: 16 }}>
@@ -309,6 +295,7 @@ export function TanStackLayoutCache() {
               table={table}
               width={560}
               height={520}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
               engineRef={engineRef}
               flexDirection={flexDirection}
               gap={gap}
@@ -359,7 +346,7 @@ export function TanStackLayoutCache() {
               display: "flex",
               justifyContent: "space-between",
               marginBottom: 4,
-              color: "#888",
+              color: "var(--demo-muted-4)",
             }}
           >
             <span>Cache Log</span>
@@ -379,7 +366,7 @@ export function TanStackLayoutCache() {
             </button>
           </div>
           {results.length === 0 && (
-            <div style={{ color: "#666" }}>
+            <div style={{ color: "var(--demo-muted)" }}>
               Click "Benchmark" to compare cached vs uncached performance, or "invalidateLayout()"
               to manually clear the cache.
             </div>
@@ -393,7 +380,7 @@ export function TanStackLayoutCache() {
         </div>
       </div>
 
-      <div style={{ marginTop: 12, fontSize: 13, color: "#555" }}>
+      <div style={{ marginTop: 12, fontSize: 13, color: "var(--demo-muted-2)" }}>
         <strong>How the cache works:</strong>
         <ul style={{ margin: "4px 0", paddingLeft: 20 }}>
           <li>2-slot LRU — one for header height, one for row height (both hit on every frame)</li>

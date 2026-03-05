@@ -13,7 +13,7 @@ import {
   type NormalizedRange,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../../data";
-import { CodeSnippet } from "../../components/CodeSnippet";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type SmallRow = { name: string; dept: string; salary: number; score: number };
 const helper = createColumnHelper<SmallRow>();
@@ -21,13 +21,14 @@ const helper = createColumnHelper<SmallRow>();
 const btnStyle: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
-  border: "1px solid #ccc",
-  background: "#fff",
+  border: "1px solid var(--demo-border-2)",
+  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
 
 export function TanStackUseSelection() {
+  const isDark = useDarkMode();
   const data = useMemo(() => generateSmallData(), []);
   const [selection, setSelection] = useState<NormalizedRange | null>(null);
   const [copyLog, setCopyLog] = useState<string[]>([]);
@@ -114,7 +115,7 @@ export function TanStackUseSelection() {
           <select
             value={copyFormat}
             onChange={(e) => setCopyFormat(e.target.value as "tsv" | "json")}
-            style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid #ccc" }}
+            style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid var(--demo-border-2)" }}
           >
             <option value="tsv">TSV</option>
             <option value="json">JSON</option>
@@ -141,6 +142,7 @@ export function TanStackUseSelection() {
         table={table}
         width={560}
         height={480}
+        theme={isDark ? DARK_THEME : LIGHT_THEME}
         selection={selection}
         onSelectionChange={setSelection}
         onBeforeSelectionChange={onBeforeSelectionChange}
@@ -169,58 +171,24 @@ export function TanStackUseSelection() {
       </Table>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
-        <div style={{ padding: 12, background: "#f9f9f9", borderRadius: 4, fontSize: 13, flex: 1 }}>
+        <div style={{ padding: 12, background: "var(--demo-panel-bg)", borderRadius: 4, fontSize: 13, flex: 1 }}>
           <strong>Selection state:</strong>
           <pre style={{ margin: "4px 0 0", fontSize: 12 }}>
             {selection ? JSON.stringify(selection, null, 2) : "null"}
           </pre>
         </div>
-        <div style={{ padding: 12, background: "#f9f9f9", borderRadius: 4, fontSize: 13, flex: 1 }}>
+        <div style={{ padding: 12, background: "var(--demo-panel-bg)", borderRadius: 4, fontSize: 13, flex: 1 }}>
           <strong>Copy log:</strong>
           {copyLog.length === 0 && (
-            <div style={{ color: "#999", marginTop: 4 }}>Select cells and Ctrl/Cmd+C</div>
+            <div style={{ color: "var(--demo-muted-5)", marginTop: 4 }}>Select cells and Ctrl/Cmd+C</div>
           )}
           {copyLog.map((entry, i) => (
-            <div key={i} style={{ color: "#555", marginTop: 2 }}>
+            <div key={i} style={{ color: "var(--demo-muted-2)", marginTop: 2 }}>
               {entry}
             </div>
           ))}
         </div>
       </div>
-      <CodeSnippet>{`const [selection, setSelection] = useState<NormalizedRange | null>(null);
-
-const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
-
-<Table
-  table={table}
-  width={560}
-  height={480}
-  selection={selection}
-  onSelectionChange={setSelection}
-  onBeforeSelectionChange={(next) => guardEnabled && next && next.maxRow > 5 ? false : undefined}
-  onCopy={(tsv, range) => { setCopyLog(prev => [...]); return copyFormat === "json" ? JSON.stringify(rows) : tsv; }}
->
-  <Thead>
-    {table.getHeaderGroups().map((hg) => (
-      <Tr key={hg.id}>
-        {hg.headers.map((h) => (
-          <Th key={h.id} colSpan={h.colSpan}>
-            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-          </Th>
-        ))}
-      </Tr>
-    ))}
-  </Thead>
-  <Tbody>
-    {table.getRowModel().rows.map((row) => (
-      <Tr key={row.id}>
-        {row.getVisibleCells().map((cell) => (
-          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-        ))}
-      </Tr>
-    ))}
-  </Tbody>
-</Table>`}</CodeSnippet>
     </>
   );
 }
