@@ -39,10 +39,16 @@ pub struct JsViewport {
     pub scroll_top: f32,
     #[serde(rename = "lineHeight", default = "default_line_height")]
     pub line_height: f32,
+    #[serde(rename = "headerRowCount", default = "default_header_row_count")]
+    pub header_row_count: usize,
 }
 
 pub fn default_line_height() -> f32 {
     20.0
+}
+
+pub fn default_header_row_count() -> usize {
+    1
 }
 
 /// Column layout from JS.
