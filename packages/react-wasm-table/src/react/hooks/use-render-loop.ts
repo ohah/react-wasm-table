@@ -944,7 +944,7 @@ export function useRenderLoop({
         }
 
         // Dropdown panel overlay (viewport space — after all layers + onAfterDraw)
-        if (getDropdownPanelState() && ctx) {
+        if (canvasRef.current && getDropdownPanelState(canvasRef.current) && ctx) {
           drawDropdownPanel(ctx, scrollLeft, scrollTopRef.current, height);
         }
 

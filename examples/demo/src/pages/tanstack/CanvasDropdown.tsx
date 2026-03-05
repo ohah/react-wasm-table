@@ -155,6 +155,67 @@ export function TanStackCanvasDropdown() {
           </div>
         </section>
       </div>
+
+      <hr style={{ margin: "32px 0" }} />
+
+      <h2>Multiple Tables</h2>
+      <p>
+        Dropdown panels are scoped per canvas instance. Opening a dropdown in one table should{" "}
+        <strong>not</strong> render the panel on another table.
+      </p>
+
+      <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+        <DropdownTable title="Table A" isDark={isDark} />
+        <DropdownTable title="Table B" isDark={isDark} />
+      </div>
     </>
+  );
+}
+
+/** Standalone dropdown table used to verify multi-instance isolation. */
+function DropdownTable({ title, isDark }: { title: string; isDark: boolean }) {
+  const [data, setData] = useState<Row[]>([
+    { id: 1, name: `${title} - Row 1`, status: "active" },
+    { id: 2, name: `${title} - Row 2`, status: "pending" },
+    { id: 3, name: `${title} - Row 3`, status: "" },
+  ]);
+
+  const updateStatus = useCallback((rowIdx: number, value: string) => {
+    setData((prev) => prev.map((r, i) => (i === rowIdx ? { ...r, status: value } : r)));
+  }, []);
+
+  const columns = useMemo(
+    () => [
+      helper.accessor("name", { header: "Task", size: 140, padding: [0, 8] }),
+      helper.accessor("status", {
+        header: "Status",
+        size: 180,
+        padding: [4, 8],
+        cell: (info) => (
+          <Dropdown
+            value={info.getValue()}
+            options={statusOptions}
+            placeholder="Select..."
+            onChange={(value) => updateStatus(info.row.index, value)}
+          />
+        ),
+      }),
+    ],
+    [updateStatus],
+  );
+
+  const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+  return (
+    <div>
+      <h4>{title}</h4>
+      <Table
+        table={table}
+        width={360}
+        height={160}
+        rowHeight={40}
+        theme={isDark ? DARK_THEME : LIGHT_THEME}
+      />
+    </div>
   );
 }

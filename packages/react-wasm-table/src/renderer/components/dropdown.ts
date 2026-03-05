@@ -156,6 +156,8 @@ export function resolveDropdownPanelStyle(s?: Partial<DropdownStyle>): ResolvedP
 
 /** State for an open dropdown panel overlay. Coordinates are in content space. */
 export interface DropdownPanelState {
+  /** Canvas element that owns this panel (scopes panel to a single table instance). */
+  canvas: HTMLCanvasElement;
   /** Cell key "row:col". */
   key: string;
   options: { value: string; label: string }[];
@@ -180,7 +182,9 @@ const CHECK_WIDTH = 22;
 
 // ── Public API ────────────────────────────────────────────────────────
 
-export function getDropdownPanelState(): DropdownPanelState | null {
+export function getDropdownPanelState(canvas?: HTMLCanvasElement): DropdownPanelState | null {
+  if (!openPanel) return null;
+  if (canvas && openPanel.canvas !== canvas) return null;
   return openPanel;
 }
 
@@ -396,8 +400,8 @@ export const dropdownCellRenderer: CellRenderer<DropdownInstruction> = {
       ctx.globalAlpha = 0.5;
     }
 
-    // Background — highlight if this cell's panel is open
-    const isOpen = openPanel?.key === key;
+    // Background — highlight if this cell's panel is open on THIS canvas
+    const isOpen = openPanel?.key === key && openPanel?.canvas === ctx.canvas;
     ctx.beginPath();
     ctx.roundRect(selectX, selectY, selectW, selectH, borderRadius);
     ctx.fillStyle = isOpen ? activeBgColor : bgColor;
