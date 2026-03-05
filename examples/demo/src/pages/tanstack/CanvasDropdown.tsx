@@ -12,6 +12,7 @@ import {
   Dropdown,
 } from "@ohah/react-wasm-table";
 import { useContainerSize } from "../../useContainerSize";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Row = { id: number; name: string; status: string };
 
@@ -42,6 +43,7 @@ interface LogEntry {
 let logId = 0;
 
 export function TanStackCanvasDropdown() {
+  const isDark = useDarkMode();
   const [data, setData] = useState(INITIAL_DATA);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const { ref, width } = useContainerSize();
@@ -83,9 +85,10 @@ export function TanStackCanvasDropdown() {
 
   const btnBase: React.CSSProperties = {
     padding: "2px 8px",
-    border: "1px solid #ccc",
+    border: "1px solid var(--demo-border-2)",
     borderRadius: 4,
-    background: "#fff",
+    background: "var(--demo-card-bg)",
+    color: "var(--demo-panel-fg)",
     cursor: "pointer",
     fontSize: 12,
   };
@@ -100,7 +103,7 @@ export function TanStackCanvasDropdown() {
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
         <div ref={ref} style={{ flex: 1, minWidth: 360 }}>
-          <Table table={table} width={Math.min(width || 440, 500)} height={280} rowHeight={40} />
+          <Table table={table} width={Math.min(width || 440, 500)} height={280} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
         </div>
 
         <section style={{ minWidth: 240, maxWidth: 320 }}>
@@ -114,29 +117,29 @@ export function TanStackCanvasDropdown() {
             style={{
               height: 240,
               overflow: "auto",
-              border: "1px solid #e0e0e0",
+              border: "1px solid var(--demo-border-2)",
               borderRadius: 6,
               fontSize: 12,
               fontFamily: "monospace",
-              background: "#fafafa",
+              background: "var(--demo-card-bg)",
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>No events yet</div>
+              <div style={{ padding: 16, color: "var(--demo-muted-fg, #999)", textAlign: "center" }}>No events yet</div>
             )}
             {logs.map((log) => (
               <div
                 key={log.id}
                 style={{
                   padding: "4px 10px",
-                  borderBottom: "1px solid #f0f0f0",
+                  borderBottom: "1px solid var(--demo-border-1)",
                   display: "flex",
                   gap: 8,
                 }}
               >
                 <span style={{ color: "#1565c0", fontWeight: 600, minWidth: 60 }}>{log.event}</span>
-                <span style={{ color: "#333" }}>{log.value}</span>
-                <span style={{ color: "#999" }}>{log.cell}</span>
+                <span style={{ color: "var(--demo-panel-fg)" }}>{log.value}</span>
+                <span style={{ color: "var(--demo-muted-fg, #999)" }}>{log.cell}</span>
               </div>
             ))}
           </div>

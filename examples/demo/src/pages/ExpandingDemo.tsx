@@ -190,7 +190,7 @@ export function ExpandingDemo() {
               <tr
                 key={row.id}
                 style={{
-                  background: row.depth === 0 ? "#fff" : row.depth === 1 ? "#fafafa" : "#f5f5f5",
+                  background: row.depth === 0 ? "var(--demo-card-bg)" : row.depth === 1 ? "var(--demo-panel-bg)" : "var(--demo-code-bg)",
                 }}
               >
                 <td style={tdStyle}>

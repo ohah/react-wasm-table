@@ -1,11 +1,13 @@
 import { useState, useMemo, useCallback } from "react";
 import { Grid, createColumnHelper, DatePicker } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { id: number; label: string; date: string };
 
 const helper = createColumnHelper<Row>();
 
 export function CanvasDatePicker() {
+  const isDark = useDarkMode();
   const [data, setData] = useState<Row[]>([
     { id: 1, label: "Start date", date: "2024-01-15" },
     { id: 2, label: "End date", date: "2024-06-30" },
@@ -49,7 +51,7 @@ export function CanvasDatePicker() {
         The canvas preview shows date text and a calendar icon.
       </p>
 
-      <Grid data={data} columns={columns} width={460} height={200} rowHeight={40} />
+      <Grid data={data} columns={columns} width={460} height={200} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
 
       <h3 style={{ marginTop: 16 }}>Current values:</h3>
       <pre style={{ fontSize: 12 }}>{JSON.stringify(data, null, 2)}</pre>

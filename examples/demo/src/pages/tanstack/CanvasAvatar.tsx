@@ -13,6 +13,7 @@ import {
   Text,
 } from "@ohah/react-wasm-table";
 import { useContainerSize } from "../../useContainerSize";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Row = { id: number; name: string; avatar: string; role: string };
 
@@ -31,9 +32,10 @@ const USERS: Row[] = [
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -45,6 +47,7 @@ const btnActive: React.CSSProperties = {
 };
 
 export function TanStackCanvasAvatar() {
+  const isDark = useDarkMode();
   const [size, setSize] = useState(32);
   const { ref, width } = useContainerSize();
 
@@ -86,7 +89,7 @@ export function TanStackCanvasAvatar() {
       </div>
 
       <div ref={ref}>
-        <Table table={table} width={Math.min(width || 400, 500)} height={360} rowHeight={48} />
+        <Table table={table} width={Math.min(width || 400, 500)} height={360} rowHeight={48} theme={isDark ? DARK_THEME : LIGHT_THEME} />
       </div>
     </>
   );

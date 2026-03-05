@@ -12,12 +12,14 @@ import {
   DatePicker,
 } from "@ohah/react-wasm-table";
 import { useContainerSize } from "../../useContainerSize";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Row = { id: number; label: string; date: string };
 
 const helper = createColumnHelper<Row>();
 
 export function TanStackCanvasDatePicker() {
+  const isDark = useDarkMode();
   const [data, setData] = useState<Row[]>([
     { id: 1, label: "Sprint start", date: "2024-01-15" },
     { id: 2, label: "Sprint end", date: "2024-01-29" },
@@ -65,7 +67,7 @@ export function TanStackCanvasDatePicker() {
       </p>
 
       <div ref={ref}>
-        <Table table={table} width={Math.min(width || 440, 500)} height={280} rowHeight={40} />
+        <Table table={table} width={Math.min(width || 440, 500)} height={280} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
       </div>
 
       <h3 style={{ marginTop: 16 }}>Current values:</h3>
