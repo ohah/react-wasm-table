@@ -22,6 +22,41 @@
       "types": "./dist/index.d.ts",
       "development": "./src/index.ts",
       "import": "./dist/index.js"
+    },
+    "./wasm": {
+      "types": "./dist/wasm.d.ts",
+      "development": "./src/entries/wasm.ts",
+      "import": "./dist/wasm.js"
+    },
+    "./sorting": {
+      "types": "./dist/sorting.d.ts",
+      "development": "./src/entries/sorting.ts",
+      "import": "./dist/sorting.js"
+    },
+    "./filtering": {
+      "types": "./dist/filtering.d.ts",
+      "development": "./src/entries/filtering.ts",
+      "import": "./dist/filtering.js"
+    },
+    "./grouping": {
+      "types": "./dist/grouping.d.ts",
+      "development": "./src/entries/grouping.ts",
+      "import": "./dist/grouping.js"
+    },
+    "./selection": {
+      "types": "./dist/selection.d.ts",
+      "development": "./src/entries/selection.ts",
+      "import": "./dist/selection.js"
+    },
+    "./clipboard": {
+      "types": "./dist/clipboard.d.ts",
+      "development": "./src/entries/clipboard.ts",
+      "import": "./dist/clipboard.js"
+    },
+    "./renderers": {
+      "types": "./dist/renderers.d.ts",
+      "development": "./src/entries/renderers.ts",
+      "import": "./dist/renderers.js"
     }
   },
   "scripts": {
