@@ -1,3 +1,68 @@
 import { ColumnFeatures } from "demo";
 
 <ColumnFeatures />
+
+## Code
+
+```tsx
+const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(["id", "name", ...]);
+const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>({});
+const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
+const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({ left: [], right: [] });
+
+<Grid
+  columnOrder={columnOrder}
+  onColumnOrderChange={setColumnOrder}
+  columnVisibility={columnVisibility}
+  onColumnVisibilityChange={setColumnVisibility}
+  columnSizing={columnSizing}
+  onColumnSizingChange={setColumnSizing}  // also called on drag resize
+  columnPinning={columnPinning}
+  onColumnPinningChange={setColumnPinning}
+/>
+```
+
+## Table API Code
+
+```tsx
+const table = useReactTable({
+  data,
+  columns: reorderColumnsBy(columnDefs, columnOrder),
+  getCoreRowModel: getCoreRowModel(),
+  state: { columnOrder, columnVisibility, columnSizing, columnPinning, columnFilters },
+  onColumnOrderChange: setColumnOrder,
+  onColumnVisibilityChange: setColumnVisibility,
+  onColumnSizingChange: setColumnSizing,
+  onColumnPinningChange: setColumnPinning,
+  onColumnFiltersChange: setColumnFilters,
+});
+
+<Table
+  table={table}
+  width={600}
+  height={500}
+  columnOrder={columnOrder}
+  onColumnOrderChange={setColumnOrder}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

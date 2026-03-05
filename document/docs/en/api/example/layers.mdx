@@ -1,3 +1,87 @@
 import { LayerDemo } from "demo";
 
 <LayerDemo />
+
+## Code
+
+```tsx
+import { headerLayer, dataLayer, gridLinesLayer, selectionLayer } from "@ohah/react-wasm-table";
+
+// Custom watermark layer (viewport space — no scroll translate)
+const watermark: GridLayer = {
+  name: "watermark",
+  space: "viewport",
+  draw({ ctx, width, height }) {
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    ctx.font = "bold 48px system-ui";
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(-Math.PI / 6);
+    ctx.fillText("CONFIDENTIAL", 0, 0);
+    ctx.restore();
+  },
+};
+
+<Grid
+  layers={[
+    headerLayer(),
+    dataLayer(),
+    gridLinesLayer(),
+    watermark,         // injected between gridLines and selection
+    selectionLayer(),
+  ]}
+  ...
+/>
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td,
+  headerLayer, dataLayer, gridLinesLayer, selectionLayer,
+  type GridLayer,
+} from "@ohah/react-wasm-table";
+
+const activeLayers: GridLayer[] = useMemo(() => [
+  headerLayer(),
+  dataLayer(),
+  gridLinesLayer(),
+  rowHighlightLayer(2),   // custom layer
+  selectionLayer(),
+  watermarkLayer(),        // custom layer
+], []);
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table
+  table={table}
+  width={560}
+  height={520}
+  layers={activeLayers}
+  selection={selection}
+  onSelectionChange={setSelection}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

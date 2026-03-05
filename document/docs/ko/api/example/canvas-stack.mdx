@@ -1,3 +1,75 @@
 import { CanvasStack } from "demo";
 
 <CanvasStack />
+
+## Code
+
+```tsx
+import { Grid, createColumnHelper, Stack, Text, Badge } from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ dept: string }>();
+
+const columns = [
+  helper.accessor("dept", {
+    header: "Stack (row)",
+    size: 200,
+    cell: (info) => (
+      <Stack direction="row" gap={6}>
+        <Text value={info.getValue()} />
+        <Badge value="dept" style={{ backgroundColor: "#e3f2fd", color: "#1565c0" }} />
+      </Stack>
+    ),
+  }),
+];
+
+<Grid data={data} columns={columns} width={780} height={480} rowHeight={44} />;
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td, createColumnHelper, Stack, Text, Badge,
+} from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ dept: string }>();
+
+const columns = [
+  helper.accessor("dept", {
+    header: "Stack (row)",
+    size: 200,
+    cell: (info) => (
+      <Stack direction="row" gap={6}>
+        <Text value={info.getValue()} />
+        <Badge value="dept" style={{ backgroundColor: "#e3f2fd", color: "#1565c0" }} />
+      </Stack>
+    ),
+  }),
+];
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table table={table} width={780} height={480} rowHeight={44}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>;
+```

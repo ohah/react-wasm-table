@@ -1,3 +1,78 @@
 import { EventCallbacks } from "demo";
 
 <EventCallbacks />
+
+## Code
+
+```tsx
+<Grid
+  data={data}
+  columns={columns}
+  sorting={sorting}
+  onSortingChange={setSorting}
+  selection={selection}
+  onSelectionChange={setSelection}
+  onCellClick={(e) => { /* e.cell.row, e.cell.col; e.preventDefault() to block */ }}
+  onCellDoubleClick={(e) => { /* e.preventDefault() to block */ }}
+  onHeaderClick={(e) => { /* e.colIndex */ }}
+  onKeyDown={(e) => { /* e.key; e.preventDefault() to block */ }}
+  onCellMouseDown={(e) => { /* e.shiftKey, e.cell */ }}
+  onCellMouseMove={(e) => { /* e.viewportX, e.viewportY */ }}
+  onCellMouseUp={() => { /* drag end */ }}
+  onScroll={(e) => { /* e.deltaY, e.deltaX; e.preventDefault() to block */ }}
+  onCanvasEvent={(e) => { /* e.type, e.hitTest */ }}
+  onBeforeSortChange={(next) => { /* return false to block */ }}
+  onBeforeSelectionChange={(next) => { /* return false to block */ }}
+/>
+```
+
+## Table API Code
+
+```tsx
+const table = useReactTable({
+  data, columns, getCoreRowModel: getCoreRowModel(),
+  state: { sorting }, onSortingChange: setSorting,
+});
+
+<Table
+  table={table}
+  width={560}
+  height={480}
+  sorting={sorting}
+  onSortingChange={setSorting}
+  selection={selection}
+  onSelectionChange={setSelection}
+  onCellClick={(e) => { /* e.cell.row, e.cell.col */ }}
+  onCellDoubleClick={(e) => { /* e.preventDefault() to block */ }}
+  onHeaderClick={(e) => { /* e.colIndex */ }}
+  onKeyDown={(e) => { /* e.key */ }}
+  onCellMouseDown={(e) => { /* e.shiftKey, e.cell */ }}
+  onCellMouseMove={(e) => { /* e.viewportX, e.viewportY */ }}
+  onCellMouseUp={() => { /* drag end */ }}
+  onScroll={(e) => { /* e.deltaY, e.deltaX */ }}
+  onCanvasEvent={(e) => { /* e.type, e.hitTest */ }}
+  onBeforeSortChange={(next) => { /* return false to block */ }}
+  onBeforeSelectionChange={(next) => { /* return false to block */ }}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

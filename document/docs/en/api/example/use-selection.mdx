@@ -1,3 +1,68 @@
 import { UseSelectionDemo } from "demo";
 
 <UseSelectionDemo />
+
+## Code
+
+```tsx
+<Grid
+  data={data}
+  columns={columns}
+  selection={selection}
+  onSelectionChange={setSelection}
+  onBeforeSelectionChange={(next) => {
+    if (next && next.maxRow > 5) return false;
+  }}
+  onCopy={(tsv) => JSON.stringify(tsv.split("\n").map((l) => l.split("\t")))}
+/>
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td,
+  type NormalizedRange,
+} from "@ohah/react-wasm-table";
+
+const [selection, setSelection] = useState<NormalizedRange | null>(null);
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table
+  table={table}
+  width={560}
+  height={480}
+  selection={selection}
+  onSelectionChange={setSelection}
+  onBeforeSelectionChange={(next) => {
+    if (next && next.maxRow > 5) return false;
+  }}
+  onCopy={(tsv, range) => {
+    // Return custom format or undefined for default TSV
+    return JSON.stringify(tsv.split("\n").map((l) => l.split("\t")));
+  }}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

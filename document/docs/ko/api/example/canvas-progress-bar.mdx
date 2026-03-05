@@ -1,3 +1,85 @@
 import { CanvasProgressBar } from "demo";
 
 <CanvasProgressBar />
+
+## Code
+
+```tsx
+import { Grid, createColumnHelper, ProgressBar } from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ score: number }>();
+
+const columns = [
+  helper.accessor("score", {
+    header: "Progress",
+    size: 180,
+    cell: (info) => (
+      <ProgressBar
+        value={info.getValue()}
+        max={100}
+        showLabel
+        color="#9c27b0"
+        backgroundColor="#e1bee7"
+        height={14}
+        borderRadius={7}
+      />
+    ),
+  }),
+];
+
+<Grid data={data} columns={columns} width={900} height={460} rowHeight={40} />;
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td, createColumnHelper, ProgressBar,
+} from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ score: number }>();
+
+const columns = [
+  helper.accessor("score", {
+    header: "Progress",
+    size: 180,
+    cell: (info) => (
+      <ProgressBar
+        value={info.getValue()}
+        max={100}
+        showLabel
+        color="#9c27b0"
+        backgroundColor="#e1bee7"
+        height={14}
+        borderRadius={7}
+      />
+    ),
+  }),
+];
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table table={table} width={900} height={460} rowHeight={40}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>;
+```

@@ -1,3 +1,74 @@
 import { CanvasSparkline } from "demo";
 
 <CanvasSparkline />
+
+## Code
+
+```tsx
+import { Grid, createColumnHelper, Sparkline } from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ trend: number[] }>();
+
+const columns = [
+  helper.accessor("trend", {
+    header: "Trend",
+    size: 200,
+    cell: (info) => (
+      <Sparkline
+        data={info.getValue()}
+        variant="line"
+        color="#1565c0"
+        strokeWidth={1.5}
+      />
+    ),
+  }),
+];
+
+<Grid data={data} columns={columns} width={360} height={460} rowHeight={40} />;
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td, createColumnHelper, Sparkline,
+} from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ trend: number[] }>();
+
+const columns = [
+  helper.accessor("trend", {
+    header: "Trend",
+    size: 200,
+    cell: (info) => (
+      <Sparkline data={info.getValue()} variant="line" color="#1565c0" strokeWidth={1.5} />
+    ),
+  }),
+];
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table table={table} width={360} height={460} rowHeight={40}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>;
+```

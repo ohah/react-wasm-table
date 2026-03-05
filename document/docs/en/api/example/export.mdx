@@ -1,3 +1,53 @@
 import { ExportDemo } from "demo";
 
 <ExportDemo />
+
+## Code
+
+```tsx
+import { buildRowModel, exportToCSV, exportToTSV, exportToJSON } from "@ohah/react-wasm-table";
+
+const rowModel = buildRowModel(data, null, columns);
+
+const csv = exportToCSV(rowModel, { includeHeaders: true });
+const tsv = exportToTSV(rowModel, { includeHeaders: true, columns: ["name", "salary"] });
+const json = exportToJSON(rowModel);
+```
+
+## Table API Code
+
+```tsx
+import { exportToCSV, exportToTSV, exportToJSON } from "@ohah/react-wasm-table";
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+// Export using the table's row model (respects sorting/filtering)
+const rowModel = table.getRowModel();
+
+const csv = exportToCSV(rowModel, { includeHeaders: true });
+const tsv = exportToTSV(rowModel, { includeHeaders: true, columns: ["name", "salary"] });
+const json = exportToJSON(rowModel);
+
+<Table table={table} width={560} height={480}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

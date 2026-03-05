@@ -1,3 +1,30 @@
 import { HooksOverview } from "demo";
 
 <HooksOverview />
+
+## Code
+
+```tsx
+Grid.tsx (thin shell — ~420 lines)
+│
+├─ useWasmEngine        WASM init + MemoryBridge
+│
+├─ useDataIngestion     data[] → WASM columnar store + StringTable
+│
+├─ useSorting           sorting state (controlled/uncontrolled)
+│   └─ onBeforeSortChange guard
+│
+├─ useSelection         SelectionManager + clipboard + handlers
+│   └─ onBeforeSelectionChange guard
+│
+├─ useEditing           EditorManager + double-click handler
+│
+├─ useGridScroll        scroll refs + auto-scroll + clamping
+│
+├─ useEventAttachment   EventManager.attach + callback interception
+│   ├─ onCellClick / onCellDoubleClick
+│   ├─ onHeaderClick
+│   └─ onKeyDown
+│
+└─ useRenderLoop        RAF + WASM layout + Canvas draw
+```

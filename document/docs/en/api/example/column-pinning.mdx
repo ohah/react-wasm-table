@@ -1,3 +1,73 @@
 import { ColumnPinningDemo } from "demo";
 
 <ColumnPinningDemo />
+
+## Code
+
+```tsx
+import { Grid, type ColumnPinningState, type ColumnOrderState } from "@ohah/react-wasm-table";
+
+const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({
+  left: ["id"],
+  right: ["joinDate"],
+});
+const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(allColumnIds);
+
+<Grid
+  data={data}
+  columns={columns}
+  width={700}
+  height={520}
+  columnOrder={columnOrder}
+  onColumnOrderChange={setColumnOrder}
+  columnPinning={columnPinning}
+  onColumnPinningChange={setColumnPinning}
+  enableColumnDnD
+  overflowY="scroll"
+/>;
+```
+
+## Table API Code
+
+```tsx
+const table = useReactTable({
+  data,
+  columns: reorderColumnsBy(columnDefs, columnOrder),
+  getCoreRowModel: getCoreRowModel(),
+  state: { sorting, columnOrder, columnPinning },
+  onSortingChange: setSorting,
+  onColumnOrderChange: setColumnOrder,
+  onColumnPinningChange: setColumnPinning,
+});
+
+<Table
+  table={table}
+  width={700}
+  height={520}
+  enableColumnDnD
+  columnOrder={columnOrder}
+  onColumnOrderChange={setColumnOrder}
+  overflowY="scroll"
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

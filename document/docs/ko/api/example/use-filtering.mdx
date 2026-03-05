@@ -1,3 +1,62 @@
 import { UseFilteringDemo } from "demo";
 
 <UseFilteringDemo />
+
+## Code
+
+```tsx
+const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+const [globalFilter, setGlobalFilter] = useState("");
+
+<Grid
+  data={data}
+  columns={columns}
+  columnFilters={columnFilters}
+  onColumnFiltersChange={setColumnFilters}
+  globalFilter={globalFilter}
+  onGlobalFilterChange={setGlobalFilter}
+/>
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td,
+  type ColumnFiltersState,
+} from "@ohah/react-wasm-table";
+
+const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+const [globalFilter, setGlobalFilter] = useState("");
+
+const table = useReactTable({
+  data, columns, getCoreRowModel: getCoreRowModel(),
+  state: { columnFilters, globalFilter },
+  onColumnFiltersChange: setColumnFilters,
+  onGlobalFilterChange: setGlobalFilter,
+});
+
+<Table table={table} width={640} height={520} overflowY="scroll">
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```
