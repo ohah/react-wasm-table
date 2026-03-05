@@ -1463,6 +1463,9 @@ describe("Dropdown component", () => {
 });
 
 describe("ProgressBar with onChange handlers", () => {
+  // Shared mock canvas element for geometry cache scoping
+  const mockCanvasEl = {} as HTMLCanvasElement;
+
   // Helper to populate the bar geometry cache by drawing a progressbar cell
   const defaultTheme: Theme = {
     headerBackground: "#f5f5f5",
@@ -1496,6 +1499,7 @@ describe("ProgressBar with onChange handlers", () => {
 
   function mockCtx() {
     return {
+      canvas: mockCanvasEl,
       font: "",
       fillStyle: "",
       strokeStyle: "",
@@ -1543,13 +1547,15 @@ describe("ProgressBar with onChange handlers", () => {
 
   function makeCellEvent(contentX: number, row: number, col: number) {
     let defaultPrevented = false;
+    const nativeEvent = new MouseEvent("click", { clientX: contentX });
+    Object.defineProperty(nativeEvent, "target", { value: mockCanvasEl });
     return {
       cell: { row, col },
       contentX,
       contentY: 50,
       viewportX: contentX,
       viewportY: 50,
-      nativeEvent: new MouseEvent("click", { clientX: contentX }),
+      nativeEvent,
       preventDefault: () => {
         defaultPrevented = true;
       },

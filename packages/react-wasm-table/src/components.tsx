@@ -422,8 +422,7 @@ export function ProgressBar(props: ProgressBarProps): CanvasElement {
 
   if (onChange) {
     // Helper: extract canvas element from native event target
-    const getCanvas = (e: GridCellEvent) =>
-      e.nativeEvent.target instanceof HTMLCanvasElement ? e.nativeEvent.target : null;
+    const getCanvas = (e: GridCellEvent) => (e.nativeEvent.target as HTMLCanvasElement) ?? null;
 
     // Helper: compute value from contentX using cached geometry
     const computeValue = (
