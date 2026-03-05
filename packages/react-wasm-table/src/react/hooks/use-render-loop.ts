@@ -867,10 +867,10 @@ export function useRenderLoop({
           const perRowH = headerHeight / headerRowCount;
           const ghostY = headerHeight - perRowH;
           ctx.save();
-          ctx.globalAlpha = 0.9;
+          ctx.globalAlpha = 0.85;
           ctx.fillStyle = theme.headerBackground;
-          ctx.strokeStyle = theme.borderColor;
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = "#1976d2";
+          ctx.lineWidth = 2;
           ctx.beginPath();
           if (typeof ctx.roundRect === "function") {
             ctx.roundRect(ghostX, ghostY, headerWidth, perRowH, 4);
@@ -879,7 +879,35 @@ export function useRenderLoop({
           }
           ctx.fill();
           ctx.stroke();
+
+          // Draw header text inside ghost
+          const leafRowIdx = headerGroups.length - 1;
+          const leafGroup = headerGroups[leafRowIdx];
+          if (leafGroup && dnd.dragColIndex < leafGroup.headers.length) {
+            const header = leafGroup.headers[dnd.dragColIndex]!;
+            const colDef = header.column.columnDef;
+            let label = "";
+            if (typeof colDef.header === "string") {
+              label = colDef.header;
+            } else if (colDef.header) {
+              label =
+                colDef.header({ column: { id: header.column.id, columnDef: colDef } }) ?? "";
+            }
+            // Add sort indicator
+            const sortEntry = sorting.find((s) => s.id === header.column.id);
+            if (sortEntry) {
+              label = `${label} ${sortEntry.desc ? "\u25BC" : "\u25B2"}`;
+            }
+            ctx.globalAlpha = 1;
+            const fontSize = theme.headerFontSize ?? 13;
+            ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+            ctx.fillStyle = theme.headerColor;
+            ctx.textBaseline = "middle";
+            ctx.textAlign = "center";
+            ctx.fillText(label, ghostX + headerWidth / 2, ghostY + perRowH / 2, headerWidth - 8);
+          }
           ctx.globalAlpha = 1;
+
           // Drop indicator line
           const dropLeft =
             dnd.dropIndicatorColIndex >= headerCount

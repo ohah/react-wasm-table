@@ -51,18 +51,19 @@ export function useColumnDnD({
   }, []);
 
   const handleHeaderMouseDown = useCallback(
-    (colIndex: number) => {
+    (colIndex: number, viewportX: number) => {
       if (!enableColumnDnD || !onColumnOrderChange) return;
       const state: ColumnDnDState = {
         isDragging: true,
         dragColIndex: colIndex,
-        ghostViewportX: 0,
+        ghostViewportX: viewportX,
         dropIndicatorColIndex: colIndex,
       };
       setDndState(state);
       syncRef(state);
+      invalidate?.();
     },
-    [enableColumnDnD, onColumnOrderChange, syncRef],
+    [enableColumnDnD, onColumnOrderChange, syncRef, invalidate],
   );
 
   const handleColumnDnDMove = useCallback(
