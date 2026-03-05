@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Grid, createColumnHelper, Icon, Text, Stack } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 // Material Design SVG paths (viewBox 24)
 const ICONS = {
@@ -45,6 +46,7 @@ const COLORS = ["#333", "#e53935", "#1976d2", "#388e3c", "#f57c00", "#7b1fa2"];
 const SIZES = [16, 20, 24, 32];
 
 export function CanvasIcon() {
+  const isDark = useDarkMode();
   const data = useMemo(generateData, []);
 
   const columns = useMemo(
@@ -120,6 +122,7 @@ export function CanvasIcon() {
           rowHeight={40}
           overflowX="auto"
           overflowY="auto"
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
         />
       </section>
     </>

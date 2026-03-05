@@ -77,7 +77,7 @@ function DemoCard({ to, title, description }: { to: string; title: string; descr
       style={{
         display: "block",
         padding: 16,
-        background: "#f8f9fa",
+        background: "var(--demo-card-bg)",
         border: "1px solid var(--demo-border)",
         borderRadius: 8,
         textDecoration: "none",
@@ -85,7 +85,7 @@ function DemoCard({ to, title, description }: { to: string; title: string; descr
         transition: "border-color 0.15s",
       }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#1976d2")}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e0e0e0")}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--demo-border)")}
     >
       <div style={{ fontWeight: 600, fontSize: 15, color: "#1976d2", marginBottom: 4 }}>
         {title}

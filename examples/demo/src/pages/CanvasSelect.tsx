@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Grid, createColumnHelper, Select, Text } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = {
   id: number;
@@ -14,9 +15,10 @@ const helper = createColumnHelper<Row>();
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -91,6 +93,7 @@ function generateData(): Row[] {
 }
 
 export function CanvasSelect() {
+  const isDark = useDarkMode();
   const [data, setData] = useState(generateData);
   const [disabled, setDisabled] = useState(false);
 
@@ -205,6 +208,7 @@ export function CanvasSelect() {
           rowHeight={40}
           overflowX="auto"
           overflowY="auto"
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
         />
       </section>
 
@@ -212,7 +216,7 @@ export function CanvasSelect() {
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Current Data</h2>
         <pre
           style={{
-            background: "#f5f5f5",
+            background: "var(--demo-code-bg)",
             padding: 12,
             borderRadius: 6,
             fontSize: 12,

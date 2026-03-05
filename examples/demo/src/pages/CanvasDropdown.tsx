@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Grid, createColumnHelper, Dropdown } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { id: number; label: string; status: string };
 
@@ -13,6 +14,7 @@ const statusOptions = [
 ];
 
 export function CanvasDropdown() {
+  const isDark = useDarkMode();
   const [data, setData] = useState<Row[]>([
     { id: 1, label: "Project Alpha", status: "active" },
     { id: 2, label: "Project Beta", status: "pending" },
@@ -57,7 +59,7 @@ export function CanvasDropdown() {
         open, select an option, or click outside to close.
       </p>
 
-      <Grid data={data} columns={columns} width={480} height={200} rowHeight={40} />
+      <Grid data={data} columns={columns} width={480} height={200} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
 
       <h3 style={{ marginTop: 16 }}>Current values:</h3>
       <pre style={{ fontSize: 12 }}>{JSON.stringify(data, null, 2)}</pre>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Grid, createColumnHelper, Avatar } from "@ohah/react-wasm-table";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 
 type Row = { name: string; avatar: string };
 
@@ -15,9 +16,10 @@ const data: Row[] = [
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid var(--demo-border-2, #ccc)",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -29,6 +31,7 @@ const btnActive: React.CSSProperties = {
 };
 
 export function CanvasAvatar() {
+  const isDark = useDarkMode();
   const [size, setSize] = useState(32);
   const [showBorder, setShowBorder] = useState(false);
 
@@ -101,7 +104,7 @@ export function CanvasAvatar() {
         </div>
       </div>
 
-      <Grid data={data} columns={columns} width={400} height={260} rowHeight={48} />
+      <Grid data={data} columns={columns} width={400} height={260} rowHeight={48} theme={isDark ? DARK_THEME : LIGHT_THEME} />
     </>
   );
 }

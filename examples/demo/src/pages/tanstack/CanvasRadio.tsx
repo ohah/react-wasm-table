@@ -14,6 +14,7 @@ import {
   type GridCellEvent,
 } from "@ohah/react-wasm-table";
 import { useContainerSize } from "../../useContainerSize";
+import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
 
 type Row = { id: number; name: string; plan: string };
 const helper = createColumnHelper<Row>();
@@ -58,9 +59,10 @@ function generateData(): Row[] {
 
 const btnBase: React.CSSProperties = {
   padding: "4px 12px",
-  border: "1px solid #ccc",
+  border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "#fff",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -80,6 +82,7 @@ interface LogEntry {
 let logId = 0;
 
 export function TanStackCanvasRadio() {
+  const isDark = useDarkMode();
   const [data, setData] = useState(generateData);
   const [disabled, setDisabled] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -171,6 +174,7 @@ export function TanStackCanvasRadio() {
             height={400}
             rowHeight={36}
             overflowY="auto"
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
           />
         </section>
 
@@ -184,29 +188,29 @@ export function TanStackCanvasRadio() {
               Clear
             </button>
           </h2>
-          <p style={{ fontSize: 13, color: "#666", margin: "0 0 8px" }}>
+          <p style={{ fontSize: 13, color: "var(--demo-muted-fg, #666)", margin: "0 0 8px" }}>
             Click radio buttons to change plan. Events are logged below.
           </p>
           <div
             style={{
               height: 340,
               overflow: "auto",
-              border: "1px solid #e0e0e0",
+              border: "1px solid var(--demo-border-2)",
               borderRadius: 6,
               fontSize: 12,
               fontFamily: "monospace",
-              background: "#fafafa",
+              background: "var(--demo-card-bg)",
             }}
           >
             {logs.length === 0 && (
-              <div style={{ padding: 16, color: "#999", textAlign: "center" }}>No events yet</div>
+              <div style={{ padding: 16, color: "var(--demo-muted-fg, #999)", textAlign: "center" }}>No events yet</div>
             )}
             {logs.map((log) => (
               <div
                 key={log.id}
                 style={{
                   padding: "4px 10px",
-                  borderBottom: "1px solid #f0f0f0",
+                  borderBottom: "1px solid var(--demo-border-1)",
                   display: "flex",
                   gap: 8,
                 }}
@@ -224,8 +228,8 @@ export function TanStackCanvasRadio() {
                 >
                   {log.event}
                 </span>
-                <span style={{ color: "#333" }}>{log.value}</span>
-                <span style={{ color: "#999" }}>{log.cell}</span>
+                <span style={{ color: "var(--demo-panel-fg)" }}>{log.value}</span>
+                <span style={{ color: "var(--demo-muted-fg, #999)" }}>{log.cell}</span>
               </div>
             ))}
           </div>
