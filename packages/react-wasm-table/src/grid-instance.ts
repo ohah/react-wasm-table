@@ -24,12 +24,7 @@ import type {
   HeaderContext,
 } from "./tanstack-types";
 
-import type {
-  Row,
-  RowModel,
-  AggregationFn,
-  FacetedColumnValues,
-} from "./row-model";
+import type { Row, RowModel, AggregationFn, FacetedColumnValues } from "./row-model";
 import {
   buildRowModel,
   buildVirtualRowModel,

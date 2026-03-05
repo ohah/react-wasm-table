@@ -62,11 +62,7 @@ export function CanvasBox() {
         size: 100,
         padding: [0, 4],
         cell: (info) => (
-          <Box
-            padding={6}
-            borderWidth={2}
-            borderColor="#1976d2"
-          >
+          <Box padding={6} borderWidth={2} borderColor="#1976d2">
             <Text value={`${info.getValue()} pts`} />
           </Box>
         ),

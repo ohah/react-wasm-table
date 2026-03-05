@@ -81,31 +81,31 @@ const columns = [
 
 ## Canvas 컴포넌트
 
-| 컴포넌트    | 설명                             |
-| ----------- | -------------------------------- |
-| Text        | 한 줄 텍스트                     |
-| Badge       | 배경이 있는 pill/chip            |
-| Flex        | Taffy 호환 flex 컨테이너         |
-| Box         | padding/margin/border 컨테이너   |
-| Stack       | gap이 있는 행/열 레이아웃        |
-| Sparkline   | 인라인 미니 라인/영역 차트       |
-| Color       | 중앙 정렬 색상 견본              |
-| Tag         | 테두리가 있는 텍스트             |
-| Rating      | 별점 (채움/빈)                   |
-| Chip        | 닫기 버튼 옵션이 있는 pill       |
-| Link        | 밑줄이 있는 클릭 가능 텍스트     |
-| Image       | Canvas 이미지 (object-fit 지원)  |
-| Icon        | SVG 경로 아이콘                  |
-| Avatar      | 원형 아바타 (이미지 또는 이니셜) |
+| 컴포넌트    | 설명                              |
+| ----------- | --------------------------------- |
+| Text        | 한 줄 텍스트                      |
+| Badge       | 배경이 있는 pill/chip             |
+| Flex        | Taffy 호환 flex 컨테이너          |
+| Box         | padding/margin/border 컨테이너    |
+| Stack       | gap이 있는 행/열 레이아웃         |
+| Sparkline   | 인라인 미니 라인/영역 차트        |
+| Color       | 중앙 정렬 색상 견본               |
+| Tag         | 테두리가 있는 텍스트              |
+| Rating      | 별점 (채움/빈)                    |
+| Chip        | 닫기 버튼 옵션이 있는 pill        |
+| Link        | 밑줄이 있는 클릭 가능 텍스트      |
+| Image       | Canvas 이미지 (object-fit 지원)   |
+| Icon        | SVG 경로 아이콘                   |
+| Avatar      | 원형 아바타 (이미지 또는 이니셜)  |
 | Input       | 텍스트 입력 (테두리/플레이스홀더) |
-| Select      | 셀렉트 드롭다운                  |
-| Checkbox    | 체크 가능한 박스 (라벨 포함)     |
-| Radio       | 라디오 버튼 (라벨 포함)          |
-| Label       | 포인터 커서 텍스트 라벨          |
-| Switch      | 애니메이션 토글 스위치           |
-| ProgressBar | 수평 프로그레스 바               |
-| DatePicker  | DOM 오버레이 날짜 입력           |
-| Dropdown    | DOM 오버레이 선택 입력           |
+| Select      | 셀렉트 드롭다운                   |
+| Checkbox    | 체크 가능한 박스 (라벨 포함)      |
+| Radio       | 라디오 버튼 (라벨 포함)           |
+| Label       | 포인터 커서 텍스트 라벨           |
+| Switch      | 애니메이션 토글 스위치            |
+| ProgressBar | 수평 프로그레스 바                |
+| DatePicker  | DOM 오버레이 날짜 입력            |
+| Dropdown    | DOM 오버레이 선택 입력            |
 
 모든 컴포넌트는 이벤트 핸들러를 지원합니다: `onClick`, `onDoubleClick`, `onMouseDown`, `onMouseUp`, `onMouseEnter`, `onMouseLeave`.
 

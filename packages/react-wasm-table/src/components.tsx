@@ -329,7 +329,6 @@ export interface StubProps {
   [key: string]: unknown;
 }
 
-
 /** Props for the Stack canvas component (direction + gap only). */
 export interface StackProps extends CanvasEventHandlers {
   children?: ReactNode;
