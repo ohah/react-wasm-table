@@ -60,7 +60,7 @@ export interface UseEventAttachmentParams {
     handleResizeMove?: (deltaX: number) => void;
     handleResizeEnd?: () => void;
     handleResizeHover?: (colIndex: number | null) => void;
-    handleHeaderMouseDown?: (colIndex: number) => void;
+    handleHeaderMouseDown?: (colIndex: number, viewportX: number) => void;
     handleColumnDnDMove?: (viewportX: number, contentX: number) => void;
     handleColumnDnDEnd?: () => void;
     isCellEditable?: (coord: CellCoord) => boolean;
@@ -333,7 +333,7 @@ export function useEventAttachment({
           }
         },
         onHeaderMouseDown: handlers.handleHeaderMouseDown
-          ? (colIndex) => handlers.handleHeaderMouseDown!(colIndex)
+          ? (colIndex, _native, coords) => handlers.handleHeaderMouseDown!(colIndex, coords.viewportX)
           : undefined,
         onColumnDnDMove: handlers.handleColumnDnDMove,
         onColumnDnDEnd: handlers.handleColumnDnDEnd,
