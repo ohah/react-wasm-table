@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- this module IS the console abstraction */
 /** Logger interface for debug output. */
 export interface Logger {
   log: (...args: unknown[]) => void;

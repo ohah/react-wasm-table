@@ -559,5 +559,6 @@ export function useEventAttachment({
     rowHeight,
     headerHeight,
     height,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refs (scrollTopRef, scrollLeftRef, cellRendererRegistryRef, getInstructionForCellRef) have stable identity; invalidate is a stable useCallback; handlers object identity is managed by caller
   ]);
 }

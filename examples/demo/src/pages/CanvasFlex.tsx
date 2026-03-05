@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   Grid,
   createColumnHelper,
@@ -53,25 +53,28 @@ export function CanvasFlex() {
     [],
   );
 
-  const flexCell = (info: { getValue: () => string; row: { index: number; original: Row } }) =>
-    useStyleProp ? (
-      <Flex style={{ flexDirection, gap, alignItems, justifyContent }}>
-        <Badge value={info.getValue()} backgroundColor="#e3f2fd" color="#1565c0" />
-        <Text value={`#${info.row.index + 1}`} fontSize={11} color="#666" />
-        <Text value={String(info.row.original.salary)} fontSize={11} color="#888" />
-      </Flex>
-    ) : (
-      <Flex
-        flexDirection={flexDirection}
-        gap={gap}
-        alignItems={alignItems}
-        justifyContent={justifyContent}
-      >
-        <Badge value={info.getValue()} backgroundColor="#e3f2fd" color="#1565c0" />
-        <Text value={`#${info.row.index + 1}`} fontSize={11} color="#666" />
-        <Text value={String(info.row.original.salary)} fontSize={11} color="#888" />
-      </Flex>
-    );
+  const flexCell = useCallback(
+    (info: { getValue: () => string; row: { index: number; original: Row } }) =>
+      useStyleProp ? (
+        <Flex style={{ flexDirection, gap, alignItems, justifyContent }}>
+          <Badge value={info.getValue()} backgroundColor="#e3f2fd" color="#1565c0" />
+          <Text value={`#${info.row.index + 1}`} fontSize={11} color="#666" />
+          <Text value={String(info.row.original.salary)} fontSize={11} color="#888" />
+        </Flex>
+      ) : (
+        <Flex
+          flexDirection={flexDirection}
+          gap={gap}
+          alignItems={alignItems}
+          justifyContent={justifyContent}
+        >
+          <Badge value={info.getValue()} backgroundColor="#e3f2fd" color="#1565c0" />
+          <Text value={`#${info.row.index + 1}`} fontSize={11} color="#666" />
+          <Text value={String(info.row.original.salary)} fontSize={11} color="#888" />
+        </Flex>
+      ),
+    [flexDirection, gap, alignItems, justifyContent, useStyleProp],
+  );
 
   const previewColumns = useMemo(
     () => [
@@ -82,7 +85,7 @@ export function CanvasFlex() {
         cell: flexCell,
       }),
     ],
-    [flexDirection, gap, alignItems, justifyContent, useStyleProp],
+    [flexCell],
   );
 
   return (

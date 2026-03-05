@@ -45,6 +45,7 @@ export function Position() {
       helper.accessor("salary", { header: "Salary", size: 100, align: "right", padding: [0, 8] }),
       helper.accessor("score", { header: "Score", size: 80, align: "right", padding: [0, 8] }),
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- helper is a module-scope constant
     [pos, insetLeft, insetTop],
   );
 
