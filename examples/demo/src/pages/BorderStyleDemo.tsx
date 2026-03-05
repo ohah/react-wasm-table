@@ -269,7 +269,6 @@ export function BorderStyleDemo() {
           </Table>
         )}
       </div>
-
     </>
   );
 }

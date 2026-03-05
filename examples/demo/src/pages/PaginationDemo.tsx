@@ -92,7 +92,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
   border: "1px solid var(--demo-border-2)",
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -232,7 +233,9 @@ export function PaginationDemo() {
             }}
           />
           {globalFilter && (
-            <span style={{ fontSize: 12, color: "var(--demo-muted)" }}>Matching rows: {totalRows}</span>
+            <span style={{ fontSize: 12, color: "var(--demo-muted)" }}>
+              Matching rows: {totalRows}
+            </span>
           )}
         </div>
       </div>
@@ -241,7 +244,14 @@ export function PaginationDemo() {
       <div style={sectionStyle}>
         <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div>
-            <label style={{ fontSize: 12, color: "var(--demo-muted)", display: "block", marginBottom: 4 }}>
+            <label
+              style={{
+                fontSize: 12,
+                color: "var(--demo-muted)",
+                display: "block",
+                marginBottom: 4,
+              }}
+            >
               Department (contains)
             </label>
             <div style={{ display: "flex", gap: 4 }}>
@@ -260,7 +270,14 @@ export function PaginationDemo() {
           </div>
 
           <div>
-            <label style={{ fontSize: 12, color: "var(--demo-muted)", display: "block", marginBottom: 4 }}>
+            <label
+              style={{
+                fontSize: 12,
+                color: "var(--demo-muted)",
+                display: "block",
+                marginBottom: 4,
+              }}
+            >
               Min Salary (≥)
             </label>
             <div style={{ display: "flex", gap: 4 }}>
@@ -278,7 +295,15 @@ export function PaginationDemo() {
             </div>
           </div>
 
-          <button style={{ ...btnBase, background: "var(--demo-code-bg)", color: "var(--demo-code-fg)", color: "var(--demo-muted)" }} onClick={clearAll}>
+          <button
+            style={{
+              ...btnBase,
+              background: "var(--demo-code-bg)",
+              color: "var(--demo-code-fg)",
+              color: "var(--demo-muted)",
+            }}
+            onClick={clearAll}
+          >
             Clear All
           </button>
         </div>
@@ -405,7 +430,13 @@ export function PaginationDemo() {
         style={{ width: "100%", height: Math.min(pagination.pageSize * 36 + 40, 520) }}
       >
         {size.width > 0 && (
-          <Table table={table} width={size.width} height={size.height} overflowY="scroll" theme={isDark ? DARK_THEME : LIGHT_THEME}>
+          <Table
+            table={table}
+            width={size.width}
+            height={size.height}
+            overflowY="scroll"
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
+          >
             <Thead>
               {table.getHeaderGroups().map((hg) => (
                 <Tr key={hg.id}>
@@ -460,7 +491,6 @@ export function PaginationDemo() {
           <li>Click column headers to sort, use inputs above to filter</li>
         </ol>
       </div>
-
     </>
   );
 }

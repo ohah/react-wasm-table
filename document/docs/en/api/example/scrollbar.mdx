@@ -10,21 +10,22 @@ import { Grid, type CssOverflow } from "@ohah/react-wasm-table";
 const [overflowY, setOverflowY] = useState<CssOverflow>("auto");
 
 // overflowY: "auto" | "scroll" | "hidden" | "visible"
-<Grid
-  data={data}
-  columns={columns}
-  width={550}
-  height={520}
-  overflowY={overflowY}
-/>;
+<Grid data={data} columns={columns} width={550} height={520} overflowY={overflowY} />;
 ```
 
 ## Table API Code
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
   type CssOverflow,
 } from "@ohah/react-wasm-table";
 
@@ -53,5 +54,5 @@ const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() 
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

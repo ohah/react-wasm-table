@@ -20,21 +20,22 @@ function onAfterDraw({ ctx, width, height }: AfterDrawContext) {
   ctx.restore();
 }
 
-<Grid
-  data={data}
-  columns={columns}
-  width={640}
-  height={520}
-  onAfterDraw={onAfterDraw}
-/>;
+<Grid data={data} columns={columns} width={640} height={520} onAfterDraw={onAfterDraw} />;
 ```
 
 ## Table API Code
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
   type AfterDrawContext,
 } from "@ohah/react-wasm-table";
 
@@ -48,12 +49,7 @@ const onAfterDraw = useCallback((ctx: AfterDrawContext) => {
 
 const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
 
-<Table
-  table={table}
-  width={560}
-  height={500}
-  onAfterDraw={onAfterDraw}
->
+<Table table={table} width={560} height={500} onAfterDraw={onAfterDraw}>
   <Thead>
     {table.getHeaderGroups().map((hg) => (
       <Tr key={hg.id}>
@@ -74,5 +70,5 @@ const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() 
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

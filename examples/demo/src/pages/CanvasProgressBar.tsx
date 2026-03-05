@@ -135,7 +135,14 @@ export function CanvasProgressBar() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Style Variations</h2>
-        <Grid data={data} columns={columns} width={900} height={460} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+        <Grid
+          data={data}
+          columns={columns}
+          width={900}
+          height={460}
+          rowHeight={40}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+        />
       </section>
 
       <section style={{ marginBottom: 32 }}>

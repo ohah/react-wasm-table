@@ -80,7 +80,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
   border: "1px solid var(--demo-border-2)",
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -103,7 +104,8 @@ const thStyle: React.CSSProperties = {
   padding: "8px 12px",
   textAlign: "left",
   borderBottom: "2px solid #ddd",
-  background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
+  background: "var(--demo-code-bg)",
+  color: "var(--demo-code-fg)",
   fontSize: 13,
   fontWeight: 600,
 };
@@ -168,7 +170,12 @@ export function ExpandingDemo() {
 
       {/* Tree table */}
       <div
-        style={{ border: "1px solid var(--demo-border)", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}
+        style={{
+          border: "1px solid var(--demo-border)",
+          borderRadius: 6,
+          overflow: "hidden",
+          marginBottom: 20,
+        }}
       >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -234,7 +241,6 @@ export function ExpandingDemo() {
           </div>
         </div>
       </div>
-
     </>
   );
 }

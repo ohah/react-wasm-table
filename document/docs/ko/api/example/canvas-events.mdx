@@ -5,7 +5,14 @@ import { CanvasEvents } from "demo";
 ## Code
 
 ```tsx
-import { Grid, createColumnHelper, Text, Link, Chip, type GridCellEvent } from "@ohah/react-wasm-table";
+import {
+  Grid,
+  createColumnHelper,
+  Text,
+  Link,
+  Chip,
+  type GridCellEvent,
+} from "@ohah/react-wasm-table";
 
 const helper = createColumnHelper<{ name: string; dept: string }>();
 
@@ -44,9 +51,20 @@ const columns = [
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td, createColumnHelper,
-  Text, Link, Chip, type GridCellEvent,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  createColumnHelper,
+  Text,
+  Link,
+  Chip,
+  type GridCellEvent,
 } from "@ohah/react-wasm-table";
 
 const helper = createColumnHelper<{ name: string; dept: string }>();

@@ -16,11 +16,9 @@ import {
 const [sorting, setSorting] = useState<SortingState>([]);
 const [selection, setSelection] = useState<NormalizedRange | null>(null);
 
-const onCellClick = (event: GridCellEvent) =>
-  console.log("cell", event.cell.row, event.cell.col);
+const onCellClick = (event: GridCellEvent) => console.log("cell", event.cell.row, event.cell.col);
 
-const onHeaderClick = (event: GridHeaderEvent) =>
-  console.log("header", event.colIndex);
+const onHeaderClick = (event: GridHeaderEvent) => console.log("header", event.colIndex);
 
 <Grid
   data={data}
@@ -80,5 +78,5 @@ const table = useReactTable({
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```

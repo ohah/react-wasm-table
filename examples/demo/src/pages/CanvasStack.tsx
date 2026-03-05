@@ -119,7 +119,14 @@ export function CanvasStack() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
-        <Grid data={data} columns={columns} width={780} height={480} rowHeight={44} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+        <Grid
+          data={data}
+          columns={columns}
+          width={780}
+          height={480}
+          rowHeight={44}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+        />
       </section>
     </>
   );

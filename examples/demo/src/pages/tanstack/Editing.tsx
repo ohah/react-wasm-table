@@ -225,7 +225,14 @@ export function TanStackEditing() {
 
       <section style={{ marginBottom: 16 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-        <Table table={table} width={600} height={300} theme={isDark ? DARK_THEME : LIGHT_THEME} meta={meta} editTrigger={editTrigger}>
+        <Table
+          table={table}
+          width={600}
+          height={300}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+          meta={meta}
+          editTrigger={editTrigger}
+        >
           <Thead>
             {table.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>
@@ -288,7 +295,8 @@ export function TanStackEditing() {
               overflow: "auto",
               fontSize: 13,
               fontFamily: "monospace",
-              background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
+              background: "var(--demo-code-bg)",
+              color: "var(--demo-code-fg)",
               padding: 8,
               borderRadius: 4,
             }}
@@ -313,7 +321,8 @@ export function TanStackEditing() {
               maxHeight: 200,
               overflow: "auto",
               fontSize: 12,
-              background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
+              background: "var(--demo-code-bg)",
+              color: "var(--demo-code-fg)",
               padding: 8,
               borderRadius: 4,
               margin: 0,

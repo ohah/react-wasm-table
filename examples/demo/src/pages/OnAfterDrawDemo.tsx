@@ -135,7 +135,9 @@ export function OnAfterDrawDemo() {
             minWidth: 200,
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--demo-panel-fg)" }}>AfterDrawContext</div>
+          <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--demo-panel-fg)" }}>
+            AfterDrawContext
+          </div>
           <div>
             <code>ctx</code>: CanvasRenderingContext2D
           </div>

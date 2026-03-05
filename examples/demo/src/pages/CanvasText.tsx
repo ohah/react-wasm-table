@@ -10,7 +10,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -102,7 +103,14 @@ export function CanvasText() {
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Grid API</h2>
-        <Grid data={data} columns={columns} width={380} height={460} rowHeight={40} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+        <Grid
+          data={data}
+          columns={columns}
+          width={380}
+          height={460}
+          rowHeight={40}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+        />
       </section>
     </>
   );

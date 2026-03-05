@@ -102,7 +102,11 @@ export function UseSelectionDemo() {
           <select
             value={copyFormat}
             onChange={(e) => setCopyFormat(e.target.value as "tsv" | "json")}
-            style={{ padding: "2px 8px", borderRadius: 4, border: "1px solid var(--demo-border-2)" }}
+            style={{
+              padding: "2px 8px",
+              borderRadius: 4,
+              border: "1px solid var(--demo-border-2)",
+            }}
           >
             <option value="tsv">TSV (default)</option>
             <option value="json">JSON</option>
@@ -169,7 +173,9 @@ export function UseSelectionDemo() {
           >
             <strong>Copy log:</strong>
             {copyLog.length === 0 && (
-              <div style={{ color: "var(--demo-muted-5)", marginTop: 4 }}>Select cells and press Ctrl/Cmd+C</div>
+              <div style={{ color: "var(--demo-muted-5)", marginTop: 4 }}>
+                Select cells and press Ctrl/Cmd+C
+              </div>
             )}
             {copyLog.map((entry, i) => (
               <div key={i} style={{ color: "var(--demo-muted-2)", marginTop: 2 }}>
@@ -187,7 +193,8 @@ const btnStyle: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
   border: "1px solid var(--demo-border-2)",
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };

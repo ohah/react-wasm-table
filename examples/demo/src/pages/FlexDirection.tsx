@@ -12,7 +12,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -62,7 +63,14 @@ export function FlexDirection() {
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
-          <Grid data={data} width={800} height={h} flexDirection={direction} columns={columns} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+          <Grid
+            data={data}
+            width={800}
+            height={h}
+            flexDirection={direction}
+            columns={columns}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
+          />
         </div>
       </div>
     </>

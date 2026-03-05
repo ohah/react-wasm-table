@@ -87,7 +87,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   borderRadius: 4,
   border: "1px solid var(--demo-border-2)",
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -196,7 +197,6 @@ export function GroupingDemo() {
           </div>
         </div>
       </div>
-
     </>
   );
 }

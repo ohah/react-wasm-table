@@ -61,9 +61,7 @@ const columns = [
   helper.accessor("name", { header: "이름" }),
   helper.accessor("status", {
     header: "상태",
-    cell: ({ getValue }) => (
-      <Badge value={getValue()} backgroundColor="#d1fae5" color="#065f46" />
-    ),
+    cell: ({ getValue }) => <Badge value={getValue()} backgroundColor="#d1fae5" color="#065f46" />,
   }),
   helper.accessor("rating", {
     header: "평점",
@@ -74,43 +72,43 @@ const columns = [
 
 ## 아키텍처
 
-| 레이어              | 역할                                                |
-| ------------------- | --------------------------------------------------- |
-| React Headless API  | 설정 수집 (`Grid`, `Column`, hooks)                 |
-| JS Adapter          | 컬럼 레지스트리, 데이터 수집, 이벤트 관리           |
-| WASM Core (Rust)    | 컬럼 저장소, Taffy 레이아웃, 가상 스크롤, 정렬      |
-| Canvas Renderer     | 셀 그리기, 헤더 렌더링, 그리드 라인, 히트 테스트    |
+| 레이어             | 역할                                             |
+| ------------------ | ------------------------------------------------ |
+| React Headless API | 설정 수집 (`Grid`, `Column`, hooks)              |
+| JS Adapter         | 컬럼 레지스트리, 데이터 수집, 이벤트 관리        |
+| WASM Core (Rust)   | 컬럼 저장소, Taffy 레이아웃, 가상 스크롤, 정렬   |
+| Canvas Renderer    | 셀 그리기, 헤더 렌더링, 그리드 라인, 히트 테스트 |
 
 ## Canvas 컴포넌트
 
-| 컴포넌트      | 설명                                |
-| ------------- | ----------------------------------- |
-| Text          | 한 줄 텍스트                        |
-| Badge         | 배경이 있는 pill/chip               |
-| Flex          | Taffy 호환 flex 컨테이너            |
-| Box           | padding/margin/border 컨테이너     |
-| Stack         | gap이 있는 행/열 레이아웃           |
-| Sparkline     | 인라인 미니 라인/영역 차트          |
-| Color         | 중앙 정렬 색상 견본                  |
-| Tag           | 테두리가 있는 텍스트                |
-| Rating        | 별점 (채움/빈)                      |
-| Chip          | 닫기 버튼 옵션이 있는 pill          |
-| Link          | 밑줄이 있는 클릭 가능 텍스트        |
-| Avatar        | 원형 아바타 (이미지 또는 이니셜)    |
-| DatePicker    | DOM 오버레이 날짜 입력              |
-| Dropdown      | DOM 오버레이 선택 입력              |
+| 컴포넌트   | 설명                             |
+| ---------- | -------------------------------- |
+| Text       | 한 줄 텍스트                     |
+| Badge      | 배경이 있는 pill/chip            |
+| Flex       | Taffy 호환 flex 컨테이너         |
+| Box        | padding/margin/border 컨테이너   |
+| Stack      | gap이 있는 행/열 레이아웃        |
+| Sparkline  | 인라인 미니 라인/영역 차트       |
+| Color      | 중앙 정렬 색상 견본              |
+| Tag        | 테두리가 있는 텍스트             |
+| Rating     | 별점 (채움/빈)                   |
+| Chip       | 닫기 버튼 옵션이 있는 pill       |
+| Link       | 밑줄이 있는 클릭 가능 텍스트     |
+| Avatar     | 원형 아바타 (이미지 또는 이니셜) |
+| DatePicker | DOM 오버레이 날짜 입력           |
+| Dropdown   | DOM 오버레이 선택 입력           |
 
 모든 컴포넌트는 이벤트 핸들러를 지원합니다: `onClick`, `onDoubleClick`, `onMouseDown`, `onMouseUp`, `onMouseEnter`, `onMouseLeave`.
 
 ## Hooks
 
-| Hook             | 설명                                    |
-| ---------------- | --------------------------------------- |
-| `useReactTable`  | TanStack 호환 테이블 인스턴스           |
-| `useGridTable`   | Grid 전용 테이블 인스턴스               |
-| `useSorting`     | 컬럼 정렬 상태                          |
-| `useFiltering`   | 컬럼/글로벌 필터링                      |
-| `useSelection`   | 셀/행 선택                              |
+| Hook            | 설명                          |
+| --------------- | ----------------------------- |
+| `useReactTable` | TanStack 호환 테이블 인스턴스 |
+| `useGridTable`  | Grid 전용 테이블 인스턴스     |
+| `useSorting`    | 컬럼 정렬 상태                |
+| `useFiltering`  | 컬럼/글로벌 필터링            |
+| `useSelection`  | 셀/행 선택                    |
 
 ## Row Models
 

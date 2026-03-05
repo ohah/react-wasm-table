@@ -28,7 +28,8 @@ const btnBase: React.CSSProperties = {
   padding: "4px 12px",
   border: "1px solid var(--demo-border-2)",
   borderRadius: 4,
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 13,
 };
@@ -166,7 +167,9 @@ export function CanvasFlex() {
         </div>
       </div>
 
-      <h3 style={{ margin: "16px 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>Canvas preview</h3>
+      <h3 style={{ margin: "16px 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
+        Canvas preview
+      </h3>
       <section style={{ marginBottom: 32 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>Grid API</h4>
         <Grid
@@ -178,7 +181,6 @@ export function CanvasFlex() {
           theme={isDark ? DARK_THEME : LIGHT_THEME}
         />
       </section>
-
     </>
   );
 }

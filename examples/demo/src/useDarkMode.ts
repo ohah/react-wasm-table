@@ -10,8 +10,7 @@ export function useDarkMode(): boolean {
   );
   useEffect(() => {
     const el = document.documentElement;
-    const check = () =>
-      setDark(el.classList.contains("rp-dark") || el.classList.contains("dark"));
+    const check = () => setDark(el.classList.contains("rp-dark") || el.classList.contains("dark"));
     check();
     const obs = new MutationObserver(check);
     obs.observe(el, { attributes: true, attributeFilter: ["class"] });

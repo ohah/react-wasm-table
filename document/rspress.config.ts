@@ -59,7 +59,10 @@ const config: UserConfig = {
     },
     resolve: {
       alias: {
-        "@ohah/react-wasm-table": path.resolve(__dirname, "../packages/react-wasm-table/src/index.ts"),
+        "@ohah/react-wasm-table": path.resolve(
+          __dirname,
+          "../packages/react-wasm-table/src/index.ts",
+        ),
         "@": path.resolve(__dirname, "src"),
       },
     },

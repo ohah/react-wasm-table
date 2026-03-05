@@ -230,7 +230,14 @@ export function CanvasEvents() {
             <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
               Click Text / Link / Chip. Link's <code>preventDefault()</code> blocks URL open.
             </p>
-            <Grid data={data} columns={basicColumns} width={400} height={200} rowHeight={36} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+            <Grid
+              data={data}
+              columns={basicColumns}
+              width={400}
+              height={200}
+              rowHeight={36}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
+            />
           </section>
 
           {/* Example 2 */}
@@ -244,7 +251,14 @@ export function CanvasEvents() {
                 <span style={{ color: "var(--demo-muted-5)" }}>Not hovering</span>
               )}
             </p>
-            <Grid data={data} columns={hoverColumns} width={430} height={200} rowHeight={36} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+            <Grid
+              data={data}
+              columns={hoverColumns}
+              width={430}
+              height={200}
+              rowHeight={36}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
+            />
           </section>
 
           {/* Example 3 */}
@@ -255,7 +269,14 @@ export function CanvasEvents() {
             <p style={{ fontSize: 13, color: "var(--demo-muted)", margin: "0 0 8px" }}>
               All events fire in DOM order: mousedown &rarr; mouseup &rarr; click &rarr; dblclick.
             </p>
-            <Grid data={data} columns={combinedColumns} width={430} height={200} rowHeight={36} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+            <Grid
+              data={data}
+              columns={combinedColumns}
+              width={430}
+              height={200}
+              rowHeight={36}
+              theme={isDark ? DARK_THEME : LIGHT_THEME}
+            />
           </section>
         </div>
 
@@ -270,7 +291,8 @@ export function CanvasEvents() {
                 padding: "2px 8px",
                 border: "1px solid var(--demo-border-2)",
                 borderRadius: 4,
-                background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+                background: "var(--demo-card-bg)",
+                color: "var(--demo-panel-fg)",
                 cursor: "pointer",
                 marginLeft: 8,
               }}

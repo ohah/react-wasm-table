@@ -415,7 +415,9 @@ export function TanStackStreaming() {
       {/* Table (TanStack API) */}
       <div ref={containerRef} style={{ width: "100%" }}>
         {size.width > 0 && (
-          <div style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden" }}>
+          <div
+            style={{ border: "1px solid var(--demo-border)", borderRadius: 8, overflow: "hidden" }}
+          >
             <Table
               table={table}
               width={gridWidth}
@@ -480,7 +482,6 @@ export function TanStackStreaming() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -14,12 +14,7 @@ const columns = [
     header: "Trend",
     size: 200,
     cell: (info) => (
-      <Sparkline
-        data={info.getValue()}
-        variant="line"
-        color="#1565c0"
-        strokeWidth={1.5}
-      />
+      <Sparkline data={info.getValue()} variant="line" color="#1565c0" strokeWidth={1.5} />
     ),
   }),
 ];
@@ -31,8 +26,17 @@ const columns = [
 
 ```tsx
 import {
-  Table, useReactTable, flexRender, getCoreRowModel,
-  Thead, Tbody, Tr, Th, Td, createColumnHelper, Sparkline,
+  Table,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  createColumnHelper,
+  Sparkline,
 } from "@ohah/react-wasm-table";
 
 const helper = createColumnHelper<{ trend: number[] }>();

@@ -174,7 +174,8 @@ export function TanStackUseFiltering() {
             padding: "4px 12px",
             borderRadius: 4,
             border: "1px solid var(--demo-border-2)",
-            background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+            background: "var(--demo-card-bg)",
+            color: "var(--demo-panel-fg)",
             cursor: "pointer",
             fontSize: 13,
             height: 28,
@@ -197,7 +198,13 @@ export function TanStackUseFiltering() {
 
       <section style={{ marginBottom: 16 }}>
         <h4 style={{ fontSize: 14, marginBottom: 6 }}>TanStack API</h4>
-        <Table table={table} width={640} height={520} theme={isDark ? DARK_THEME : LIGHT_THEME} overflowY="scroll">
+        <Table
+          table={table}
+          width={640}
+          height={520}
+          theme={isDark ? DARK_THEME : LIGHT_THEME}
+          overflowY="scroll"
+        >
           <Thead>
             {table.getHeaderGroups().map((hg) => (
               <Tr key={hg.id}>

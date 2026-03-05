@@ -21,11 +21,7 @@ const [editorManager] = useState(() => new EditorManager());
 />;
 
 // Grid B: shared SelectionManager only
-<Grid
-  data={data}
-  columns={columns}
-  selectionManager={selectionManager}
-/>;
+<Grid data={data} columns={columns} selectionManager={selectionManager} />;
 ```
 
 ## Table API Code
@@ -65,7 +61,7 @@ const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() 
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 
 // Access selection externally: selectionManager.getNormalized()
 // Clear selection: selectionManager.clear()

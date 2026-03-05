@@ -43,7 +43,14 @@ export function Gap() {
           <h3 style={{ margin: "0 0 8px", fontSize: 14, color: "var(--demo-muted)" }}>
             Grid API — Canvas (WASM/Taffy)
           </h3>
-          <Grid data={data} width={800} height={520} gap={gapValue} columns={columns} theme={isDark ? DARK_THEME : LIGHT_THEME} />
+          <Grid
+            data={data}
+            width={800}
+            height={520}
+            gap={gapValue}
+            columns={columns}
+            theme={isDark ? DARK_THEME : LIGHT_THEME}
+          />
         </div>
       </div>
     </>

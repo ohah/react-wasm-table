@@ -87,89 +87,97 @@ export function TanStackApi() {
   const data = useMemo(() => generatePeople(10_000), []);
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const columns = useMemo(() => [
-    helper.group({
-      header: "Name",
-      columns: [
-        helper.accessor("firstName", {
-          header: "First",
-          size: 120,
-          enableSorting: true,
-          padding: [0, 8],
-        }),
-        helper.accessor("lastName", {
-          header: "Last",
-          size: 120,
-          enableSorting: true,
-          padding: [0, 8],
-        }),
-      ],
-    }),
-    helper.accessor("age", {
-      header: "Age",
-      size: 70,
-      enableSorting: true,
-      align: "right",
-      padding: [0, 8],
-      cell: (info) => <Text value={String(info.getValue())} fontWeight="bold" />,
-    }),
-    helper.accessor("department", {
-      header: "Dept",
-      size: 120,
-      enableSorting: true,
-      padding: [0, 8],
-      cell: (info) => (
-        <Badge value={info.getValue()} color={isDark ? "#e0e0e0" : "#333"} backgroundColor={isDark ? "#1e3a5f" : "#e3f2fd"} borderRadius={4} />
-      ),
-    }),
-    helper.accessor("status", {
-      header: "Status",
-      size: 100,
-      enableSorting: true,
-      padding: [0, 8],
-      cell: (info) => {
-        const v = info.getValue();
-        const bg = v === "Active" ? "#4caf50" : v === "On Leave" ? "#ff9800" : "#9e9e9e";
-        return <Badge value={v} color="white" backgroundColor={bg} borderRadius={4} />;
-      },
-    }),
-    helper.accessor("salary", {
-      header: "Salary",
-      size: 120,
-      enableSorting: true,
-      align: "right",
-      padding: [0, 8],
-      cell: (info) => (
-        <Text
-          value={`$${info.getValue().toLocaleString()}`}
-          fontWeight="bold"
-          color={info.getValue() > 100000 ? "#2e7d32" : (isDark ? "#e0e0e0" : "#333")}
-        />
-      ),
-    }),
-    helper.accessor("score", {
-      header: "Score",
-      size: 160,
-      padding: [0, 8],
-      cell: (info) => (
-        <Flex flexDirection="row" gap={8} alignItems="center">
-          <Text
-            value={`${info.getValue()}%`}
-            fontSize={12}
-            color={info.getValue() >= 70 ? "#2e7d32" : "#d32f2f"}
+  const columns = useMemo(
+    () => [
+      helper.group({
+        header: "Name",
+        columns: [
+          helper.accessor("firstName", {
+            header: "First",
+            size: 120,
+            enableSorting: true,
+            padding: [0, 8],
+          }),
+          helper.accessor("lastName", {
+            header: "Last",
+            size: 120,
+            enableSorting: true,
+            padding: [0, 8],
+          }),
+        ],
+      }),
+      helper.accessor("age", {
+        header: "Age",
+        size: 70,
+        enableSorting: true,
+        align: "right",
+        padding: [0, 8],
+        cell: (info) => <Text value={String(info.getValue())} fontWeight="bold" />,
+      }),
+      helper.accessor("department", {
+        header: "Dept",
+        size: 120,
+        enableSorting: true,
+        padding: [0, 8],
+        cell: (info) => (
+          <Badge
+            value={info.getValue()}
+            color={isDark ? "#e0e0e0" : "#333"}
+            backgroundColor={isDark ? "#1e3a5f" : "#e3f2fd"}
+            borderRadius={4}
           />
-          <ProgressBar value={info.getValue()} max={100} color="#2196f3" />
-        </Flex>
-      ),
-    }),
-    helper.accessor("startYear", {
-      header: "Start",
-      size: 80,
-      enableSorting: true,
-      align: "center",
-      padding: [0, 8],
-    }),
-  ], [isDark]);
+        ),
+      }),
+      helper.accessor("status", {
+        header: "Status",
+        size: 100,
+        enableSorting: true,
+        padding: [0, 8],
+        cell: (info) => {
+          const v = info.getValue();
+          const bg = v === "Active" ? "#4caf50" : v === "On Leave" ? "#ff9800" : "#9e9e9e";
+          return <Badge value={v} color="white" backgroundColor={bg} borderRadius={4} />;
+        },
+      }),
+      helper.accessor("salary", {
+        header: "Salary",
+        size: 120,
+        enableSorting: true,
+        align: "right",
+        padding: [0, 8],
+        cell: (info) => (
+          <Text
+            value={`$${info.getValue().toLocaleString()}`}
+            fontWeight="bold"
+            color={info.getValue() > 100000 ? "#2e7d32" : isDark ? "#e0e0e0" : "#333"}
+          />
+        ),
+      }),
+      helper.accessor("score", {
+        header: "Score",
+        size: 160,
+        padding: [0, 8],
+        cell: (info) => (
+          <Flex flexDirection="row" gap={8} alignItems="center">
+            <Text
+              value={`${info.getValue()}%`}
+              fontSize={12}
+              color={info.getValue() >= 70 ? "#2e7d32" : "#d32f2f"}
+            />
+            <ProgressBar value={info.getValue()} max={100} color="#2196f3" />
+          </Flex>
+        ),
+      }),
+      helper.accessor("startYear", {
+        header: "Start",
+        size: 80,
+        enableSorting: true,
+        align: "center",
+        padding: [0, 8],
+      }),
+    ],
+    [isDark],
+  );
 
   return (
     <>
@@ -232,7 +240,6 @@ export function TanStackApi() {
           theme={isDark ? DARK_THEME : LIGHT_THEME}
         />
       </section>
-
     </>
   );
 }

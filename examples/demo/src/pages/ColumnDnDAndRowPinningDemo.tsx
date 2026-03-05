@@ -62,7 +62,8 @@ const btnBase: React.CSSProperties = {
   padding: "6px 12px",
   borderRadius: 4,
   border: "1px solid var(--demo-border-2)",
-  background: "var(--demo-card-bg)", color: "var(--demo-panel-fg)",
+  background: "var(--demo-card-bg)",
+  color: "var(--demo-panel-fg)",
   cursor: "pointer",
   fontSize: 12,
 };
@@ -219,7 +220,8 @@ export function ColumnDnDAndRowPinningDemo() {
         <pre
           style={{
             margin: 0,
-            background: "var(--demo-code-bg)", color: "var(--demo-code-fg)",
+            background: "var(--demo-code-bg)",
+            color: "var(--demo-code-fg)",
             padding: 12,
             borderRadius: 4,
             fontSize: 11,

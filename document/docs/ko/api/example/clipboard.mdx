@@ -25,14 +25,7 @@ const onPaste = (text: string, target: { row: number; col: number }) => {
   // apply cells to data...
 };
 
-<Grid
-  data={data}
-  columns={columns}
-  width={560}
-  height={460}
-  onCopy={onCopy}
-  onPaste={onPaste}
-/>;
+<Grid data={data} columns={columns} width={560} height={460} onCopy={onCopy} onPaste={onPaste} />;
 ```
 
 ## Table API Code
@@ -77,5 +70,5 @@ const onPaste = (text: string, target: { row: number; col: number }) => {
       </Tr>
     ))}
   </Tbody>
-</Table>
+</Table>;
 ```
