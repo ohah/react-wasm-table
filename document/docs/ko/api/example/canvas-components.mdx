@@ -1,3 +1,28 @@
 import { CanvasComponents } from "demo";
 
 <CanvasComponents />
+
+## Code
+
+```tsx
+import { Grid, createColumnHelper, Text, Badge, Flex } from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ name: string; dept: string }>();
+
+const columns = [
+  helper.accessor("name", {
+    header: "Name",
+    size: 140,
+    cell: (info) => <Text value={info.getValue()} fontWeight="bold" />,
+  }),
+  helper.accessor("dept", {
+    header: "Department",
+    size: 200,
+    cell: (info) => (
+      <Flex gap={6} alignItems="center">
+        <Badge value={info.getValue()} backgroundColor="#e3f2fd" color="#1565c0" />
+      </Flex>
+    ),
+  }),
+];
+```

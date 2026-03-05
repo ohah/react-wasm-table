@@ -1,3 +1,78 @@
 import { OnAfterDrawDemo } from "demo";
 
 <OnAfterDrawDemo />
+
+## Code
+
+```tsx
+import { Grid, type AfterDrawContext } from "@ohah/react-wasm-table";
+
+function onAfterDraw({ ctx, width, height }: AfterDrawContext) {
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.font = "bold 48px system-ui, sans-serif";
+  ctx.fillStyle = "#000";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.translate(width / 2, height / 2);
+  ctx.rotate(-Math.PI / 6);
+  ctx.fillText("DRAFT", 0, 0);
+  ctx.restore();
+}
+
+<Grid
+  data={data}
+  columns={columns}
+  width={640}
+  height={520}
+  onAfterDraw={onAfterDraw}
+/>;
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td,
+  type AfterDrawContext,
+} from "@ohah/react-wasm-table";
+
+const onAfterDraw = useCallback((ctx: AfterDrawContext) => {
+  ctx.ctx.save();
+  ctx.ctx.globalAlpha = 0.08;
+  ctx.ctx.font = "bold 48px system-ui";
+  ctx.ctx.fillText("DRAFT", ctx.width / 2, ctx.height / 2);
+  ctx.ctx.restore();
+}, []);
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table
+  table={table}
+  width={560}
+  height={500}
+  onAfterDraw={onAfterDraw}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

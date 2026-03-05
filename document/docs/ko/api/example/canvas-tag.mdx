@@ -1,3 +1,74 @@
 import { CanvasTag } from "demo";
 
 <CanvasTag />
+
+## Code
+
+```tsx
+import { Grid, createColumnHelper, Tag } from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ dept: string }>();
+
+const columns = [
+  helper.accessor("dept", {
+    header: "Tag",
+    size: 200,
+    cell: (info) => (
+      <Tag
+        value={info.getValue()}
+        color="#1565c0"
+        borderColor="#1565c0"
+        borderRadius={4}
+      />
+    ),
+  }),
+];
+
+<Grid data={data} columns={columns} width={360} height={460} rowHeight={40} />;
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td, createColumnHelper, Tag,
+} from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ dept: string }>();
+
+const columns = [
+  helper.accessor("dept", {
+    header: "Tag",
+    size: 200,
+    cell: (info) => (
+      <Tag value={info.getValue()} color="#1565c0" borderColor="#1565c0" borderRadius={4} />
+    ),
+  }),
+];
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table table={table} width={360} height={460} rowHeight={40}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>;
+```

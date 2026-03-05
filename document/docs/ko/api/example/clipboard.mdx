@@ -1,3 +1,81 @@
 import { ClipboardDemo } from "demo";
 
 <ClipboardDemo />
+
+## Code
+
+```tsx
+import {
+  Grid,
+  createColumnHelper,
+  useGridTable,
+  getCoreRowModel,
+  copyToClipboard,
+  pasteFromClipboard,
+  type NormalizedRange,
+} from "@ohah/react-wasm-table";
+
+const table = useGridTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+const onCopy = (_tsv: string, range: NormalizedRange) =>
+  copyToClipboard(table, range, { format: "tsv", includeHeaders: false });
+
+const onPaste = (text: string, target: { row: number; col: number }) => {
+  const { cells, target: t, columnIds } = pasteFromClipboard(table, text, target);
+  // apply cells to data...
+};
+
+<Grid
+  data={data}
+  columns={columns}
+  width={560}
+  height={460}
+  onCopy={onCopy}
+  onPaste={onPaste}
+/>;
+```
+
+## Table API Code
+
+```tsx
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+const onCopy = (_tsv: string, range: NormalizedRange) =>
+  copyToClipboard(table, range, { format: "tsv", includeHeaders: false });
+
+const onPaste = (text: string, target: { row: number; col: number }) => {
+  const { cells, target: t, columnIds } = pasteFromClipboard(table, text, target);
+  // apply cells to data...
+};
+
+<Table
+  table={table}
+  width={560}
+  height={460}
+  selection={selection}
+  onSelectionChange={setSelection}
+  onCopy={onCopy}
+  onPaste={onPaste}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

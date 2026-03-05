@@ -1,3 +1,77 @@
 import { CustomRendererDemo } from "demo";
 
 <CustomRendererDemo />
+
+## Code
+
+```tsx
+// Custom ProgressBar renderer
+const progressRenderer: CellRenderer = {
+  type: "progress",
+  draw(instruction, { ctx, buf, cellIdx }) {
+    // Read layout from buffer
+    const x = readCellX(buf, cellIdx);
+    const y = readCellY(buf, cellIdx);
+    const w = readCellWidth(buf, cellIdx);
+    const h = readCellHeight(buf, cellIdx);
+    // Draw progress bar using Canvas 2D API...
+    ctx.fillStyle = "#4caf50";
+    ctx.roundRect(x, y, w * instruction.value, h, 4);
+    ctx.fill();
+  },
+};
+
+// Usage
+<Grid
+  cellRenderers={[progressRenderer]}
+  ...
+/>
+```
+
+## Table API Code
+
+```tsx
+// Use column cell functions with canvas components (Badge, Text, etc.)
+helper.accessor("dept", {
+  cell: (info) => (
+    <Badge value={info.getValue()} color="#333" backgroundColor="#e0e0e0" borderRadius={4} />
+  ),
+});
+helper.accessor("salary", {
+  cell: (info) => (
+    <Text
+      value={`$${info.getValue().toLocaleString()}`}
+      fontWeight="bold"
+      color={info.getValue() > 85000 ? "#2e7d32" : "#333"}
+    />
+  ),
+});
+
+const table = useReactTable({
+  data, columns, getCoreRowModel: getCoreRowModel(),
+  state: { sorting }, onSortingChange: setSorting,
+});
+
+<Table table={table} width={560} height={480}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

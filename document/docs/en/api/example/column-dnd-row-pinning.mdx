@@ -1,3 +1,88 @@
 import { ColumnDnDAndRowPinningDemo } from "demo";
 
 <ColumnDnDAndRowPinningDemo />
+
+## Code
+
+```tsx
+import {
+  Grid,
+  type ColumnOrderState,
+  type ColumnPinningState,
+  type RowPinningState,
+} from "@ohah/react-wasm-table";
+
+const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(allColumnIds);
+const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({ left: [], right: [] });
+const [rowPinning, setRowPinning] = useState<RowPinningState>({ top: [], bottom: [] });
+
+const getRowId = (row: Record<string, unknown>, index: number) => String(row.id ?? index);
+
+<Grid
+  data={data}
+  columns={columns}
+  width={700}
+  height={500}
+  columnOrder={columnOrder}
+  onColumnOrderChange={setColumnOrder}
+  columnPinning={columnPinning}
+  onColumnPinningChange={setColumnPinning}
+  rowPinning={rowPinning}
+  onRowPinningChange={setRowPinning}
+  getRowId={getRowId}
+  enableColumnDnD
+  overflowY="scroll"
+/>;
+```
+
+## Table API Code
+
+```tsx
+const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(allColumnIds);
+const [rowPinning, setRowPinning] = useState<RowPinningState>({ top: [], bottom: [] });
+
+const table = useReactTable({
+  data,
+  columns: reorderColumnsBy(columnDefs, columnOrder),
+  getCoreRowModel: getCoreRowModel(),
+  getRowId: (row) => String(row.id),
+  state: { columnOrder, columnPinning, rowPinning },
+  onColumnOrderChange: setColumnOrder,
+  onColumnPinningChange: setColumnPinning,
+  onRowPinningChange: setRowPinning,
+});
+
+<Table
+  table={table}
+  width={700}
+  height={500}
+  enableColumnDnD
+  columnOrder={columnOrder}
+  onColumnOrderChange={setColumnOrder}
+  getRowId={getRowId}
+  rowPinning={rowPinning}
+  onRowPinningChange={setRowPinning}
+  overflowY="scroll"
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

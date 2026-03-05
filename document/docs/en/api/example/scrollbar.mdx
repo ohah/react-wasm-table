@@ -1,3 +1,57 @@
 import { Scrollbar } from "demo";
 
 <Scrollbar />
+
+## Code
+
+```tsx
+import { Grid, type CssOverflow } from "@ohah/react-wasm-table";
+
+const [overflowY, setOverflowY] = useState<CssOverflow>("auto");
+
+// overflowY: "auto" | "scroll" | "hidden" | "visible"
+<Grid
+  data={data}
+  columns={columns}
+  width={550}
+  height={520}
+  overflowY={overflowY}
+/>;
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td,
+  type CssOverflow,
+} from "@ohah/react-wasm-table";
+
+const [overflowY, setOverflowY] = useState<CssOverflow>("auto");
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table table={table} width={550} height={520} overflowY={overflowY}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

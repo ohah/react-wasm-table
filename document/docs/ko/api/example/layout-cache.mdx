@@ -1,3 +1,67 @@
 import { LayoutCacheDemo } from "demo";
 
 <LayoutCacheDemo />
+
+## Code
+
+```tsx
+const engineRef = useRef<WasmTableEngine | null>(null);
+
+// Clear layout cache (forces Taffy recomputation on next frame)
+engineRef.current?.invalidateLayout();
+
+<Grid
+  data={data}
+  columns={columns}
+  engineRef={engineRef}
+  flexDirection="row"
+  gap={0}
+/>
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td,
+  type WasmTableEngine,
+} from "@ohah/react-wasm-table";
+
+const engineRef = useRef<WasmTableEngine | null>(null);
+
+// Clear layout cache (forces Taffy recomputation on next frame)
+engineRef.current?.invalidateLayout();
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table
+  table={table}
+  width={560}
+  height={520}
+  engineRef={engineRef}
+  flexDirection="row"
+  gap={0}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

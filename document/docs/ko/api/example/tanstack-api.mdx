@@ -1,3 +1,46 @@
 import { TanStackApi } from "demo";
 
 <TanStackApi />
+
+## Code
+
+```tsx
+import {
+  Grid, createColumnHelper,
+  Text, Badge, Flex, ProgressBar,
+} from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<Person>();
+
+const columns = [
+  helper.group({
+    header: 'Name',
+    columns: [
+      helper.accessor('firstName', { header: 'First', size: 120 }),
+      helper.accessor('lastName', { header: 'Last', size: 120 }),
+    ],
+  }),
+  helper.accessor('status', {
+    header: 'Status', size: 100, enableSorting: true,
+    cell: (info) => (
+      <Badge value={info.getValue()} color="white"
+        backgroundColor={info.getValue() === 'Active' ? '#4caf50' : '#9e9e9e'} />
+    ),
+  }),
+  helper.accessor('salary', {
+    header: 'Salary', size: 120, align: 'right',
+    cell: (info) => (
+      <Text value={\`$\${info.getValue().toLocaleString()}\`} fontWeight="bold" />
+    ),
+  }),
+  // ...
+];
+
+function App() {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  return (
+    <Grid data={people} columns={columns} width={800} height={600}
+      sorting={sorting} onSortingChange={setSorting} />
+  );
+}
+```

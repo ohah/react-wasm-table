@@ -1,3 +1,67 @@
 import { UseSortingDemo } from "demo";
 
 <UseSortingDemo />
+
+## Code
+
+```tsx
+const [sorting, setSorting] = useState<SortingState>([]);
+
+<Grid
+  data={data}
+  columns={columns}
+  sorting={sorting}
+  onSortingChange={setSorting}
+  onBeforeSortChange={(next) => {
+    if (next.length > maxColumns) return false;
+  }}
+/>
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td,
+  type SortingState,
+} from "@ohah/react-wasm-table";
+
+const [sorting, setSorting] = useState<SortingState>([]);
+
+const table = useReactTable({
+  data, columns, getCoreRowModel: getCoreRowModel(),
+  state: { sorting }, onSortingChange: setSorting,
+});
+
+<Table
+  table={table}
+  width={640}
+  height={520}
+  onBeforeSortChange={(next) => {
+    if (next.length > maxColumns) return false;
+  }}
+  overflowY="scroll"
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

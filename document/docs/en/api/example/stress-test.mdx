@@ -1,3 +1,71 @@
 import { StressTest } from "demo";
 
 <StressTest />
+
+## Code
+
+```tsx
+import { Grid, createColumnHelper, Text, Badge, type SortingState } from "@ohah/react-wasm-table";
+
+const data = useMemo(() => generateEmployees(1_000_000), []);
+const [sorting, setSorting] = useState<SortingState>([]);
+
+<Grid
+  data={data}
+  columns={columns}
+  width={width}
+  height={height}
+  sorting={sorting}
+  onSortingChange={setSorting}
+  overflowY="scroll"
+  overflowX="scroll"
+/>;
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td,
+  createColumnHelper, Text, Badge,
+  type SortingState,
+} from "@ohah/react-wasm-table";
+
+const data = useMemo(() => generateEmployees(1_000_000), []);
+const [sorting, setSorting] = useState<SortingState>([]);
+
+const table = useReactTable({
+  data, columns, getCoreRowModel: getCoreRowModel(),
+  state: { sorting }, onSortingChange: setSorting,
+});
+
+<Table
+  table={table}
+  width={size.width}
+  height={size.height}
+  overflowY="scroll"
+  overflowX="scroll"
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

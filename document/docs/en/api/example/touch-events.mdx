@@ -1,3 +1,65 @@
 import { TouchEventsDemo } from "demo";
 
 <TouchEventsDemo />
+
+## Code
+
+```tsx
+<Grid
+  data={data}
+  columns={columns}
+  onTouchStart={(e) => {
+    console.log(e.hitTest, e.touch, e.touchCount);
+    e.preventDefault(); // blocks scroll + tap
+  }}
+  onTouchMove={(e) => { /* e.touch.contentX, e.touch.contentY */ }}
+  onTouchEnd={(e) => { /* e.touchCount */ }}
+/>
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td,
+  type GridTouchEvent,
+} from "@ohah/react-wasm-table";
+
+const onTouchStart = useCallback((event: GridTouchEvent) => {
+  console.log(event.hitTest, event.touchCount);
+  // event.preventDefault(); // blocks scroll + tap
+}, []);
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table
+  table={table}
+  width={560}
+  height={480}
+  onTouchStart={onTouchStart}
+  onTouchMove={onTouchMove}
+  onTouchEnd={onTouchEnd}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

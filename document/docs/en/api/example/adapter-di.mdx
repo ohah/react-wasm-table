@@ -1,3 +1,72 @@
 import { AdapterDIDemo } from "demo";
 
 <AdapterDIDemo />
+
+## Code
+
+```tsx
+import { Grid, EventManager, SelectionManager, EditorManager } from "@ohah/react-wasm-table";
+
+const [eventManager] = useState(() => new EventManager());
+const [selectionManager] = useState(() => new SelectionManager());
+const [editorManager] = useState(() => new EditorManager());
+
+// Grid A: full DI (all 3 managers)
+<Grid
+  data={data}
+  columns={columns}
+  eventManager={eventManager}
+  selectionManager={selectionManager}
+  editorManager={editorManager}
+/>;
+
+// Grid B: shared SelectionManager only
+<Grid
+  data={data}
+  columns={columns}
+  selectionManager={selectionManager}
+/>;
+```
+
+## Table API Code
+
+```tsx
+const [eventManager] = useState(() => new EventManager());
+const [selectionManager] = useState(() => new SelectionManager());
+const [editorManager] = useState(() => new EditorManager());
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table
+  table={table}
+  width={560}
+  height={500}
+  eventManager={eventManager}
+  selectionManager={selectionManager}
+  editorManager={editorManager}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+
+// Access selection externally: selectionManager.getNormalized()
+// Clear selection: selectionManager.clear()
+```

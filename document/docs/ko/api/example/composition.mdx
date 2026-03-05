@@ -1,3 +1,84 @@
 import { HookCompositionDemo } from "demo";
 
 <HookCompositionDemo />
+
+## Code
+
+```tsx
+import {
+  Grid,
+  type SortingState,
+  type NormalizedRange,
+  type GridCellEvent,
+  type GridHeaderEvent,
+} from "@ohah/react-wasm-table";
+
+const [sorting, setSorting] = useState<SortingState>([]);
+const [selection, setSelection] = useState<NormalizedRange | null>(null);
+
+const onCellClick = (event: GridCellEvent) =>
+  console.log("cell", event.cell.row, event.cell.col);
+
+const onHeaderClick = (event: GridHeaderEvent) =>
+  console.log("header", event.colIndex);
+
+<Grid
+  data={data}
+  columns={columns}
+  width={580}
+  height={560}
+  sorting={sorting}
+  onSortingChange={setSorting}
+  selection={selection}
+  onSelectionChange={setSelection}
+  onCellClick={onCellClick}
+  onHeaderClick={onHeaderClick}
+  overflowY="scroll"
+/>;
+```
+
+## Table API Code
+
+```tsx
+const [sorting, setSorting] = useState<SortingState>([]);
+const [selection, setSelection] = useState<NormalizedRange | null>(null);
+
+const table = useReactTable({
+  data,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  state: { sorting },
+  onSortingChange: setSorting,
+});
+
+<Table
+  table={table}
+  width={580}
+  height={560}
+  selection={selection}
+  onSelectionChange={setSelection}
+  onCellClick={() => logEvent("onCellClick", "cell")}
+  onHeaderClick={() => logEvent("onHeaderClick", "header")}
+>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

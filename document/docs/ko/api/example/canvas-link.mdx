@@ -1,3 +1,87 @@
 import { CanvasLink } from "demo";
 
 <CanvasLink />
+
+## Code
+
+```tsx
+import { Grid, createColumnHelper, Link } from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ dept: string }>();
+
+const columns = [
+  helper.accessor("dept", {
+    header: "Link",
+    size: 200,
+    cell: (info) => (
+      <Link
+        value={info.getValue()}
+        href={`#${info.getValue().toLowerCase()}`}
+        color="#2563eb"
+        underline
+        onClick={(e) => {
+          e.preventDefault();
+          console.log("link clicked", info.getValue());
+        }}
+      />
+    ),
+  }),
+];
+
+<Grid data={data} columns={columns} width={360} height={460} rowHeight={40} />;
+```
+
+## Table API Code
+
+```tsx
+import {
+  Table, useReactTable, flexRender, getCoreRowModel,
+  Thead, Tbody, Tr, Th, Td, createColumnHelper, Link,
+} from "@ohah/react-wasm-table";
+
+const helper = createColumnHelper<{ dept: string }>();
+
+const columns = [
+  helper.accessor("dept", {
+    header: "Link",
+    size: 200,
+    cell: (info) => (
+      <Link
+        value={info.getValue()}
+        href={`#${info.getValue().toLowerCase()}`}
+        color="#2563eb"
+        underline
+        onClick={(e) => {
+          e.preventDefault();
+          console.log("link clicked", info.getValue());
+        }}
+      />
+    ),
+  }),
+];
+
+const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() });
+
+<Table table={table} width={360} height={460} rowHeight={40}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>;
+```

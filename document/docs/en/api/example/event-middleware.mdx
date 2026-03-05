@@ -1,3 +1,67 @@
 import { MiddlewareDemo } from "demo";
 
 <MiddlewareDemo />
+
+## Code
+
+```tsx
+const middleware: EventMiddleware[] = [
+  // Timing middleware
+  (channel, event, next) => {
+    const start = performance.now();
+    next();
+    console.log(`${channel}: ${performance.now() - start}ms`);
+  },
+  // Logger middleware
+  (channel, event, next) => {
+    console.log("event:", channel);
+    next();
+  },
+  // Blocker middleware
+  (channel, event, next) => {
+    if (["headerClick"].includes(channel)) return; // skip next() to block
+    next();
+  },
+];
+
+<Grid data={data} columns={columns} eventMiddleware={middleware} />
+```
+
+## Table API Code
+
+```tsx
+const middleware: EventMiddleware[] = [
+  (channel, event, next) => {
+    console.log("event:", channel);
+    next(); // call next() to continue, or skip to block
+  },
+];
+
+const table = useReactTable({
+  data, columns, getCoreRowModel: getCoreRowModel(),
+  state: { sorting }, onSortingChange: setSorting,
+});
+
+<Table table={table} width={560} height={480} eventMiddleware={middleware}>
+  <Thead>
+    {table.getHeaderGroups().map((hg) => (
+      <Tr key={hg.id}>
+        {hg.headers.map((h) => (
+          <Th key={h.id} colSpan={h.colSpan}>
+            {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+          </Th>
+        ))}
+      </Tr>
+    ))}
+  </Thead>
+  <Tbody>
+    {table.getRowModel().rows.map((row) => (
+      <Tr key={row.id}>
+        {row.getVisibleCells().map((cell) => (
+          <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+        ))}
+      </Tr>
+    ))}
+  </Tbody>
+</Table>
+```

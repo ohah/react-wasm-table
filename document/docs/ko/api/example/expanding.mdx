@@ -1,3 +1,53 @@
 import { ExpandingDemo } from "demo";
 
 <ExpandingDemo />
+
+## Code
+
+```tsx
+const [expanded, setExpanded] = useState<ExpandedState>({});
+
+const table = useGridTable({
+  data: treeData,
+  columns,
+  getSubRows: (row) => row.children,
+  getExpandedRowModel: getExpandedRowModel(),
+  state: { ..., expanded },
+  onExpandedChange: setExpanded,
+});
+
+const model = table.getExpandedRowModel();
+// model.rows → flat array of visible rows (with depth, subRows, etc.)
+
+// Per-row API:
+// row.depth        → nesting level (0 = root)
+// row.subRows      → child Row objects
+// row.getCanExpand() → has children?
+// row.getIsExpanded() → currently expanded?
+// row.toggleExpanded() → toggle expand/collapse
+// row.getLeafRows()   → all leaf descendants
+```
+
+## Table API Code
+
+```tsx
+const [expanded, setExpanded] = useState<ExpandedState>({});
+
+const table = useReactTable({
+  data: treeData,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  getExpandedRowModel: getExpandedRowModel(),
+  getSubRows: (row) => row.children,
+  state: { expanded },
+  onExpandedChange: setExpanded,
+});
+
+const model = table.getExpandedRowModel();
+// model.rows -> visible rows with depth info
+
+// Expand/collapse controls:
+table.toggleAllRowsExpanded(); // expand or collapse all
+row.toggleExpanded();          // toggle a single row
+table.resetExpanded();         // reset to initial state
+```
