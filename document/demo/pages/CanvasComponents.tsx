@@ -77,17 +77,28 @@ export function CanvasComponents() {
             Link
           </Link>
         </li>
+        <li>
+          <Link to="/canvas-avatar" style={linkStyle}>
+            Avatar
+          </Link>
+        </li>
       </ul>
 
-      <h2 style={{ marginTop: 24, fontSize: 16 }}>Planned — interactive (DOM overlay)</h2>
-      <p style={{ fontSize: 13, color: "var(--demo-muted)", marginBottom: 8 }}>
-        Stub only; will use DOM overlay (e.g. <code>&lt;input type="range"&gt;</code>) when
-        implemented.
-      </p>
+      <h2 style={{ marginTop: 24, fontSize: 16 }}>Interactive (DOM overlay)</h2>
       <ul style={{ listStyle: "none", padding: 0 }}>
         <li>
           <Link to="/canvas-progress-bar" style={linkStyle}>
             ProgressBar
+          </Link>
+        </li>
+        <li>
+          <Link to="/canvas-datepicker" style={linkStyle}>
+            DatePicker
+          </Link>
+        </li>
+        <li>
+          <Link to="/canvas-dropdown" style={linkStyle}>
+            Dropdown
           </Link>
         </li>
       </ul>

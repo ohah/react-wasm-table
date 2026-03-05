@@ -1,6 +1,6 @@
 # Canvas Components
 
-Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering. Implemented: Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag, Image, Input, Checkbox, Radio, Label, Switch, ProgressBar.
+Rules and API for canvas JSX components (Text, Badge, Flex, etc.) used in cell rendering. Implemented: Text, Badge, Flex, Box, Stack, Sparkline, Rating, Color, Link, Chip, Tag, Image, Input, Checkbox, Radio, Label, Switch, ProgressBar, Avatar, DatePicker, Dropdown.
 
 ---
 
@@ -242,24 +242,51 @@ Horizontal progress bar with optional percentage label. Caches bar geometry for 
 
 ---
 
-## 6. Stub components
+## 6. Avatar component
 
-These components are **exported and usable in JSX**, but the renderer only draws a placeholder (e.g. `[Icon]`). They return a `StubInstruction`; props (including `style`) are stored and will apply when a real renderer is added.
+Canvas-rendered circular avatar with image or initials fallback.
 
-### Data display
+| Prop              | Type     | Default     | Description                                 |
+| ----------------- | -------- | ----------- | ------------------------------------------- |
+| `src`             | `string` | —           | Image URL                                   |
+| `name`            | `string` | —           | Display name (initials fallback)             |
+| `alt`             | `string` | —           | Alt text for load error                      |
+| `size`            | `number` | `40`        | Avatar diameter in px                        |
+| `backgroundColor` | `string` | `"#e5e7eb"` | Background for initials fallback             |
+| `color`           | `string` | `"#374151"` | Text color for initials                      |
+| `fontSize`        | `number` | `16`        | Font size for initials                       |
+| `borderColor`     | `string` | —           | Border color                                 |
+| `borderWidth`     | `number` | `0`         | Border width                                 |
 
-| Component  | Intended use          |
-| ---------- | --------------------- |
-| **Icon**   | Icon (name or glyph). |
-| **Avatar** | User avatar.          |
+## 7. DatePicker component (DOM overlay)
 
-### Interactive (DOM overlay)
+Date input using DOM `<input type="date">` overlay. Canvas preview shows date text and calendar icon.
 
-| Component      | Intended use     |
-| -------------- | ---------------- |
-| **Select**     | Dropdown select. |
-| **DatePicker** | Date picker.     |
-| **Dropdown**   | Dropdown menu.   |
+| Prop          | Type     | Default     | Description              |
+| ------------- | -------- | ----------- | ------------------------ |
+| `value`       | `string` | —           | Date value (YYYY-MM-DD)  |
+| `placeholder` | `string` | —           | Placeholder text         |
+| `disabled`    | `boolean`| `false`     | Disable the input        |
+| `min`         | `string` | —           | Minimum date             |
+| `max`         | `string` | —           | Maximum date             |
+| `onChange`    | `fn`     | —           | Change handler           |
+
+## 8. Dropdown component (DOM overlay)
+
+Dropdown select using DOM `<select>` overlay. Canvas preview shows selected label and dropdown arrow.
+
+| Prop          | Type                                | Default | Description              |
+| ------------- | ----------------------------------- | ------- | ------------------------ |
+| `value`       | `string`                            | —       | Selected value           |
+| `options`     | `{ value: string; label: string }[]`| —       | Options array (required) |
+| `placeholder` | `string`                            | —       | Placeholder text         |
+| `disabled`    | `boolean`                           | `false` | Disable the select       |
+| `multiple`    | `boolean`                           | `false` | Allow multi-select       |
+| `onChange`    | `fn`                                | —       | Change handler           |
+
+## 9. Stub components
+
+No stub components remain. All planned components have been implemented.
 
 ---
 

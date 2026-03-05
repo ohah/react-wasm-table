@@ -24,3 +24,6 @@ export { TanStackEditing } from "./Editing";
 export { TanStackStreaming } from "./Streaming";
 export { TanStackCanvasEvents } from "./CanvasEvents";
 export { TanStackCanvasRadio } from "./CanvasRadio";
+export { TanStackCanvasAvatar } from "./CanvasAvatar";
+export { TanStackCanvasDatePicker } from "./CanvasDatePicker";
+export { TanStackCanvasDropdown } from "./CanvasDropdown";

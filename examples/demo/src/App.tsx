@@ -53,6 +53,9 @@ import { CanvasRadio } from "./pages/CanvasRadio";
 import { CanvasInput } from "./pages/CanvasInput";
 import { CanvasIcon } from "./pages/CanvasIcon";
 import { CanvasSelect } from "./pages/CanvasSelect";
+import { CanvasAvatar } from "./pages/CanvasAvatar";
+import { CanvasDatePicker } from "./pages/CanvasDatePicker";
+import { CanvasDropdown } from "./pages/CanvasDropdown";
 import { CanvasEvents } from "./pages/CanvasEvents";
 import { CustomRendererDemo } from "./pages/CustomRendererDemo";
 import { LayerDemo } from "./pages/LayerDemo";
@@ -93,6 +96,9 @@ import {
   TanStackStreaming,
   TanStackCanvasEvents,
   TanStackCanvasRadio,
+  TanStackCanvasAvatar,
+  TanStackCanvasDatePicker,
+  TanStackCanvasDropdown,
 } from "./pages/tanstack";
 import { FpsCounter } from "./components/FpsCounter";
 
@@ -156,6 +162,9 @@ export function App() {
           <Route path="/tanstack/canvas-input" element={<CanvasInput />} />
           <Route path="/tanstack/canvas-icon" element={<CanvasIcon />} />
           <Route path="/tanstack/canvas-select" element={<CanvasSelect />} />
+          <Route path="/tanstack/canvas-avatar" element={<TanStackCanvasAvatar />} />
+          <Route path="/tanstack/canvas-datepicker" element={<TanStackCanvasDatePicker />} />
+          <Route path="/tanstack/canvas-dropdown" element={<TanStackCanvasDropdown />} />
           <Route path="/tanstack/canvas-events" element={<TanStackCanvasEvents />} />
           <Route path="/tanstack/grid-template" element={<GridTemplate />} />
           <Route path="/tanstack/flex-direction" element={<FlexDirection />} />
@@ -220,6 +229,9 @@ export function App() {
           <Route path="/canvas-input" element={<CanvasInput />} />
           <Route path="/canvas-icon" element={<CanvasIcon />} />
           <Route path="/canvas-select" element={<CanvasSelect />} />
+          <Route path="/canvas-avatar" element={<CanvasAvatar />} />
+          <Route path="/canvas-datepicker" element={<CanvasDatePicker />} />
+          <Route path="/canvas-dropdown" element={<CanvasDropdown />} />
           <Route path="/canvas-events" element={<CanvasEvents />} />
           <Route path="/custom-renderer" element={<CustomRendererDemo />} />
           <Route path="/layers" element={<LayerDemo />} />
