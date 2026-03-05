@@ -85,66 +85,94 @@ When `columns` prop is provided, JSX children are ignored.
 ### Grid Props
 
 ```typescript
-interface GridProps {
+interface GridProps extends BoxModelProps {
   /** Row data as array of objects */
   data: Record<string, unknown>[];
-
-  /** Canvas width in pixels */
+  /** Grid width in pixels */
   width: number;
-
-  /** Canvas height in pixels */
+  /** Grid height in pixels */
   height: number;
-
   /** Row height in pixels (default: 36) */
   rowHeight?: number;
-
   /** Header height in pixels (default: 40) */
   headerHeight?: number;
-
   /** Theme overrides */
   theme?: Partial<Theme>;
-
-  /** Object-based column definitions. Takes precedence over children. */
-  columns?: ColumnDef[];
-
+  /** Column definitions (TanStack-compatible). Takes precedence over children. */
+  columns?: GridColumnDef<any, any>[];
   /** Children must be <Column> elements. Ignored when columns prop is provided. */
   children?: React.ReactNode;
+
+  // TanStack-compatible controlled state
+  sorting?: SortingState;
+  onSortingChange?: (updater: SortingUpdater) => void;
+  columnFilters?: ColumnFiltersState;
+  onColumnFiltersChange?: (updater: ColumnFiltersUpdater) => void;
+  globalFilter?: string;
+  onGlobalFilterChange?: (value: string) => void;
+  columnOrder?: ColumnOrderState;
+  onColumnOrderChange?: (updater: ColumnOrderUpdater) => void;
+  columnVisibility?: ColumnVisibilityState;
+  onColumnVisibilityChange?: (updater: ColumnVisibilityUpdater) => void;
+  columnSizing?: ColumnSizingState;
+  onColumnSizingChange?: (updater: ColumnSizingUpdater) => void;
+  columnPinning?: ColumnPinningState;
+  onColumnPinningChange?: (updater: ColumnPinningUpdater) => void;
+  rowPinning?: RowPinningState;
+  onRowPinningChange?: (updater: RowPinningUpdater) => void;
+
+  // Features
+  enableColumnDnD?: boolean;
+  enableSelection?: boolean;
+  editTrigger?: "click" | "dblclick";
+  getRowId?: (row: Record<string, unknown>, index: number) => string;
+  meta?: TableMeta;
+
+  // Selection
+  selection?: NormalizedRange | null;
+  onSelectionChange?: (selection: NormalizedRange | null) => void;
+  selectionStyle?: SelectionStyle;
+  onCopy?: (tsv: string, range: NormalizedRange) => string | void;
+  onPaste?: (text: string, target: CellCoord) => void;
+
+  // Events
+  onCellClick?: (event: GridCellEvent) => void;
+  onCellDoubleClick?: (event: GridCellEvent) => void;
+  onHeaderClick?: (event: GridHeaderEvent) => void;
+  onKeyDown?: (event: GridKeyboardEvent) => void;
+  onContextMenu?: (event: GridContextMenuEvent) => void;
+  onScroll?: (event: GridScrollEvent) => void;
+
+  // Extensibility
+  eventMiddleware?: EventMiddleware[];
+  cellRenderers?: CellRenderer<any>[];
+  layers?: GridLayer[];
 }
 ```
 
-### ColumnDef (object-based)
+### ColumnProps (JSX & object-based)
 
 ```typescript
-interface ColumnDef {
+interface ColumnProps extends BoxModelProps {
   id: string;
-  width?: number;
-  minWidth?: number;
-  maxWidth?: number;
+  width?: CssDimension;
+  minWidth?: CssDimension;
+  maxWidth?: CssDimension;
   flexGrow?: number;
   flexShrink?: number;
+  flexBasis?: CssDimension;
+  height?: CssDimension;
+  minHeight?: CssDimension;
+  maxHeight?: CssDimension;
+  alignSelf?: CssAlignItems;
   header?: string;
   align?: "left" | "center" | "right";
   sortable?: boolean;
+  selectable?: boolean;
   editor?: "text" | "number" | "select";
-  render?: (value: unknown) => RenderInstruction;
-}
-```
-
-### ColumnProps (JSX)
-
-```typescript
-interface ColumnProps {
-  id: string;
-  width?: number;
-  minWidth?: number;
-  maxWidth?: number;
-  flexGrow?: number;
-  flexShrink?: number;
-  header?: string;
-  align?: "left" | "center" | "right";
-  sortable?: boolean;
-  editor?: "text" | "number" | "select";
-  children?: (value: unknown) => RenderInstruction;
+  editCell?: (props: CellEditRenderProps) => React.ReactNode;
+  editorOptions?: Record<string, unknown>;
+  cellDef?: string | ((info: any) => unknown);
 }
 ```
 

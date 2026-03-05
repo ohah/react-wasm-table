@@ -13,7 +13,7 @@ React Headless API -> JS Adapter -> WASM Core (Rust/Taffy) -> Canvas Renderer
 - **Canvas rendering** - No DOM per cell; one canvas draws the entire viewport
 - **WASM layout engine** - Taffy (Rust) handles flexbox/grid layout and hit-testing
 - **TanStack-compatible API** - `createColumnHelper`, `useReactTable`, same column/state model
-- **Canvas components** - Text, Badge, Flex, Box, Stack, Sparkline, Color, Tag, Rating, Chip, Link, Avatar, DatePicker, Dropdown
+- **Canvas components** - Text, Badge, Flex, Box, Stack, Sparkline, Color, Tag, Rating, Chip, Link, Image, Icon, Avatar, Input, Select, Checkbox, Radio, Label, Switch, ProgressBar, DatePicker, Dropdown
 - **Built-in features** - Sorting, filtering, selection, clipboard (copy/paste), CSV/TSV/JSON export
 - **60fps scrolling** - Scroll hot path runs entirely outside React
 - **Virtual scrolling** - Handles 1M+ rows
@@ -81,22 +81,31 @@ const columns = [
 
 ## Canvas Components
 
-| Component  | Description                          |
-| ---------- | ------------------------------------ |
-| Text       | Single-line text                     |
-| Badge      | Pill/chip with background            |
-| Flex       | Taffy-compatible flex container      |
-| Box        | Container with padding/margin/border |
-| Stack      | Row or column layout with gap        |
-| Sparkline  | Inline mini line/area chart          |
-| Color      | Centered square color swatch         |
-| Tag        | Outlined text with border            |
-| Rating     | Star rating (filled/empty)           |
-| Chip       | Filled pill with optional close      |
-| Link       | Clickable text with underline        |
-| Avatar     | Circular avatar (image or initials)  |
-| DatePicker | Date input with DOM overlay          |
-| Dropdown   | Select input with DOM overlay        |
+| Component   | Description                          |
+| ----------- | ------------------------------------ |
+| Text        | Single-line text                     |
+| Badge       | Pill/chip with background            |
+| Flex        | Taffy-compatible flex container      |
+| Box         | Container with padding/margin/border |
+| Stack       | Row or column layout with gap        |
+| Sparkline   | Inline mini line/area chart          |
+| Color       | Centered square color swatch         |
+| Tag         | Outlined text with border            |
+| Rating      | Star rating (filled/empty)           |
+| Chip        | Filled pill with optional close      |
+| Link        | Clickable text with underline        |
+| Image       | Canvas image with object-fit         |
+| Icon        | SVG path icon                        |
+| Avatar      | Circular avatar (image or initials)  |
+| Input       | Text input with border/placeholder   |
+| Select      | Select dropdown                      |
+| Checkbox    | Checkable box with label             |
+| Radio       | Radio button with label              |
+| Label       | Text label with pointer cursor       |
+| Switch      | Animated toggle switch               |
+| ProgressBar | Horizontal progress bar              |
+| DatePicker  | Date input with DOM overlay          |
+| Dropdown    | Select input with DOM overlay        |
 
 All components support event handlers: `onClick`, `onDoubleClick`, `onMouseDown`, `onMouseUp`, `onMouseEnter`, `onMouseLeave`.
 

@@ -30,7 +30,7 @@ react-wasm-table/
     core/          # Pure Rust logic (layout, sort, filter)
     wasm/          # WASM bindings (JS interop)
   packages/
-    grid/          # React component library (@ohah/react-wasm-table)
+    react-wasm-table/ # React component library (@ohah/react-wasm-table)
   examples/
     demo/          # Demo application
   document/        # Rspress documentation site
