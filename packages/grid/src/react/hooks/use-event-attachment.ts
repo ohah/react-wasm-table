@@ -29,6 +29,15 @@ import {
   type EventChannel,
   type GridEvent,
 } from "../../event-middleware";
+import {
+  getDropdownPanelState,
+  openDropdownPanel,
+  closeDropdownPanel,
+  hitTestDropdownPanel,
+  setDropdownHoveredIndex,
+  _getTriggerRectMap,
+  resolveDropdownPanelStyle,
+} from "../../renderer/components/dropdown";
 
 export interface UseEventAttachmentParams {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -80,6 +89,11 @@ export interface UseEventAttachmentParams {
   >;
   /** Ref to cell renderer registry (for cursor + renderer default actions). */
   cellRendererRegistryRef?: React.RefObject<CellRendererRegistryLike | null>;
+  /** Invalidate (request redraw). Used by dropdown panel hover/close. */
+  invalidate?: () => void;
+  /** Ref to current scroll offsets (for dropdown panel hit-testing). */
+  scrollLeftRef?: React.RefObject<number>;
+  scrollTopRef?: React.RefObject<number>;
 }
 
 export function useEventAttachment({
@@ -107,6 +121,9 @@ export function useEventAttachment({
   height,
   getInstructionForCellRef,
   cellRendererRegistryRef,
+  invalidate,
+  scrollLeftRef,
+  scrollTopRef,
 }: UseEventAttachmentParams) {
   // Ref pattern: stable identity across renders, no re-attach on callback change
   const onCellClickRef = useRef(onCellClick);
@@ -183,6 +200,38 @@ export function useEventAttachment({
           dispatch("cellClick", event, () => {
             onCellClickRef.current?.(event);
             if (event.defaultPrevented) return;
+
+            // Dropdown toggle: open panel on cell click
+            if (instruction?.type === "dropdown" && !instruction.disabled) {
+              const dropdownInst = instruction as import("../../types").DropdownInstruction;
+              const cellKey = `${coord.row}:${coord.col}`;
+              const current = getDropdownPanelState();
+              if (current?.key === cellKey) {
+                // Toggle off (close)
+                closeDropdownPanel();
+                invalidate?.();
+              } else {
+                // Open panel — read cached trigger rect
+                const triggerRect = _getTriggerRectMap().get(cellKey);
+                if (triggerRect && dropdownInst.options.length > 0) {
+                  openDropdownPanel({
+                    key: cellKey,
+                    options: dropdownInst.options,
+                    value: dropdownInst.value,
+                    hoveredIndex: -1,
+                    onChange: dropdownInst.onChange,
+                    triggerX: triggerRect.x,
+                    triggerY: triggerRect.y,
+                    triggerW: triggerRect.w,
+                    triggerH: triggerRect.h,
+                    style: resolveDropdownPanelStyle(dropdownInst.style),
+                  });
+                  invalidate?.();
+                }
+              }
+              return; // skip default cell click handling for dropdown
+            }
+
             // Renderer default action (e.g., Link opens URL)
             if (instruction) {
               const renderer = cellRendererRegistryRef?.current?.get(instruction.type);
@@ -245,6 +294,11 @@ export function useEventAttachment({
           });
         },
         onScroll: (deltaY, deltaX, native) => {
+          // Close dropdown panel on scroll
+          if (getDropdownPanelState()) {
+            closeDropdownPanel();
+            invalidate?.();
+          }
           // Cancel editor on scroll (Step 3 #2)
           if (editorManagerRef.current.isEditing) {
             editorManagerRef.current.cancel();
@@ -289,6 +343,50 @@ export function useEventAttachment({
           // that don't route through onCellMouseDown).
           if (type === "mousedown" && editorManagerRef.current.isEditing) {
             editorManagerRef.current.cancel();
+          }
+
+          // ── Dropdown panel event handling ──────────────────────────
+          const panelState = getDropdownPanelState();
+          if (panelState) {
+            const sL = scrollLeftRef?.current ?? 0;
+            const sT = scrollTopRef?.current ?? 0;
+
+            if (type === "mousemove") {
+              const hit = hitTestDropdownPanel(coords.viewportX, coords.viewportY, sL, sT, height);
+              if (hit?.type === "item") {
+                if (setDropdownHoveredIndex(hit.index)) {
+                  invalidate?.();
+                }
+              } else if (setDropdownHoveredIndex(-1)) {
+                invalidate?.();
+              }
+            }
+
+            if (type === "click") {
+              const hit = hitTestDropdownPanel(coords.viewportX, coords.viewportY, sL, sT, height);
+              if (hit?.type === "item") {
+                // Select the option
+                const opt = panelState.options[hit.index];
+                if (opt) {
+                  panelState.onChange?.(opt.value);
+                }
+                closeDropdownPanel();
+                invalidate?.();
+                return false; // block cell click
+              }
+              // Click outside panel → close it
+              closeDropdownPanel();
+              invalidate?.();
+              // If clicked on the same dropdown cell, let onCellClick toggle (it'll see panel is closed now)
+              // If clicked elsewhere, still need to block to prevent unwanted side effects
+              const clickedOnDropdownTrigger =
+                hitTest.type === "cell" &&
+                hitTest.cell &&
+                `${hitTest.cell.row}:${hitTest.cell.col}` === panelState.key;
+              if (!clickedOnDropdownTrigger) {
+                return false;
+              }
+            }
           }
 
           // Component-level mouseEnter / mouseLeave tracking

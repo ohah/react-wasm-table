@@ -50,6 +50,7 @@ import {
   readCellAlign,
 } from "../../adapter/layout-reader";
 import { syncScrollBarPosition, syncScrollBarContentSize } from "../ScrollBar";
+import { getDropdownPanelState, drawDropdownPanel } from "../../renderer/components/dropdown";
 import {
   resolveDimension,
   resolveLength,
@@ -690,7 +691,7 @@ export function useRenderLoop({
           const overlays: DomOverlayDescriptor[] = [];
           for (let i = headerCount; i < cellCount; i++) {
             const inst = getInstruction(i);
-            if (inst && (inst.type === "input" || inst.type === "select")) {
+            if (inst && (inst.type === "input" || inst.type === "select" || inst.type === "datepicker")) {
               const row = readCellRow(layoutBuf, i);
               const col = readCellCol(layoutBuf, i);
               overlays.push({
@@ -909,6 +910,11 @@ export function useRenderLoop({
           } catch (e) {
             console.error("onAfterDraw error:", e);
           }
+        }
+
+        // Dropdown panel overlay (viewport space — after all layers + onAfterDraw)
+        if (getDropdownPanelState() && ctx) {
+          drawDropdownPanel(ctx, scrollLeft, scrollTopRef.current, height);
         }
 
         // Sync native scrollbar positions (canvas wheel → scrollbar DOM)

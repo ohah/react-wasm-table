@@ -567,6 +567,9 @@ export function Grid({
     height,
     getInstructionForCellRef,
     cellRendererRegistryRef,
+    invalidate: renderInvalidate,
+    scrollLeftRef,
+    scrollTopRef: scrollTopRef,
   });
 
   // DOM overlays (Input components)
@@ -778,6 +781,7 @@ export function Grid({
                 opacity: inst.disabled ? 0.5 : 1,
               };
               if (inst.type === "select") {
+                const si = inst;
                 const selectStyle: React.CSSProperties = {
                   ...baseStyle,
                   appearance: "none",
@@ -788,25 +792,25 @@ export function Grid({
                     key={d.key}
                     overlayKey={d.key}
                     inputRefsMap={inputRefsMap}
-                    value={inst.value ?? ""}
-                    options={inst.options}
-                    placeholder={inst.placeholder}
-                    disabled={inst.disabled}
-                    multiple={inst.multiple}
-                    size={inst.size}
-                    name={inst.name}
-                    required={inst.required}
-                    autoFocus={inst.autoFocus}
-                    onChange={inst._domHandlers?.onChange}
-                    onFocus={inst._domHandlers?.onFocus}
-                    onBlur={inst._domHandlers?.onBlur}
+                    value={si.value ?? ""}
+                    options={si.options}
+                    placeholder={si.placeholder}
+                    disabled={si.disabled}
+                    multiple={si.multiple}
+                    size={si.size}
+                    name={si.name}
+                    required={si.required}
+                    autoFocus={si.autoFocus}
+                    onChange={si._domHandlers?.onChange}
+                    onFocus={si._domHandlers?.onFocus}
+                    onBlur={si._domHandlers?.onBlur}
                     onKeyDown={(e) => {
                       if (e.key === "Tab" && !e.nativeEvent.isComposing) {
                         e.preventDefault();
                         handleOverlayTab(d.key, e.shiftKey);
                         return;
                       }
-                      inst._domHandlers?.onKeyDown?.(e);
+                      si._domHandlers?.onKeyDown?.(e);
                     }}
                     onWheel={(e) => {
                       canvasRef.current?.dispatchEvent(new WheelEvent("wheel", e.nativeEvent));
@@ -815,29 +819,31 @@ export function Grid({
                   />
                 );
               }
+              // Input or DatePicker (both render as <input>)
+              const ii = inst as import("../types").InputInstruction | import("../types").DatePickerInstruction;
               return (
                 <OverlayInput
                   key={d.key}
                   overlayKey={d.key}
                   inputRefsMap={inputRefsMap}
-                  type={inst.inputType ?? "text"}
-                  value={inst.value ?? ""}
-                  placeholder={inst.placeholder}
-                  disabled={inst.disabled}
-                  readOnly={inst.readOnly}
-                  min={inst.min}
-                  max={inst.max}
-                  step={inst.step}
-                  onChange={inst._domHandlers?.onChange}
-                  onFocus={inst._domHandlers?.onFocus}
-                  onBlur={inst._domHandlers?.onBlur}
+                  type={ii.type === "datepicker" ? "date" : (ii as import("../types").InputInstruction).inputType ?? "text"}
+                  value={ii.value ?? ""}
+                  placeholder={ii.placeholder}
+                  disabled={ii.disabled}
+                  readOnly={(ii as import("../types").InputInstruction).readOnly}
+                  min={ii.min}
+                  max={ii.max}
+                  step={(ii as import("../types").InputInstruction).step}
+                  onChange={ii._domHandlers?.onChange}
+                  onFocus={ii._domHandlers?.onFocus}
+                  onBlur={ii._domHandlers?.onBlur}
                   onKeyDown={(e) => {
                     if (e.key === "Tab" && !e.nativeEvent.isComposing) {
                       e.preventDefault();
                       handleOverlayTab(d.key, e.shiftKey);
                       return;
                     }
-                    inst._domHandlers?.onKeyDown?.(e);
+                    ii._domHandlers?.onKeyDown?.(e);
                   }}
                   onWheel={(e) => {
                     canvasRef.current?.dispatchEvent(new WheelEvent("wheel", e.nativeEvent));
