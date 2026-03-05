@@ -42,7 +42,7 @@ function createBlockerMiddleware(
   blockedChannels: Set<string>,
   addLog: (source: string, channel: string, detail: string) => void,
 ): EventMiddleware {
-  return (channel, event, next) => {
+  return (channel, _event, next) => {
     if (blockedChannels.has(channel)) {
       addLog("blocker", channel, "BLOCKED — next() not called");
       return;
@@ -54,7 +54,7 @@ function createBlockerMiddleware(
 function createTimingMiddleware(
   addLog: (source: string, channel: string, detail: string) => void,
 ): EventMiddleware {
-  return (channel, event, next) => {
+  return (channel, _event, next) => {
     const start = performance.now();
     next();
     const elapsed = (performance.now() - start).toFixed(2);

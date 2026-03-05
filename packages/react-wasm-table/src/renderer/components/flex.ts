@@ -32,8 +32,8 @@ export const flexCellRenderer: CellRenderer<FlexInstruction> = {
     const padB = readCellPaddingBottom(buf, cellIdx);
     const padL = readCellPaddingLeft(buf, cellIdx);
     const padR = readCellPaddingRight(buf, cellIdx);
-    const contentW = cellW - padL - padR;
-    const contentH = cellH - padT - padB;
+    const _contentW = cellW - padL - padR;
+    const _contentH = cellH - padT - padB;
 
     const gap = typeof instruction.gap === "number" ? instruction.gap : 4;
     const flexDir = instruction.flexDirection ?? "row";

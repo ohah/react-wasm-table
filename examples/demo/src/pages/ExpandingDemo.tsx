@@ -1,5 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
-import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
+import { useState, useCallback } from "react";
 import {
   createColumnHelper,
   useGridTable,
@@ -119,7 +118,6 @@ const tdStyle: React.CSSProperties = {
 // ── Component ──────────────────────────────────────────────────────
 
 export function ExpandingDemo() {
-  const isDark = useDarkMode();
   const [expanded, setExpanded] = useState<ExpandedState>({});
 
   const handleExpandedChange = useCallback(

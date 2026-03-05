@@ -17,7 +17,7 @@ import {
   buildFacetedValues,
 } from "../row-model";
 import type { AggregationFn } from "../row-model";
-import type { GridColumnDef, ExpandedState, ExpandedUpdater } from "../tanstack-types";
+import type { GridColumnDef, ExpandedUpdater } from "../tanstack-types";
 
 type Person = { name: string; age: number; status: string };
 const helper = createColumnHelper<Person>();

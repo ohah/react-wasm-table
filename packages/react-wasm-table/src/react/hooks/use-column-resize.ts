@@ -15,7 +15,7 @@ const DEFAULT_MIN_WIDTH = 30;
 export function useColumnResize({
   canvasRef,
   columnRegistry,
-  columnSizingProp,
+  _columnSizingProp,
   onColumnSizingChangeProp,
   invalidate,
 }: UseColumnResizeParams) {

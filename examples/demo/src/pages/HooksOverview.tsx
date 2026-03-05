@@ -1,8 +1,5 @@
 import { Link } from "react-router";
-import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
-
 export function HooksOverview() {
-  const isDark = useDarkMode();
   return (
     <>
       <h1>Hooks Architecture (Phase 0)</h1>

@@ -102,7 +102,7 @@ function buildContext(overrides?: Partial<InternalLayerContext>): InternalLayerC
     _enableSelection: true,
     _selection: { minRow: 0, maxRow: 2, minCol: 0, maxCol: 1 },
     _selectionStyle: undefined,
-    _computeChildLayout: (input: Float32Array) => new Float32Array(0),
+    _computeChildLayout: (_input: Float32Array) => new Float32Array(0),
     _enableColumnDnD: false,
     ...overrides,
   };

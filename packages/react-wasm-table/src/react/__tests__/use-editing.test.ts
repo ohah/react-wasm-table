@@ -2,7 +2,6 @@ import { describe, expect, it, mock } from "bun:test";
 import React from "react";
 import { renderHook, act, render } from "@testing-library/react";
 import { useEditing } from "../hooks/use-editing";
-import type { UseEditingParams } from "../hooks/use-editing";
 import { ColumnRegistry } from "../../adapter/column-registry";
 import { EditorManager } from "../../adapter/editor-manager";
 import { SelectionManager } from "../../adapter/selection-manager";

@@ -793,7 +793,7 @@ describe("imageCellRenderer", () => {
     imageCellRenderer.draw({ type: "image", src: testSrc }, context);
 
     // A new entry should be created (may or may not load depending on env)
-    const entry = cache.get(testSrc);
+    const _entry = cache.get(testSrc);
     // In test env, Image constructor might be from happy-dom
     // The entry may exist or not depending on globalThis.Image availability
     // Just verify no crash occurs

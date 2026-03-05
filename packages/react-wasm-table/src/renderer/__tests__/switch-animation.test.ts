@@ -78,7 +78,7 @@ function makeContext(overrides?: Partial<CellRenderContext>): CellRenderContext 
     cellIdx: 0,
     theme: defaultTheme,
     registry: createCellRendererRegistry(),
-    computeChildLayout: (input: Float32Array) => new Float32Array(0),
+    computeChildLayout: (_input: Float32Array) => new Float32Array(0),
     ...overrides,
   };
 }
@@ -404,8 +404,8 @@ describe("switch animation", () => {
 
       // Track fillStyle should be a mid-gray (approximately #808080)
       // The first fillStyle set is for the track
-      const fillCalls: string[] = [];
-      const origFillStyle = Object.getOwnPropertyDescriptor(context3.ctx, "fillStyle");
+      const _fillCalls: string[] = [];
+      const _origFillStyle = Object.getOwnPropertyDescriptor(context3.ctx, "fillStyle");
       // Since we track fillStyle as a simple property, check its value after draw
       // The last fillStyle will be thumbColor (#fff), the one before that is the track color
       // We can't easily track intermediate assignments, so let's check the animation map state instead

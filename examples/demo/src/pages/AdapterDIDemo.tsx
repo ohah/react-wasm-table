@@ -5,7 +5,6 @@ import {
   EventManager,
   SelectionManager,
   EditorManager,
-  type NormalizedRange,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";

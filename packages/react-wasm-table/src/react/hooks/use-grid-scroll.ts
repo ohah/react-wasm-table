@@ -13,7 +13,7 @@ export interface UseGridScrollParams {
 }
 
 export function useGridScroll({
-  data,
+  data: _data,
   viewRowCountRef,
   rowHeight,
   height,

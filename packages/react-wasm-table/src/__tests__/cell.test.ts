@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test";
 import { buildCell } from "../cell";
-import type { Cell } from "../cell";
 import type { GridColumn } from "../grid-instance";
 import type { Row } from "../row-model";
 

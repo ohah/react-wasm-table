@@ -1,4 +1,4 @@
-import { describe, expect, it, mock, beforeEach, afterEach } from "bun:test";
+import { describe, expect, it, mock, beforeEach } from "bun:test";
 import { renderHook, act } from "@testing-library/react";
 import { useStreaming } from "../hooks/use-streaming";
 

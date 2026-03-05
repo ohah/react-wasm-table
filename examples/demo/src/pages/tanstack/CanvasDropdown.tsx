@@ -3,11 +3,6 @@ import {
   Table,
   useReactTable,
   getCoreRowModel,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
   createColumnHelper,
   Dropdown,
 } from "@ohah/react-wasm-table";
