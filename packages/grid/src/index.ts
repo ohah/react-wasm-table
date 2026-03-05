@@ -40,8 +40,12 @@ export type {
   IconProps,
   SelectProps,
   ProgressBarProps,
+  AvatarProps,
+  DatePickerProps,
+  DropdownProps,
   StubProps,
 } from "./components";
+export { DropdownPanel, DropdownOption, DropdownCheckmark } from "./components";
 export {
   Text,
   Badge,
@@ -272,6 +276,9 @@ export {
   iconCellRenderer,
   selectCellRenderer,
   progressBarCellRenderer,
+  avatarCellRenderer,
+  datepickerCellRenderer,
+  dropdownCellRenderer,
 } from "./renderer/components";
 export type { CellRenderer, CellRenderContext } from "./renderer/components";
 
@@ -348,6 +355,15 @@ export type {
   SelectStyle,
   ProgressBarInstruction,
   ProgressBarStyle,
+  AvatarInstruction,
+  AvatarStyle,
+  DatePickerInstruction,
+  DatePickerStyle,
+  DropdownInstruction,
+  DropdownStyle,
+  DropdownPanelStyle,
+  DropdownOptionStyle,
+  DropdownCheckmarkStyle,
   DomOverlayDescriptor,
   CssObjectFit,
   ReferrerPolicy,
