@@ -85,6 +85,8 @@ const cardStyle: React.CSSProperties = {
 
 // ── Component ─────────────────────────────────────────────────────
 
+const facetedColumns = ["department", "title", "status", "salary", "name"];
+
 export function FacetedDemo() {
   const isDark = useDarkMode();
   const table = useGridTable<Employee>({
@@ -93,8 +95,6 @@ export function FacetedDemo() {
     getFacetedRowModel: getFacetedRowModel(),
     state: { sorting: [], columnFilters: [], globalFilter: "" },
   });
-
-  const facetedColumns = ["department", "title", "status", "salary", "name"];
 
   const facetedData = useMemo(() => {
     return facetedColumns.map((colId) => ({

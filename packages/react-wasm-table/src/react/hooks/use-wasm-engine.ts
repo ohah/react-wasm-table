@@ -36,6 +36,7 @@ export function useWasmEngine({ engineRef }: UseWasmEngineParams) {
         }
       })
       .catch((err) => {
+        // eslint-disable-next-line no-console -- WASM init failure must be visible to users
         if (!cancelled) console.error(err);
       });
     return () => {

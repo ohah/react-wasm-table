@@ -301,6 +301,7 @@ export function Grid({
       engine.setPagination(undefined, undefined);
     }
     invalidate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- paginationProp is destructured to avoid re-runs on new object references with same values
   }, [engine, paginationProp?.pageIndex, paginationProp?.pageSize, invalidate]);
 
   const { stringTableRef } = useDataIngestion({
@@ -312,7 +313,9 @@ export function Grid({
     headerHeight: totalHeaderHeight,
     invalidate,
   });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs have stable identity
   const getMemoryBridge = useCallback(() => memoryBridgeRef.current, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs have stable identity
   const getStringTable = useCallback(() => stringTableRef.current, []);
 
   const {
@@ -596,6 +599,7 @@ export function Grid({
         invalidate();
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scrollLeftRef is a stable ref
     [domOverlays, width, invalidate],
   );
 

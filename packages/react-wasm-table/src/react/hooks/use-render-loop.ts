@@ -22,6 +22,7 @@ import type {
   CssGridAutoFlow,
 } from "../../types";
 import { resolveCellBorder } from "../border-utils";
+import { createLogger } from "../../debug/logger";
 import type { SortingState } from "../../tanstack-types";
 import type { ColumnRegistry } from "../../adapter/column-registry";
 import type { MemoryBridge } from "../../adapter/memory-bridge";
@@ -236,6 +237,8 @@ export function useRenderLoop({
     rendererRef.current = renderer;
     dirtyRef.current = true;
   }, [canvasRef, width, height]);
+
+  const renderLogger = useMemo(() => createLogger("grid:render-loop"), []);
 
   // Render loop — unified hot path (single WASM call per frame)
   useEffect(() => {
@@ -815,14 +818,14 @@ export function useRenderLoop({
                     try {
                       layer.draw(layerCtx);
                     } catch (e) {
-                      console.error(`Layer "${layer.name}" error:`, e);
+                      renderLogger.error(`Layer "${layer.name}" error:`, e);
                     }
                     ctx.restore();
                   } else {
                     try {
                       layer.draw(layerCtx);
                     } catch (e) {
-                      console.error(`Layer "${layer.name}" error:`, e);
+                      renderLogger.error(`Layer "${layer.name}" error:`, e);
                     }
                   }
                 }
@@ -842,14 +845,14 @@ export function useRenderLoop({
                   try {
                     layer.draw(layerCtx);
                   } catch (e) {
-                    console.error(`Layer "${layer.name}" error:`, e);
+                    renderLogger.error(`Layer "${layer.name}" error:`, e);
                   }
                   ctx.restore();
                 } else {
                   try {
                     layer.draw(layerCtx);
                   } catch (e) {
-                    console.error(`Layer "${layer.name}" error:`, e);
+                    renderLogger.error(`Layer "${layer.name}" error:`, e);
                   }
                 }
               }
@@ -939,7 +942,7 @@ export function useRenderLoop({
               dataRowCount: data.length,
             });
           } catch (e) {
-            console.error("onAfterDraw error:", e);
+            console.error("onAfterDraw error:", e); // eslint-disable-line no-console -- user callback errors must always be visible
           }
         }
 
@@ -996,6 +999,8 @@ export function useRenderLoop({
     getRowId,
     parsedBodyContent,
     parsedBorderStyles,
+    renderLogger,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refs (canvasRef, viewIndicesRef, viewRowCountRef) have stable identity; enableColumnDnD & effectiveTotalRows are read in rAF loop intentionally to avoid restarting animation
   ]);
 
   return { invalidate, getInstructionForCellRef, cellRendererRegistryRef, domOverlaysRef };

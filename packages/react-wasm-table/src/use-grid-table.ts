@@ -382,6 +382,7 @@ export function useGridTable<TData>(options: UseGridTableOptions<TData>): GridIn
     onGroupingChange,
     aggregationFns,
     getSubRows,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- viewIndicesRef is a stable React ref
   ]);
 
   return instance;

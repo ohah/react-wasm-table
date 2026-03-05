@@ -64,8 +64,9 @@ export function CanvasBox() {
             padding={6}
             borderWidth={2}
             borderColor="#1976d2"
-            children={<Text value={`${info.getValue()} pts`} />}
-          />
+          >
+            <Text value={`${info.getValue()} pts`} />
+          </Box>
         ),
       }),
       helper.accessor("salary", {

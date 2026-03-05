@@ -156,7 +156,7 @@ export function useSelection({
         sm.clear();
       }
     },
-    [onCopy, onPaste, onBeforeSelectionChange, getMemoryBridge, getStringTable],
+    [onCopy, onPaste, onBeforeSelectionChange, getMemoryBridge, getStringTable, columnRegistry],
   );
 
   return {

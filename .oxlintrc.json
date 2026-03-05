@@ -27,5 +27,15 @@
     "typescript/no-non-null-assertion": "warn",
     "react/no-danger": "error",
     "react-hooks/exhaustive-deps": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**", "e2e/**"],
+      "rules": {
+        "typescript/no-non-null-assertion": "off",
+        "typescript/no-explicit-any": "off",
+        "no-console": "off"
+      }
+    }
+  ]
 }
