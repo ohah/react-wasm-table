@@ -742,7 +742,7 @@ describe("measureInstructionHeight", () => {
 
   it("returns 0 for unknown type", () => {
     const ctx = mockCtx();
-    expect(measureInstructionHeight(ctx, { type: "progressbar" } as any)).toBe(0);
+    expect(measureInstructionHeight(ctx, { type: "unknown" } as any)).toBe(0);
   });
 });
 

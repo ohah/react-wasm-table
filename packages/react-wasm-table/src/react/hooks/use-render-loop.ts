@@ -296,6 +296,7 @@ export function useRenderLoop({
           return;
         }
 
+        const headerRowCount = headerGroups.length || 1;
         const viewport = {
           width,
           height,
@@ -303,6 +304,7 @@ export function useRenderLoop({
           headerHeight,
           scrollTop: scrollTopRef.current,
           lineHeight: Math.ceil(theme.fontSize * 1.5),
+          headerRowCount,
         };
 
         const isGrid = display === "grid";
@@ -461,7 +463,6 @@ export function useRenderLoop({
         const effectiveRowHeight = meta[8] ?? rowHeight;
         const headerCount = colCount;
         const dataCount = cellCount - headerCount;
-        const headerRowCount = headerGroups.length || 1;
 
         onVisStartComputed(visStart);
 
