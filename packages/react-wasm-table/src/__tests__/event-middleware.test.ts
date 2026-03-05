@@ -19,7 +19,7 @@ function makeFakeEvent(overrides?: Record<string, unknown>): GridEvent {
 describe("composeMiddleware", () => {
   it("calls final directly when no middlewares", () => {
     const calls: string[] = [];
-    const dispatch = composeMiddleware([], (ch, ev) => {
+    const dispatch = composeMiddleware([], (ch, _ev) => {
       calls.push(`final:${ch}`);
     });
     dispatch("cellClick", makeFakeEvent());
@@ -28,11 +28,11 @@ describe("composeMiddleware", () => {
 
   it("calls final when single middleware calls next()", () => {
     const calls: string[] = [];
-    const mw: EventMiddleware = (ch, ev, next) => {
+    const mw: EventMiddleware = (_ch, _ev, next) => {
       calls.push("mw");
       next();
     };
-    const dispatch = composeMiddleware([mw], (ch) => {
+    const dispatch = composeMiddleware([mw], (_ch) => {
       calls.push("final");
     });
     dispatch("headerClick", makeFakeEvent());
@@ -41,11 +41,11 @@ describe("composeMiddleware", () => {
 
   it("skips final when middleware does not call next()", () => {
     const calls: string[] = [];
-    const mw: EventMiddleware = (ch, ev, next) => {
+    const mw: EventMiddleware = (_ch, _ev, _next) => {
       calls.push("mw-blocked");
       // intentionally not calling next()
     };
-    const dispatch = composeMiddleware([mw], (ch) => {
+    const dispatch = composeMiddleware([mw], (_ch) => {
       calls.push("final");
     });
     dispatch("cellClick", makeFakeEvent());
@@ -54,15 +54,15 @@ describe("composeMiddleware", () => {
 
   it("executes multiple middlewares in order", () => {
     const calls: string[] = [];
-    const mw1: EventMiddleware = (ch, ev, next) => {
+    const mw1: EventMiddleware = (_ch, _ev, next) => {
       calls.push("mw1");
       next();
     };
-    const mw2: EventMiddleware = (ch, ev, next) => {
+    const mw2: EventMiddleware = (_ch, _ev, next) => {
       calls.push("mw2");
       next();
     };
-    const mw3: EventMiddleware = (ch, ev, next) => {
+    const mw3: EventMiddleware = (_ch, _ev, next) => {
       calls.push("mw3");
       next();
     };
@@ -75,7 +75,7 @@ describe("composeMiddleware", () => {
 
   it("second middleware can block without reaching final", () => {
     const calls: string[] = [];
-    const mw1: EventMiddleware = (ch, ev, next) => {
+    const mw1: EventMiddleware = (_ch, _ev, next) => {
       calls.push("mw1");
       next();
     };

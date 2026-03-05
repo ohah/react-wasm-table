@@ -13,7 +13,7 @@ import type {
  */
 export function resolveColumns<TData>(
   defs: GridColumnDef<TData, any>[],
-  data: TData[],
+  _data: TData[],
   options?: {
     columnOrder?: ColumnOrderState;
     columnVisibility?: ColumnVisibilityState;

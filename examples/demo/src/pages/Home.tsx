@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   Grid,
   createColumnHelper,
@@ -15,7 +15,6 @@ import {
   Color,
   Switch,
   type SortingState,
-  type Theme,
 } from "@ohah/react-wasm-table";
 import { useContainerSize } from "../useContainerSize";
 import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";

@@ -11,7 +11,7 @@ import type {
   GridContextMenuEvent,
   GridTouchEvent,
 } from "../../types";
-import type { EventManager, EventCoords } from "../../adapter/event-manager";
+import type { EventManager } from "../../adapter/event-manager";
 import type { EditorManager } from "../../adapter/editor-manager";
 import type { CellRendererRegistryLike } from "../../renderer/components/types";
 import {

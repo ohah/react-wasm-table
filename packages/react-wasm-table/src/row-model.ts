@@ -315,7 +315,7 @@ export function buildExpandedRowModel<TData>(
     const rows: Row<TData>[] = [];
     for (const item of items) {
       const originalIndex = allData.indexOf(item);
-      const idx = originalIndex >= 0 ? originalIndex : allData.length;
+      const _idx = originalIndex >= 0 ? originalIndex : allData.length;
       // If item is not in top-level data, push it and use that index
       if (originalIndex < 0) {
         allData.push(item);

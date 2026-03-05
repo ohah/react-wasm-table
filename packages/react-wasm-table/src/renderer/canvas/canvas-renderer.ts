@@ -8,7 +8,7 @@ import type {
 import type { CellRendererRegistry } from "../components";
 import type { GridHeaderGroup } from "../../grid-instance";
 import type { SortingState } from "../../tanstack-types";
-import { drawTextCellFromBuffer } from "../draw-primitives";
+
 import {
   computeHeaderLinesFromBuffer,
   computeDataLinesFromBuffer,
@@ -167,7 +167,7 @@ export class CanvasRenderer {
 
           const textMaxW = rowIdx === isLeafRow ? cellW - 8 - handleReserved : cellW - 8;
           const measured = ctx.measureText(label);
-          const textW = Math.min(measured.width, Math.max(0, textMaxW));
+          const _textW = Math.min(measured.width, Math.max(0, textMaxW));
           // Clip to cell bounds
           ctx.save();
           ctx.beginPath();

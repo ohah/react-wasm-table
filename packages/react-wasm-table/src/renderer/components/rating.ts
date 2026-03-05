@@ -25,7 +25,7 @@ export const ratingCellRenderer: CellRenderer<RatingInstruction> = {
     const w = readCellWidth(buf, cellIdx);
     const h = readCellHeight(buf, cellIdx);
     const padTop = readCellPaddingTop(buf, cellIdx);
-    const padRight = readCellPaddingRight(buf, cellIdx);
+    const _padRight = readCellPaddingRight(buf, cellIdx);
     const padBottom = readCellPaddingBottom(buf, cellIdx);
     const padLeft = readCellPaddingLeft(buf, cellIdx);
 

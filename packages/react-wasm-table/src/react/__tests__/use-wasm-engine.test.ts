@@ -1,10 +1,10 @@
-import { describe, expect, it, mock, beforeEach } from "bun:test";
-import { renderHook, waitFor } from "@testing-library/react";
+import { describe, expect, it, mock } from "bun:test";
+import { renderHook } from "@testing-library/react";
 import type { WasmTableEngine } from "../../types";
 
 // Mock the wasm-loader module before importing the hook
-const mockEngine = { enableDebugLog: mock(() => {}) } as unknown as WasmTableEngine;
-const mockMemory = new WebAssembly.Memory({ initial: 1 });
+const _mockEngine = { enableDebugLog: mock(() => {}) } as unknown as WasmTableEngine;
+const _mockMemory = new WebAssembly.Memory({ initial: 1 });
 
 // We need to mock the module at the source level.
 // Since bun doesn't have jest.mock(), we test the hook's integration

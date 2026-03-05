@@ -3,11 +3,9 @@ import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
 import {
   Grid,
   createColumnHelper,
-  composeMiddleware,
   type SortingState,
   type EventMiddleware,
   type EventChannel,
-  type GridEvent,
 } from "@ohah/react-wasm-table";
 import { generateSmallData } from "../data";
 
@@ -39,7 +37,7 @@ function createBlockerMiddleware(
   blockedChannels: Set<string>,
   addLog: (source: string, channel: string, detail: string) => void,
 ): EventMiddleware {
-  return (channel, event, next) => {
+  return (channel, _event, next) => {
     if (blockedChannels.has(channel)) {
       addLog("blocker", channel, "BLOCKED — next() not called");
       return; // don't call next()
@@ -52,7 +50,7 @@ function createBlockerMiddleware(
 function createTimingMiddleware(
   addLog: (source: string, channel: string, detail: string) => void,
 ): EventMiddleware {
-  return (channel, event, next) => {
+  return (channel, _event, next) => {
     const start = performance.now();
     next();
     const elapsed = (performance.now() - start).toFixed(2);

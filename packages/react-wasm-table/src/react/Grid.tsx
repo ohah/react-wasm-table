@@ -59,7 +59,7 @@ export function Grid({
   onColumnPinningChange: _onColumnPinningChangeProp,
   enableColumnDnD: enableColumnDnDProp = false,
   rowPinning: rowPinningProp,
-  onRowPinningChange: onRowPinningChangeProp,
+  onRowPinningChange: _onRowPinningChangeProp,
   getRowId: getRowIdProp,
   // Event callbacks (enriched events)
   onCellClick: onCellClickProp,

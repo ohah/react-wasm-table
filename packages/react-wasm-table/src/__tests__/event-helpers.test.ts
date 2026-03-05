@@ -1,10 +1,5 @@
 import { describe, expect, it } from "bun:test";
 import {
-  createGridCellEvent,
-  createGridHeaderEvent,
-  createGridKeyboardEvent,
-  createGridScrollEvent,
-  createGridCanvasEvent,
   createGridContextMenuEvent,
   createGridTouchEvent,
 } from "../event-helpers";

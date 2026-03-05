@@ -329,17 +329,6 @@ export interface StubProps {
   [key: string]: unknown;
 }
 
-function stub(component: string) {
-  return (props: StubProps): CanvasElement => {
-    const { style, ...rest } = props;
-    const merged = { ...style, ...rest } as Record<string, unknown>;
-    return {
-      type: "stub",
-      component,
-      props: Object.keys(merged).length > 0 ? merged : undefined,
-    } as CanvasElement;
-  };
-}
 
 /** Props for the Stack canvas component (direction + gap only). */
 export interface StackProps extends CanvasEventHandlers {

@@ -56,7 +56,7 @@ function makeLayoutBuf(
   return buf;
 }
 
-function makeEngine(layoutBuf: Float32Array, viewIndices?: Uint32Array) {
+function makeEngine(layoutBuf: Float32Array, _viewIndices?: Uint32Array) {
   return {
     updateViewportColumnar: mock(() => new Float64Array([layoutBuf.length / STRIDE, 0])),
   } as any;
@@ -495,7 +495,7 @@ describe("useRenderLoop", () => {
     });
 
     it("falls through to cellDef when parsedBodyContent has no matching key", () => {
-      const cellDefSpy = mock((info: any) => `from-cellDef`);
+      const cellDefSpy = mock((_info: any) => `from-cellDef`);
 
       const registry = new ColumnRegistry();
       registry.setAll([

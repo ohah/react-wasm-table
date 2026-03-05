@@ -299,7 +299,6 @@ export function PaginationDemo() {
             style={{
               ...btnBase,
               background: "var(--demo-code-bg)",
-              color: "var(--demo-code-fg)",
               color: "var(--demo-muted)",
             }}
             onClick={clearAll}

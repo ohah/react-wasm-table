@@ -1,19 +1,15 @@
 import { Link } from "react-router";
-import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../useDarkMode";
-
 const linkStyle: React.CSSProperties = {
   display: "block",
   padding: "8px 12px",
   borderRadius: 4,
   background: "var(--demo-code-bg)",
-  color: "var(--demo-code-fg)",
   color: "#1565c0",
   textDecoration: "none",
   fontSize: 14,
   marginBottom: 8,
 };
 export function CanvasComponents() {
-  const isDark = useDarkMode();
   return (
     <>
       <h1>Canvas Components</h1>

@@ -60,7 +60,7 @@ describe("EventManager — resize drag sequence", () => {
     const listeners: Record<string, ((e: any) => void)[]> = {};
     return {
       getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
-      addEventListener: (type: string, handler: (e: any) => void, opts?: any) => {
+      addEventListener: (type: string, handler: (e: any) => void, _opts?: any) => {
         if (!listeners[type]) listeners[type] = [];
         listeners[type]!.push(handler);
       },
@@ -87,7 +87,7 @@ describe("EventManager — resize drag sequence", () => {
     const origAddWin = window.addEventListener.bind(window);
     const origRemWin = window.removeEventListener.bind(window);
     const addedFns: Array<{ type: string; fn: (e: any) => void }> = [];
-    window.addEventListener = ((type: string, fn: any, opts?: any) => {
+    window.addEventListener = ((type: string, fn: any, _opts?: any) => {
       if (!windowListeners[type]) windowListeners[type] = [];
       windowListeners[type]!.push(fn);
       addedFns.push({ type, fn });

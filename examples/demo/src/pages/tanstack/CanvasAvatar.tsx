@@ -3,14 +3,8 @@ import {
   Table,
   useReactTable,
   getCoreRowModel,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
   createColumnHelper,
   Avatar,
-  Text,
 } from "@ohah/react-wasm-table";
 import { useContainerSize } from "../../useContainerSize";
 import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";

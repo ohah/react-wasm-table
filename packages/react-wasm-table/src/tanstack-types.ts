@@ -161,7 +161,7 @@ export interface CellContext<TData, TValue> {
 }
 
 /** Context passed to the `header` render function. */
-export interface HeaderContext<TData, TValue = unknown> {
+export interface HeaderContext<TData, _TValue = unknown> {
   column: {
     id: string;
     // Use `any` for TValue to avoid covariance issues when mixing column types in arrays

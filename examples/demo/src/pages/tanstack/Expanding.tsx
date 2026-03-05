@@ -6,7 +6,7 @@ import {
   getCoreRowModel,
   type ExpandedState,
 } from "@ohah/react-wasm-table";
-import { useDarkMode, LIGHT_THEME, DARK_THEME } from "../../useDarkMode";
+import { useDarkMode } from "../../useDarkMode";
 
 // ── Tree data type ─────────────────────────────────────────────────
 
@@ -120,7 +120,7 @@ const tdStyle: React.CSSProperties = {
 // ── Component ──────────────────────────────────────────────────────
 
 export function TanStackExpanding() {
-  const isDark = useDarkMode();
+  const _isDark = useDarkMode();
   const [expanded, setExpanded] = useState<ExpandedState>({});
 
   const handleExpandedChange = useCallback(

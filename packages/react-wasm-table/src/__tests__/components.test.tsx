@@ -65,18 +65,13 @@ import type {
   SparklineInstruction,
   BoxInstruction,
   StackInstruction,
-  StubInstruction,
   ColorInstruction,
   TagInstruction,
   RatingInstruction,
   ChipInstruction,
   LinkInstruction,
   ImageInstruction,
-  CheckboxInstruction,
-  RadioInstruction,
-  InputInstruction,
   ProgressBarInstruction,
-  SwitchInstruction,
 } from "../types";
 
 describe("Canvas components", () => {
@@ -1134,9 +1129,9 @@ describe("Canvas components", () => {
     });
 
     it("preserves user onClick while wrapping with onChange logic", () => {
-      let userClickCalled = false;
+      let _userClickCalled = false;
       const userOnClick = () => {
-        userClickCalled = true;
+        _userClickCalled = true;
       };
       const onChange = (_v: number) => {};
       const result = ProgressBar({ value: 50, onClick: userOnClick, onChange }) as any;
@@ -1540,7 +1535,7 @@ describe("ProgressBar with onChange handlers", () => {
         cellIdx: 0,
         theme: defaultTheme,
         registry: createCellRendererRegistry(),
-        computeChildLayout: (input: Float32Array) => new Float32Array(0),
+        computeChildLayout: (_input: Float32Array) => new Float32Array(0),
       },
     );
   }

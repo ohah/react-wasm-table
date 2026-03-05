@@ -21,14 +21,12 @@ import type {
   PaginationUpdater,
   GroupingState,
   GroupingUpdater,
-  CellContext,
   HeaderContext,
 } from "./tanstack-types";
-import { getLeafColumns } from "./resolve-columns";
+
 import type {
   Row,
   RowModel,
-  RowModelFactory,
   AggregationFn,
   FacetedColumnValues,
 } from "./row-model";
