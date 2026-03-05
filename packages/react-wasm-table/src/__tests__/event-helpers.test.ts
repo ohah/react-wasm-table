@@ -1,8 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import {
-  createGridContextMenuEvent,
-  createGridTouchEvent,
-} from "../event-helpers";
+import { createGridContextMenuEvent, createGridTouchEvent } from "../event-helpers";
 
 describe("createGridContextMenuEvent", () => {
   const coords = { contentX: 10, contentY: 20, viewportX: 10, viewportY: 20 };
