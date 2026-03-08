@@ -872,10 +872,15 @@ export class EventManager {
 
   /** Detach all event listeners in one call. */
   detach(): void {
-    if (this.touchState?.longPressTimer) {
+    // Preserve touchState across detach/attach cycles so that an in-progress
+    // touch gesture (e.g. scroll) survives React effect re-runs.
+    // Only clear touchState if there is no active gesture.
+    if (!this.touchState) {
+      // no active touch — safe to clear everything
+    } else if (this.touchState.longPressTimer) {
       clearTimeout(this.touchState.longPressTimer);
+      this.touchState.longPressTimer = null;
     }
-    this.touchState = null;
     this.controller?.abort();
     this.controller = null;
   }
