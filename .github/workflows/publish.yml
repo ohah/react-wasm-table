@@ -27,12 +27,6 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
-
       - name: Install wasm-pack
         run: cargo install wasm-pack
 
@@ -59,7 +53,7 @@ jobs:
         run: bun run build:lib
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: bunx npm publish --access public
         working-directory: packages/react-wasm-table
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
