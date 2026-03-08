@@ -866,6 +866,26 @@ describe("EventManager", () => {
       expect(onCellClick).not.toHaveBeenCalled();
     });
 
+    it("touchState survives detach/attach cycle during active scroll", () => {
+      const onScroll = mock(() => {});
+      em.setLayouts([], []);
+      em.attach(canvas, { onScroll });
+
+      // Start touch and begin scrolling
+      canvas.dispatchEvent(createTouchEvent("touchstart", [{ clientX: 100, clientY: 100 }]));
+      canvas.dispatchEvent(createTouchEvent("touchmove", [{ clientX: 100, clientY: 80 }]));
+      expect(onScroll).toHaveBeenCalled();
+      onScroll.mockClear();
+
+      // Simulate React effect re-run: detach then re-attach
+      em.detach();
+      em.attach(canvas, { onScroll });
+
+      // Continue scrolling — touchmove should still work
+      canvas.dispatchEvent(createTouchEvent("touchmove", [{ clientX: 100, clientY: 60 }]));
+      expect(onScroll).toHaveBeenCalled();
+    });
+
     it("multi-touch is ignored", () => {
       const onScroll = mock(() => {});
       const onCellClick = mock(() => {});
