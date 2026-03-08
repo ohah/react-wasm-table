@@ -10,6 +10,8 @@ const DOUBLE_TAP_INTERVAL = 300; // ms between taps for double-tap
 const DOUBLE_TAP_DISTANCE = 20; // max px between taps for double-tap
 const LONG_PRESS_DURATION = 500; // ms hold → selection drag mode
 const MOUSE_DRAG_THRESHOLD = 5; // px movement before mousemove triggers drag-extend
+const MOMENTUM_FRICTION = 0.95; // velocity multiplier per frame (lower = more friction)
+const MOMENTUM_MIN_VELOCITY = 0.5; // px/frame — stop animation below this
 const RESIZE_HANDLE_ZONE = 5; // px from header right edge for resize handle
 const DRAG_HANDLE_ZONE = 20; // px zone for column DnD grip handle (left of resize zone)
 
@@ -80,11 +82,9 @@ export interface GridEventHandlers {
   ) => boolean | void;
 }
 
-/** Options for deltaMode normalization. */
+/** @deprecated Wheel scroll is now handled natively by the scroll overlay. */
 export interface ScrollNormalization {
-  /** Pixels per line for deltaMode=1 (DOM_DELTA_LINE). Typically rowHeight. */
   lineHeight: number;
-  /** Pixels per page for deltaMode=2 (DOM_DELTA_PAGE). Typically viewport height. */
   pageHeight: number;
 }
 
@@ -154,6 +154,12 @@ export class EventManager {
   private lastTapX = 0;
   private lastTapY = 0;
 
+  // Momentum / inertia state (touch only — wheel uses native scroll)
+  private momentumRafId: number | null = null;
+  private velocityX = 0;
+  private velocityY = 0;
+  private lastMoveTime = 0;
+
   // Mouse drag state
   private mouseDownPos: { x: number; y: number } | null = null;
   private mouseDragActive = false;
@@ -176,6 +182,35 @@ export class EventManager {
     shiftKey: boolean;
     coords: EventCoords;
   } | null = null;
+
+  /** Cancel any running touch momentum animation. */
+  private stopMomentum(): void {
+    if (this.momentumRafId !== null) {
+      cancelAnimationFrame(this.momentumRafId);
+      this.momentumRafId = null;
+    }
+    this.velocityX = 0;
+    this.velocityY = 0;
+  }
+
+  /** Start momentum deceleration animation (shared by touch and wheel). */
+  private startMomentum(onScroll: GridEventHandlers["onScroll"]): void {
+    const speed = Math.sqrt(this.velocityX ** 2 + this.velocityY ** 2);
+    if (speed < MOMENTUM_MIN_VELOCITY) return;
+
+    const tick = () => {
+      this.velocityX *= MOMENTUM_FRICTION;
+      this.velocityY *= MOMENTUM_FRICTION;
+      const curSpeed = Math.sqrt(this.velocityX ** 2 + this.velocityY ** 2);
+      if (curSpeed < MOMENTUM_MIN_VELOCITY) {
+        this.stopMomentum();
+        return;
+      }
+      onScroll?.(this.velocityY, this.velocityX, null);
+      this.momentumRafId = requestAnimationFrame(tick);
+    };
+    this.momentumRafId = requestAnimationFrame(tick);
+  }
 
   /** Update the layouts used for hit-testing. */
   setLayouts(headerLayouts: CellLayout[], rowLayouts: CellLayout[]): void {
@@ -265,11 +300,14 @@ export class EventManager {
     return findCell(x, y, this.rowLayouts) ?? findNearestCell(x, y, this.rowLayouts);
   }
 
-  /** Attach event listeners to a canvas element. */
+  /**
+   * Attach event listeners to an element (typically the scroll overlay div).
+   * Wheel scroll is handled natively by the overlay's `overflow: auto`.
+   */
   attach(
-    canvas: HTMLCanvasElement,
+    canvas: HTMLElement,
     handlers: GridEventHandlers,
-    scrollNorm?: ScrollNormalization,
+    _scrollNorm?: ScrollNormalization,
   ): void {
     this.detach();
     this.controller = new AbortController();
@@ -629,29 +667,9 @@ export class EventManager {
       { signal },
     );
 
-    const lineH = scrollNorm?.lineHeight ?? 36;
-    const pageH = scrollNorm?.pageHeight ?? 400;
-
-    canvas.addEventListener(
-      "wheel",
-      (e: WheelEvent) => {
-        e.preventDefault();
-        let dy = e.deltaY;
-        let dx = e.deltaX;
-        // Normalize deltaMode to pixels
-        if (e.deltaMode === 1) {
-          // DOM_DELTA_LINE (Firefox mouse wheel)
-          dy *= lineH;
-          dx *= lineH;
-        } else if (e.deltaMode === 2) {
-          // DOM_DELTA_PAGE
-          dy *= pageH;
-          dx *= pageH;
-        }
-        handlers.onScroll?.(dy, dx, e);
-      },
-      { signal, passive: false },
-    );
+    // Wheel scroll is handled natively by the overlay's overflow: auto.
+    // No wheel event listener needed — the browser provides momentum,
+    // smooth scrolling, and trackpad gesture support automatically.
 
     // ── Touch event listeners ──────────────────────────────────────────
 
@@ -680,6 +698,9 @@ export class EventManager {
 
         // Fire user touch callback — preventDefault cancels all internal handling
         if (handlers.onTouchStart?.(e, coords, hitTest) === false) return;
+
+        // Stop any running momentum animation when a new touch begins
+        this.stopMomentum();
 
         this.touchState = {
           startX: touch.clientX,
@@ -778,6 +799,17 @@ export class EventManager {
           if (ts.isScrolling) {
             // Invert: finger moves down → content scrolls up (negative deltaY)
             handlers.onScroll?.(-dy, -dx, null);
+
+            // Track velocity for momentum
+            const now = performance.now();
+            const dt = now - this.lastMoveTime;
+            if (dt > 0 && dt < 100) {
+              // Use exponential smoothing to avoid jitter
+              const alpha = 0.8;
+              this.velocityX = alpha * (-dx / dt) * 16 + (1 - alpha) * this.velocityX;
+              this.velocityY = alpha * (-dy / dt) * 16 + (1 - alpha) * this.velocityY;
+            }
+            this.lastMoveTime = now;
           }
         }
 
@@ -812,6 +844,11 @@ export class EventManager {
           handlers.onCellMouseUp?.();
           this.touchState = null;
           return;
+        }
+
+        // Start momentum animation if scrolling with enough velocity
+        if (ts.isScrolling && !ts.isSelectionDrag) {
+          this.startMomentum(handlers.onScroll);
         }
 
         // Tap detection
@@ -878,6 +915,8 @@ export class EventManager {
       clearTimeout(this.touchState.longPressTimer);
       this.touchState.longPressTimer = null;
     }
+    // Note: do NOT stop touch momentum on detach — allow inertia to continue
+    // across React effect re-runs (same reason as touchState preservation).
     this.controller?.abort();
     this.controller = null;
   }

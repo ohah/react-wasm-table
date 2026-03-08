@@ -41,6 +41,8 @@ import {
 
 export interface UseEventAttachmentParams {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  /** Scroll overlay div — sits on top of canvas and handles native wheel scroll. */
+  scrollOverlayRef?: React.RefObject<HTMLDivElement | null>;
   eventManagerRef: React.RefObject<EventManager>;
   editorManagerRef: React.RefObject<EditorManager>;
   /** When provided, attached to context menu event as event.table. */
@@ -98,6 +100,7 @@ export interface UseEventAttachmentParams {
 
 export function useEventAttachment({
   canvasRef,
+  scrollOverlayRef,
   eventManagerRef,
   editorManagerRef,
   table,
@@ -164,8 +167,11 @@ export function useEventAttachment({
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const overlay = scrollOverlayRef?.current;
     const em = eventManagerRef.current;
     if (!canvas || !em) return;
+    // Attach to overlay if available (native wheel scroll), otherwise fall back to canvas
+    const eventTarget = overlay ?? canvas;
 
     /** Dispatch an event through the middleware chain, then run the final handler. */
     function dispatch(channel: EventChannel, event: GridEvent, final_: () => void) {
@@ -179,7 +185,7 @@ export function useEventAttachment({
     }
 
     em.attach(
-      canvas,
+      eventTarget,
       {
         onHeaderClick: (colIndex, native, coords) => {
           const event = createGridHeaderEvent(native, colIndex, coords);
@@ -317,21 +323,19 @@ export function useEventAttachment({
         onResizeEnd: handlers.handleResizeEnd,
         onResizeHover: handlers.handleResizeHover,
         onCellHover: (coord) => {
-          const canvas = canvasRef.current;
-          if (!canvas) return;
+          // Set cursor on the event target (overlay if available, else canvas)
           if (coord) {
-            // Check renderer cursor first (e.g., Link → "pointer")
             const instr = getInstructionForCellRef?.current?.(coord.row, coord.col);
             const renderer = instr ? cellRendererRegistryRef?.current?.get(instr.type) : undefined;
             if (renderer?.cursor) {
-              canvas.style.cursor = renderer.cursor;
+              eventTarget.style.cursor = renderer.cursor;
             } else if (isCellEditableRef.current?.(coord)) {
-              canvas.style.cursor = "text";
+              eventTarget.style.cursor = "text";
             } else {
-              canvas.style.cursor = "";
+              eventTarget.style.cursor = "";
             }
           } else {
-            canvas.style.cursor = "";
+            eventTarget.style.cursor = "";
           }
         },
         onHeaderMouseDown: handlers.handleHeaderMouseDown
@@ -530,11 +534,69 @@ export function useEventAttachment({
       { lineHeight: rowHeight, pageHeight: height - headerHeight },
     );
 
+    // ── Native scroll event on overlay ─────────────────────────────────
+    // The overlay div has overflow: auto — wheel events scroll it natively.
+    // We read its scrollTop/scrollLeft and sync to scrollTopRef/scrollLeftRef.
+    const onNativeScroll = overlay ? () => {
+      const actualH = Number(overlay.dataset.actualHeight) || 0;
+      const actualW = Number(overlay.dataset.actualWidth) || 0;
+
+      // Convert capped scroll position to actual content position (MAX_SCROLL_SIZE ratio)
+      let effectiveTop = overlay.scrollTop;
+      if (actualH > 10_000_000) {
+        const cappedRange = Math.min(actualH, 10_000_000) - height;
+        const actualRange = actualH - height;
+        if (cappedRange > 0 && actualRange > 0) {
+          effectiveTop = overlay.scrollTop * (actualRange / cappedRange);
+        }
+      }
+      let effectiveLeft = overlay.scrollLeft;
+      if (actualW > 10_000_000) {
+        const cappedRange = Math.min(actualW, 10_000_000) - overlay.clientWidth;
+        const actualRange = actualW - overlay.clientWidth;
+        if (cappedRange > 0 && actualRange > 0) {
+          effectiveLeft = overlay.scrollLeft * (actualRange / cappedRange);
+        }
+      }
+
+      const deltaY = effectiveTop - (scrollTopRef?.current ?? 0);
+      const deltaX = effectiveLeft - (scrollLeftRef?.current ?? 0);
+      if (Math.abs(deltaY) < 0.5 && Math.abs(deltaX) < 0.5) return;
+
+      // Side effects: close dropdown, cancel editor
+      if (getDropdownPanelState()) {
+        closeDropdownPanel();
+        invalidate?.();
+      }
+      if (editorManagerRef.current.isEditing) {
+        editorManagerRef.current.cancel();
+      }
+
+      // Fire onScroll callback through middleware
+      const event = createGridScrollEvent(deltaY, deltaX, null);
+      dispatch("scroll", event, () => {
+        onScrollRef.current?.(event);
+        if (event.defaultPrevented) return;
+        // Update scroll refs
+        if (scrollTopRef) (scrollTopRef as React.MutableRefObject<number>).current = effectiveTop;
+        if (scrollLeftRef) (scrollLeftRef as React.MutableRefObject<number>).current = effectiveLeft;
+        invalidate?.();
+      });
+    } : null;
+
+    if (overlay && onNativeScroll) {
+      overlay.addEventListener("scroll", onNativeScroll, { passive: true });
+    }
+
     return () => {
       em.detach();
+      if (overlay && onNativeScroll) {
+        overlay.removeEventListener("scroll", onNativeScroll);
+      }
     };
   }, [
     canvasRef,
+    scrollOverlayRef,
     eventManagerRef,
     editorManagerRef,
     handlers.handleHeaderClick,
