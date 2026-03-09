@@ -1,5 +1,6 @@
 import { useRef, useCallback } from "react";
 import type { ColumnRegistry } from "../../adapter/column-registry";
+import { MAX_SCROLL_SIZE } from "../ScrollBar";
 
 export interface UseGridScrollParams {
   data: Record<string, unknown>[];
@@ -10,6 +11,48 @@ export interface UseGridScrollParams {
   width: number;
   columnRegistry: ColumnRegistry;
   invalidate: () => void;
+  scrollOverlayRef?: React.RefObject<HTMLDivElement | null>;
+}
+
+/**
+ * Sync scrollTopRef/scrollLeftRef → overlay element (reverse direction).
+ * Uses threshold to prevent feedback loops with the overlay scroll event.
+ */
+function syncOverlayFromRefs(
+  overlay: HTMLDivElement | null,
+  scrollTop: number,
+  scrollLeft: number,
+  contentHeight: number,
+  contentWidth: number,
+  viewportHeight: number,
+  viewportWidth: number,
+): void {
+  if (!overlay) return;
+
+  // Handle MAX_SCROLL_SIZE ratio conversion
+  let targetTop = scrollTop;
+  if (contentHeight > MAX_SCROLL_SIZE) {
+    const cappedRange = MAX_SCROLL_SIZE - viewportHeight;
+    const actualRange = contentHeight - viewportHeight;
+    if (actualRange > 0 && cappedRange > 0) {
+      targetTop = scrollTop * (cappedRange / actualRange);
+    }
+  }
+  let targetLeft = scrollLeft;
+  if (contentWidth > MAX_SCROLL_SIZE) {
+    const cappedRange = MAX_SCROLL_SIZE - viewportWidth;
+    const actualRange = contentWidth - viewportWidth;
+    if (actualRange > 0 && cappedRange > 0) {
+      targetLeft = scrollLeft * (cappedRange / actualRange);
+    }
+  }
+
+  if (Math.abs(overlay.scrollTop - targetTop) > 0.5) {
+    overlay.scrollTop = targetTop;
+  }
+  if (Math.abs(overlay.scrollLeft - targetLeft) > 0.5) {
+    overlay.scrollLeft = targetLeft;
+  }
 }
 
 export function useGridScroll({
@@ -21,6 +64,7 @@ export function useGridScroll({
   width,
   columnRegistry,
   invalidate,
+  scrollOverlayRef,
 }: UseGridScrollParams) {
   const scrollTopRef = useRef(0);
   const scrollLeftRef = useRef(0);
@@ -33,18 +77,39 @@ export function useGridScroll({
       const maxScrollY = Math.max(0, rowCount * rowHeight - (height - headerHeight));
       scrollTopRef.current = Math.max(0, Math.min(maxScrollY, scrollTopRef.current + dy));
       const cols = columnRegistry.getAll();
-      // CssDimension: non-number width (string/"auto") falls back to 100 for scroll math
       const totalColWidth = cols.reduce(
         (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
         0,
       );
       const maxScrollX = Math.max(0, totalColWidth - width);
       scrollLeftRef.current = Math.max(0, Math.min(maxScrollX, scrollLeftRef.current + dx));
+
+      // Sync overlay element from updated refs (for programmatic scroll like auto-scroll, touch)
+      const contentH = rowCount * rowHeight + headerHeight;
+      syncOverlayFromRefs(
+        scrollOverlayRef?.current ?? null,
+        scrollTopRef.current,
+        scrollLeftRef.current,
+        contentH,
+        totalColWidth,
+        height,
+        width,
+      );
       invalidate();
     },
-    [viewRowCountRef, rowHeight, height, headerHeight, width, columnRegistry, invalidate],
+    [
+      viewRowCountRef,
+      rowHeight,
+      height,
+      headerHeight,
+      width,
+      columnRegistry,
+      invalidate,
+      scrollOverlayRef,
+    ],
   );
 
+  /** Called from touch scroll in EventManager (touch still uses manual delta). */
   const handleWheel = useCallback(
     (deltaY: number, deltaX: number) => {
       applyScrollDelta(deltaY, deltaX);
@@ -85,18 +150,76 @@ export function useGridScroll({
     (pos: number) => {
       if (Math.abs(scrollTopRef.current - pos) < 0.5) return;
       scrollTopRef.current = pos;
+      // Sync overlay
+      const overlay = scrollOverlayRef?.current ?? null;
+      if (overlay) {
+        const rowCount = viewRowCountRef.current;
+        const contentH = rowCount * rowHeight + headerHeight;
+        const cols = columnRegistry.getAll();
+        const totalColWidth = cols.reduce(
+          (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
+          0,
+        );
+        syncOverlayFromRefs(
+          overlay,
+          pos,
+          scrollLeftRef.current,
+          contentH,
+          totalColWidth,
+          height,
+          width,
+        );
+      }
       invalidate();
     },
-    [invalidate],
+    [
+      invalidate,
+      scrollOverlayRef,
+      viewRowCountRef,
+      rowHeight,
+      headerHeight,
+      columnRegistry,
+      height,
+      width,
+    ],
   );
 
   const handleHScrollChange = useCallback(
     (pos: number) => {
       if (Math.abs(scrollLeftRef.current - pos) < 0.5) return;
       scrollLeftRef.current = pos;
+      // Sync overlay
+      const overlay = scrollOverlayRef?.current ?? null;
+      if (overlay) {
+        const rowCount = viewRowCountRef.current;
+        const contentH = rowCount * rowHeight + headerHeight;
+        const cols = columnRegistry.getAll();
+        const totalColWidth = cols.reduce(
+          (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
+          0,
+        );
+        syncOverlayFromRefs(
+          overlay,
+          scrollTopRef.current,
+          pos,
+          contentH,
+          totalColWidth,
+          height,
+          width,
+        );
+      }
       invalidate();
     },
-    [invalidate],
+    [
+      invalidate,
+      scrollOverlayRef,
+      viewRowCountRef,
+      rowHeight,
+      headerHeight,
+      columnRegistry,
+      height,
+      width,
+    ],
   );
 
   /** Scroll so that the given data row (0-based) is visible in the viewport. */
@@ -110,13 +233,40 @@ export function useGridScroll({
 
       if (cellTop < scrollTop) {
         scrollTopRef.current = Math.max(0, Math.min(maxScrollY, cellTop));
-        invalidate();
       } else if (cellBottom > scrollTop + viewportHeight) {
         scrollTopRef.current = Math.max(0, Math.min(maxScrollY, cellBottom - viewportHeight));
-        invalidate();
+      } else {
+        return; // already visible
       }
+      // Sync overlay
+      const rowCount = viewRowCountRef.current;
+      const contentH = rowCount * rowHeight + headerHeight;
+      const cols = columnRegistry.getAll();
+      const totalColWidth = cols.reduce(
+        (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
+        0,
+      );
+      syncOverlayFromRefs(
+        scrollOverlayRef?.current ?? null,
+        scrollTopRef.current,
+        scrollLeftRef.current,
+        contentH,
+        totalColWidth,
+        height,
+        width,
+      );
+      invalidate();
     },
-    [rowHeight, height, headerHeight, viewRowCountRef, invalidate],
+    [
+      rowHeight,
+      height,
+      headerHeight,
+      viewRowCountRef,
+      invalidate,
+      scrollOverlayRef,
+      columnRegistry,
+      width,
+    ],
   );
 
   return {

@@ -1,4 +1,15 @@
 import { useRef, useMemo, useEffect, useCallback } from "react";
+
+// Inject global CSS to hide scrollbar in scroll overlay (Safari doesn't support scrollbar-width: none)
+const SCROLL_OVERLAY_STYLE_ID = "__rwt-scroll-overlay-style";
+function ensureScrollOverlayStyle() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(SCROLL_OVERLAY_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = SCROLL_OVERLAY_STYLE_ID;
+  style.textContent = `[data-scroll-overlay]::-webkit-scrollbar { display: none; }`;
+  document.head.appendChild(style);
+}
 import type { GridProps, Theme } from "../types";
 import { DEFAULT_THEME } from "../types";
 import { resolveColumns } from "../resolve-columns";
@@ -144,7 +155,10 @@ export function Grid({
   _parsedBorderStyles,
   _onVisibleRangeChange,
 }: GridProps) {
+  ensureScrollOverlayStyle();
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scrollOverlayRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const vScrollbarRef = useRef<HTMLDivElement>(null);
   const hScrollbarRef = useRef<HTMLDivElement>(null);
@@ -269,6 +283,7 @@ export function Grid({
     width,
     columnRegistry,
     invalidate,
+    scrollOverlayRef,
   });
 
   // Hook composition
@@ -485,6 +500,7 @@ export function Grid({
     engine,
     memoryBridgeRef,
     canvasRef,
+    scrollOverlayRef,
     columnRegistry,
     data,
     stringTableRef,
@@ -527,6 +543,7 @@ export function Grid({
 
   useEventAttachment({
     canvasRef,
+    scrollOverlayRef,
     eventManagerRef,
     editorManagerRef,
     table: tableProp,
@@ -715,8 +732,27 @@ export function Grid({
         <canvas
           ref={canvasRef}
           data-grid-canvas
-          style={{ display: "block", touchAction: "none", width, height }}
+          style={{ display: "block", width, height, pointerEvents: "none" }}
         />
+        {/* Scroll overlay: native browser scroll for wheel (momentum/smooth),
+            touch-action: none so touch is handled manually by EventManager */}
+        <div
+          ref={scrollOverlayRef}
+          data-scroll-overlay
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width,
+            height,
+            overflow: "auto",
+            touchAction: "none",
+            scrollbarWidth: "none",
+            zIndex: 1,
+          }}
+        >
+          <div data-scroll-spacer style={{ pointerEvents: "none" }} />
+        </div>
         <div
           ref={editorRef}
           style={{
@@ -817,7 +853,10 @@ export function Grid({
                       si._domHandlers?.onKeyDown?.(e);
                     }}
                     onWheel={(e) => {
-                      canvasRef.current?.dispatchEvent(new WheelEvent("wheel", e.nativeEvent));
+                      scrollOverlayRef.current?.scrollBy({
+                        top: e.nativeEvent.deltaY,
+                        left: e.nativeEvent.deltaX,
+                      });
                     }}
                     style={selectStyle}
                   />

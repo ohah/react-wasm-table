@@ -100,6 +100,8 @@ export interface UseRenderLoopParams {
   engine: WasmTableEngine | null;
   memoryBridgeRef: React.RefObject<MemoryBridge | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  /** Scroll overlay div for native scroll sync. */
+  scrollOverlayRef?: React.RefObject<HTMLDivElement | null>;
   columnRegistry: ColumnRegistry;
   data: Record<string, unknown>[];
   stringTableRef: React.RefObject<StringTable>;
@@ -152,6 +154,7 @@ export function useRenderLoop({
   engine,
   memoryBridgeRef,
   canvasRef,
+  scrollOverlayRef,
   columnRegistry,
   data,
   stringTableRef,
@@ -954,6 +957,29 @@ export function useRenderLoop({
         // Sync native scrollbar positions (canvas wheel → scrollbar DOM)
         syncScrollBarPosition(vScrollbarRef.current, scrollTopRef.current, "vertical", height);
         syncScrollBarPosition(hScrollbarRef.current, scrollLeftRef.current, "horizontal", width);
+
+        // Sync scroll overlay spacer dimensions and scroll position.
+        // The overlay provides native wheel scroll (momentum, smooth scrolling).
+        if (scrollOverlayRef?.current) {
+          const overlayEl = scrollOverlayRef.current;
+          const spacer = overlayEl.firstElementChild as HTMLElement | null;
+          if (spacer) {
+            const cols = columnRegistry.getAll();
+            const totalColWidth = cols.reduce(
+              (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
+              0,
+            );
+            const rowCount = viewRowCountRef.current;
+            const contentH =
+              rowCount * (prevEffectiveRowHeightRef.current || rowHeight) + headerHeight;
+            const cappedH = Math.min(contentH, 10_000_000);
+            const cappedW = Math.min(totalColWidth, 10_000_000);
+            if (spacer.style.height !== `${cappedH}px`) spacer.style.height = `${cappedH}px`;
+            if (spacer.style.width !== `${cappedW}px`) spacer.style.width = `${cappedW}px`;
+            overlayEl.dataset.actualHeight = String(contentH);
+            overlayEl.dataset.actualWidth = String(totalColWidth);
+          }
+        }
       }
 
       rafRef.current = requestAnimationFrame(loop);

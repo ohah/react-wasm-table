@@ -996,19 +996,14 @@ describe("EventManager", () => {
       expect(coords.viewportX).toBe(56);
     });
 
-    it("passes native WheelEvent to onScroll", () => {
+    it("wheel scroll is handled natively by overlay (no onScroll from wheel)", () => {
+      // Wheel events no longer trigger onScroll — the scroll overlay div
+      // handles them natively via overflow: auto.
       const onScroll = mock((_dy: number, _dx: number, _native: WheelEvent | null) => {});
       em.attach(canvas, { onScroll });
 
       canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: 100, deltaX: 0, bubbles: true }));
-      expect(onScroll).toHaveBeenCalledTimes(1);
-      const [dy, _dx, native] = onScroll.mock.calls[0] as unknown as [
-        number,
-        number,
-        WheelEvent | null,
-      ];
-      expect(dy).toBe(100);
-      expect(native).toBeInstanceOf(WheelEvent);
+      expect(onScroll).toHaveBeenCalledTimes(0);
     });
 
     it("passes EventCoords with scrollLeft correction", () => {
