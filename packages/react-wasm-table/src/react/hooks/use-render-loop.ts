@@ -970,7 +970,8 @@ export function useRenderLoop({
               0,
             );
             const rowCount = viewRowCountRef.current;
-            const contentH = rowCount * (prevEffectiveRowHeightRef.current || rowHeight) + headerHeight;
+            const contentH =
+              rowCount * (prevEffectiveRowHeightRef.current || rowHeight) + headerHeight;
             const cappedH = Math.min(contentH, 10_000_000);
             const cappedW = Math.min(totalColWidth, 10_000_000);
             if (spacer.style.height !== `${cappedH}px`) spacer.style.height = `${cappedH}px`;

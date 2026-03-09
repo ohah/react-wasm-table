@@ -97,7 +97,16 @@ export function useGridScroll({
       );
       invalidate();
     },
-    [viewRowCountRef, rowHeight, height, headerHeight, width, columnRegistry, invalidate, scrollOverlayRef],
+    [
+      viewRowCountRef,
+      rowHeight,
+      height,
+      headerHeight,
+      width,
+      columnRegistry,
+      invalidate,
+      scrollOverlayRef,
+    ],
   );
 
   /** Called from touch scroll in EventManager (touch still uses manual delta). */
@@ -151,11 +160,28 @@ export function useGridScroll({
           (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
           0,
         );
-        syncOverlayFromRefs(overlay, pos, scrollLeftRef.current, contentH, totalColWidth, height, width);
+        syncOverlayFromRefs(
+          overlay,
+          pos,
+          scrollLeftRef.current,
+          contentH,
+          totalColWidth,
+          height,
+          width,
+        );
       }
       invalidate();
     },
-    [invalidate, scrollOverlayRef, viewRowCountRef, rowHeight, headerHeight, columnRegistry, height, width],
+    [
+      invalidate,
+      scrollOverlayRef,
+      viewRowCountRef,
+      rowHeight,
+      headerHeight,
+      columnRegistry,
+      height,
+      width,
+    ],
   );
 
   const handleHScrollChange = useCallback(
@@ -172,11 +198,28 @@ export function useGridScroll({
           (sum, c) => sum + (typeof c.width === "number" ? c.width : 100),
           0,
         );
-        syncOverlayFromRefs(overlay, scrollTopRef.current, pos, contentH, totalColWidth, height, width);
+        syncOverlayFromRefs(
+          overlay,
+          scrollTopRef.current,
+          pos,
+          contentH,
+          totalColWidth,
+          height,
+          width,
+        );
       }
       invalidate();
     },
-    [invalidate, scrollOverlayRef, viewRowCountRef, rowHeight, headerHeight, columnRegistry, height, width],
+    [
+      invalidate,
+      scrollOverlayRef,
+      viewRowCountRef,
+      rowHeight,
+      headerHeight,
+      columnRegistry,
+      height,
+      width,
+    ],
   );
 
   /** Scroll so that the given data row (0-based) is visible in the viewport. */
@@ -214,7 +257,16 @@ export function useGridScroll({
       );
       invalidate();
     },
-    [rowHeight, height, headerHeight, viewRowCountRef, invalidate, scrollOverlayRef, columnRegistry, width],
+    [
+      rowHeight,
+      height,
+      headerHeight,
+      viewRowCountRef,
+      invalidate,
+      scrollOverlayRef,
+      columnRegistry,
+      width,
+    ],
   );
 
   return {

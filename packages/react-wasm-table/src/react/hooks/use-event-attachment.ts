@@ -537,52 +537,56 @@ export function useEventAttachment({
     // ── Native scroll event on overlay ─────────────────────────────────
     // The overlay div has overflow: auto — wheel events scroll it natively.
     // We read its scrollTop/scrollLeft and sync to scrollTopRef/scrollLeftRef.
-    const onNativeScroll = overlay ? () => {
-      const actualH = Number(overlay.dataset.actualHeight) || 0;
-      const actualW = Number(overlay.dataset.actualWidth) || 0;
+    const onNativeScroll = overlay
+      ? () => {
+          const actualH = Number(overlay.dataset.actualHeight) || 0;
+          const actualW = Number(overlay.dataset.actualWidth) || 0;
 
-      // Convert capped scroll position to actual content position (MAX_SCROLL_SIZE ratio)
-      let effectiveTop = overlay.scrollTop;
-      if (actualH > 10_000_000) {
-        const cappedRange = Math.min(actualH, 10_000_000) - height;
-        const actualRange = actualH - height;
-        if (cappedRange > 0 && actualRange > 0) {
-          effectiveTop = overlay.scrollTop * (actualRange / cappedRange);
+          // Convert capped scroll position to actual content position (MAX_SCROLL_SIZE ratio)
+          let effectiveTop = overlay.scrollTop;
+          if (actualH > 10_000_000) {
+            const cappedRange = Math.min(actualH, 10_000_000) - height;
+            const actualRange = actualH - height;
+            if (cappedRange > 0 && actualRange > 0) {
+              effectiveTop = overlay.scrollTop * (actualRange / cappedRange);
+            }
+          }
+          let effectiveLeft = overlay.scrollLeft;
+          if (actualW > 10_000_000) {
+            const cappedRange = Math.min(actualW, 10_000_000) - overlay.clientWidth;
+            const actualRange = actualW - overlay.clientWidth;
+            if (cappedRange > 0 && actualRange > 0) {
+              effectiveLeft = overlay.scrollLeft * (actualRange / cappedRange);
+            }
+          }
+
+          const deltaY = effectiveTop - (scrollTopRef?.current ?? 0);
+          const deltaX = effectiveLeft - (scrollLeftRef?.current ?? 0);
+          if (Math.abs(deltaY) < 0.5 && Math.abs(deltaX) < 0.5) return;
+
+          // Side effects: close dropdown, cancel editor
+          if (getDropdownPanelState()) {
+            closeDropdownPanel();
+            invalidate?.();
+          }
+          if (editorManagerRef.current.isEditing) {
+            editorManagerRef.current.cancel();
+          }
+
+          // Fire onScroll callback through middleware
+          const event = createGridScrollEvent(deltaY, deltaX, null);
+          dispatch("scroll", event, () => {
+            onScrollRef.current?.(event);
+            if (event.defaultPrevented) return;
+            // Update scroll refs
+            if (scrollTopRef)
+              (scrollTopRef as React.MutableRefObject<number>).current = effectiveTop;
+            if (scrollLeftRef)
+              (scrollLeftRef as React.MutableRefObject<number>).current = effectiveLeft;
+            invalidate?.();
+          });
         }
-      }
-      let effectiveLeft = overlay.scrollLeft;
-      if (actualW > 10_000_000) {
-        const cappedRange = Math.min(actualW, 10_000_000) - overlay.clientWidth;
-        const actualRange = actualW - overlay.clientWidth;
-        if (cappedRange > 0 && actualRange > 0) {
-          effectiveLeft = overlay.scrollLeft * (actualRange / cappedRange);
-        }
-      }
-
-      const deltaY = effectiveTop - (scrollTopRef?.current ?? 0);
-      const deltaX = effectiveLeft - (scrollLeftRef?.current ?? 0);
-      if (Math.abs(deltaY) < 0.5 && Math.abs(deltaX) < 0.5) return;
-
-      // Side effects: close dropdown, cancel editor
-      if (getDropdownPanelState()) {
-        closeDropdownPanel();
-        invalidate?.();
-      }
-      if (editorManagerRef.current.isEditing) {
-        editorManagerRef.current.cancel();
-      }
-
-      // Fire onScroll callback through middleware
-      const event = createGridScrollEvent(deltaY, deltaX, null);
-      dispatch("scroll", event, () => {
-        onScrollRef.current?.(event);
-        if (event.defaultPrevented) return;
-        // Update scroll refs
-        if (scrollTopRef) (scrollTopRef as React.MutableRefObject<number>).current = effectiveTop;
-        if (scrollLeftRef) (scrollLeftRef as React.MutableRefObject<number>).current = effectiveLeft;
-        invalidate?.();
-      });
-    } : null;
+      : null;
 
     if (overlay && onNativeScroll) {
       overlay.addEventListener("scroll", onNativeScroll, { passive: true });
